@@ -118,6 +118,11 @@ H3Studio/
 
 ## 协议
 
-- 软件代码：MIT
+- 软件代码：**CC BY-NC-SA 4.0**（署名-非商业性使用-相同方式共享）——免费开源，**禁止商用**；衍生作品须同协议发布
 - MiniMax H3 权重：MiniMax H3 Community License（排除美国/欧盟/英国/韩国）
 - 依赖：diffusers 生态 Apache-2.0；PySide6 LGPL（动态链接，商用分发友好）；bitsandbytes MIT
+
+---
+
+**创作者：Bullobis** · 开源地址：https://github.com/Bullobis/minimax-h3-studio
+本项目免费开源，仅供个人学习、创作与研究使用，严禁商用。

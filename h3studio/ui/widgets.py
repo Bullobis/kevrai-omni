@@ -109,7 +109,7 @@ class TitleBar(QWidget):
         f = t.font(); f.setPointSize(10); f.setBold(True)
         t.setFont(f)
         lay.addWidget(t)
-        sub = QLabel("视频生成工作站")
+        sub = QLabel("视频生成工作站 · by Bullobis")
         sub.setObjectName("dimText")
         lay.addWidget(sub)
         lay.addStretch(1)

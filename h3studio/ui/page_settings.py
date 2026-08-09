@@ -358,6 +358,9 @@ class SettingsPage(QWidget):
         from .. import __version__
         about = QLabel(
             f"MiniMax H3 Studio · v{__version__}\n"
+            f"创作者：Bullobis\n"
+            f"开源地址：https://github.com/Bullobis/minimax-h3-studio\n"
+            f"许可协议：CC BY-NC-SA 4.0（免费开源，禁止商用）\n"
             f"内置推理引擎：{facts.ENGINE_INFO['name']}（{facts.ENGINE_INFO['license']}，GitHub {facts.ENGINE_INFO['stars_verified_at']}）\n"
             f"模型：{facts.MODEL_INFO['name']}，{facts.MODEL_INFO['developer']}，"
             f"{facts.MODEL_INFO['release_date']} 发布，{facts.MODEL_INFO['open_source_date']} 开源\n"
@@ -369,7 +372,8 @@ class SettingsPage(QWidget):
         about.setTextInteractionFlags(Qt.TextSelectableByMouse)
         v.addWidget(about)
         link_row = QHBoxLayout()
-        for name, url in [("HF 官方仓库", "https://huggingface.co/MiniMaxAI/MiniMax-H3"),
+        for name, url in [("⭐ 项目开源地址", "https://github.com/Bullobis/minimax-h3-studio"),
+                          ("HF 官方仓库", "https://huggingface.co/MiniMaxAI/MiniMax-H3"),
                           ("魔搭官方仓库", "https://modelscope.cn/models/MiniMax/MiniMax-H3"),
                           ("DiffSynth-Studio", facts.ENGINE_INFO["repo"]),
                           ("官方博客", "https://www.minimaxi.com/blog/minimax-h3")]:
