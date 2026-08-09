@@ -319,6 +319,15 @@ class MainWindow(QWidget):
             self.nav_btns[key] = b
         nv.addStretch(1)
 
+        # 开源信息（常驻可见，点击直达仓库）
+        self.oss_chip = QPushButton("⭐ 本项目开源\nby Bullobis")
+        self.oss_chip.setObjectName("navBtn")
+        self.oss_chip.setToolTip("https://github.com/Bullobis/minimax-h3-studio\nCC BY-NC-SA 4.0（免费开源，禁止商用）")
+        self.oss_chip.setCursor(Qt.PointingHandCursor)
+        self.oss_chip.clicked.connect(
+            lambda: self.ctx.open_url("https://github.com/Bullobis/minimax-h3-studio"))
+        nv.addWidget(self.oss_chip)
+
         # 硬件状态
         self.hw_chip = QLabel("硬件检测中…")
         self.hw_chip.setObjectName("hintLabel")
