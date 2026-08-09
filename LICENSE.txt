@@ -1,18 +1,20 @@
 MiniMax H3 Studio 软件许可说明
 ================================
 
-本软件（H3Studio）代码部分采用 MIT 协议发布。
+本软件（H3Studio）代码以 CC BY-NC-SA 4.0（署名-非商业性使用-相同方式共享）
+协议免费开源。
+
+您可以：自由使用、复制、修改、分享本软件。
+您必须：
+  1. 保留创作者信息（Bullobis）与开源地址：
+     https://github.com/Bullobis/minimax-h3-studio
+  2. 不得用于任何商业目的（禁止出售、收费服务、商业产品内置、
+     企业营利性生产环境使用等）。
+  3. 衍生作品必须以相同协议发布。
+
+我们欢迎个人学习、创作与研究使用。若您希望商用，请先联系创作者获得授权。
 
 重要：本软件将帮助您下载并本地运行 MiniMax H3 模型。
 MiniMax H3 模型权重采用《MiniMax H3 Community License Agreement》，
 该协议明确排除美国、欧盟、英国、韩国地区的使用权限。
 在下载和使用模型前，请务必阅读并遵守模型协议及您所在地区的法律法规。
-
-模型协议全文：
-https://huggingface.co/MiniMaxAI/MiniMax-H3/blob/main/LICENSE
-
-依赖组件协议：
-- PySide6 (LGPL)、PyTorch (BSD)、DiffSynth-Studio (Apache-2.0)、
-  bitsandbytes (MIT)、PyAV (BSD)、NSIS (zlib) 等，均为商用友好协议。
-
-本软件为社区工具，与 MiniMax 官方无关。
