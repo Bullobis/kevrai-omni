@@ -194,18 +194,28 @@ class LibraryPage(QWidget):
         if not files:
             return
         import shutil
+        from ..engine import validate_lora_file
         loras_dir = self.ctx.settings.get("loras_dir")
         os.makedirs(loras_dir, exist_ok=True)
+        ok_n, warns = 0, []
         for f in files:
+            dest = os.path.join(loras_dir, os.path.basename(f))
             try:
-                shutil.copy2(f, os.path.join(loras_dir, os.path.basename(f)))
+                shutil.copy2(f, dest)
+                ok_n += 1
+                is_lora, note = validate_lora_file(dest)
+                if is_lora is False:
+                    warns.append(f"{os.path.basename(f)}：{note}")
             except Exception as e:
                 self.ctx.toast(f"导入失败：{e}")
         self.refresh()
         gp = self.ctx.pages.get("generate")
         if gp:
             gp.refresh_loras()
-        self.ctx.toast(f"已导入 {len(files)} 个 LoRA")
+        if warns:
+            self.ctx.toast(f"已导入 {ok_n} 个，但 " + warns[0] + "（仍可尝试加载）")
+        else:
+            self.ctx.toast(f"已导入 {ok_n} 个 LoRA（格式预检通过）")
 
     def _open_lora_dir(self):
         self.ctx.open_dir(self.ctx.settings.get("loras_dir"))

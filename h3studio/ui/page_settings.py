@@ -371,6 +371,17 @@ class SettingsPage(QWidget):
         about.setWordWrap(True)
         about.setTextInteractionFlags(Qt.TextSelectableByMouse)
         v.addWidget(about)
+        lora_lines = ["LoRA / 嵌入模型支持状态："]
+        for k, label in [("lora_inference", "LoRA 推理"), ("lora_training", "LoRA 训练"),
+                         ("embeddings", "嵌入(Embeddings)"), ("extra_components", "组件自定义"),
+                         ("stacking_note", "叠加机制")]:
+            lora_lines.append(f"  · {label}：{facts.LORA_SUPPORT[k]}")
+        lora_label = QLabel("\n".join(lora_lines))
+        lora_label.setObjectName("hintLabel")
+        lora_label.setWordWrap(True)
+        lora_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        v.addWidget(lora_label)
+
         link_row = QHBoxLayout()
         for name, url in [("⭐ 项目开源地址", "https://github.com/Bullobis/minimax-h3-studio"),
                           ("HF 官方仓库", "https://huggingface.co/MiniMaxAI/MiniMax-H3"),

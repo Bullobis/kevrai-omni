@@ -60,6 +60,7 @@ DEFAULT_SETTINGS = {
 
     # 下载
     "preferred_source": "auto",  # auto / modelscope / hf / hf_mirror
+    "preferred_source_last_best": "modelscope",  # 最近一次测速的综合最优源
     "download_retries": 5,
 
     # 协议

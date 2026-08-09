@@ -304,12 +304,35 @@ class H3Engine:
     # ─────────────────────────────────────────────
     # LoRA（社区微调 / 加速模型）
     # ─────────────────────────────────────────────
+    def clear_lora(self):
+        """清空已热加载的 LoRA（官方机制：LoRA 权重列表存储在 LoRAHotLoadMixin 模块上，
+        调用 init_lora_hotload() 即可重置）。"""
+        if not self.ready:
+            return
+        try:
+            from diffsynth.core.vram.layers import LoRAHotLoadMixin
+            cleared = 0
+            for _, module in self.pipe.dit.named_modules():
+                if isinstance(module, LoRAHotLoadMixin):
+                    module.init_lora_hotload()
+                    cleared += 1
+            self._lora_applied = None
+            return cleared
+        except Exception:
+            self._lora_applied = None
+            return 0
+
     def apply_lora(self, lora_path: str, alpha: float = 1.0):
-        """加载 LoRA 到 DiT（官方 load_lora 接口）。重复调用前请先 unload_lora。"""
+        """加载 LoRA 到 DiT（官方 load_lora 热加载接口）。
+
+        DiffSynth 的 LoRA 是"追加叠加"机制（lora_A_weights 列表 append），
+        因此切换 LoRA 前必须先清空，否则会越叠越多。
+        """
         if not self.ready:
             raise RuntimeError("模型尚未加载")
         if self._lora_applied == (lora_path, alpha):
             return
+        self.clear_lora()   # 切换语义：先清后载，防止叠加
         self.pipe.load_lora(self.pipe.dit, lora_config=lora_path, alpha=alpha)
         self._lora_applied = (lora_path, alpha)
 
@@ -455,9 +478,11 @@ class H3Engine:
         if progress_cb:
             progress_cb(0, total_steps, "encode")
 
-        # LoRA
+        # LoRA：有则加载/切换，无则清除残留（保证"不使用"时干净出片）
         if p.lora_path:
             self.apply_lora(p.lora_path, p.lora_alpha)
+        elif self._lora_applied is not None:
+            self.clear_lora()
 
         # ── 执行 ──
         video, audio = self.pipe(**kwargs)
@@ -500,6 +525,29 @@ class H3Engine:
             "seed": seed,
             "log": "\n".join(log),
         }
+
+
+def validate_lora_file(path: str) -> tuple:
+    """校验文件是否像 LoRA 权重。返回 (是否像LoRA, 说明)。
+
+    只读检查 safetensors 键名特征，不加载张量（快且安全）。
+    无法解析时返回 (None, 原因)，由 UI 决定是否放行（不硬拦）。
+    """
+    try:
+        from safetensors import safe_open
+        with safe_open(path, framework="pt") as f:
+            keys = list(f.keys())
+        if not keys:
+            return False, "文件为空"
+        lora_keys = [k for k in keys if "lora" in k.lower()]
+        if lora_keys:
+            return True, f"含 {len(lora_keys)}/{len(keys)} 个 LoRA 键"
+        # 无 lora 键：可能是其他格式权重
+        return False, f"未发现 LoRA 特征键（共 {len(keys)} 键），可能不是 LoRA 文件"
+    except ImportError:
+        return None, "缺少 safetensors 库，无法预检"
+    except Exception as e:
+        return False, f"文件无法解析：{str(e)[:60]}"
 
 
 # ─────────────────────────────────────────────

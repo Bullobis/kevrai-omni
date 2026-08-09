@@ -359,7 +359,41 @@ BUNDLES = [
         "source_repos": {"hf": "Abiray/MiniMax-H3-GGUF", "hf_mirror": "Abiray/MiniMax-H3-GGUF"},
     },
 
-    # ═══════ ⑤ 社区微调 / 加速 LoRA ═══════
+    # ═══════ ⑤ 社区微调 / 加速 LoRA（H3 官方支持 LoRA 热加载与训练）═══════
+    {
+        "id": "lora_instantx_turbo_ema",
+        "name": "InstantX Turbo 4 步加速 LoRA（EMA 版）",
+        "series": "社区微调 · 加速",
+        "engine": "lora",
+        "partition": "通用",
+        "precision": "LoRA (BF16)",
+        "size_gb": 0.85,
+        "min_vram_gb": 0,
+        "min_ram_gb": 0,
+        "recommended": False,
+        "desc": "InstantX 官方蒸馏的 EMA 版 Turbo LoRA（训练权重指数滑动平均，通常更稳定）。加载后采样步数设为 4。",
+        "files": [
+            {"repo": "InstantX/MiniMax-H3-Turbo-Lora-Diffusers", "path": "minimax_h3_turbo_4step_ema_ckpt500_diffusers.safetensors", "size_gb": 0.85, "dest": "minimax_h3_turbo_4step_ema.safetensors"},
+        ],
+        "source_repos": {"hf": "InstantX/MiniMax-H3-Turbo-Lora-Diffusers", "hf_mirror": "InstantX/MiniMax-H3-Turbo-Lora-Diffusers"},
+    },
+    {
+        "id": "lora_abiray_turbo_pruned",
+        "name": "Abiray Turbo 4 步 LoRA（Pruned 模型专用）",
+        "series": "社区微调 · 加速",
+        "engine": "lora",
+        "partition": "通用",
+        "precision": "LoRA (BF16)",
+        "size_gb": 0.62,
+        "min_vram_gb": 0,
+        "min_ram_gb": 0,
+        "recommended": False,
+        "desc": "针对 ComfyUI Pruned 剪枝模型的 Turbo LoRA（ckpt600 EMA V4），配合 ComfyUI 使用；内置引擎请选 InstantX 版。",
+        "files": [
+            {"repo": "Abiray/MiniMax-H3-Turbo-Lora-Pruned-ComfyUI", "path": "minimax_h3_turbo_4step_ckpt600_ema_V4.safetensors", "size_gb": 0.62, "dest": "minimax_h3_turbo_4step_pruned_ema.safetensors"},
+        ],
+        "source_repos": {"hf": "Abiray/MiniMax-H3-Turbo-Lora-Pruned-ComfyUI", "hf_mirror": "Abiray/MiniMax-H3-Turbo-Lora-Pruned-ComfyUI"},
+    },
     {
         "id": "lora_instantx_turbo",
         "name": "InstantX Turbo 4 步加速 LoRA",
@@ -511,6 +545,15 @@ DIY_COMPONENTS = {
          "repo": "InstantX/MiniMax-H3-Turbo-Lora-Diffusers",
          "path": "minimax_h3_turbo_4step_ckpt500_diffusers.safetensors"},
     ],
+}
+
+# H3 的 LoRA / 嵌入模型支持状态（2026-08-09 核实）
+LORA_SUPPORT = {
+    "lora_inference": "支持：DiffSynth 官方 load_lora 热加载接口（本软件已实现：导入/切换/清除/强度调节）",
+    "lora_training": "支持：官方支持在 NF4 量化权重上做单阶段 LoRA 训练（需训练环境，本软件暂不含训练界面）",
+    "embeddings": "不支持：H3/DiffSynth 无 Textual Inversion 嵌入机制，社区微调走 LoRA 路线",
+    "extra_components": "视频 VAE / 文本编码器变体可通过 DIY 打包自由组合（见 DIY 打包页）",
+    "stacking_note": "DiffSynth LoRA 为追加叠加机制，本软件已做切换防叠加处理（换 LoRA 自动先清空）",
 }
 
 ENGINE_INFO = {
