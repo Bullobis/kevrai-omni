@@ -63,6 +63,9 @@ DEFAULT_SETTINGS = {
     "preferred_source_last_best": "modelscope",  # 最近一次测速的综合最优源
     "download_retries": 5,
 
+    # 引导
+    "first_run_done": False,
+
     # 协议
     "license_accepted": False,
     "license_accepted_at": "",

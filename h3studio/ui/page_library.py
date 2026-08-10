@@ -7,7 +7,7 @@ import os
 import sys
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QApplication, QFileDialog, QHBoxLayout, QLabel,
+from PySide6.QtWidgets import (QFileDialog, QHBoxLayout, QLabel,
                                QListWidget, QListWidgetItem, QPushButton,
                                QVBoxLayout, QWidget)
 
@@ -89,31 +89,7 @@ class LibraryPage(QWidget):
         lv.addLayout(rm_row)
         root.addWidget(lora_card)
 
-        # ── ComfyUI 用户工具（AMD/低显存等更广泛硬件的路线）──
-        comfy_card = GlassPanel()
-        cv = QVBoxLayout(comfy_card)
-        cv.setContentsMargins(16, 14, 16, 14)
-        cv.setSpacing(8)
-        ct = QLabel("ComfyUI 用户工具（内置官方社区工作流）")
-        ct.setObjectName("sectionTitle")
-        cv.addWidget(ct)
-        chint = QLabel(
-            "没有 NVIDIA 显卡？可走 ComfyUI 路线（AMD/Intel/低显存通用）。"
-            "下面两个工作流来自社区仓库 Abiray/MiniMax-H3-GGUF（已随软件下载），"
-            "复制后在 ComfyUI 里粘贴即可，需搭配 ComfyUI-GGUF 插件与 GGUF 版模型（市场页可下）。")
-        chint.setObjectName("hintLabel")
-        chint.setWordWrap(True)
-        cv.addWidget(chint)
-        crow = QHBoxLayout()
-        b1 = QPushButton("📋 复制 FL2VA 工作流（文生/首尾帧）")
-        b1.clicked.connect(lambda: self._copy_workflow("minimax_fl2v_gguf_workflow.json"))
-        crow.addWidget(b1)
-        b2 = QPushButton("📋 复制 Ref2VA 工作流（全模态参考）")
-        b2.clicked.connect(lambda: self._copy_workflow("minimax_ref2va_gguf_workflow.json"))
-        crow.addWidget(b2)
-        crow.addStretch(1)
-        cv.addLayout(crow)
-        root.addWidget(comfy_card)
+        root.addStretch(1)
         root.addStretch(1)
 
         self.refresh()
@@ -219,20 +195,6 @@ class LibraryPage(QWidget):
 
     def _open_lora_dir(self):
         self.ctx.open_dir(self.ctx.settings.get("loras_dir"))
-
-    def _copy_workflow(self, filename: str):
-        """把内置 ComfyUI 工作流 JSON 复制到剪贴板。"""
-        path = _resource_path(os.path.join("resources", "comfyui_workflows", filename))
-        if not os.path.exists(path):
-            self.ctx.toast("工作流文件缺失，请重新下载完整软件包")
-            return
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                content = f.read()
-            QApplication.clipboard().setText(content)
-            self.ctx.toast("工作流已复制：打开 ComfyUI → 画布上 Ctrl+V 粘贴即可")
-        except Exception as e:
-            self.ctx.toast(f"复制失败：{e}")
 
     def _remove_lora(self):
         for it in self.lora_list.selectedItems():

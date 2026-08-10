@@ -266,6 +266,11 @@ class MarketPage(QWidget):
         v.addLayout(top)
 
         badges = QHBoxLayout()
+        if b.get("heat"):
+            heat = QLabel(b["heat"])
+            heat.setObjectName("badge")
+            heat.setToolTip("社区热度（下载量/好评数，数据日期见徽章）")
+            badges.addWidget(heat)
         prec = QLabel(b["precision"])
         prec.setObjectName("badge")
         badges.addWidget(prec)

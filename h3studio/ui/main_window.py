@@ -306,6 +306,7 @@ class MainWindow(QWidget):
             ("custom", "🧩  DIY 打包"),
             ("library", "📦  我的模型"),
             ("gallery", "🖼  作品库"),
+            ("help", "📖  帮助教程"),
             ("settings", "⚙  设置"),
         ]
         self._nav_group_layout = nv
@@ -350,6 +351,7 @@ class MainWindow(QWidget):
         from .page_custom import CustomPage
         from .page_library import LibraryPage
         from .page_gallery import GalleryPage
+        from .page_help import HelpPage
         from .page_settings import SettingsPage
 
         self.ctx.pages = {
@@ -358,9 +360,10 @@ class MainWindow(QWidget):
             "custom": CustomPage(self.ctx),
             "library": LibraryPage(self.ctx),
             "gallery": GalleryPage(self.ctx),
+            "help": HelpPage(self.ctx),
             "settings": SettingsPage(self.ctx),
         }
-        for key in ("generate", "market", "custom", "library", "gallery", "settings"):
+        for key in ("generate", "market", "custom", "library", "gallery", "help", "settings"):
             self.stack.addWidget(self.ctx.pages[key])
 
         # Toast
@@ -388,6 +391,10 @@ class MainWindow(QWidget):
         self._hw_thread = HwProbeThread()
         self._hw_thread.done.connect(self._on_hw_done)
         self._hw_thread.start()
+
+        # 首次启动引导（教程已内置于软件，打包版同样可见）
+        if not self.ctx.settings.get("first_run_done"):
+            QTimer.singleShot(800, self._first_run_guide)
 
     # ═══════════════════════════════════════════════════════
     def resizeEvent(self, e):
@@ -433,6 +440,10 @@ class MainWindow(QWidget):
         if mk:
             mk.refresh_hardware()
         self.ctx.status("硬件检测完成")
+
+    def _first_run_guide(self):
+        self.ctx.settings.set("first_run_done", True)
+        self.show_toast("👋 首次使用？点左侧「📖 帮助教程」，三步上手！")
 
     def closeEvent(self, e):
         mk = self.ctx.pages.get("market")
