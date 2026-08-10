@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (QCheckBox, QDialog, QHBoxLayout, QLabel,
 
 from .. import facts
 from ..config import Settings
+from ..i18n import tr
 from ..engine import check_engine_ready, get_engine
 from ..hardware import HardwareReport, probe_all
 from .styles import build_qss
@@ -271,6 +272,10 @@ class MainWindow(QWidget):
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, False)
 
+        # 语言初始化：跟随系统（中文→中文，其他→英文），可被设置覆盖
+        from ..i18n import set_lang
+        set_lang(Settings().get("language", "auto"))
+
         self.ctx = AppContext(self)
 
         # 背景（铺满窗口底层，内容控件叠在其上）
@@ -282,7 +287,7 @@ class MainWindow(QWidget):
         content.setContentsMargins(12, 12, 12, 12)
         content.setSpacing(10)
 
-        self.title_bar = TitleBar(self)
+        self.title_bar = TitleBar(self, title=tr("app_title"), subtitle=tr("app_subtitle"))
         content.addWidget(self.title_bar)
 
         body = QHBoxLayout()
@@ -301,13 +306,14 @@ class MainWindow(QWidget):
 
         self.nav_btns = {}
         NAV = [
-            ("generate", "🎬  生成"),
-            ("market", "🏪  模型市场"),
-            ("custom", "🧩  DIY 打包"),
-            ("library", "📦  我的模型"),
-            ("gallery", "🖼  作品库"),
-            ("help", "📖  帮助教程"),
-            ("settings", "⚙  设置"),
+            ("generate", tr("nav_generate")),
+            ("image", tr("nav_image")),
+            ("market", tr("nav_market")),
+            ("custom", tr("nav_custom")),
+            ("library", tr("nav_library")),
+            ("gallery", tr("nav_gallery")),
+            ("help", tr("nav_help")),
+            ("settings", tr("nav_settings")),
         ]
         self._nav_group_layout = nv
         for key, label in NAV:
@@ -330,11 +336,11 @@ class MainWindow(QWidget):
         nv.addWidget(self.oss_chip)
 
         # 硬件状态
-        self.hw_chip = QLabel("硬件检测中…")
+        self.hw_chip = QLabel(tr("hw_detecting"))
         self.hw_chip.setObjectName("hintLabel")
         self.hw_chip.setWordWrap(True)
         nv.addWidget(self.hw_chip)
-        self.status_label = QLabel("就绪")
+        self.status_label = QLabel(tr("status_ready"))
         self.status_label.setObjectName("dimText")
         self.status_label.setWordWrap(True)
         nv.addWidget(self.status_label)
@@ -347,6 +353,7 @@ class MainWindow(QWidget):
         content.addLayout(body, 1)
 
         from .page_generate import GeneratePage
+        from .page_image import ImagePage
         from .page_market import MarketPage
         from .page_custom import CustomPage
         from .page_library import LibraryPage
@@ -356,6 +363,7 @@ class MainWindow(QWidget):
 
         self.ctx.pages = {
             "generate": GeneratePage(self.ctx),
+            "image": ImagePage(self.ctx),
             "market": MarketPage(self.ctx),
             "custom": CustomPage(self.ctx),
             "library": LibraryPage(self.ctx),
@@ -363,7 +371,7 @@ class MainWindow(QWidget):
             "help": HelpPage(self.ctx),
             "settings": SettingsPage(self.ctx),
         }
-        for key in ("generate", "market", "custom", "library", "gallery", "help", "settings"):
+        for key in ("generate", "image", "market", "custom", "library", "gallery", "help", "settings"):
             self.stack.addWidget(self.ctx.pages[key])
 
         # Toast
@@ -439,11 +447,11 @@ class MainWindow(QWidget):
         mk = self.ctx.pages.get("market")
         if mk:
             mk.refresh_hardware()
-        self.ctx.status("硬件检测完成")
+        self.ctx.status(tr("hw_done"))
 
     def _first_run_guide(self):
         self.ctx.settings.set("first_run_done", True)
-        self.show_toast("👋 首次使用？点左侧「📖 帮助教程」，三步上手！")
+        self.show_toast(tr("first_run_tip"))
 
     def closeEvent(self, e):
         mk = self.ctx.pages.get("market")

@@ -1,8 +1,8 @@
 ; H3Studio Inno Setup 安装脚本（Inno Setup 6）
 ; 由 build_windows.bat 自动调用 ISCC 编译
 
-#define MyAppName "MiniMax H3 Studio"
-#define MyAppVersion "1.11.0"
+#define MyAppName "Kevrai-Omni"
+#define MyAppVersion "2.0.0"
 #define MyAppPublisher "H3Studio"
 #define MyAppExeName "H3Studio.exe"
 

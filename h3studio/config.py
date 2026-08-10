@@ -52,7 +52,8 @@ DEFAULT_SETTINGS = {
     # 下载设置
     "probe_sample_mb": 4,        # 测速采样大小
 
-    # 外观
+    # 外观与语言
+    "language": "auto",          # auto / zh / en（auto=跟随系统，非中英文默认英文）
     "theme": "aurora",           # classic / techblue / aurora / forest（见 THEMES）
     "accent_color": "#3b82f6",
     "glass_opacity": 82,         # 50~95

@@ -89,6 +89,22 @@ class SettingsPage(QWidget):
         self.fs_slider.valueChanged.connect(self._set_font_scale)
         v.addLayout(fs_row)
 
+        lang_row = QHBoxLayout()
+        lang_row.addWidget(QLabel("界面语言"))
+        self.lang_combo = QComboBox()
+        self.lang_combo.addItem("跟随系统（非中英文默认英文）", "auto")
+        self.lang_combo.addItem("中文", "zh")
+        self.lang_combo.addItem("English", "en")
+        i = self.lang_combo.findData(self.ctx.settings.get("language", "auto"))
+        if i >= 0:
+            self.lang_combo.setCurrentIndex(i)
+        self.lang_combo.currentIndexChanged.connect(self._on_lang_changed)
+        lang_row.addWidget(self.lang_combo, 1)
+        lang_note = QLabel("切换语言立即保存；部分界面在下次打开时完整生效。")
+        lang_note.setObjectName("hintLabel")
+        v.addLayout(lang_row)
+        v.addWidget(lang_note)
+
         op_row = QHBoxLayout()
         op_row.addWidget(QLabel("玻璃透明度"))
         self.op_slider = QSlider(Qt.Horizontal)
@@ -474,6 +490,14 @@ class SettingsPage(QWidget):
         s.set("probe_sample_mb", int(self.probe_spin.value()), autosave=False)
         s.set("download_retries", int(self.retry_spin.value()))
         self.ctx.toast("下载设置已保存")
+
+    def _on_lang_changed(self, _idx):
+        from ..i18n import set_lang
+        code = self.lang_combo.currentData()
+        self.ctx.settings.set("language", code)
+        set_lang(code)
+        self.ctx.apply_theme()   # 主题里的文案随语言刷新
+        self.ctx.toast("语言已切换 / Language switched")
 
     def _set_theme(self, key):
         if self._theme_btns[key].isChecked():

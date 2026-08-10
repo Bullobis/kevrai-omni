@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QButtonGroup, QCheckBox,
 from ..facts import (ACCEPT_AUDIO, ACCEPT_IMAGE, ACCEPT_VIDEO, ASPECT_PRESETS,
                      GENERATION_SPECS, UPLOAD_LIMITS)
 from ..engine import GenerationParams, align_num_frames, check_engine_ready
+from ..i18n import tr
 
 
 # ─────────────────────────────────────────────────────────────
@@ -116,7 +117,7 @@ class GeneratePage(QWidget):
         lv.setContentsMargins(16, 16, 16, 16)
         lv.setSpacing(10)
 
-        t = QLabel("提示词")
+        t = QLabel(tr("gen_prompt_title"))
         t.setObjectName("sectionTitle")
         lv.addWidget(t)
         hint = QLabel("用自然语言描述画面与声音，可用「图1」「视频1」「音频1」指代下方参考素材；台词请写进提示词。")
@@ -136,7 +137,7 @@ class GeneratePage(QWidget):
         guide_row.addStretch(1)
         lv.addLayout(guide_row)
 
-        tpl_title = QLabel("💡 提示词模板（点一下自动填入，适合新手）")
+        tpl_title = QLabel(tr("gen_tpl_title"))
         tpl_title.setObjectName("sectionTitle")
         lv.addWidget(tpl_title)
         from .widgets import FlowLayout
@@ -198,7 +199,7 @@ class GeneratePage(QWidget):
         pv = QVBoxLayout(params_card)
         pv.setContentsMargins(16, 14, 16, 14)
         pv.setSpacing(10)
-        pt = QLabel("生成参数")
+        pt = QLabel(tr("gen_params_title"))
         pt.setObjectName("sectionTitle")
         pv.addWidget(pt)
 
@@ -217,7 +218,7 @@ class GeneratePage(QWidget):
 
         # 比例
         ratio_row = QHBoxLayout()
-        ratio_row.addWidget(QLabel("画面比例"))
+        ratio_row.addWidget(QLabel(tr("gen_ratio")))
         self.ratio_group = QButtonGroup(self)
         self._ratio_btns = {}
         for r in ASPECT_PRESETS.keys():
@@ -234,7 +235,7 @@ class GeneratePage(QWidget):
 
         # 时长
         dur_row = QHBoxLayout()
-        dur_row.addWidget(QLabel("视频时长"))
+        dur_row.addWidget(QLabel(tr("gen_duration")))
         self.dur_slider = QSlider(Qt.Horizontal)
         self.dur_slider.setRange(GENERATION_SPECS["duration_min_s"], GENERATION_SPECS["duration_max_s"])
         self.dur_slider.setValue(self.ctx.settings.get("default_duration"))
@@ -250,11 +251,11 @@ class GeneratePage(QWidget):
 
         # 分辨率档 + 帧率说明
         res_row = QHBoxLayout()
-        res_row.addWidget(QLabel("分辨率档"))
+        res_row.addWidget(QLabel(tr("gen_res")))
         self.res_combo = QComboBox()
-        self.res_combo.addItem("480p · 快速预览（更快出片）", "480p")
-        self.res_combo.addItem("640p · 均衡", "640p")
-        self.res_combo.addItem("768p · 标准（H3-Base 默认）", "768p")
+        self.res_combo.addItem(tr("gen_res_480"), "480p")
+        self.res_combo.addItem(tr("gen_res_640"), "640p")
+        self.res_combo.addItem(tr("gen_res_768"), "768p")
         idx = self.res_combo.findData(self.ctx.settings.get("default_resolution"))
         if idx >= 0:
             self.res_combo.setCurrentIndex(idx)
@@ -266,19 +267,19 @@ class GeneratePage(QWidget):
 
         # 高级：步数 + 种子
         adv_row = QHBoxLayout()
-        adv_row.addWidget(QLabel("采样步数"))
+        adv_row.addWidget(QLabel(tr("gen_steps")))
         self.steps_spin = QSpinBox()
         self.steps_spin.setRange(1, 100)
         self.steps_spin.setValue(self.ctx.settings.get("default_steps"))
         adv_row.addWidget(self.steps_spin)
         adv_row.addSpacing(18)
-        adv_row.addWidget(QLabel("随机种子"))
+        adv_row.addWidget(QLabel(tr("gen_seed")))
         self.seed_edit = QLineEdit(str(self.ctx.settings.get("default_seed")))
         self.seed_edit.setFixedWidth(120)
         self.seed_edit.setToolTip("-1 表示每次随机")
         adv_row.addWidget(self.seed_edit)
         adv_row.addSpacing(18)
-        adv_row.addWidget(QLabel("生成数量"))
+        adv_row.addWidget(QLabel(tr("gen_count")))
         self.count_spin = QSpinBox()
         self.count_spin.setRange(1, 4)
         self.count_spin.setValue(1)
@@ -306,7 +307,7 @@ class GeneratePage(QWidget):
         rv.setContentsMargins(16, 14, 16, 14)
         rv.setSpacing(8)
         rt_row = QHBoxLayout()
-        rt = QLabel("参考素材导入")
+        rt = QLabel(tr("gen_ref_title"))
         rt.setObjectName("sectionTitle")
         rt_row.addWidget(rt)
         rt_row.addStretch(1)
@@ -315,7 +316,7 @@ class GeneratePage(QWidget):
         rt_row.addWidget(self.limit_badge)
         rv.addLayout(rt_row)
 
-        self.dropzone = DropZone("点击选择文件，或将 GIF / MP4 / MP3 / 图片 拖拽到这里")
+        self.dropzone = DropZone(tr("gen_ref_drop"))
         self.dropzone.filesDropped.connect(self._add_files)
         rv.addWidget(self.dropzone)
 
@@ -325,9 +326,9 @@ class GeneratePage(QWidget):
         rv.addWidget(self.ref_list)
 
         ref_btns = QHBoxLayout()
-        rm = QPushButton("移除选中")
+        rm = QPushButton(tr("gen_ref_remove"))
         rm.clicked.connect(self._remove_selected_refs)
-        clear = QPushButton("清空")
+        clear = QPushButton(tr("gen_ref_clear"))
         clear.clicked.connect(self._clear_refs)
         ref_btns.addWidget(rm)
         ref_btns.addWidget(clear)
@@ -356,20 +357,20 @@ class GeneratePage(QWidget):
         rvv = QVBoxLayout(right)
         rvv.setContentsMargins(16, 16, 16, 16)
         rvv.setSpacing(8)
-        mt = QLabel("生成模式")
+        mt = QLabel(tr("gen_mode_title"))
         mt.setObjectName("sectionTitle")
         rvv.addWidget(mt)
 
         self.mode_group = QButtonGroup(self)
         self._mode_btns = {}
         MODES = [
-            ("t2va", "文生视频", "纯文字生成带声音的视频"),
-            ("first", "首帧 → 视频", "提供 1 张首帧图片"),
-            ("last", "尾帧 → 视频", "提供 1 张尾帧图片"),
-            ("fl", "首尾帧 → 视频", "提供首、尾 2 张图片"),
-            ("ref2va", "全模态参考", "≤9 图 + ≤3 视频 + ≤3 音频混合参考"),
-            ("audio_driven", "音频驱动", "用音频（台词/音乐）驱动画面"),
-            ("retake", "视频编辑", "基于源视频重生成指定区间"),
+            ("t2va", tr("gen_mode_t2va"), tr("gen_mode_t2va_d")),
+            ("first", tr("gen_mode_first"), tr("gen_mode_first_d")),
+            ("last", tr("gen_mode_last"), tr("gen_mode_last_d")),
+            ("fl", tr("gen_mode_fl"), tr("gen_mode_fl_d")),
+            ("ref2va", tr("gen_mode_ref2va"), tr("gen_mode_ref2va_d")),
+            ("audio_driven", tr("gen_mode_audio"), tr("gen_mode_audio_d")),
+            ("retake", tr("gen_mode_retake"), tr("gen_mode_retake_d")),
         ]
         for key, name, desc in MODES:
             b = QPushButton(f"{name}\n{desc}")
@@ -386,7 +387,7 @@ class GeneratePage(QWidget):
 
         rvv.addSpacing(6)
         lt_row = QHBoxLayout()
-        lt = QLabel("嵌入模型（LoRA）")
+        lt = QLabel(tr("gen_lora_title"))
         lt.setObjectName("sectionTitle")
         lt_row.addWidget(lt)
         lt_row.addStretch(1)
@@ -397,10 +398,10 @@ class GeneratePage(QWidget):
         lt_row.addWidget(lora_import)
         rvv.addLayout(lt_row)
         self.lora_combo = QComboBox()
-        self.lora_combo.addItem("不使用", "")
+        self.lora_combo.addItem(tr("gen_lora_none"), "")
         rvv.addWidget(self.lora_combo)
         alpha_row = QHBoxLayout()
-        alpha_row.addWidget(QLabel("强度"))
+        alpha_row.addWidget(QLabel(tr("gen_lora_strength")))
         self.lora_alpha = QSlider(Qt.Horizontal)
         self.lora_alpha.setRange(0, 200)
         self.lora_alpha.setValue(100)
@@ -413,14 +414,14 @@ class GeneratePage(QWidget):
 
         rvv.addStretch(1)
 
-        self.gen_btn = QPushButton("▶  开始生成")
+        self.gen_btn = QPushButton(tr("gen_start"))
         self.gen_btn.setObjectName("primaryBtn")
         self.gen_btn.setMinimumHeight(46)
         self.gen_btn.setCursor(Qt.PointingHandCursor)
         self.gen_btn.clicked.connect(self._start_generate)
         rvv.addWidget(self.gen_btn)
 
-        self.cancel_btn = QPushButton("取消生成")
+        self.cancel_btn = QPushButton(tr("gen_cancel"))
         self.cancel_btn.setObjectName("dangerBtn")
         self.cancel_btn.setEnabled(False)
         self.cancel_btn.clicked.connect(self._cancel_generate)
@@ -436,7 +437,7 @@ class GeneratePage(QWidget):
         bv.setContentsMargins(16, 10, 16, 10)
         bv.setSpacing(14)
 
-        self.phase_label = QLabel("就绪")
+        self.phase_label = QLabel(tr("gen_phase_ready"))
         self.phase_label.setMinimumWidth(220)
         bv.addWidget(self.phase_label)
 
@@ -450,7 +451,7 @@ class GeneratePage(QWidget):
         self.speed_label.setMinimumWidth(150)
         bv.addWidget(self.speed_label)
 
-        self.preview_btn = QPushButton("预览最新结果")
+        self.preview_btn = QPushButton(tr("gen_preview"))
         self.preview_btn.setEnabled(False)
         self.preview_btn.clicked.connect(self._show_last_result)
         bv.addWidget(self.preview_btn)
@@ -705,7 +706,7 @@ class GeneratePage(QWidget):
     def refresh_loras(self):
         cur = self.lora_combo.currentData()
         self.lora_combo.clear()
-        self.lora_combo.addItem("不使用", "")
+        self.lora_combo.addItem(tr("gen_lora_none"), "")
         loras_dir = self.ctx.settings.get("loras_dir")
         if os.path.isdir(loras_dir):
             for fn in sorted(os.listdir(loras_dir)):
