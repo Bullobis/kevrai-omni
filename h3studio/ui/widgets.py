@@ -85,7 +85,7 @@ class GlassPanel(QFrame):
 # 标题栏（无边框窗口拖拽 + 最小化/最大化/关闭）
 # ─────────────────────────────────────────────────────────────
 class TitleBar(QWidget):
-    def __init__(self, window, title="MiniMax H3 Studio", parent=None):
+    def __init__(self, window, title="Kevrai-Omni", subtitle="", parent=None):
         super().__init__(parent)
         self._win = window
         self._drag_pos = None
@@ -96,7 +96,7 @@ class TitleBar(QWidget):
         lay.setContentsMargins(14, 0, 8, 0)
         lay.setSpacing(10)
 
-        logo = QLabel("H3")
+        logo = QLabel("K")
         logo.setFixedSize(26, 26)
         logo.setAlignment(Qt.AlignCenter)
         logo.setStyleSheet(
@@ -109,7 +109,7 @@ class TitleBar(QWidget):
         f = t.font(); f.setPointSize(10); f.setBold(True)
         t.setFont(f)
         lay.addWidget(t)
-        sub = QLabel("视频生成工作站 · by Bullobis")
+        sub = QLabel(subtitle or "")
         sub.setObjectName("dimText")
         lay.addWidget(sub)
         lay.addStretch(1)

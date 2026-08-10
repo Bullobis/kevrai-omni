@@ -140,7 +140,23 @@ class MarketPage(QWidget):
         mt = QLabel("模型版本")
         mt.setObjectName("sectionTitle")
         head_row.addWidget(mt)
-        note = QLabel(f"数据核实于 {facts.VERIFIED_AT} · GitHub 不托管官方权重，故未列入下载源")
+        # 类型筛选栏
+        from PySide6.QtWidgets import QButtonGroup
+        self._filter_group = QButtonGroup(self)
+        self._filter_btns = {}
+        FILTERS = [("all", "全部"), ("video", "🎬 视频模型"), ("image", "🖼️ 图片模型"),
+                   ("lora", "⚡ LoRA 加速"), ("comfy", "🔧 ComfyUI 专用")]
+        for key, label in FILTERS:
+            fb = QPushButton(label)
+            fb.setObjectName("chipBtn")
+            fb.setCheckable(True)
+            fb.setCursor(Qt.PointingHandCursor)
+            fb.clicked.connect(lambda _c=False, k=key: self._apply_filter(k))
+            self._filter_group.addButton(fb)
+            self._filter_btns[key] = fb
+            head_row.addWidget(fb)
+        self._filter_btns["all"].setChecked(True)
+        note = QLabel(f"数据核实于 {facts.VERIFIED_AT}")
         note.setObjectName("hintLabel")
         head_row.addWidget(note)
         head_row.addStretch(1)
@@ -166,6 +182,26 @@ class MarketPage(QWidget):
                 row += 1
         self._grid_next = [row, col]
         self.grid.setRowStretch(row + 1, 1)
+        # 收集所有卡片引用（用于筛选显隐）
+        self._all_cards = []
+        for i in range(self.grid.count()):
+            item = self.grid.itemAt(i)
+            if item and item.widget():
+                self._all_cards.append(item.widget())
+
+    def _apply_filter(self, key: str):
+        for k, btn in self._filter_btns.items():
+            btn.setChecked(k == key)
+        for w in getattr(self, "_all_cards", []):
+            cat = w.property("bundle_category")
+            eng = w.property("bundle_engine")
+            if key == "all":
+                show = True
+            elif key == "comfy":
+                show = (eng == "comfyui")
+            else:
+                show = (cat == key)
+            w.setVisible(show)
 
     # ═══════════════════════════════════════════════════════
     # 硬件横幅
@@ -250,12 +286,15 @@ class MarketPage(QWidget):
     def _make_card(self, b: dict) -> QWidget:
         card = GlassPanel()
         card.setMinimumWidth(360)
+        card.setProperty("bundle_category", b.get("category", ""))
+        card.setProperty("bundle_engine", b.get("engine", ""))
         v = QVBoxLayout(card)
         v.setContentsMargins(16, 14, 16, 14)
         v.setSpacing(8)
 
         top = QHBoxLayout()
-        name = QLabel(b["name"])
+        cat_icons = {"video": "🎬", "image": "🖼️", "lora": "⚡"}
+        name = QLabel(f"{cat_icons.get(b.get('category'), '📦')} {b['name']}")
         name.setObjectName("sectionTitle")
         name.setWordWrap(True)
         top.addWidget(name, 1)
@@ -436,6 +475,8 @@ class MarketPage(QWidget):
                 self._grid_next = [r, c]
                 self.grid.setRowStretch(r + 1, 1)
                 card = self._cards.get(bid)
+                if card and hasattr(self, "_all_cards"):
+                    self._all_cards.append(widget)
             if not card:
                 continue
             p = task.progress

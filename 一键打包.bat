@@ -137,7 +137,7 @@ if defined ISCC (
     )
     echo.
     echo ═══════════ 打包完成 ═══════════
-    echo 安装包：packaging\Output\H3Studio-Setup-1.11.0.exe
+    echo 安装包：packaging\Output\H3Studio-Setup-2.0.0.exe
     echo 绿色版：dist\H3Studio\H3Studio.exe
 ) else (
     echo [提示] 未检测到 Inno Setup 6，已跳过安装包编译。

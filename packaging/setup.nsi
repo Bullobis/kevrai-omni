@@ -2,11 +2,11 @@
 ; 用法: makensis packaging/setup.nsi
 
 !ifndef APPVERSION
-  !define APPVERSION "1.11.0"
+  !define APPVERSION "2.0.0"
 !endif
 
 Unicode true
-Name "MiniMax H3 Studio"
+Name "Kevrai-Omni"
 OutFile "Output\H3Studio-Setup-${APPVERSION}.exe"
 
 ; 64 位安装到 Program Files
