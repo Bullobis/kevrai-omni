@@ -17,7 +17,7 @@ facts.py — MiniMax H3 事实库（全部条目 2026-08-07 联网核实）
 - Turbo LoRA    InstantX/MiniMax-H3-Turbo-Lora-Diffusers            (tree API 核尺寸)
 """
 
-VERIFIED_AT = "2026-08-07（2026-08-09 复核官方仓库新增资源）"
+VERIFIED_AT = "2026-08-07 初核 · 2026-08-10 复核社区 LoRA 生态与热度"
 
 # ─────────────────────────────────────────────────────────────
 # 1. 模型基本规格（官方发布页 + 多家媒体交叉核实）
@@ -371,7 +371,8 @@ BUNDLES = [
         "min_vram_gb": 0,
         "min_ram_gb": 0,
         "recommended": False,
-        "desc": "InstantX 官方蒸馏的 EMA 版 Turbo LoRA（训练权重指数滑动平均，通常更稳定）。加载后采样步数设为 4。",
+        "heat": "官方出品（2026-08-10）",
+        "desc": "InstantX 官方蒸馏的 EMA 版 Turbo LoRA（训练权重指数滑动平均，通常更稳定，内置引擎可用）。加载后采样步数设为 4。",
         "files": [
             {"repo": "InstantX/MiniMax-H3-Turbo-Lora-Diffusers", "path": "minimax_h3_turbo_4step_ema_ckpt500_diffusers.safetensors", "size_gb": 0.85, "dest": "minimax_h3_turbo_4step_ema.safetensors"},
         ],
@@ -388,11 +389,66 @@ BUNDLES = [
         "min_vram_gb": 0,
         "min_ram_gb": 0,
         "recommended": False,
+        "heat": "🔥 1890 下载 · 31 ♥（2026-08-10）",
         "desc": "针对 ComfyUI Pruned 剪枝模型的 Turbo LoRA（ckpt600 EMA V4），配合 ComfyUI 使用；内置引擎请选 InstantX 版。",
         "files": [
             {"repo": "Abiray/MiniMax-H3-Turbo-Lora-Pruned-ComfyUI", "path": "minimax_h3_turbo_4step_ckpt600_ema_V4.safetensors", "size_gb": 0.62, "dest": "minimax_h3_turbo_4step_pruned_ema.safetensors"},
         ],
         "source_repos": {"hf": "Abiray/MiniMax-H3-Turbo-Lora-Pruned-ComfyUI", "hf_mirror": "Abiray/MiniMax-H3-Turbo-Lora-Pruned-ComfyUI"},
+    },
+    {
+        "id": "lora_lightx2v_turbo",
+        "name": "lightx2v Turbo 4 步蒸馏（社区下载量第一）",
+        "series": "社区微调 · 加速",
+        "engine": "lora",
+        "partition": "通用",
+        "precision": "Turbo 蒸馏 (diffusers)",
+        "size_gb": 1.38,
+        "min_vram_gb": 0,
+        "min_ram_gb": 0,
+        "recommended": True,
+        "heat": "🔥 6117 下载 · 239 ♥（2026-08-10）",
+        "desc": "ModelTC/lightx2v 团队蒸馏的 4 步 Turbo 权重，社区下载量第一（Apache-2.0）。支持 t2v/i2v/r2v，配合 diffusers/ComfyUI 工作流使用；加载后采样步数设为 4。",
+        "files": [
+            {"repo": "lightx2v/Minimax-h3-Turbo", "path": "minimax_h3_fl2v_turbo_4step_v0.1.safetensors", "size_gb": 1.38, "dest": "minimax_h3_fl2v_turbo_4step_v0.1.safetensors"},
+        ],
+        "source_repos": {"hf": "lightx2v/Minimax-h3-Turbo", "hf_mirror": "lightx2v/Minimax-h3-Turbo"},
+    },
+    {
+        "id": "lora_larryvrh_turbo_v4",
+        "name": "larryvrh Turbo LoRA v4（社区好评最高）",
+        "series": "社区微调 · 加速",
+        "engine": "lora",
+        "partition": "通用",
+        "precision": "LoRA (BF16)",
+        "size_gb": 0.78,
+        "min_vram_gb": 0,
+        "min_ram_gb": 0,
+        "recommended": True,
+        "heat": "♥ 552 好评（2026-08-10，LoRA 类最高）",
+        "desc": "知名量化作者 larryvrh 的 4 步 Turbo LoRA，作者推荐 v4 step600 EMA 为最强检查点：静态/小动态画面与面部细节显著更好，修复了 v1 的过度锐化塑料感。ComfyUI 格式。",
+        "files": [
+            {"repo": "larryvrh/MiniMax-H3-Turbo-Lora", "path": "minimax_h3_turbo_v4_step600_ema.safetensors", "size_gb": 0.78, "dest": "minimax_h3_turbo_v4_step600_ema.safetensors"},
+        ],
+        "source_repos": {"hf": "larryvrh/MiniMax-H3-Turbo-Lora", "hf_mirror": "larryvrh/MiniMax-H3-Turbo-Lora"},
+    },
+    {
+        "id": "lora_drbaph_turbo_pruned",
+        "name": "drbaph Turbo LoRA（Pruned 专用）",
+        "series": "社区微调 · 加速",
+        "engine": "lora",
+        "partition": "通用",
+        "precision": "LoRA (BF16)",
+        "size_gb": 0.62,
+        "min_vram_gb": 0,
+        "min_ram_gb": 0,
+        "recommended": False,
+        "heat": "♥ 233 好评（2026-08-10）",
+        "desc": "drbaph 针对 ComfyUI Pruned 剪枝模型的 4 步 Turbo LoRA（EMA ckpt500），附首尾帧示例工作流。配合 ComfyUI Pruned INT8 套件使用。",
+        "files": [
+            {"repo": "drbaph/MiniMax-H3-Turbo-Lora-ComfyUI", "path": "minimax_h3_turbo_4step_ema_ckpt500_pruned_comfyui.safetensors", "size_gb": 0.62, "dest": "minimax_h3_turbo_4step_ema_ckpt500_pruned.safetensors"},
+        ],
+        "source_repos": {"hf": "drbaph/MiniMax-H3-Turbo-Lora-ComfyUI", "hf_mirror": "drbaph/MiniMax-H3-Turbo-Lora-ComfyUI"},
     },
     {
         "id": "lora_instantx_turbo",
@@ -405,7 +461,8 @@ BUNDLES = [
         "min_vram_gb": 0,
         "min_ram_gb": 0,
         "recommended": False,
-        "desc": "InstantX 团队蒸馏的 4 步 Turbo LoRA（851MB）：把默认 50 步采样压缩到 4 步，适合快速预览构图。加载后请将采样步数设为 4。",
+        "heat": "🔥 754 下载（2026-08-10）",
+        "desc": "InstantX 官方团队蒸馏的 4 步 Turbo LoRA（diffusers 格式，内置引擎可用）：把默认 50 步采样压缩到 4 步，适合快速预览构图。加载后请将采样步数设为 4。",
         "files": [
             {"repo": "InstantX/MiniMax-H3-Turbo-Lora-Diffusers", "path": "minimax_h3_turbo_4step_ckpt500_diffusers.safetensors", "size_gb": 0.85, "dest": "minimax_h3_turbo_4step.safetensors"},
         ],

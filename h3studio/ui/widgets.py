@@ -8,10 +8,10 @@ DropZone 拖拽区
 
 import math
 
-from PySide6.QtCore import QPointF, Qt, QTimer, Signal
+from PySide6.QtCore import QPointF, QRect, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen, QRadialGradient
 from PySide6.QtWidgets import (QFrame, QGraphicsDropShadowEffect, QHBoxLayout,
-                               QLabel, QPushButton, QWidget)
+                               QLabel, QLayout, QPushButton, QWidget)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -216,6 +216,72 @@ class DropZone(QFrame):
                 "媒体文件 (*.png *.jpg *.jpeg *.webp *.bmp *.gif *.mp4 *.mov *.mkv *.webm *.avi *.mp3 *.wav *.flac *.m4a *.ogg *.aac);;所有文件 (*.*)")
             if files:
                 self.filesDropped.emit(files)
+
+
+# ─────────────────────────────────────────────────────────────
+# 流式布局（模板按钮等自动换行排列）
+# ─────────────────────────────────────────────────────────────
+class FlowLayout(QLayout):
+    def __init__(self, parent=None, margin=0, hspacing=8, vspacing=8):
+        super().__init__(parent)
+        self._h = hspacing
+        self._v = vspacing
+        self._items = []
+        self.setContentsMargins(margin, margin, margin, margin)
+
+    def addItem(self, item):
+        self._items.append(item)
+
+    def count(self):
+        return len(self._items)
+
+    def itemAt(self, i):
+        return self._items[i] if 0 <= i < len(self._items) else None
+
+    def takeAt(self, i):
+        return self._items.pop(i) if 0 <= i < len(self._items) else None
+
+    def expandingDirections(self):
+        return Qt.Orientations()
+
+    def hasHeightForWidth(self):
+        return True
+
+    def heightForWidth(self, width):
+        return self._do_layout(QRect(0, 0, width, 0), True)
+
+    def setGeometry(self, rect):
+        super().setGeometry(rect)
+        self._do_layout(rect, False)
+
+    def sizeHint(self):
+        return self.minimumSize()
+
+    def minimumSize(self):
+        size = QSize()
+        for it in self._items:
+            size = size.expandedTo(it.minimumSize())
+        m = self.contentsMargins()
+        size += QSize(m.left() + m.right(), m.top() + m.bottom())
+        return size
+
+    def _do_layout(self, rect, test_only):
+        m = self.contentsMargins()
+        eff = rect.adjusted(m.left(), m.top(), -m.right(), -m.bottom())
+        x, y = eff.x(), eff.y()
+        line_h = 0
+        for it in self._items:
+            w = it.widget()
+            hint = w.sizeHint()
+            if x + hint.width() > eff.right() and line_h > 0:
+                x = eff.x()
+                y += line_h + self._v
+                line_h = 0
+            if not test_only:
+                w.setGeometry(QRect(QPointF(x, y).toPoint(), hint))
+            x += hint.width() + self._h
+            line_h = max(line_h, hint.height())
+        return y + line_h - rect.y() + m.bottom()
 
 
 # ─────────────────────────────────────────────────────────────

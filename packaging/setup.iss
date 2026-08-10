@@ -2,7 +2,7 @@
 ; 由 build_windows.bat 自动调用 ISCC 编译
 
 #define MyAppName "MiniMax H3 Studio"
-#define MyAppVersion "1.10.0"
+#define MyAppVersion "1.11.0"
 #define MyAppPublisher "H3Studio"
 #define MyAppExeName "H3Studio.exe"
 

@@ -136,15 +136,30 @@ class GeneratePage(QWidget):
         guide_row.addStretch(1)
         lv.addLayout(guide_row)
 
-        tpl_row = QHBoxLayout()
-        tpl_row.addWidget(QLabel("快捷模板"))
+        tpl_title = QLabel("💡 提示词模板（点一下自动填入，适合新手）")
+        tpl_title.setObjectName("sectionTitle")
+        lv.addWidget(tpl_title)
+        from .widgets import FlowLayout
+        tpl_wrap = QWidget()
+        tpl_flow = FlowLayout(tpl_wrap, margin=0, hspacing=6, vspacing=6)
+        self._tpl_btns = []
+        for name, text in PROMPT_TEMPLATES:
+            tb = QPushButton(name)
+            tb.setObjectName("chipBtn")
+            tb.setToolTip(text[:60] + "…")
+            tb.setCursor(Qt.PointingHandCursor)
+            tb.clicked.connect(lambda _c=False, t=text: self._apply_template_text(t))
+            tpl_flow.addWidget(tb)
+            self._tpl_btns.append(tb)
+        tpl_wrap.setMaximumHeight(76)
+        lv.addWidget(tpl_wrap)
+        # 保留隐藏下拉以兼容旧调用
         self.tpl_combo = QComboBox()
-        self.tpl_combo.addItem("选择提示词模板（可选，点选后自动填入）", "")
+        self.tpl_combo.addItem("选择提示词模板（可选）", "")
         for name, text in PROMPT_TEMPLATES:
             self.tpl_combo.addItem(name, text)
         self.tpl_combo.activated.connect(self._apply_template)
-        tpl_row.addWidget(self.tpl_combo, 1)
-        lv.addLayout(tpl_row)
+        self.tpl_combo.hide()
 
         self.prompt_edit = QPlainTextEdit()
         self.prompt_edit.setPlaceholderText("例：图1 中的女孩站在海边日落里，微风吹动头发，她轻声说：“我们出发吧。” 海浪声作背景，电影感色调。")
@@ -164,10 +179,13 @@ class GeneratePage(QWidget):
         neg_hint.setObjectName("hintLabel")
         neg_hint.setWordWrap(True)
         lv.addWidget(neg_hint)
+        neg_t.hide()
+        neg_hint.hide()
         self.neg_edit = QPlainTextEdit()
         self.neg_edit.setPlaceholderText("（可选）不希望出现的内容")
         self.neg_edit.setMaximumHeight(70)
         lv.addWidget(self.neg_edit, 1)
+        self.neg_edit.hide()   # H3 为 CFG 蒸馏模型，负向提示词无效果，界面隐藏（引擎保留接口）
         lv.addStretch(1)
 
         # ── 中栏：参数 + 参考素材 ──
@@ -628,6 +646,11 @@ class GeneratePage(QWidget):
         else:
             self.ctx.toast(pd["tip"])
         self._param_changed()
+
+    def _apply_template_text(self, text):
+        cur = self.prompt_edit.toPlainText().strip()
+        self.prompt_edit.setPlainText(text if not cur else cur + "\n" + text)
+        self._update_count()
 
     def _apply_template(self, idx):
         text = self.tpl_combo.currentData()
