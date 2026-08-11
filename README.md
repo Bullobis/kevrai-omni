@@ -130,5 +130,5 @@ H3Studio/
 
 ---
 
-**创作者：Bullobis** · 开源地址：https://github.com/Bullobis/minimax-h3-studio
+**创作者：Bullobis** · 开源地址：https://github.com/Bullobis/Kevrai-omni
 本项目免费开源，仅供个人学习、创作与研究使用，严禁商用。
