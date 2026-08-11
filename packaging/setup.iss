@@ -2,7 +2,7 @@
 ; 由 build_windows.bat 自动调用 ISCC 编译
 
 #define MyAppName "Kevrai-Omni"
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "2.1.0"
 #define MyAppPublisher "H3Studio"
 #define MyAppExeName "H3Studio.exe"
 

@@ -17,7 +17,7 @@ facts.py — MiniMax H3 事实库（全部条目 2026-08-07 联网核实）
 - Turbo LoRA    InstantX/MiniMax-H3-Turbo-Lora-Diffusers            (tree API 核尺寸)
 """
 
-VERIFIED_AT = "2026-08-07 初核 · 2026-08-10 复核社区 LoRA 生态与热度"
+VERIFIED_AT = "2026-08-07 初核 · 2026-08-11 复核社区微调生态（hf-mirror 全量扫描）"
 
 # ─────────────────────────────────────────────────────────────
 # 1. 模型基本规格（官方发布页 + 多家媒体交叉核实）
@@ -530,6 +530,82 @@ BUNDLES = [
             {"repo": "drbaph/MiniMax-H3-Turbo-Lora-ComfyUI", "path": "minimax_h3_turbo_4step_ema_ckpt500_pruned_comfyui.safetensors", "size_gb": 0.62, "dest": "minimax_h3_turbo_4step_ema_ckpt500_pruned.safetensors"},
         ],
         "source_repos": {"hf": "drbaph/MiniMax-H3-Turbo-Lora-ComfyUI", "hf_mirror": "drbaph/MiniMax-H3-Turbo-Lora-ComfyUI"},
+    },
+    {
+        "id": "lora_fal_realism_people",
+        "name": "fal 写实人物风格 LoRA",
+        "series": "社区微调 · 风格",
+        "category": "lora",
+        "engine": "lora",
+        "partition": "通用",
+        "precision": "LoRA (BF16)",
+        "size_gb": 0.07,
+        "min_vram_gb": 0,
+        "min_ram_gb": 0,
+        "recommended": False,
+        "heat": "♥ 53 好评（2026-08-10，fal.ai 官方出品）",
+        "desc": "fal.ai 官方训练的写实人物风格 LoRA（仅 65MB），增强人物真实感与皮肤质感。文生视频适用，可与 Turbo LoRA 叠加。",
+        "files": [
+            {"repo": "fal/MiniMax-H3-Realism-People-LoRA", "path": "h3-realism-people-t2v.safetensors", "size_gb": 0.07, "dest": "h3-realism-people-t2v.safetensors"},
+        ],
+        "source_repos": {"hf": "fal/MiniMax-H3-Realism-People-LoRA", "hf_mirror": "fal/MiniMax-H3-Realism-People-LoRA"},
+    },
+    {
+        "id": "lora_tutu_nfe_8step",
+        "name": "Tutu 8 步加速 LoRA（20→8 NFE）",
+        "series": "社区微调 · 加速",
+        "category": "lora",
+        "engine": "lora",
+        "partition": "通用",
+        "precision": "LoRA (BF16)",
+        "size_gb": 0.99,
+        "min_vram_gb": 0,
+        "min_ram_gb": 0,
+        "recommended": False,
+        "heat": "♥ 14 好评（2026-08-09，音画同步加速研究）",
+        "desc": "Tutu 训练的 20→8 步 NFE 蒸馏 LoRA（H3 社区协议），音画同步生成加速约 2.5 倍。diffusers 格式，内置引擎可用。",
+        "files": [
+            {"repo": "tutututututu/Tutu-MiniMax-H3-AudioVideo-20to8-NFE-LoRA", "path": "diffusers/tutu-t8-minimax-h3-av-20to8-nfe-lora-step000300/pytorch_lora_weights.safetensors", "size_gb": 0.99, "dest": "tutu-t8-nfe-lora.safetensors"},
+        ],
+        "source_repos": {"hf": "tutututututu/Tutu-MiniMax-H3-AudioVideo-20to8-NFE-LoRA", "hf_mirror": "tutututututu/Tutu-MiniMax-H3-AudioVideo-20to8-NFE-LoRA"},
+    },
+    {
+        "id": "gguf_unsloth_q4k",
+        "name": "unsloth GGUF Q4_K（Pruned 剪枝）",
+        "series": "社区量化 · GGUF",
+        "category": "video",
+        "engine": "comfyui",
+        "partition": "FL2VA",
+        "precision": "GGUF Q4_K",
+        "size_gb": 11.4,
+        "min_vram_gb": 10,
+        "min_ram_gb": 32,
+        "recommended": False,
+        "heat": "♥ 86 好评（2026-08-07，unsloth 出品）",
+        "desc": "unsloth 出品的 Pruned 剪枝 GGUF Q4_K（11.4GB），比 Abiray 版更小。配合 ComfyUI-GGUF 插件，低显存可用。",
+        "files": [
+            {"repo": "unsloth/MiniMax-H3-GGUF", "path": "minimax_h3_fl2va_pruned-Q4_K.gguf", "size_gb": 11.42, "dest": "minimax_h3_fl2va_pruned-Q4_K.gguf"},
+        ],
+        "source_repos": {"hf": "unsloth/MiniMax-H3-GGUF", "hf_mirror": "unsloth/MiniMax-H3-GGUF"},
+    },
+    {
+        "id": "tae_kijai_preview",
+        "name": "Kijai TAE 快速预览模型",
+        "series": "社区工具 · 预览加速",
+        "category": "video",
+        "engine": "comfyui",
+        "partition": "通用",
+        "precision": "TAE (微型VAE)",
+        "size_gb": 0.01,
+        "min_vram_gb": 0,
+        "min_ram_gb": 0,
+        "recommended": False,
+        "heat": "♥ 103 好评（2026-08-04，Kijai 出品）",
+        "desc": "Kijai 的 MiniMax-H3 微型自编码器（仅 9.8MB），ComfyUI 中用于生成过程的快速预览解码，大幅缩短试错时间。",
+        "files": [
+            {"repo": "Kijai/MiniMax-H3-TAE", "path": "vae_approx/taeh3.safetensors", "size_gb": 0.01, "dest": "taeh3.safetensors"},
+        ],
+        "source_repos": {"hf": "Kijai/MiniMax-H3-TAE", "hf_mirror": "Kijai/MiniMax-H3-TAE"},
     },
     {
         "id": "lora_qwen_lightning",
