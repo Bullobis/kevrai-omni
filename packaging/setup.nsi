@@ -2,7 +2,7 @@
 ; 用法: makensis packaging/setup.nsi
 
 !ifndef APPVERSION
-  !define APPVERSION "2.0.0"
+  !define APPVERSION "2.1.0"
 !endif
 
 Unicode true

@@ -299,6 +299,13 @@ class GeneratePage(QWidget):
         self.frames_hint = frames_hint
         pv.addWidget(frames_hint)
 
+        # 预期速度参考（基于社区实测数据，硬件检测完成后显示）
+        self.speed_hint = QLabel("")
+        self.speed_hint.setObjectName("hintLabel")
+        self.speed_hint.setWordWrap(True)
+        pv.addWidget(self.speed_hint)
+        self._update_speed_hint()
+
         cv.addWidget(params_card)
 
         # 参考素材卡片
@@ -472,6 +479,18 @@ class GeneratePage(QWidget):
             if b.isChecked():
                 return r
         return "16:9"
+
+    def _update_speed_hint(self):
+        hw = getattr(self.ctx, "hw", None)
+        if hw is None or hw.policy == "unsupported":
+            self.speed_hint.setText("")
+            return
+        try:
+            from ..planner import _speed_ref_for
+            ref = _speed_ref_for(hw.gpu_name)
+            self.speed_hint.setText(f"⏱ 本机预期速度：{ref}")
+        except Exception:
+            self.speed_hint.setText("")
 
     def _param_changed(self):
         if not hasattr(self, "dur_slider"):
