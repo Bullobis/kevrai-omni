@@ -6,10 +6,26 @@ cd /d "%~dp0"
 set "ROOT=%cd%"
 set "LOGFILE=%ROOT%\build_log.txt"
 
-echo ══════════════════════════════════════════════
-echo     MiniMax H3 Studio · 一键打包（出安装包）
+echo ═══════════════════════════════════════════════════════
+echo     MiniMax H3 Studio · 一键打包
 echo     完整日志将保存到 build_log.txt
-echo ══════════════════════════════════════════════
+echo ═══════════════════════════════════════════════════════
+echo.
+echo   [1] 完整版 — 含 torch CUDA + diffsynth 推理引擎
+echo        包体积：约 2GB / 安装包约 1.5~2GB
+echo        适合：最终用户分发，解压即用
+echo.
+echo   [2] 精简版 — 仅核心 + 界面（~80MB）
+echo        包体积：约 80MB
+echo        适合：快速测试、小体积分发，首次运行通过应用内
+echo              市场下载推理引擎
+echo.
+set /p MODE="请选择 (1/2，默认1): "
+if "!MODE!"=="" set MODE=1
+if not "!MODE!"=="1" if not "!MODE!"=="2" (
+    echo 无效选择，请输入 1 或 2
+    pause & exit /b 1
+)
 echo.
 echo 开始时间 %date% %time% > "%LOGFILE%"
 
@@ -45,16 +61,15 @@ if errorlevel 1 (
 )
 echo [信息] Python 版本：
 %PY% --version
-REM 版本门禁：PyTorch Windows 版支持 3.10~3.14（2026-08 核实于 PyTorch 官方兼容矩阵）
 %PY% -c "import sys; v=sys.version_info[:2]; sys.exit(0 if (3,10)<=v<=(3,14) else 1)" >nul 2>nul
 if errorlevel 1 (
-    echo [错误] Python 版本需在 3.10~3.14 之间（推荐 3.12/3.13）。3.15 暂无 Windows 版 PyTorch。
+    echo [错误] Python 版本需在 3.10~3.14 之间（推荐 3.12/3.13）。
     pause & exit /b 1
 )
 
 REM ── [2] 虚拟环境 ──
 echo.
-echo [1/5] 创建/复用虚拟环境...
+if "!MODE!"=="1" (echo [1/5] 创建/复用虚拟环境...) else (echo [1/3] 创建/复用虚拟环境...)
 if not exist .venv (
     %PY% -m venv .venv >> "%LOGFILE%" 2>&1 || (
         echo [错误] 虚拟环境创建失败，详见 build_log.txt
@@ -63,29 +78,34 @@ if not exist .venv (
 )
 call .venv\Scripts\activate.bat
 
-REM ── [3] PyTorch CUDA ──
+REM ═══════════════════════════════════════════════════════
+if "!MODE!"=="1" goto FULL_BUILD
+if "!MODE!"=="2" goto LITE_BUILD
+
+REM ═══════════════════════════════════════════════════════
+REM ── 完整版打包 ──
+REM ═══════════════════════════════════════════════════════
+:FULL_BUILD
 echo [2/5] 检查/安装 PyTorch CUDA（约 2.5GB）...
 python -c "import torch" >nul 2>nul
 if errorlevel 1 (
-    REM 必须走 PyTorch 官方 CUDA 源：国内 PyPI 镜像的 torch 会匹配到 CPU 版（2026-08 实测确认）
     pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128 >> "%LOGFILE%" 2>&1
     if errorlevel 1 (
         echo   cu128 失败（老卡 GTX 10/900 系），尝试 cu126...
         pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu126 >> "%LOGFILE%" 2>&1 || (
-            echo [错误] PyTorch 安装失败，详见 build_log.txt。检查网络后重跑本脚本可续装。
+            echo [错误] PyTorch 安装失败，详见 build_log.txt。
             pause & exit /b 1
         )
     )
 )
 python -c "import torch; print('  torch', torch.__version__, '| CUDA:', torch.version.cuda)"
 
-REM ── [4] 应用依赖 ──
 echo [3/5] 检查/安装应用依赖...
 python -c "import PySide6, diffsynth" >nul 2>nul
 if errorlevel 1 (
     pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple >> "%LOGFILE%" 2>&1 || ^
     pip install -r requirements.txt -i https://mirrors.cloud.tencent.com/pypi/simple >> "%LOGFILE%" 2>&1 || (
-        echo [错误] 依赖安装失败，详见 build_log.txt。重跑本脚本可续装。
+        echo [错误] 依赖安装失败，详见 build_log.txt。
         pause & exit /b 1
     )
 )
@@ -95,7 +115,6 @@ pip install pyinstaller -i https://mirrors.cloud.tencent.com/pypi/simple >> "%LO
     pause & exit /b 1
 )
 
-REM ── [5] PyInstaller 打包 ──
 echo [4/5] PyInstaller 打包（约 5~15 分钟）...
 if exist dist rmdir /s /q dist
 if exist build rmdir /s /q build
@@ -110,6 +129,9 @@ python -m PyInstaller --noconfirm --clean --windowed --name H3Studio ^
   --hidden-import h3studio.ui.page_generate --hidden-import h3studio.ui.page_market ^
   --hidden-import h3studio.ui.page_library --hidden-import h3studio.ui.page_gallery ^
   --hidden-import h3studio.ui.page_settings ^
+  --hidden-import h3studio.ui.page_custom --hidden-import h3studio.ui.page_help ^
+  --hidden-import h3studio.ui.page_image ^
+  --hidden-import h3studio.i18n --hidden-import h3studio.customizer --hidden-import h3studio.image_gen ^
   --hidden-import diffsynth.pipelines.minimax_h3_audio_video ^
   --hidden-import diffsynth.utils.data.audio_video --hidden-import diffsynth.utils.data.audio ^
   --hidden-import modelscope --hidden-import huggingface_hub --hidden-import safetensors ^
@@ -120,11 +142,9 @@ python -m PyInstaller --noconfirm --clean --windowed --name H3Studio ^
   --exclude-module jupyter --exclude-module pytest ^
   h3studio\main.py >> "%LOGFILE%" 2>&1 || (
     echo [错误] PyInstaller 打包失败，详见 build_log.txt
-    echo        （中文路径/OneDrive 目录/杀毒软件拦截是三大常见原因）
     pause & exit /b 1
 )
 
-REM ── [6] Inno Setup 编译安装包 ──
 echo [5/5] 编译安装包...
 set "ISCC="
 if exist "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" set "ISCC=%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
@@ -136,15 +156,72 @@ if defined ISCC (
         pause & exit /b 1
     )
     echo.
-    echo ═══════════ 打包完成 ═══════════
+    echo ═══════════ 完整版打包完成 ═══════════
     echo 安装包：packaging\Output\H3Studio-Setup-2.1.0.exe
     echo 绿色版：dist\H3Studio\H3Studio.exe
 ) else (
     echo [提示] 未检测到 Inno Setup 6，已跳过安装包编译。
-    echo        安装免费的 Inno Setup 6（jrsoftware.org/isdl.php）后重跑本脚本即可生成安装包。
     echo        当前已产出绿色版：dist\H3Studio\H3Studio.exe
 )
+goto END
 
+REM ═══════════════════════════════════════════════════════
+REM ── 精简版打包（不含 torch/diffsynth，~80MB）──
+REM ═══════════════════════════════════════════════════════
+:LITE_BUILD
+echo [2/3] 检查/安装精简依赖（PySide6 + 基础库）...
+python -c "import PySide6" >nul 2>nul
+if errorlevel 1 (
+    pip install PySide6>=6.7 requests pillow -i https://pypi.tuna.tsinghua.edu.cn/simple >> "%LOGFILE%" 2>&1 || ^
+    pip install PySide6>=6.7 requests pillow -i https://mirrors.cloud.tencent.com/pypi/simple >> "%LOGFILE%" 2>&1 || (
+        echo [错误] 依赖安装失败，详见 build_log.txt。
+        pause & exit /b 1
+    )
+)
+pip install pyinstaller -i https://pypi.tuna.tsinghua.edu.cn/simple >> "%LOGFILE%" 2>&1 || ^
+pip install pyinstaller -i https://mirrors.cloud.tencent.com/pypi/simple >> "%LOGFILE%" 2>&1 || (
+    echo [错误] PyInstaller 安装失败，详见 build_log.txt
+    pause & exit /b 1
+)
+
+echo [3/3] PyInstaller 打包精简版（约 2~5 分钟）...
+if exist dist rmdir /s /q dist
+if exist build rmdir /s /q build
+python -m PyInstaller --noconfirm --clean --windowed --name H3Studio ^
+  --paths . ^
+  --add-data "resources;resources" ^
+  --hidden-import h3studio --hidden-import h3studio.facts --hidden-import h3studio.config ^
+  --hidden-import h3studio.hardware --hidden-import h3studio.sources --hidden-import h3studio.downloader ^
+  --hidden-import h3studio.planner ^
+  --hidden-import h3studio.ui --hidden-import h3studio.ui.styles ^
+  --hidden-import h3studio.ui.widgets --hidden-import h3studio.ui.main_window ^
+  --hidden-import h3studio.ui.page_generate --hidden-import h3studio.ui.page_market ^
+  --hidden-import h3studio.ui.page_library --hidden-import h3studio.ui.page_gallery ^
+  --hidden-import h3studio.ui.page_settings ^
+  --hidden-import h3studio.ui.page_custom --hidden-import h3studio.ui.page_help ^
+  --hidden-import h3studio.ui.page_image ^
+  --hidden-import h3studio.i18n --hidden-import h3studio.customizer --hidden-import h3studio.image_gen ^
+  --hidden-import PIL --hidden-import requests ^
+  --exclude-module torch --exclude-module torchaudio --exclude-module torchvision ^
+  --exclude-module diffsynth --exclude-module modelscope --exclude-module huggingface_hub ^
+  --exclude-module bitsandbytes --exclude-module av --exclude-module transformers ^
+  --exclude-module safetensors --exclude-module einops --exclude-module imageio ^
+  --exclude-module imageio_ffmpeg --exclude-module psutil ^
+  --exclude-module tkinter --exclude-module matplotlib --exclude-module IPython ^
+  --exclude-module jupyter --exclude-module pytest ^
+  h3studio\main.py >> "%LOGFILE%" 2>&1 || (
+    echo [错误] PyInstaller 打包失败，详见 build_log.txt
+    pause & exit /b 1
+)
+
+echo.
+echo ═══════════ 精简版打包完成 ═══════════
+echo 绿色版：dist\H3Studio\H3Studio.exe
+echo 体积：约 80MB（首次运行通过应用内市场下载推理引擎）
+echo ═══════════════════════════════════════
+goto END
+
+:END
 echo.
 pause
 exit /b 0
