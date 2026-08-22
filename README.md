@@ -40,15 +40,30 @@ Windows 11 上的全能 AI 创作工作站（MiniMax H3 视频生成 + 图片生
 | 模板优先 | 生成页 12 个快捷模板按钮（小白一键套用）；负面提示词已移除（H3 CFG 蒸馏不生效） |
 | 安装包 | PyInstaller + Inno Setup 6 一键构建（`packaging\build_windows.bat`） |
 
+## 📦 下载 / Download（v2.2.0）
+
+开箱即用的安装包与源码已发布在 [Releases](https://github.com/Bullobis/kevrai-omni/releases/tag/v2.2.0)：
+
+| 平台 | 文件 | 说明 |
+|---|---|---|
+| Windows 11 | [Kevrai-Omni-Setup-2.2.0.exe](https://github.com/Bullobis/kevrai-omni/releases/download/v2.2.0/Kevrai-Omni-Setup-2.2.0.exe) | 安装包（PyInstaller + Inno Setup 6） |
+| Linux（amd64 / Debian·Ubuntu） | [Kevrai-Omni-2.2.0-amd64.deb](https://github.com/Bullobis/kevrai-omni/releases/download/v2.2.0/Kevrai-Omni-2.2.0-amd64.deb) | Debian/Ubuntu 安装包 |
+| Linux（x86_64 便携版） | [Kevrai-Omni-2.2.0-x86_64.AppImage](https://github.com/Bullobis/kevrai-omni/releases/download/v2.2.0/Kevrai-Omni-2.2.0-x86_64.AppImage) | 赋予可执行权限后直接运行 |
+| 源码 | [kevrai-omni-2.2.0-source.tar.gz](https://github.com/Bullobis/kevrai-omni/releases/download/v2.2.0/kevrai-omni-2.2.0-source.tar.gz) · [.zip](https://github.com/Bullobis/kevrai-omni/releases/download/v2.2.0/kevrai-omni-2.2.0-source.zip) | 完整源代码 |
+
+校验和见同版本 `SHA256SUMS.txt`。各平台校验命令：
+- Windows（PowerShell）：`Get-FileHash -Algorithm SHA256 文件名`
+- Linux / macOS：`sha256sum 文件名`
+
 ## 快速开始（两种玩法）
 
 **玩法一：一键启动（推荐日常使用，免打包）**
 1. 安装 Python 3.10~3.14（推荐 3.12/3.13，勾选 Add to PATH；勿用 3.15）
-2. 把文件夹放在**纯英文路径**（如 `D:\H3Studio`，避免中文/OneDrive 目录）
+2. 把文件夹放在**纯英文路径**（如 `D:\KevraiOmni`，避免中文/OneDrive 目录）
 3. 双击 `一键启动.bat`：首次自动装环境，之后秒开
 
 **玩法二：打包成安装包**
-双击 `一键打包.bat`（需安装免费的 Inno Setup 6），产出 `H3Studio-Setup.exe` 安装包 + 绿色版 exe。
+双击 `一键打包.bat`（需安装免费的 Inno Setup 6），产出 `Kevrai-Omni-Setup-2.2.0.exe` 安装包 + 绿色版 exe。
 
 > 详细小白教程见压缩包内的《使用教程.md》（含桌面/中文路径报错排查）。
 
@@ -75,8 +90,8 @@ python -m h3studio.main
 安装依赖（清华/腾讯镜像）→ PyInstaller 打包 → Inno Setup 编译安装包。
 
 产物：
-- **安装包**：`packaging\Output\H3Studio-Setup-1.0.0.exe`（需安装免费的 Inno Setup 6：jrsoftware.org/isdl.php）
-- **绿色版**：`dist\H3Studio\H3Studio.exe`（未装 Inno Setup 时直接可用）
+- **安装包**：`packaging\Output\Kevrai-Omni-Setup-2.2.0.exe`（需安装免费的 Inno Setup 6：jrsoftware.org/isdl.php）
+- **绿色版**：`dist\Kevrai-Omni\Kevrai-Omni.exe`（未装 Inno Setup 时直接可用）
 
 说明：安装包含 PyTorch CUDA 运行库（约 1.5~2GB，本地 AI 软件的共同现状）；
 模型权重不打进安装包，由用户在软件内按需下载（NF4 版约 35GB）。
@@ -91,7 +106,7 @@ python -m h3studio.main
 ## 项目结构
 
 ```
-H3Studio/
+Kevrai-Omni/
 ├── h3studio/
 │   ├── facts.py            # 事实库：全部模型/仓库/限制数据（已核实，含来源）
 │   ├── config.py           # 设置持久化 + 主题定义
