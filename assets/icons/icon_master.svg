@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3B2BD6"/>
+      <stop offset="0.5" stop-color="#7A4BFF"/>
+      <stop offset="1" stop-color="#18C8F0"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9F7BFF"/>
+      <stop offset="1" stop-color="#27E0E0"/>
+    </linearGradient>
+    <linearGradient id="kStroke" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DCE8FF"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.65">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="hub" cx="0.38" cy="0.32" r="0.75">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.55" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#BCD8FF"/>
+    </radialGradient>
+    <linearGradient id="ringHi" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.35" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="0.7" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#1A0B57" flood-opacity="0.35"/>
+    </filter>
+    <filter id="ringShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0A1F66" flood-opacity="0.30"/>
+    </filter>
+    <filter id="kShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0F1456" flood-opacity="0.35"/>
+    </filter>
+    <filter id="hubShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F1456" flood-opacity="0.40"/>
+    </filter>
+  </defs>
+
+  <!-- Base squircle -->
+  <rect x="112" y="112" width="800" height="800" rx="200" ry="200" fill="url(#bg)" filter="url(#soft)"/>
+  <rect x="112" y="112" width="800" height="800" rx="200" ry="200" fill="url(#glow)"/>
+  <path d="M160 300 Q340 150 560 180 Q420 250 320 360 Z" fill="#FFFFFF" opacity="0.12"/>
+
+  <!-- O ring (gradient) -->
+  <circle cx="512" cy="512" r="220" fill="none" stroke="url(#ring)" stroke-width="56" filter="url(#ringShadow)"/>
+
+  <!-- Subtle glass-highlight arc on the O ring (a clean band, not dashes) -->
+  <circle cx="512" cy="512" r="220" fill="none" stroke="url(#ringHi)" stroke-width="8" stroke-opacity="0.7"
+          stroke-dasharray="260 1220" stroke-dashoffset="-360" transform="rotate(-40 512 512)"/>
+
+  <!-- K letter: junction at O center, vertical crosses O ring top & bottom, arms extend right and cross O ring -->
+  <g stroke="#FFFFFF" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" fill="none" filter="url(#kShadow)">
+    <line x1="512" y1="268" x2="512" y2="756"/>
+    <line x1="512" y1="512" x2="746" y2="286"/>
+    <line x1="512" y1="512" x2="746" y2="738"/>
+  </g>
+
+  <!-- Junction hub: the "middle" overlap focal point -->
+  <circle cx="512" cy="512" r="38" fill="url(#hub)" filter="url(#hubShadow)"/>
+  <circle cx="512" cy="512" r="38" fill="none" stroke="url(#ring)" stroke-width="5" opacity="0.85"/>
+  <circle cx="512" cy="512" r="13" fill="#FFFFFF" opacity="0.95"/>
+</svg>

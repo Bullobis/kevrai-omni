@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; connect-src 'self' http://127.0.0.1:17890 ws://127.0.0.1:17890; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <!-- NOTE: frame-ancestors is NOT supported in a <meta> CSP (it is enforced
+       via the response header injected in electron/main.js instead). -->
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="referrer" content="no-referrer" />
+  <title>Kevrai Studio</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles/generation-wait.css" />
+</head>
+<body>
+  <a href="#main" class="skip-link">跳到正文</a>
+
+  <header class="titlebar" role="banner">
+    <div class="brand">
+      <img class="logo" src="../assets/icons/icon-256.png" width="28" height="28" alt="Kevrai Studio" id="brand-logo" />
+      <span id="logo-fallback" class="logo-fallback" aria-hidden="true" hidden>◈</span>
+      <h1 class="title">Kevrai Studio</h1>
+      <p class="subtitle">local AI workstation · LLM · TTS · Image · Video · 3D · Audio · SR · MNN</p>
+    </div>
+    <div class="header-actions">
+      <button class="ghost icon" data-action="open-downloads" aria-label="打开下载面板" title="下载">
+        ⬇
+      </button>
+      <button class="ghost icon" data-action="detect-gpu" aria-label="检测 GPU" title="检测 GPU">⚙</button>
+      <button class="ghost icon" data-action="check-updates" aria-label="检查更新" title="检查更新">↻</button>
+      <button class="ghost icon" data-action="refresh" aria-label="刷新" title="刷新">⟳</button>
+      <div class="status" aria-live="polite">
+        <span id="health-dot" class="dot" aria-hidden="true"></span>
+        <span id="health-text" class="mut">sidecar: …</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar" aria-label="分类导航">
+      <nav>
+        <button class="pane-tab active" data-tab="market">
+          <span class="ico" aria-hidden="true">◇</span> 模型市场
+        </button>
+        <button class="pane-tab" data-tab="hardware">
+          <span class="ico" aria-hidden="true">⚡</span> 硬件推荐
+        </button>
+        <button class="pane-tab" data-tab="engines">
+          <span class="ico" aria-hidden="true">⟁</span> AI 引擎
+        </button>
+        <button class="pane-tab" data-tab="mnn">
+          <span class="ico" aria-hidden="true">⬢</span> MNN 引擎
+        </button>
+        <button class="pane-tab" data-tab="drama">
+          <span class="ico" aria-hidden="true">🎬</span> 短剧 Agent
+        </button>
+        <button class="pane-tab" data-tab="ltx">
+          <span class="ico" aria-hidden="true">🎥</span> LTX-2.5 视频
+        </button>
+        <button class="pane-tab" data-tab="local">
+          <span class="ico" aria-hidden="true">⛁</span> 本地模型
+        </button>
+        <button class="pane-tab" data-tab="gguf">
+          <span class="ico" aria-hidden="true">▤</span> GGUF 仓库
+        </button>
+        <button class="pane-tab" data-tab="pending">
+          <span class="ico" aria-hidden="true">⌛</span> 待官方开源
+        </button>
+        <button class="pane-tab" data-tab="environments">
+          <span class="ico" aria-hidden="true">⚙</span> 环境管理
+        </button>
+      </nav>
+      <div class="sidebar-foot">
+        <button class="ghost full" data-action="open-settings" aria-label="打开设置">
+          ⚙ 设置
+        </button>
+        <p class="mut tiny" id="version-line">v…</p>
+      </div>
+    </aside>
+
+    <main id="main" class="main" tabindex="-1">
+      <!-- Market pane -->
+      <section id="pane-market" class="pane active" aria-label="模型市场">
+        <div class="toolbar" role="search">
+          <label class="visually-hidden" for="cat-filter">分类</label>
+          <select id="cat-filter" aria-label="按分类筛选">
+            <option value="">全部分类</option>
+          </select>
+          <label class="visually-hidden" for="sort-filter">排序</label>
+          <select id="sort-filter" aria-label="排序方式">
+            <option value="relevance">相关度</option>
+            <option value="trending">热门优先</option>
+            <option value="name_asc">名称 A→Z</option>
+            <option value="size_desc">体积 大→小</option>
+            <option value="size_asc">体积 小→大</option>
+          </select>
+          <label class="trending-toggle" title="只看热门模型">
+            <input type="checkbox" id="trending-filter" /> 🔥 热门
+          </label>
+          <div class="search-wrap">
+            <label class="visually-hidden" for="search">搜索模型</label>
+            <input id="search" type="search" placeholder="搜索模型（支持模糊、拼音式缩写、中文，按 / 聚焦）"
+                   autocomplete="off" aria-label="搜索模型" />
+          </div>
+          <span class="counter" id="models-count" aria-live="polite">0 条</span>
+        </div>
+        <div id="models-grid" class="vgrid" role="listbox" aria-label="模型列表"></div>
+      </section>
+
+      <!-- Hardware recommendation pane -->
+      <section id="pane-hardware" class="pane" aria-label="硬件推荐">
+        <div id="hw-root"></div>
+      </section>
+
+      <!-- Engines pane -->
+      <section id="pane-engines" class="pane" aria-label="AI 引擎">
+        <p class="hint">首次安装某类模型时会提示安装对应引擎；也可在此手动预装。引擎按需下载到本地。</p>
+        <div class="engine-grid" aria-live="polite"></div>
+      </section>
+
+      <!-- Local pane -->
+      <section id="pane-local" class="pane" aria-label="本地模型">
+        <p class="hint">从你的硬盘一键导入本地模型文件（GGUF / safetensors）。也可以把文件直接拖入窗口。</p>
+        <div class="import-row">
+          <button id="btn-import-folder">选择文件夹</button>
+          <button id="btn-import-file" class="secondary">选择文件</button>
+        </div>
+        <h3 class="section">已导入的本地模型</h3>
+        <div id="local-list" class="list"></div>
+      </section>
+
+      <!-- GGUF pane -->
+      <section id="pane-gguf" class="pane" aria-label="GGUF 仓库">
+        <p class="hint">列出所有 GGUF 文件。每个文件都可以在 Kevrai Studio 中单独下载，由 llama.cpp 或 MNN 加载。</p>
+        <div id="gguf-repos" class="list"></div>
+      </section>
+
+      <!-- Pending pane -->
+      <section id="pane-pending" class="pane" aria-label="待官方开源">
+        <p class="hint">保留给尚未开源的模型条目。官方公开权重后会自动上架到模型市场。</p>
+        <div id="pending-list" class="list"></div>
+      </section>
+
+      <!-- MNN engine pane -->
+      <section id="pane-mnn" class="pane" aria-label="MNN 引擎">
+        <div id="mnn-root"></div>
+      </section>
+
+      <!-- Drama Agent pane -->
+      <section id="pane-drama" class="pane" aria-label="短剧 Agent">
+        <div id="drama-root"></div>
+      </section>
+
+      <!-- LTX-2.5 video generation pane -->
+      <section id="pane-ltx" class="pane" aria-label="LTX-2.5 视频生成">
+        <div class="ltx-header">
+          <div>
+            <h2 class="section">🎥 LTX-2.5 视频生成</h2>
+            <p class="hint">Lightricks LTX-2.5 世界模型：文生视频 / 图生视频，12GB 显存近实时生成。
+              输出目录：<code id="ltx-outputs-dir" class="pathlike"></code></p>
+          </div>
+          <span id="ltx-engine-badge" class="ltx-badge">检测中…</span>
+        </div>
+
+        <div id="ltx-install-hint" class="ltx-install-hint" hidden>
+          ⚠ 未检测到推理引擎。请在「环境管理」中安装，或手动执行：
+          <code></code>
+        </div>
+
+        <div class="ltx-grid">
+          <div class="ltx-form">
+            <label class="field">
+              <span>生成模式</span>
+              <select id="ltx-mode">
+                <option value="t2v">文生视频 (Text-to-Video)</option>
+                <option value="i2v">图生视频 (Image-to-Video)</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>质量预设</span>
+              <select id="ltx-preset"></select>
+            </label>
+            <label class="field">
+              <span>提示词 Prompt</span>
+              <textarea id="ltx-prompt" rows="3" placeholder="一只猫在月球上弹钢琴，电影感，4K"></textarea>
+            </label>
+            <label class="field">
+              <span>反向提示词 Negative prompt</span>
+              <textarea id="ltx-negative" rows="2">low quality, blurry, distorted, watermark, text, deformed</textarea>
+            </label>
+
+            <div class="ltx-row" id="ltx-image-row" hidden>
+              <label class="field grow">
+                <span>参考图片路径</span>
+                <input id="ltx-image" type="text" placeholder="C:\\path\\to\\image.png" />
+              </label>
+              <button class="secondary" id="ltx-pick-image" type="button">选择…</button>
+            </div>
+
+            <div class="ltx-row">
+              <label class="field"><span>宽</span><input id="ltx-width" type="number" min="256" max="1920" step="32" value="768"></label>
+              <label class="field"><span>高</span><input id="ltx-height" type="number" min="256" max="1080" step="32" value="432"></label>
+              <label class="field"><span>帧数</span><input id="ltx-frames" type="number" min="9" max="257" step="8" value="97"></label>
+              <label class="field"><span>FPS</span><input id="ltx-fps" type="number" min="1" max="60" value="24"></label>
+            </div>
+            <div class="ltx-row">
+              <label class="field"><span>步数</span><input id="ltx-steps" type="number" min="1" max="100" value="25"></label>
+              <label class="field"><span>CFG</span><input id="ltx-cfg" type="number" min="0.1" max="20" step="0.1" value="3.0"></label>
+              <label class="field" id="ltx-strength-row" hidden><span>图生强度</span><input id="ltx-strength" type="number" min="0.1" max="1" step="0.05" value="0.85"></label>
+              <label class="field"><span>种子 (-1 随机)</span><input id="ltx-seed" type="number" value="-1"></label>
+              <button class="secondary" id="ltx-seed-random" type="button" title="随机种子">🎲</button>
+            </div>
+            <div class="ltx-row">
+              <label class="field"><span>输出格式</span>
+                <select id="ltx-format"><option value="mp4">MP4</option><option value="gif">GIF</option></select>
+              </label>
+              <label class="check"><input type="checkbox" id="ltx-vae-slice" checked> VAE 切片（省显存）</label>
+              <label class="check"><input type="checkbox" id="ltx-cpu-offload"> CPU offload（低显存）</label>
+            </div>
+
+            <div class="ltx-actions">
+              <button id="ltx-generate" class="primary">▶ 开始生成</button>
+              <button id="ltx-cancel" class="danger" hidden>■ 取消</button>
+              <span id="ltx-status" class="ltx-status"></span>
+            </div>
+
+            <div id="ltx-active" class="ltx-active" hidden>
+              <div class="ltx-active-head">
+                <span>任务 <code id="ltx-active-id"></code></span>
+                <span id="ltx-active-state"></span>
+                <span class="mut">步 <span id="ltx-active-step"></span></span>
+                <span class="mut">用时 <span id="ltx-active-elapsed"></span></span>
+              </div>
+              <div id="ltx-progress" class="ltx-progress" hidden>
+                <div class="bar"></div><span class="pct">0%</span>
+              </div>
+            </div>
+
+            <h3 class="section">最近任务</h3>
+            <div id="ltx-task-list" class="ltx-task-list"></div>
+          </div>
+
+          <div class="ltx-outputs">
+            <div class="ltx-outputs-head">
+              <h3 class="section">生成结果</h3>
+              <span>
+                <button class="secondary" id="ltx-refresh-outputs" type="button">↻ 刷新</button>
+                <button class="secondary" id="ltx-open-folder" type="button">📁 打开目录</button>
+              </span>
+            </div>
+            <div id="ltx-gallery" class="ltx-gallery"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Environments pane -->
+      <section id="pane-environments" class="pane" aria-label="环境管理">
+        <div id="env-root"></div>
+      </section>
+    </main>
+
+    <!-- Right detail panel -->
+    <aside class="detail" aria-label="详情">
+      <div id="detail-panel" class="detail-empty">
+        <p class="mut">← 选择一个模型查看详情。</p>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Settings overlay -->
+  <div id="settings-overlay" class="overlay" role="dialog" aria-modal="true"
+       aria-labelledby="settings-title" hidden aria-hidden="true">
+    <div class="overlay-card" role="document">
+      <header>
+        <h2 id="settings-title">设置</h2>
+        <button class="ghost icon" data-action="close-settings" aria-label="关闭设置">×</button>
+      </header>
+      <div class="settings-grid">
+        <label class="field">
+          <span>模型存储目录</span>
+          <div class="row">
+            <input id="set-model-dir" type="text" placeholder="/path/to/models" />
+            <button class="secondary" id="btn-pick-model-dir">浏览…</button>
+          </div>
+        </label>
+        <label class="field">
+          <span>引擎目录</span>
+          <div class="row">
+            <input id="set-engine-dir" type="text" placeholder="/path/to/engines" />
+            <button class="secondary" id="btn-pick-engine-dir">浏览…</button>
+          </div>
+        </label>
+        <label class="field">
+          <span>主题</span>
+          <select id="set-theme">
+            <option value="system">跟随系统</option>
+            <option value="dark">深色</option>
+            <option value="light">浅色</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>硬件加速</span>
+          <select id="set-hwaccel">
+            <option value="auto">自动检测</option>
+            <option value="nvidia">NVIDIA</option>
+            <option value="amd">AMD</option>
+            <option value="cpu">仅 CPU</option>
+          </select>
+        </label>
+        <label class="field inline">
+          <input id="set-telemetry" type="checkbox" />
+          <span>启用遥测（匿名使用统计）</span>
+        </label>
+        <label class="field inline">
+          <input id="set-allowlist-advanced" type="checkbox" />
+          <span>高级：编辑下载主机白名单</span>
+        </label>
+        <label class="field">
+          <span>白名单（逗号分隔）</span>
+          <input id="set-allowlist" type="text" placeholder="huggingface.co, github.com" />
+          <span class="mut tiny" id="set-allowlist-hint">默认：huggingface.co, github.com</span>
+        </label>
+      </div>
+      <footer class="overlay-foot">
+        <button id="btn-settings-reset" class="ghost">重置默认</button>
+        <button id="btn-preview-genwait" class="ghost">预览生成等待动画</button>
+        <span class="spacer"></span>
+        <button id="btn-settings-cancel" class="secondary">取消</button>
+        <button id="btn-settings-save" class="primary">保存</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Download overlay (created on demand) -->
+
+  <!-- Drop mask -->
+  <div id="drop-mask" class="drop-mask" hidden aria-hidden="true">
+    <div class="drop-mask-card">
+      <p class="drop-mask-title">松手导入模型</p>
+      <p class="mut">支持 GGUF / safetensors / 整个目录</p>
+    </div>
+  </div>
+
+  <!-- Toast container (built by toast.js) -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
