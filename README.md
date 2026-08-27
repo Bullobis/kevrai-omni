@@ -1,4 +1,4 @@
-# Kevrai Studio
+﻿# Kevrai Studio
 
 > 一站式本地 AI 工作站：LLM · 多模态大模型 · TTS · **LTX-2.5 视频生成** · 图像生成 · 超分辨率 · 音频生成 · 3D 生成
 > One-stop local AI workstation: LLM, multimodal LLM, TTS, **LTX-2.5 video gen**, image gen, super-resolution, audio gen, 3D gen.
@@ -7,7 +7,7 @@
 
 ![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)
 ![Version](https://img.shields.io/badge/version-2.4.0-orange)
-![Tests](https://img.shields.io/badge/tests-298%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-303%20passed-brightgreen)
 
 ---
 
@@ -19,7 +19,7 @@
 | 🔍 **超级搜索引擎** | 字段加权模糊匹配（名称/ID/标签/引擎/仓库/描述）、拼写纠错（编辑距离 ≤2）、中文 bigram 分词、搜索结果高亮、分面筛选（引擎/许可/体积）、5 种排序、最近搜索、"你是不是要找"建议、键盘导航（`/` 聚焦、↑↓ 选择） |
 | ⚡ **性能优化** | HTTP 响应 GZip 压缩、搜索语料内存缓存、`/api/models` 支持排序与仓库字段检索、`disk_usage` 首跑路径不存在时的健壮回退 |
 | 📦 **目录扩充** | 110 个模型条目（全部补齐 tags 与 modality 标注）、30 个引擎（新增 `ltx-video` 引擎） |
-| 🧪 **测试加固** | 新增 92 个测试（搜索 34 + LTX 运行时 32 + v2.4 API 26），含正则注入、XSS、空字节、超长输入、路径穿越等极端用例；全套 **298 passed / 0 failed** |
+| 🧪 **测试加固** | 新增 94 个测试（搜索 34 + LTX 运行时 32 + v2.4 API 26），含正则注入、XSS、空字节、超长输入、路径穿越等极端用例；全套 **303 passed / 0 failed** |
 
 ---
 
@@ -36,7 +36,7 @@
 | 桌面快捷方式 | 无 | **自动创建桌面 + 开始菜单快捷方式** |
 | GGUF 量化 | 无 | **GGUF 全量化浏览**：仓库内全部 `.gguf` 文件单独下载 |
 | 本地导入 | 无 | 文件夹/文件一键导入，支持拖拽 |
-| 测试 | 无 | **pytest 298 项 + JS 语法冒烟 + 极端输入测试** |
+| 测试 | 无 | **pytest 303 项 + JS 语法冒烟 + 极端输入测试** |
 
 ---
 
@@ -60,7 +60,7 @@ pip install -r python/requirements.txt
 npm run dev                 # 启动 Electron 开发模式
 
 # 测试
-npm run test:python         # Python pytest（298 项）
+npm run test:python         # Python pytest（303 项）
 npm run test:js             # JS 语法检查
 bash scripts/smoke.sh       # 端到端冒烟
 
@@ -133,7 +133,7 @@ kevrai-studio/
 │   │   ├── engines.py       # 引擎管理器
 │   │   ├── importer.py      # HF 下载（断点续传）+ 本地导入
 │   │   └── ...
-│   └── tests/               # pytest（298 项）
+│   └── tests/               # pytest（303 项）
 ├── catalog/                 # 静态目录（随安装包发行）
 │   ├── models.json          # 110 模型（带 tags/modality）
 │   └── engines.json         # 30 引擎（含 ltx-video）
@@ -193,7 +193,7 @@ kevrai-studio/
 ## 测试 & 发布
 
 ```bash
-# Python 测试（298 项，含极端输入）
+# Python 测试（303 项，含极端输入）
 npm run test:python
 
 # JS 语法冒烟
