@@ -1,0 +1,222 @@
+/* ============================================================
+   Creative generation-wait overlay
+   Fluid cyan/teal/blue gradient + floating particles + pulsing KO
+   ============================================================ */
+
+.generation-wait-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: var(--font, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  color: #fff;
+  animation: gwFadeIn 0.35s ease;
+}
+
+@keyframes gwFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* --- Fluid gradient background --- */
+.gw-fluid {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle at 30% 30%, #18c8f0 0%, transparent 45%),
+              radial-gradient(circle at 70% 20%, #00ffc8 0%, transparent 45%),
+              radial-gradient(circle at 50% 80%, #3b2bd6 0%, transparent 50%),
+              linear-gradient(135deg, #0b1020 0%, #0a2a3a 50%, #081830 100%);
+  filter: blur(45px);
+  animation: gwFluidMove 18s ease-in-out infinite alternate;
+}
+
+@keyframes gwFluidMove {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(3deg) scale(1.06); }
+  100% { transform: rotate(-2deg) scale(1.03); }
+}
+
+.gw-blob {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.55;
+  filter: blur(60px);
+}
+.gw-blob-a {
+  width: 60vw; height: 60vw;
+  top: -10%; left: -10%;
+  background: radial-gradient(circle, #18c8f0 0%, transparent 70%);
+  animation: gwBlobA 16s ease-in-out infinite alternate;
+}
+.gw-blob-b {
+  width: 50vw; height: 50vw;
+  bottom: -15%; right: -10%;
+  background: radial-gradient(circle, #7a4bff 0%, transparent 70%);
+  animation: gwBlobB 14s ease-in-out infinite alternate;
+}
+.gw-blob-c {
+  width: 45vw; height: 45vw;
+  top: 35%; left: 35%;
+  background: radial-gradient(circle, #00ffc8 0%, transparent 70%);
+  animation: gwBlobC 20s ease-in-out infinite alternate;
+}
+
+@keyframes gwBlobA {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(8vw, 10vh) scale(1.1); }
+}
+@keyframes gwBlobB {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(-8vw, -8vh) scale(1.15); }
+}
+@keyframes gwBlobC {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(4vw, -6vh) scale(0.95); }
+}
+
+/* --- Particle canvas --- */
+.gw-particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* --- Center content --- */
+.gw-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 420px;
+  padding: 32px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  animation: gwContentFloat 6s ease-in-out infinite;
+}
+
+@keyframes gwContentFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.gw-logo-ring {
+  width: 110px;
+  height: 110px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 40px rgba(24, 200, 240, 0.25),
+              inset 0 0 20px rgba(255, 255, 255, 0.08);
+  animation: gwPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes gwPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(24, 200, 240, 0.25), inset 0 0 20px rgba(255,255,255,0.08); }
+  50% { transform: scale(1.06); box-shadow: 0 0 60px rgba(24, 200, 240, 0.45), inset 0 0 30px rgba(255,255,255,0.12); }
+}
+
+.gw-logo {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  border-radius: 22px;
+  filter: drop-shadow(0 0 18px rgba(24, 200, 240, 0.45));
+  animation: gwLogoBreathe 3.6s ease-in-out infinite;
+}
+
+@keyframes gwLogoBreathe {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 18px rgba(24, 200, 240, 0.45)); }
+  50% { transform: scale(1.05); filter: drop-shadow(0 0 32px rgba(24, 200, 240, 0.7)); }
+}
+
+.gw-logo-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+  color: #fff;
+  text-shadow: 0 0 24px rgba(24, 200, 240, 0.6);
+  animation: gwLogoBreathe 3.6s ease-in-out infinite;
+}
+
+.gw-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.gw-caption {
+  font-size: 15px;
+  font-weight: 500;
+  opacity: 0.9;
+  min-height: 22px;
+  margin-bottom: 22px;
+  transition: opacity 0.25s ease;
+}
+
+/* --- Progress --- */
+.gw-progress-wrap {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.gw-progress-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #18c8f0, #7a4bff, #00ffc8);
+  box-shadow: 0 0 12px rgba(24, 200, 240, 0.5);
+  transition: width 0.3s ease;
+}
+
+.gw-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  opacity: 0.85;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+.gw-progress-meta span:first-child { text-align: left; }
+.gw-progress-meta span:last-child { text-align: right; }
+
+/* --- Cancel button --- */
+.gw-cancel {
+  padding: 8px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+.gw-cancel:hover { background: rgba(255, 255, 255, 0.18); }
+.gw-cancel:active { transform: scale(0.97); }
+
+/* --- Responsive --- */
+@media (max-width: 520px) {
+  .gw-content { max-width: 86vw; padding: 24px; }
+  .gw-logo-ring { width: 90px; height: 90px; }
+  .gw-title { font-size: 18px; }
+  .gw-caption { font-size: 13px; }
+}

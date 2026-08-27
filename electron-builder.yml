@@ -1,0 +1,69 @@
+appId: io.github.kevrai.studio
+productName: Kevrai Studio
+copyright: Copyright © 2026 Kevrai Studio contributors. Licensed under CC BY-NC-SA 4.0.
+artifactName: ${productName}-${version}-${arch}.${ext}
+files:
+  - "electron/**/*"
+  - "renderer/**/*"
+  - "assets/**/*"
+  - "package.json"
+
+# ---------- Directories where the app writes engines/models/user data ----------
+extraResources:
+  - from: "catalog"
+    to: "catalog"
+    filter: ["**/*"]
+  - from: "python"
+    to: "python"
+    filter: ["**/*.py", "**/*.toml", "**/*.txt"]
+
+# ---------- Windows: ONE installer, creates desktop shortcut, does NOT bundle engines ----------
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  artifactName: ${productName}-Setup-${version}.${ext}
+  signtoolOptions:
+    sign: null
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true        # <-- required
+  createStartMenuShortcut: true
+  shortcutName: Kevrai Studio
+  deleteAppDataOnUninstall: false
+  installerLanguages: ["en_US"]
+  # explicit: we do NOT bundle any engine
+  include: null
+
+# ---------- Linux: portable AppImage + deb ----------
+linux:
+  target:
+    - AppImage
+    - deb
+  category: AudioVideo
+  icon: assets/icons/icon-1024.png
+  desktop:
+    entry:
+      Name: Kevrai Studio
+      Comment: Local AI workstation
+      Categories: AudioVideo;Development;
+
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  category: public.app-category.developer-tools
+  icon: assets/icons/icon-1024.png
+
+# ---------- Common: compression, no publishing (release script handles it) ----------
+compression: normal
+asar: true
+icon: assets/icons/icon.ico
+
+directories:
+  output: build/output
+  buildResources: build
+publish: null

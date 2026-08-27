@@ -1,21 +1,22 @@
-# Python
+node_modules/
+dist/
+build/output/
 __pycache__/
 *.pyc
-*.pyo
 .venv/
 venv/
-
-# 构建产物
-dist/
-build/
-*.spec.bak
-build_log.txt
-
-# 用户数据与临时文件
-*.part
-outputs/
+.python_cache/
+*.egg-info/
+.electron-builder-cache/
+electron/python-dist/
+.DS_Store
+*.log
+.env
+.env.local
+data/
 models/
-
-# IDE
-.idea/
-.vscode/
+engines/
+*.tmp
+.cache/
+.build-cache/
+dist-packages/

@@ -1,0 +1,53 @@
+# Pre-commit configuration — Kevrai Studio
+# Hooks run automatically on `git commit`. Use `pre-commit run --all-files` to run manually.
+# Install: `pip install pre-commit && pre-commit install`.
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        language_version: python3.11
+        args: ["--line-length=110"]
+        files: ^python/.*\.py$
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+        files: ^python/.*\.py$
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        files: ^python/app/.*\.py$
+        args: ["--ignore-missing-imports"]
+        additional_dependencies: []
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^python/.*\.pyc$|\.tmp$
+      - id: end-of-file-fixer
+        exclude: ^python/.*\.pyc$|\.tmp$
+      - id: check-yaml
+        files: \.(yml|yaml)$
+        # electron-builder.yml uses some non-standard tags; keep lax
+        args: ["--unsafe"]
+      - id: check-json
+        files: \.(json|json5)$
+        # package.json has no trailing newline — allow
+        args: ["--no-ensure-ascii=false"]
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+
+  - repo: local
+    hooks:
+      - id: bash-syntax-check
+        name: bash -n (syntax)
+        entry: bash -n
+        language: system
+        files: ^scripts/.*\.sh$
+        types: [shell]
