@@ -57,6 +57,10 @@ def default_cache_root() -> Path:
 class Settings(BaseModel):
     """User settings — schema-versioned for forward-compat."""
 
+    # Fields legitimately start with "model_" (model_dir); opt out of the
+    # pydantic v2 protected namespace warning.
+    model_config = {"protected_namespaces": ()}
+
     schema_version: int = 1
 
     # Filesystem layout

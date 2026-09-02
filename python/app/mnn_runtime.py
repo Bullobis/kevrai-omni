@@ -17,7 +17,6 @@ Thread-safety: one Llm instance at a time; all calls serialize on a lock
 """
 from __future__ import annotations
 
-import asyncio
 import logging
 import os
 import threading
@@ -152,7 +151,6 @@ def chat(prompt: str, history: list[dict[str, str]] | None = None,
     MNN keeps its own context between response() calls, so we simply feed
     the latest user turn through the chat template and generate.
     """
-    global _LLM
     if _LLM is None:
         raise RuntimeError("MNN 模型尚未加载（先调用 load）")
     prompt = str(prompt or "").strip()
@@ -209,7 +207,6 @@ def chat(prompt: str, history: list[dict[str, str]] | None = None,
 # ---------------------------------------------------------------------------
 
 def _require_llm() -> Any:
-    global _LLM
     if _LLM is None:
         raise RuntimeError("MNN 模型尚未加载（先调用 load）")
     return _LLM
@@ -257,7 +254,7 @@ def chat_multimodal(prompt: str, history: list[dict[str, str]] | None = None,
                     images: list[str] | None = None,
                     audios: list[str] | None = None) -> dict[str, Any]:
     """多模态对话：images/audios 为本地文件路径列表，可为空（等价 chat()）。"""
-    llm = _require_llm()
+    _require_llm()
     prompt = str(prompt or "").strip()
     if not prompt and not images and not audios:
         raise ValueError("prompt 不能为空")
@@ -321,7 +318,7 @@ def chat_stream(prompt: str, history: list[dict[str, str]] | None = None,
     finished=True 的最后一段 delta 为空字符串，仅作结束信号；
     调用方负责把 delta 拼成完整回复。全程持有 _LOCK（MNN 非重入）。
     """
-    llm = _require_llm()
+    _require_llm()
     prompt = str(prompt or "").strip()
     if not prompt and not images and not audios:
         raise ValueError("prompt 不能为空")

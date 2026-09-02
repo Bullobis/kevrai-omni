@@ -25,7 +25,7 @@ import uuid
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 from urllib.parse import urlparse
 
 import httpx
@@ -135,6 +135,9 @@ class Downloader:
         chunk_size: int = DEFAULT_CHUNK,
     ) -> None:
         self._sem = asyncio.Semaphore(max_concurrent)
+        # v2.4.1 fix: exposed for main.put_settings concurrency compare —
+        # previously absent, making every PUT /api/settings raise AttributeError.
+        self.max_concurrent = max_concurrent
         self._tasks: dict[str, DownloadTask] = {}
         self._tasks_lock = asyncio.Lock()
         base = allowed_hosts or DEFAULT_MODEL_HOSTS

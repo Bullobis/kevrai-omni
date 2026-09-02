@@ -1,8 +1,6 @@
 """Inference orchestrator — thin proxy to installed engines."""
 from __future__ import annotations
 
-import json
-import os
 import subprocess
 import sys
 from pathlib import Path

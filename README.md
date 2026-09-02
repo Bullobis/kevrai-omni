@@ -6,8 +6,21 @@
 **一个安装包 · 桌面快捷方式 · 引擎按需下载 · 模型从 huggingface.co 一键拉取 · 支持本地导入 · 全部开源**
 
 ![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)
-![Version](https://img.shields.io/badge/version-2.4.1-orange)
-![Tests](https://img.shields.io/badge/tests-317%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-2.4.2-orange)
+![Tests](https://img.shields.io/badge/tests-323%20passed-brightgreen)
+
+---
+
+## ✨ v2.4.2 更新亮点（质量与修复）
+
+| 修复 / 优化 | 说明 |
+|---|---|
+| 🩹 设置保存崩溃修复 | `PUT /api/settings` 引用不存在的 `max_concurrent` 属性导致保存必 500（v2.4.1 起），已修复 |
+| 🔑 HF Token 下发修复 | `SettingsUpdate` 补回 `hf_token` 字段：gated 模型（LTX-2.5）Token 配置链路端到端打通，并有 HTTP 级回归测试 |
+| 🐛 converter NameError 修复 | `sys_executable()` 缺 `import sys`，调用即崩，已修复 |
+| 🧹 负面提示词清零 | 按用户偏好：LTX 生成不再内置负面提示词默认值，界面文本框留空（字段保留可选） |
+| 🧪 死代码清理 | 20+ 处未用导入、xxhash 无效可选导入、多余 global、弃用 utcnow 全部清理，警告 25 → 0 |
+| 📄 INSTALL.md 重写 | 安装包 + 快捷方式 + 按需下载 + gated 指引，替换过期的 v2.2.0 便携包说法 |
 
 ---
 
@@ -32,7 +45,7 @@
 | 🔍 **超级搜索引擎** | 字段加权模糊匹配（名称/ID/标签/引擎/仓库/描述）、拼写纠错（编辑距离 ≤2）、中文 bigram 分词、搜索结果高亮、分面筛选（引擎/许可/体积）、5 种排序、最近搜索、"你是不是要找"建议、键盘导航（`/` 聚焦、↑↓ 选择） |
 | ⚡ **性能优化** | HTTP 响应 GZip 压缩、搜索语料内存缓存、`/api/models` 支持排序与仓库字段检索、`disk_usage` 首跑路径不存在时的健壮回退 |
 | 📦 **目录扩充** | 110 个模型条目（全部补齐 tags 与 modality 标注）、30 个引擎（新增 `ltx-video` 引擎） |
-| 🧪 **测试加固** | 新增 94 个测试（搜索 34 + LTX 运行时 32 + v2.4 API 26），含正则注入、XSS、空字节、超长输入、路径穿越等极端用例；全套 **317 passed / 0 failed** |
+| 🧪 **测试加固** | 新增 94 个测试（搜索 34 + LTX 运行时 32 + v2.4 API 26），含正则注入、XSS、空字节、超长输入、路径穿越等极端用例；全套 **323 passed / 0 failed** |
 
 ---
 
@@ -49,7 +62,7 @@
 | 桌面快捷方式 | 无 | **自动创建桌面 + 开始菜单快捷方式** |
 | GGUF 量化 | 无 | **GGUF 全量化浏览**：仓库内全部 `.gguf` 文件单独下载 |
 | 本地导入 | 无 | 文件夹/文件一键导入，支持拖拽 |
-| 测试 | 无 | **pytest 317 项 + JS 语法冒烟 + 极端输入测试** |
+| 测试 | 无 | **pytest 323 项 + JS 语法冒烟 + 极端输入测试** |
 
 ---
 

@@ -27,14 +27,12 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import (
-    Body,
     FastAPI,
     HTTPException,
     Path as PathParam,
     Request,
     WebSocket,
     WebSocketDisconnect,
-    status,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -43,13 +41,10 @@ from pydantic import BaseModel, Field
 from . import __version__
 from .catalog import (
     Catalog,
-    is_host_allowed,
     load_catalog,
-    DEFAULT_MODEL_HOSTS,
 )
 from .engines import (
     EngineManager,
-    EngineState,
     apply_engine_update,
     check_engine_updates,
     ensure_engine,
@@ -58,14 +53,12 @@ from .engines import (
 )
 from . import engines as engines_module  # re-export
 from .importer import (
-    ImportResult,
     import_local,
     list_gguf_files,
     load_local_registry,
-    save_local_registry,
     snapshot_progress,
 )
-from .downloader import Downloader, DownloadRefused, DownloadTask
+from .downloader import Downloader, DownloadRefused
 from .gpu import detect as detect_gpus
 from . import mnn_catalog as mnn_market
 from . import mnn_runtime
@@ -77,7 +70,6 @@ from .converter import (
     KIND_HF_TO_MLX,
     KIND_ONNX_TO_MNN,
     KIND_TORCH_TO_MNN,
-    KIND_MNN_TO_JSON,
 )
 from .hardware import detect_hardware
 from .recommend import recommend as recommend_models
@@ -85,7 +77,7 @@ from . import drama as drama_agent
 from . import search as search_mod
 from .search import SearchQuery, search as run_search, push_recent as search_push_recent
 from . import ltx_runtime
-from .ltx_runtime import LtxManager, LtxParams, LtxParamError, LtxBusyError, LtxEngineMissing
+from .ltx_runtime import LtxManager, LtxParams, LtxParamError, LtxBusyError
 from .settings import (
     Settings,
     default_data_root,
@@ -275,7 +267,7 @@ async def _request_id_middleware(request: Request, call_next):
     t0 = time.monotonic()
     try:
         response = await call_next(request)
-    except Exception as exc:  # pragma: no cover — propagate
+    except Exception:  # pragma: no cover — propagate
         log.exception("request failed", extra={"path": request.url.path})
         raise
     finally:
@@ -315,7 +307,6 @@ _orig_format = _JsonFormatter.format
 
 def _format_with_rid(self: _JsonFormatter, record: logging.LogRecord) -> str:  # type: ignore[override]
     try:
-        import contextvars as _cv
         rid = _RidToken.get() if hasattr(_RidToken, "get") else ""
         if rid and not getattr(record, "request_id", None):
             record.request_id = rid
@@ -341,6 +332,7 @@ class EnsureEngineReq(BaseModel):
 
 
 class SettingsUpdate(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_dir: str | None = None
     engine_dir: str | None = None
     download_dir: str | None = None
@@ -352,6 +344,7 @@ class SettingsUpdate(BaseModel):
     max_model_size_gb: int | None = None
     allow_custom_blocked_mirrors: bool | None = None
     debug_http_logs: bool | None = None
+    hf_token: str | None = None
 
 
 class DownloadStartReq(BaseModel):
@@ -968,6 +961,7 @@ async def recommend(limit: int = 12, category: str | None = None,
 
 
 class MnnLoadReq(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_dir: str
     model_name: str = ""
 
@@ -1094,7 +1088,6 @@ class MnnDownloadReq(BaseModel):
 
 def _mnn_download_worker(entry: dict[str, Any], dest: Path) -> None:
     """Blocking worker: enumerate files then download each into dest/."""
-    import httpx
 
     _MNN_DL.update({
         "active": True, "status": "running", "error": "",
@@ -1433,6 +1426,7 @@ class DramaScriptReq(BaseModel):
 
 
 class DramaRenderPlanReq(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_choices: dict[str, str] = Field(default_factory=dict)
 
 
@@ -1834,9 +1828,10 @@ def ltx_capabilities(request: Request) -> dict[str, Any]:
 
 
 class LtxGenerateReq(BaseModel):
+    model_config = {"protected_namespaces": ()}  # model_id 字段合法
     mode: str = "t2v"
     prompt: str = Field(min_length=1, max_length=2000)
-    negative_prompt: str = "low quality, blurry, distorted, watermark, text, deformed"
+    negative_prompt: str = ""  # 默认无负面提示词（用户偏好：不内置）
     model_id: str = "Lightricks/LTX-2.5"
     preset: str = "balanced"
     width: int = 768

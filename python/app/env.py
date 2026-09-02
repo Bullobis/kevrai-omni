@@ -18,7 +18,6 @@ engine and reports whether a newer version is known.
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 import shutil
 import subprocess
@@ -180,7 +179,6 @@ def list_pip_packages() -> list[InstalledPackage]:
     pkgs: list[InstalledPackage] = []
     for name, req in REQUIRED_PIP_PACKAGES.items():
         cur = installed.get(name.lower(), "")
-        needs_update = bool(cur) and _is_newer(cur, cur)  # placeholder
         pkgs.append(InstalledPackage(
             name=name, version=cur, required=req, needs_update=False
         ))
