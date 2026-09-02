@@ -1,7 +1,7 @@
 {
-  "version": "2.4.1",
-  "updated": "2026-09-01",
-  "notice": "v2.4.1: 修正 MiniMax H3 / LTX-2.5 / Qwen3.8 条目（仓库地址、2K 开源进展、显存门槛、gated 下载）；引擎更新检测；HF Token 设置。",
+  "version": "2.4.2",
+  "updated": "2026-09-02",
+  "notice": "v2.4.2: 修复设置保存崩溃与 HF Token 下发；代码质量清理；负面提示词默认清空。",
   "categories": [
     {
       "id": "llm",

@@ -20,7 +20,6 @@ loader tries a list of known class names and reports a clear
 """
 from __future__ import annotations
 
-import os
 import threading
 import time
 import uuid
@@ -133,7 +132,7 @@ def _as_strict_int(v: Any, name: str) -> int:
 class LtxParams:
     mode: str = "t2v"                  # t2v | i2v
     prompt: str = ""
-    negative_prompt: str = "low quality, blurry, distorted, watermark, text, deformed"
+    negative_prompt: str = ""  # 默认无负面提示词（用户偏好：不内置）
     model_id: str = "Lightricks/LTX-2.5"
     preset: str = "balanced"
     width: int = 768

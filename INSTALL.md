@@ -1,43 +1,62 @@
-# Install — Kevrai Omni v2.2.0
+# Install — Kevrai Omni v2.4.1
 
-## 普通用户：选你的平台
+Kevrai Omni 采用**标准安装包**交付（不是解压即用的便携包）：安装后自动创建桌面快捷方式，
+推理引擎与模型不随安装包分发，首次使用时在软件内按需下载（已存在自动跳过，可检查更新）。
 
-| 平台 | 下载 | 安装 |
-|------|------|------|
-| **Linux x64** | `Kevrai-Omni-2.2.0-linux-x64-portable.tar.gz` | `tar -xzf Kevrai-Omni-2.2.0-linux-x64-portable.tar.gz && cd Kevrai-Omni-2.2.0-linux-x64 && ./run.sh` |
-| **Windows x64** | `Kevrai-Omni-2.2.0-win32-x64-portable.zip` | 解压到任意目录 → 双击 `run.bat`；想加桌面快捷方式 → 双击 `install-shortcut.bat` |
+## Windows（推荐，面向普通用户）
 
-> **首次启动**：软件会自动用阿里云 PyPI 镜像装 Python 依赖。引擎和模型**按需下载**——在"环境管理"页或"模型市场"点下载即用。
+1. 到 [Releases](https://github.com/Bullobis/kevrai-omni/releases) 下载 `Kevrai-Omni-Setup-2.4.1.exe`
+2. 双击安装 → 桌面自动出现 **Kevrai Omni** 快捷方式（也可在设置中改变安装目录）
+3. 双击快捷方式启动，首次会显示「三步上手」引导
 
-## 首次启动小贴士
+## Linux
 
-1. 打开 **设置 → 下载源**，勾选你所在网络快可达的镜像（默认含阿里云/清华/HF-Mirror 等）。
-2. 点 **"测速全部镜像"** 让软件测一下，UI 会按延迟+吞吐排好序。
-3. 在 **环境管理** 页检查 Python / GPU / 磁盘 / 引擎状态。
-4. 在 **模型市场** 浏览 62 个模型，每个都自带多镜像；点下载就自动选最快源。
+| 形态 | 文件 | 使用方式 |
+|---|---|---|
+| AppImage | `Kevrai-Omni-2.4.1-x86_64.AppImage` | `chmod +x` 后双击或命令行运行 |
+| deb | `kevrai-omni_2.4.1_amd64.deb` | `sudo apt install ./kevrai-omni_2.4.1_amd64.deb` |
 
-## Developer: 从源码构建
+deb 安装会写入桌面项与开始菜单项；AppImage 无需安装。
+
+## macOS
+
+下载 `Kevrai-Omni-2.4.1.dmg`（x64 / arm64 两版），拖入 Applications。
+内部构建未签名，首次打开请在「系统设置 → 隐私与安全性」中允许。
+
+## 三步上手
+
+1. **安装引擎**：「AI 引擎」页选择引擎（如 llama.cpp、MNN）点安装。引擎下载到
+   `AppData/KevraiOmni/engines/`（Windows），已安装会提示并跳过；「检查引擎更新」
+   可查询新版本并一键更新。
+2. **下载模型**：「模型市场」搜索并安装模型（支持模糊搜索与中文搜索）；GGUF 模型可在
+   详情页按量化档位单独下载；本地已有模型文件可直接拖入窗口导入。
+3. **开始生成**：对话（llama.cpp / MNN）、图片、视频（LTX-2.5）、音频、3D —— 选模型、
+   输提示词、点生成。
+
+## gated（受控访问）模型
+
+LTX-2.5 等部分仓库为 HuggingFace gated 仓库：
+
+1. 先在 HuggingFace 对应仓库页面登录并接受许可协议（申请获批后生效）
+2. 在 Kevrai Omni「设置 → HuggingFace Token」填入你的 Token（仅保存在本机）
+3. 之后即可正常下载；未配置 Token 时软件会给出明确提示
+
+## 从源码构建（开发者）
 
 ```bash
-# 要求：Python 3.11+ · Node 22+ · npm 10+
-tar -xzf kevrai-studio-2.2.0-source.tar.gz
-cd kevrai-studio-2.2.0
-npm install
-pip install -i https://mirrors.aliyun.com/pypi/simple/ -r python/requirements.txt
-bash scripts/smoke.sh     # 9 步验证
-cd python && pytest -ra   # 195 tests
+git clone https://github.com/Bullobis/kevrai-omni.git
+cd kevrai-omni
+npm ci
+npm run test:js          # JS 语法冒烟
+cd python && pip install -e ".[dev]" && python -m pytest -q tests/ && cd ..
+npm run build:win        # 产出 NSIS 安装包（需 Windows；Linux 下可用 wine，见 scripts/build_linux.sh）
 ```
 
-要打单文件 Windows 安装包（需要 Windows + Wine 或在 Windows 上跑）：
+## 卸载
 
-```bash
-bash scripts/build_windows.sh   # 产物在 dist/
-bash scripts/release.sh         # 推到 GitHub Releases
-```
+Windows 通过「设置 → 应用」卸载；默认保留 `AppData/KevraiOmni/` 中已下载的引擎与模型
+（重装后自动识别、无需重新下载）。如需彻底清理，手动删除该目录即可。
 
-## 故障排查
+## 许可
 
-- **白屏/启动失败**：日志在 `~/.local/share/KevraiOmni/logs/main.log`（Linux/macOS）或 `%APPDATA%\KevraiOmni\logs\main.log`（Windows）。
-- **下载慢**：到"环境管理 → 下载源"重新测速，或在设置里换镜像。
-- **GPU 检测不到**：先在系统装好 NVIDIA / AMD 驱动，再重启软件。
-- **Python 依赖装不上**：手动跑 `pip install -i https://mirrors.aliyun.com/pypi/simple/ -r python/requirements.txt`。
+CC BY-NC-SA 4.0 — 可自由使用、分享、改编，**禁止商用**。

@@ -20,13 +20,7 @@ import shutil
 import threading
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Literal
-
-try:
-    import xxhash  # type: ignore
-    _HAS_XXHASH = True
-except ImportError:  # pragma: no cover — optional dep
-    _HAS_XXHASH = False
+from typing import Any, Literal
 
 CHUNK_SIZE = 1 << 20  # 1 MiB
 
@@ -324,7 +318,7 @@ def _import_local_impl(
 
 def _now_iso() -> str:
     import datetime
-    return datetime.datetime.utcnow().isoformat() + "Z"
+    return datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 # ---------------------------------------------------------------------------
@@ -397,8 +391,6 @@ def snapshot_progress() -> list[dict[str, Any]]:
 
 from .catalog import (  # noqa: E402  — keep at bottom to preserve ordering
     DEFAULT_MODEL_HOSTS,
-    GGUFRepoEntry,
-    ModelEntry,
     is_host_allowed,
 )
 
