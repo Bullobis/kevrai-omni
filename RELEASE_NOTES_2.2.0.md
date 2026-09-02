@@ -1,4 +1,4 @@
-# Kevrai Studio v2.2.0 — Release Notes
+# Kevrai Omni v2.2.0 — Release Notes
 
 发布日期：2026-08-21
 
@@ -99,4 +99,4 @@
 - 模型/引擎请求：开 issue 标 `catalog-request`。
 - 性能问题：附 `python -m cProfile` 输出 + GPU 型号。
 
-— Kevrai Studio Contributors
+— Kevrai Omni Contributors

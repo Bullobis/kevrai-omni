@@ -252,9 +252,11 @@ function renderDetail(m, gguf) {
         ${m.license ? `<span class="pill">${escapeHtml(m.license)}</span>` : ""}
         ${m.category ? `<span class="pill">${escapeHtml(m.category)}</span>` : ""}
         ${engines.includes("mnn") ? `<span class="pill ok">MNN 可选</span>` : ""}
+        ${m.gated ? `<span class="pill warn">gated 受控访问</span>` : ""}
       </div>
     </header>
     <p class="card-desc">${escapeHtml(m.description || "")}</p>
+    ${m.gated ? `<p class="hint">ⓘ 该仓库为 gated（受控访问）：先在 HuggingFace 仓库页面接受许可协议，再到「设置」填入你的 HF Token，然后才能下载。</p>` : ""}
 
     ${m.repo ? `<p>
       <button class="secondary small" data-action="open-external"

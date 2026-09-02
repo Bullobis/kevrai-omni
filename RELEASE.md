@@ -1,4 +1,4 @@
-﻿# Release Runbook — Kevrai Studio v1.0.0
+﻿# Release Runbook — Kevrai Omni v1.0.0
 
 ## ⚠️ 第一件事：轮换 token
 
@@ -35,8 +35,8 @@ bash scripts/release.sh
 ```bash
 gh release view v1.0.0 --repo $REPO
 # 应该看到：
-#   Kevrai Studio-Setup-1.0.0.exe
-#   Kevrai Studio-1.0.0-x86_64.AppImage
+#   Kevrai Omni-Setup-1.0.0.exe
+#   Kevrai Omni-1.0.0-x86_64.AppImage
 #   kevrai-studio_1.0.0_amd64.deb
 ```
 

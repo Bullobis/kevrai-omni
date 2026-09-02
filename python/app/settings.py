@@ -19,7 +19,7 @@ HardwareAccel = Literal["auto", "nvidia", "amd", "apple", "ascend", "cpu"]
 
 
 def default_data_root() -> Path:
-    """Return the per-platform user data directory for Kevrai Studio."""
+    """Return the per-platform user data directory for Kevrai Omni."""
     if sys.platform.startswith("win"):
         base = Path(os.environ.get("APPDATA") or os.environ.get("LOCALAPPDATA") or Path.home())
     elif sys.platform == "darwin":
@@ -95,6 +95,11 @@ class Settings(BaseModel):
     ])
     # auto_pick enabled by default; user can disable to always use primary_url
     auto_pick_best_source: bool = True
+
+    # HuggingFace token — required for gated repos (e.g. Lightricks/LTX-2.5).
+    # The user must also accept the model's license agreement on the HF repo
+    # page; the token alone is not sufficient for gated access.
+    hf_token: str = ""
 
     # Anything else, key-by-key
     extra: dict[str, Any] = Field(default_factory=dict)

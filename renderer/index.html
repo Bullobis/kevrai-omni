@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="color-scheme" content="dark light" />
   <meta name="referrer" content="no-referrer" />
-  <title>Kevrai Studio</title>
+  <title>Kevrai Omni</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="styles/generation-wait.css" />
 </head>
@@ -18,9 +18,9 @@
 
   <header class="titlebar" role="banner">
     <div class="brand">
-      <img class="logo" src="../assets/icons/icon-256.png" width="28" height="28" alt="Kevrai Studio" id="brand-logo" />
+      <img class="logo" src="../assets/icons/icon-256.png" width="28" height="28" alt="Kevrai Omni" id="brand-logo" />
       <span id="logo-fallback" class="logo-fallback" aria-hidden="true" hidden>◈</span>
-      <h1 class="title">Kevrai Studio</h1>
+      <h1 class="title">Kevrai Omni</h1>
       <p class="subtitle">local AI workstation · LLM · TTS · Image · Video · 3D · Audio · SR · MNN</p>
     </div>
     <div class="header-actions">
@@ -116,7 +116,11 @@
 
       <!-- Engines pane -->
       <section id="pane-engines" class="pane" aria-label="AI 引擎">
-        <p class="hint">首次安装某类模型时会提示安装对应引擎；也可在此手动预装。引擎按需下载到本地。</p>
+        <p class="hint">首次安装某类模型时会提示安装对应引擎；也可在此手动预装。引擎按需下载到本地，已安装会自动跳过；安装后可检查官方新版本。</p>
+        <div class="engine-toolbar">
+          <button id="btn-engines-check-updates" class="secondary">检查引擎更新</button>
+          <span id="engines-update-hint" class="mut tiny" aria-live="polite"></span>
+        </div>
         <div class="engine-grid" aria-live="polite"></div>
       </section>
 
@@ -133,7 +137,7 @@
 
       <!-- GGUF pane -->
       <section id="pane-gguf" class="pane" aria-label="GGUF 仓库">
-        <p class="hint">列出所有 GGUF 文件。每个文件都可以在 Kevrai Studio 中单独下载，由 llama.cpp 或 MNN 加载。</p>
+        <p class="hint">列出所有 GGUF 文件。每个文件都可以在 Kevrai Omni 中单独下载，由 llama.cpp 或 MNN 加载。</p>
         <div id="gguf-repos" class="list"></div>
       </section>
 
@@ -270,6 +274,35 @@
   </div>
 
   <!-- Settings overlay -->
+  <!-- First-run onboarding (v2.4.1): 三步上手，看完即关 -->
+  <div id="onboarding-overlay" class="overlay" role="dialog" aria-modal="true"
+       aria-labelledby="onboarding-title" hidden aria-hidden="false">
+    <div class="overlay-card onboarding-card" role="document">
+      <header>
+        <h2 id="onboarding-title">欢迎使用 Kevrai Omni，三步上手</h2>
+      </header>
+      <ol class="onboarding-steps">
+        <li>
+          <strong>① 安装引擎</strong>
+          <span>打开「AI 引擎」页，安装你要用的引擎（如 llama.cpp）。引擎按需下载，装过会自动跳过。</span>
+        </li>
+        <li>
+          <strong>② 下载模型</strong>
+          <span>在「模型市场」搜索并安装模型（如 Qwen3.8 GGUF）。也可以把硬盘里的模型文件直接拖进来。</span>
+        </li>
+        <li>
+          <strong>③ 输入提示词，开始生成</strong>
+          <span>对话、画图、做视频：选模型 → 输提示词 → 点生成。就这么简单。</span>
+        </li>
+      </ol>
+      <footer class="overlay-foot">
+        <span class="mut tiny">带 ⓘ 的模型为 gated（受控访问），下载前需在「设置」填入 HF Token。</span>
+        <span class="spacer"></span>
+        <button class="primary" data-action="close-onboarding">开始使用</button>
+      </footer>
+    </div>
+  </div>
+
   <div id="settings-overlay" class="overlay" role="dialog" aria-modal="true"
        aria-labelledby="settings-title" hidden aria-hidden="true">
     <div class="overlay-card" role="document">
@@ -321,6 +354,11 @@
           <span>白名单（逗号分隔）</span>
           <input id="set-allowlist" type="text" placeholder="huggingface.co, github.com" />
           <span class="mut tiny" id="set-allowlist-hint">默认：huggingface.co, github.com</span>
+        </label>
+        <label class="field">
+          <span>HuggingFace Token（可选）</span>
+          <input id="set-hf-token" type="password" autocomplete="off" placeholder="hf_xxxxxxxx" />
+          <span class="mut tiny">仅 gated（受控访问）模型需要，如 LTX-2.5：须先在 HuggingFace 仓库页面接受许可协议，再在此填入你的 Token。仅保存在本机。</span>
         </label>
       </div>
       <footer class="overlay-foot">

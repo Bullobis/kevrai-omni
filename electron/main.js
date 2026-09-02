@@ -1,6 +1,6 @@
 "use strict";
 /**
- * Kevrai Studio — Electron main process (hardened).
+ * Kevrai Omni — Electron main process (hardened).
  *
  * Responsibilities:
  *   - Create the desktop window with strict CSP & locked-down webPreferences.
@@ -132,6 +132,7 @@ const DEFAULT_SETTINGS = {
   allowlist: [...ALLOW_DEFAULT],
   modelDir: "",
   engineDir: "",
+  hfToken: "",                // v2.4.1 — HuggingFace token for gated repos
 };
 
 function loadSettingsSync() {
@@ -289,7 +290,7 @@ function createWindow() {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
-    title: "Kevrai Studio",
+    title: "Kevrai Omni",
     // PNG works from inside the asar archive on every platform (.ico does not).
     icon: path.join(__dirname, "..", "assets", "icons", "icon-256.png"),
     backgroundColor: "#0b1020",
@@ -412,6 +413,15 @@ function registerIpc() {
   ipcMain.handle("api:engines:install", async (_e, engine_id) => {
     assert(isString(engine_id, 128), "engine_id: invalid");
     return sidecarFetch("/api/engines/install", { method: "POST", body: { engine_id } });
+  });
+  // v2.4.1 — engine update detection / one-click update
+  ipcMain.handle("api:engines:check-updates", async (_e, opts) => {
+    const force = !!(opts && opts.force);
+    return sidecarFetch("/api/engines/check-updates", { method: "POST", body: { force } });
+  });
+  ipcMain.handle("api:engines:update", async (_e, engine_id) => {
+    assert(isString(engine_id, 128), "engine_id: invalid");
+    return sidecarFetch("/api/engines/update", { method: "POST", body: { engine_id } });
   });
   ipcMain.handle("api:models:import", async (_e, p) => {
     assert(isString(p, 4096), "path: invalid");
@@ -697,6 +707,9 @@ function registerIpc() {
       assert(/^[0-9a-fA-F]{64}$/.test(o.sha256), "download.sha256: must be hex");
       body.sha256 = o.sha256;
     }
+    // v2.4.1 — gated repos (e.g. LTX-2.5) require the sidecar to attach the
+    // user's HF bearer token; the flag is forwarded as-is.
+    body.gated = !!o.gated;
     let r;
     try {
       r = await sidecarFetch("/api/download/start", { method: "POST", body });
@@ -838,7 +851,7 @@ async function bootstrap() {
   } catch (e) {
     logError("sidecar NOT ready:", e.message);
     dialog.showErrorBox(
-      "Kevrai Studio — Python sidecar failed to start",
+      "Kevrai Omni — Python sidecar failed to start",
       `The Python inference sidecar could not be reached on http://${SIDECAR_HOST}:${SIDECAR_PORT}.\n\n` +
         `Reason: ${e.message}\n\n` +
         `Fix: install Python 3.10+ and the deps in python/pyproject.toml ` +

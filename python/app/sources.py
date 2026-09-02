@@ -80,7 +80,7 @@ async def _probe_one(client: httpx.AsyncClient, url: str) -> SourceProbe:
         req = client.build_request(
             "GET", url,
             headers={"Range": f"bytes=0-{PROBE_RANGE - 1}",
-                     "User-Agent": "kevrai-studio/2.3.0"},
+                     "User-Agent": "kevrai-omni/2.4.1"},
         )
         resp = await client.send(req, follow_redirects=True)
         # Stream a fixed-size body

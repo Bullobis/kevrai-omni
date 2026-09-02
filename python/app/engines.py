@@ -571,9 +571,11 @@ def list_engines_status(
     root: Path,
 ) -> list[dict[str, Any]]:
     status = load_status(root)
+    manifest = {r.id: r for r in _read_manifest(root)}
     out: list[dict[str, Any]] = []
     for eid, eng in engines.items():
         st = status.get(eid, {})
+        rec = manifest.get(eid)
         out.append({
             "id": eid,
             "name": eng.get("name", eid),
@@ -582,8 +584,211 @@ def list_engines_status(
             "license": eng.get("license", ""),
             "size_mb": eng.get("size_mb", 0),
             "trending": eng.get("trending", False),
-            "installed": bool(st.get("ok")),
-            "install_path": st.get("path", ""),
+            "installed": bool(st.get("ok"))
+            or (rec is not None and rec.state == EngineState.INSTALLED),
+            "version": rec.version if rec else "",
+            "install_path": st.get("path", "") or (rec.install_path if rec else ""),
             "message": st.get("message", ""),
         })
     return out
+
+
+# ---------------------------------------------------------------------------
+# v2.4.1 — engine update detection
+# ---------------------------------------------------------------------------
+# "已存在则跳过" was already idempotent; this adds the missing half: telling
+# the user a NEWER release exists and offering a one-click reinstall.
+# GitHub releases only (binary engines). pip engines are re-installed
+# in-place (pip resolves the latest version on reinstall).
+
+UPDATE_CACHE_TTL_SECONDS = 6 * 3600  # avoid hammering the GitHub API
+
+# Asset-name keywords per platform (case-insensitive).
+_ASSET_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "windows-x64": ("win",),
+    "linux-x64": ("linux",),
+    "darwin-arm64": ("macos", "darwin", "osx", "arm"),
+    "darwin-x64": ("macos", "darwin", "osx"),
+}
+
+
+def _update_cache_path(root: Path) -> Path:
+    return engine_install_dir(root) / "update-check.json"
+
+
+def load_update_cache(root: Path) -> dict[str, Any]:
+    p = _update_cache_path(root)
+    if not p.exists():
+        return {}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def save_update_cache(root: Path, cache: dict[str, Any]) -> None:
+    p = _update_cache_path(root)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_suffix(".tmp")
+    tmp.write_text(json.dumps(cache, indent=2, ensure_ascii=False), encoding="utf-8")
+    os.replace(tmp, p)
+
+
+def _pick_release_asset(assets: list[dict[str, Any]], platform: str) -> str:
+    """Pick the best release asset URL for the current platform."""
+    kws = _ASSET_KEYWORDS.get(platform, ())
+    cands = []
+    for a in assets or []:
+        name = str(a.get("name", "")).lower()
+        url = str(a.get("browser_download_url", "") or "")
+        if not url:
+            continue
+        if kws and not any(k in name for k in kws):
+            continue
+        cands.append((name, url))
+    if not cands:
+        return ""
+    # Prefer archives we can extract.
+    for name, url in cands:
+        if name.endswith(".zip"):
+            return url
+    return cands[0][1]
+
+
+async def check_engine_updates(
+    root: Path,
+    engines_catalog: dict[str, Any],
+    *,
+    force: bool = False,
+    client: "httpx.AsyncClient | None" = None,
+) -> list[dict[str, Any]]:
+    """Check GitHub for newer releases of installed binary engines.
+
+    Results are cached for UPDATE_CACHE_TTL_SECONDS unless `force` is set.
+    Never raises on network errors — each engine gets an `error` entry instead.
+    """
+    import time as _time
+
+    mgr = EngineManager(root)
+    cache = load_update_cache(root)
+    results: list[dict[str, Any]] = []
+    plat = _platform_key()
+
+    own_client = client is None
+    cli = client or httpx.AsyncClient(
+        timeout=15.0, headers={"User-Agent": "kevrai-omni/2.4.1",
+                               "Accept": "application/vnd.github+json"},
+    )
+    try:
+        for eid, entry in engines_catalog.items():
+            rec = mgr.get(eid)
+            gh = str(entry.get("github", "") or "")
+            if rec is None or rec.state != EngineState.INSTALLED or not gh:
+                continue
+            cached = cache.get(eid) or {}
+            age = _time.time() - float(cached.get("checked_at", 0) or 0)
+            if cached and not force and age < UPDATE_CACHE_TTL_SECONDS:
+                results.append({
+                    "engine_id": eid,
+                    "current_version": rec.version,
+                    "latest_tag": cached.get("latest_tag", ""),
+                    "asset_url": cached.get("asset_url", ""),
+                    "update_available": bool(
+                        cached.get("latest_tag")
+                        ) and cached.get("latest_tag") != rec.version,
+                    "from_cache": True,
+                })
+                continue
+            try:
+                r = await cli.get(f"https://api.github.com/repos/{gh}/releases/latest")
+                if r.status_code != 200:
+                    results.append({
+                        "engine_id": eid,
+                        "error": f"github api http {r.status_code}",
+                    })
+                    continue
+                data = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
+                tag = str(data.get("tag_name", "") or "")
+                asset_url = _pick_release_asset(data.get("assets", []), plat)
+                cache[eid] = {
+                    "latest_tag": tag,
+                    "asset_url": asset_url,
+                    "checked_at": _time.time(),
+                }
+                current = rec.version
+                update_available = bool(tag) and tag != current
+                if tag and not current:
+                    # Fresh install via releases/latest: stamp baseline tag.
+                    rec.version = tag
+                    mgr._upsert(rec)
+                    update_available = False
+                results.append({
+                    "engine_id": eid,
+                    "current_version": rec.version,
+                    "latest_tag": tag,
+                    "asset_url": asset_url,
+                    "update_available": update_available,
+                    "from_cache": False,
+                })
+            except Exception as e:  # noqa: BLE001 — network errors are per-engine
+                results.append({"engine_id": eid, "error": str(e)[:200]})
+    finally:
+        if own_client:
+            await cli.aclose()
+    save_update_cache(root, cache)
+    return results
+
+
+def apply_engine_update(
+    engine_id: str,
+    engines_catalog: dict[str, Any],
+    root: Path,
+) -> InstallResult:
+    """Reinstall an engine from the newest known release.
+
+    Uses the cached latest-release asset URL when available; otherwise falls
+    back to the catalog platform URL (which for most engines already points at
+    `releases/latest/download/...`). pip engines are reinstalled in place.
+    """
+    entry = engines_catalog.get(engine_id)
+    if not entry:
+        return InstallResult(engine_id=engine_id, path="", ok=False,
+                             message="engine not in catalog")
+    if entry.get("install") == "pip" and entry.get("pypi"):
+        res = install_pip_engine(entry["pypi"], root)
+        return res
+
+    cache = load_update_cache(root)
+    info = cache.get(engine_id) or {}
+    url = str(info.get("asset_url") or "")
+    if not url:
+        url = str((entry.get("platforms") or {}).get(_platform_key(), "") or "")
+    if not url:
+        return InstallResult(engine_id=engine_id, path="", ok=False,
+                             message="no download url for current platform")
+
+    mgr = EngineManager(root)
+    try:
+        rec = mgr.install(engine_id, url, unzip=True)
+    except Exception as e:  # noqa: BLE001
+        return InstallResult(engine_id=engine_id, path="", ok=False,
+                             message=f"update failed: {e}")
+    # Stamp the release tag so the next update check compares against it.
+    tag = str(info.get("latest_tag") or "")
+    if tag and rec is not None:
+        rec.version = tag
+        mgr._upsert(rec)
+    status = load_status(root)
+    status[engine_id] = {
+        "ok": rec is not None and rec.state == EngineState.INSTALLED,
+        "path": rec.install_path if rec else "",
+        "message": f"updated to {tag}" if tag else "reinstalled",
+    }
+    save_status(root, status)
+    return InstallResult(
+        engine_id=engine_id,
+        path=rec.install_path if rec else "",
+        ok=rec is not None and rec.state == EngineState.INSTALLED,
+        message=f"updated to {tag}" if tag else "reinstalled",
+    )

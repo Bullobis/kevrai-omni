@@ -56,6 +56,15 @@ function renderCapabilities() {
   sel.innerHTML = cap.presets.map((p) =>
     `<option value="${p.id}">${p.label}</option>`).join("");
   sel.value = "balanced";
+  // v2.4.1 — surface the official 16GB minimum: presets below it are
+  // experimental (distilled weights only) and must say so next to the select.
+  let note = document.getElementById("ltx-preset-note");
+  if (!note) {
+    note = document.createElement("span");
+    note.id = "ltx-preset-note";
+    note.className = "mut tiny";
+    sel.insertAdjacentElement("afterend", note);
+  }
   applyPreset();
   // Install hint
   const hint = document.getElementById("ltx-install-hint");
@@ -80,6 +89,11 @@ function applyPreset() {
   document.getElementById("ltx-frames").value = p.num_frames;
   document.getElementById("ltx-steps").value = p.num_inference_steps;
   document.getElementById("ltx-cfg").value = p.guidance_scale;
+  const note = document.getElementById("ltx-preset-note");
+  if (note) {
+    note.textContent = p.note || "";
+    note.style.color = (p.vram_gb < 16) ? "var(--warn, #b98200)" : "";
+  }
 }
 
 function toggleMode() {

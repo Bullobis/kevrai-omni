@@ -1,8 +1,8 @@
-﻿# Security Policy — Kevrai Studio
+﻿# Security Policy — Kevrai Omni
 
 ## TL;DR
 
-Kevrai Studio **never** downloads models or engines from `hf-cdn.sufy.com` or any
+Kevrai Omni **never** downloads models or engines from `hf-cdn.sufy.com` or any
 non-allowlisted mirror. This is enforced in code, not in the UI, at three
 layers (schema parse, Pydantic field validator, runtime URL gate).
 
@@ -139,7 +139,7 @@ disclosure is necessary to protect users.
 
 ## CVE / responsible disclosure
 
-Kevrai Studio follows the
+Kevrai Omni follows the
 [CVE Numbering Authority](https://www.cve.org/) process. Reported issues
 that meet the criteria are assigned a CVE and credited in the release
 notes once patched.

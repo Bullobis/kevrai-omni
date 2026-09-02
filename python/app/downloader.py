@@ -1,4 +1,4 @@
-"""Resumable streaming downloads for Kevrai Studio.
+"""Resumable streaming downloads for Kevrai Omni.
 
 Design goals:
     * Stream to a `.partial` sibling, fsync, then atomic-rename on success.
@@ -91,6 +91,9 @@ class DownloadTask:
     cancel_event: asyncio.Event = field(default_factory=asyncio.Event)
     speed_bps: float = 0.0
     final_sha256: str | None = None
+    # Extra request headers (e.g. Authorization for gated HF repos).
+    # Never serialized into snapshots — tokens must not leak to the UI/logs.
+    extra_headers: dict[str, str] = field(default_factory=dict, repr=False)
 
     def snapshot(self) -> dict[str, Any]:
         return {
@@ -151,8 +154,13 @@ class Downloader:
         url: str,
         dest: str | os.PathLike[str],
         sha256: str | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> str:
         """Start a new download. Returns the task_id.
+
+        `extra_headers` are sent with every request for this task (used for
+        e.g. `Authorization: Bearer <hf_token>` on gated HuggingFace repos).
+        Headers are never echoed into progress snapshots.
 
         Raises `DownloadRefused` only for unsupported scheme / missing host.
         Raises `FileExistsError` if the destination already exists.
@@ -170,6 +178,7 @@ class Downloader:
             dest_path=str(dest_path),
             expected_sha256=sha256,
             started_at=time.time(),
+            extra_headers=dict(extra_headers or {}),
         )
         async with self._tasks_lock:
             self._tasks[task.id] = task
@@ -306,6 +315,11 @@ class Downloader:
         headers: dict[str, str] = {}
         if resume_from > 0:
             headers["Range"] = f"bytes={resume_from}-"
+        # Task-level headers (e.g. gated-repo Authorization). Range wins on
+        # conflict — it is resume-critical.
+        for k, v in (task.extra_headers or {}).items():
+            if k.lower() != "range" and v:
+                headers[k] = v
         client = await self._get_client()
         async with client.stream("GET", task.url, headers=headers) as r:
             r.raise_for_status()

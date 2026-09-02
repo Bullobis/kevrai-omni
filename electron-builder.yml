@@ -1,6 +1,6 @@
 appId: io.github.kevrai.studio
-productName: Kevrai Studio
-copyright: Copyright © 2026 Kevrai Studio contributors. Licensed under CC BY-NC-SA 4.0.
+productName: Kevrai Omni
+copyright: Copyright © 2026 Kevrai Omni contributors. Licensed under CC BY-NC-SA 4.0.
 artifactName: ${productName}-${version}-${arch}.${ext}
 files:
   - "electron/**/*"
@@ -32,7 +32,7 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true        # <-- required
   createStartMenuShortcut: true
-  shortcutName: Kevrai Studio
+  shortcutName: Kevrai Omni
   deleteAppDataOnUninstall: false
   installerLanguages: ["en_US"]
   # explicit: we do NOT bundle any engine
@@ -47,7 +47,7 @@ linux:
   icon: assets/icons/icon-1024.png
   desktop:
     entry:
-      Name: Kevrai Studio
+      Name: Kevrai Omni
       Comment: Local AI workstation
       Categories: AudioVideo;Development;
 

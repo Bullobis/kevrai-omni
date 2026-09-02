@@ -70,7 +70,7 @@ def _http_url() -> dict[str, Any]:
 
 MODEL_SCHEMA: dict[str, Any] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "title": "Kevrai Studio — model catalog",
+    "title": "Kevrai Omni — model catalog",
     "type": "object",
     "required": ["version", "models"],
     "additionalProperties": True,
@@ -158,7 +158,7 @@ MODEL_SCHEMA: dict[str, Any] = {
 
 ENGINE_SCHEMA: dict[str, Any] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "title": "Kevrai Studio — engine catalog",
+    "title": "Kevrai Omni — engine catalog",
     "type": "object",
     "required": ["version", "engines"],
     "additionalProperties": True,
