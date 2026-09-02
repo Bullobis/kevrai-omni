@@ -117,13 +117,17 @@ function renderOverlay() {
   overlayEl.removeAttribute("hidden");
 }
 
-export async function startDownloadFromUrl(url) {
+export async function startDownloadFromUrl(url, opts) {
   let parsed;
   try { parsed = new URL(url); } catch (_) { throw new Error("URL 不合法"); }
   if (parsed.protocol !== "https:") throw new Error("仅支持 https 链接");
   const dest = parsed.pathname.split("/").pop() || "download.bin";
   try {
-    const r = await api.startDownload({ url, dest_filename: dest });
+    // v2.4.1 — gated repos (e.g. LTX-2.5): sidecar attaches the user's HF
+    // token and returns a friendly 422 when it's missing.
+    const body = { url, dest_filename: dest };
+    if (opts && opts.gated) body.gated = true;
+    const r = await api.startDownload(body);
     if (r && r.taskId) {
       state.downloads[r.taskId] = { taskId: r.taskId, filename: dest, downloaded: 0, total: 0, status: "queued" };
       setState({ downloads: { ...state.downloads } });

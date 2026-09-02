@@ -1,4 +1,4 @@
-"""Environment / dependency / engine management for Kevrai Studio.
+"""Environment / dependency / engine management for Kevrai Omni.
 
 This module is the on-demand "download anything you need from the app" page.
 It detects what is already installed locally and reports the gaps so the UI

@@ -1,4 +1,4 @@
-"""Model format converter for Kevrai Studio.
+"""Model format converter for Kevrai Omni.
 
 Some engines only accept a specific format.  The converter turns models
 downloaded from HuggingFace (safetensors / ONNX / TorchScript) into a

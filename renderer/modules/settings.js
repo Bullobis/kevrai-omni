@@ -49,6 +49,7 @@ function fillForm(s) {
   $("#set-allowlist-hint").textContent = s.allowlistAdvanced
     ? "Editing host allowlist affects future downloads."
     : "Advanced editing is disabled. Enable above to modify.";
+  if ($("#set-hf-token")) $("#set-hf-token").value = s.hfToken || "";
 }
 
 function trapFocus(root) {

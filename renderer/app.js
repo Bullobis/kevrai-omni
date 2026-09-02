@@ -1,6 +1,6 @@
 "use strict";
 /**
- * Kevrai Studio — renderer entry.
+ * Kevrai Omni — renderer entry.
  *
  * Talks only to `window.kevrai` (preload bridge).
  * Coordinates the modules under renderer/modules/.
@@ -18,10 +18,11 @@ import { initModels, renderModelGrid, populateCategoryFilter,
          wireModelGrid, getVgrid } from "./modules/models.js";
 import { initSearch, runSearch } from "./modules/search.js";
 import { initLtx } from "./modules/ltx.js";
-import { renderEngines } from "./modules/engines.js";
+import { renderEngines, wireEngineUpdates } from "./modules/engines.js";
 import { wireSettings, openSettings, closeSettings } from "./modules/settings.js";
 import { wireDownloads, showDownloads } from "./modules/downloads.js";
 import { wireDragDrop } from "./modules/dragdrop.js";
+import { wireOnboarding } from "./modules/onboarding.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));

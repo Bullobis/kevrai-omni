@@ -1,4 +1,4 @@
-﻿# Kevrai Studio
+﻿# Kevrai Omni
 
 > 一站式本地 AI 工作站：LLM · 多模态大模型 · TTS · **LTX-2.5 视频生成** · 图像生成 · 超分辨率 · 音频生成 · 3D 生成
 > One-stop local AI workstation: LLM, multimodal LLM, TTS, **LTX-2.5 video gen**, image gen, super-resolution, audio gen, 3D gen.
@@ -6,8 +6,21 @@
 **一个安装包 · 桌面快捷方式 · 引擎按需下载 · 模型从 huggingface.co 一键拉取 · 支持本地导入 · 全部开源**
 
 ![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)
-![Version](https://img.shields.io/badge/version-2.4.0-orange)
-![Tests](https://img.shields.io/badge/tests-303%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-2.4.1-orange)
+![Tests](https://img.shields.io/badge/tests-317%20passed-brightgreen)
+
+---
+
+## ✨ v2.4.1 更新亮点（修复优化版）
+
+| 修复 / 优化 | 说明 |
+|---|---|
+| 📌 目录事实修正 | 修正不存在的 `MiniMaxAI/Hailuo-H3` 仓库（改为 `Comfy-Org/MiniMax-H3` 官方重打包 + `MiniMaxAI/MiniMax-H3` 官方权重双条目）；MiniMax 2K 进展更新至 2026-08-07 官方 AMA 承诺；LTX-2.5 显存门槛修正为官方最低 16GB、许可修正为 LTX-2.x Community License；Qwen3.8-27B 标注社区微调（JonathanColetti）身份与真实仓库 |
+| 🔐 gated 仓库下载 | LTX-2.5 等受控访问仓库：设置页新增 HuggingFace Token（仅存本机），下载自动附加 Bearer 认证；未配置时返回明确中文指引（需先在 HF 仓库页接受许可协议） |
+| 🔄 引擎更新检测 | 引擎面板新增「检查引擎更新」：查询 GitHub 最新 release，已装引擎显示版本号，发现新版出现徽章并可一键更新；6 小时缓存避免频繁请求 |
+| 🏷️ 命名统一 | 产品名统一为 **Kevrai Omni**，与仓库名 kevrai-omni 一致（安装包、快捷方式、窗口标题同步更新） |
+| 🧭 新手引导 | 首次启动显示「三步上手」引导：装引擎 → 下模型 → 输提示词 |
+| ⚠️ LTX 预设规范 | 低于官方最低 16GB 显存的预设全部标注「实验」，选择时显示提示 |
 
 ---
 
@@ -19,13 +32,13 @@
 | 🔍 **超级搜索引擎** | 字段加权模糊匹配（名称/ID/标签/引擎/仓库/描述）、拼写纠错（编辑距离 ≤2）、中文 bigram 分词、搜索结果高亮、分面筛选（引擎/许可/体积）、5 种排序、最近搜索、"你是不是要找"建议、键盘导航（`/` 聚焦、↑↓ 选择） |
 | ⚡ **性能优化** | HTTP 响应 GZip 压缩、搜索语料内存缓存、`/api/models` 支持排序与仓库字段检索、`disk_usage` 首跑路径不存在时的健壮回退 |
 | 📦 **目录扩充** | 110 个模型条目（全部补齐 tags 与 modality 标注）、30 个引擎（新增 `ltx-video` 引擎） |
-| 🧪 **测试加固** | 新增 94 个测试（搜索 34 + LTX 运行时 32 + v2.4 API 26），含正则注入、XSS、空字节、超长输入、路径穿越等极端用例；全套 **303 passed / 0 failed** |
+| 🧪 **测试加固** | 新增 94 个测试（搜索 34 + LTX 运行时 32 + v2.4 API 26），含正则注入、XSS、空字节、超长输入、路径穿越等极端用例；全套 **317 passed / 0 failed** |
 
 ---
 
 ## 与早期版本的区别
 
-| 维度 | 早期版本 | **本版（Kevrai Studio v2.4.0）** |
+| 维度 | 早期版本 | **本版（Kevrai Omni v2.4.0）** |
 |---|---|---|
 | 安装形态 | 单 Python 项目 | **Electron 桌面应用 + Windows NSIS .exe 安装包** |
 | 视频生成 | 仅目录条目 | **LTX-2.5 一键生成面板**（参数可调、进度、取消、画廊） |
@@ -36,15 +49,15 @@
 | 桌面快捷方式 | 无 | **自动创建桌面 + 开始菜单快捷方式** |
 | GGUF 量化 | 无 | **GGUF 全量化浏览**：仓库内全部 `.gguf` 文件单独下载 |
 | 本地导入 | 无 | 文件夹/文件一键导入，支持拖拽 |
-| 测试 | 无 | **pytest 303 项 + JS 语法冒烟 + 极端输入测试** |
+| 测试 | 无 | **pytest 317 项 + JS 语法冒烟 + 极端输入测试** |
 
 ---
 
 ## 快速开始
 
 ### Windows 用户（普通用户）
-1. 从 [Releases](https://github.com/Bullobis/kevrai-omni/releases) 下载 `Kevrai.Studio.Setup.2.4.0.exe`
-2. 双击安装 → 桌面出现 **Kevrai Studio** 快捷方式
+1. 从 [Releases](https://github.com/Bullobis/kevrai-omni/releases) 下载 `Kevrai-Omni-Setup-2.4.1.exe`
+2. 双击安装 → 桌面出现 **Kevrai Omni** 快捷方式
 3. 启动后 → "AI 引擎"标签 → 安装需要的引擎（如 `llama.cpp`）
 4. "模型市场" → 顶部搜索框支持模糊/中文搜索，选模型 → 安装
 5. 🎥 **"LTX-2.5 视频"标签** → 输入提示词 → 选显存预设 → 开始生成
@@ -212,7 +225,7 @@ bash scripts/release.sh
 
 ## License
 
-**Kevrai Studio 本身（源代码、文档与构建产物）采用
+**Kevrai Omni 本身（源代码、文档与构建产物）采用
 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
 (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可。**
 

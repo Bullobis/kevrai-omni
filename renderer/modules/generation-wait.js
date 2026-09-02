@@ -46,7 +46,7 @@ function buildOverlay(options) {
     <canvas class="gw-particles" aria-hidden="true"></canvas>
     <div class="gw-content">
       <div class="gw-logo-ring">
-        <img class="gw-logo" src="../assets/icons/icon-256.png" width="96" height="96" alt="Kevrai Studio" id="gw-logo-img" />
+        <img class="gw-logo" src="../assets/icons/icon-256.png" width="96" height="96" alt="Kevrai Omni" id="gw-logo-img" />
       </div>
       <div class="gw-title">${escapeHtml(opts.title)}</div>
       <div class="gw-caption" id="gw-caption">${escapeHtml(opts.captions[0])}</div>

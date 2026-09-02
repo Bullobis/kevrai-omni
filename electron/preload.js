@@ -1,6 +1,6 @@
 "use strict";
 /**
- * Kevrai Studio — preload (hardened context bridge).
+ * Kevrai Omni — preload (hardened context bridge).
  *
  * Rules:
  *   - Expose ONLY the audit-approved API on `window.kevrai`. No `ipcRenderer`
@@ -123,6 +123,12 @@ const api = {
   uninstallEngine: (id) => {
     assertString(id, "id", 128);
     return invoke("api:engines:uninstall", id);
+  },
+  // v2.4.1 — engine update detection / one-click update
+  checkEngineUpdates: (opts) => invoke("api:engines:check-updates", opts || {}),
+  updateEngine: (id) => {
+    assertString(id, "id", 128);
+    return invoke("api:engines:update", id);
   },
 
   // ----- Local models / import -----
@@ -344,6 +350,9 @@ const api = {
     assertString(opts.url, "opts.url", 2048);
     assertString(opts.dest_filename, "opts.dest_filename", 256);
     if (opts.sha256 != null) assertString(opts.sha256, "opts.sha256", 64);
+    if (opts.gated != null && typeof opts.gated !== "boolean") {
+      throw new Error("opts.gated must be boolean");
+    }
     return invoke("kevrai:start-download", opts);
   },
   cancelDownload: (taskId) => {

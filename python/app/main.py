@@ -1,4 +1,4 @@
-"""FastAPI app — Kevrai Studio sidecar HTTP control plane.
+"""FastAPI app — Kevrai Omni sidecar HTTP control plane.
 
 Hardening changes:
     * Structured JSON logging with per-request ``request_id``.
@@ -50,8 +50,11 @@ from .catalog import (
 from .engines import (
     EngineManager,
     EngineState,
+    apply_engine_update,
+    check_engine_updates,
     ensure_engine,
     list_engines_status,
+    load_update_cache,
 )
 from . import engines as engines_module  # re-export
 from .importer import (
@@ -248,7 +251,7 @@ class _TokenBucket:
 # FastAPI app
 # ---------------------------------------------------------------------------
 
-app = FastAPI(title="Kevrai Studio Sidecar", version=__version__, lifespan=_lifespan)
+app = FastAPI(title="Kevrai Omni Sidecar", version=__version__, lifespan=_lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -363,6 +366,9 @@ class DownloadStartReq(BaseModel):
     dest_filename: str
     sha256: str | None = None
     auto_pick: bool = True
+    # True when the target repo is gated on HuggingFace (e.g. LTX-2.5):
+    # requires settings.hf_token + license acceptance on the repo page.
+    gated: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -528,7 +534,34 @@ async def import_model(req: ImportReq, request: Request) -> dict[str, Any]:
 
 @app.get("/api/engines")
 def engines() -> dict[str, Any]:
-    return {"engines": list_engines_status(ENGINES, APP_ROOT)}
+    out = list_engines_status(ENGINES, APP_ROOT)
+    # v2.4.1 — attach cached update info (no network here; the UI triggers
+    # POST /api/engines/check-updates explicitly).
+    cache = load_update_cache(APP_ROOT)
+    for e in out:
+        info = cache.get(e["id"]) or {}
+        tag = str(info.get("latest_tag", "") or "")
+        e["latest_tag"] = tag
+        e["update_available"] = bool(tag) and tag != (e.get("version") or "") and e["installed"]
+    return {"engines": out}
+
+
+class CheckUpdatesReq(BaseModel):
+    force: bool = False
+
+
+@app.post("/api/engines/check-updates")
+async def engines_check_updates(req: CheckUpdatesReq) -> dict[str, Any]:
+    results = await check_engine_updates(APP_ROOT, ENGINES, force=req.force)
+    return {"results": results}
+
+
+@app.post("/api/engines/update")
+def update_engine(req: EnsureEngineReq) -> dict[str, Any]:
+    res = apply_engine_update(req.engine_id, ENGINES, APP_ROOT)
+    if not res.ok:
+        raise HTTPException(status_code=400, detail=res.message)
+    return {"ok": True, "result": {"engine_id": res.engine_id, "path": res.path, "message": res.message}}
 
 
 @app.post("/api/engines/install")
@@ -779,9 +812,29 @@ async def download_start(request: Request, body: DownloadStartReq) -> dict[str, 
     if dest.exists():
         raise HTTPException(status_code=409, detail=f"dest already exists: {dest}")
 
+    # Gated repos (e.g. Lightricks/LTX-2.5) need an HF bearer token. The user
+    # must ALSO have accepted the model's license agreement on the repo page —
+    # a token without acceptance still gets 401/403 from HuggingFace.
+    extra_headers: dict[str, str] = {}
+    if body.gated:
+        token = (getattr(settings, "hf_token", "") or "").strip()
+        if not token:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "error": "gated_requires_token",
+                    "message": (
+                        "该模型仓库为 gated（受控访问）：请先在 HuggingFace 仓库页面"
+                        "接受许可协议，然后在「设置」中填入你的 HF Token 后重试。"
+                    ),
+                },
+            )
+        extra_headers["Authorization"] = f"Bearer {token}"
+
     dl: Downloader = _get_downloader(request)
     try:
-        task_id = await dl.start(chosen_url, dest, sha256=body.sha256)
+        task_id = await dl.start(chosen_url, dest, sha256=body.sha256,
+                                 extra_headers=extra_headers or None)
     except DownloadRefused as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except FileExistsError as e:

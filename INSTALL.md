@@ -1,4 +1,4 @@
-# Install — Kevrai Studio v2.2.0
+# Install — Kevrai Omni v2.2.0
 
 ## 普通用户：选你的平台
 

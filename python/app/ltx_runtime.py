@@ -56,31 +56,39 @@ class LtxBusyError(LtxError):
 
 # Hardware-tuned presets. Each preset clamps resolution / frames / steps to
 # something the target VRAM class can actually handle.
+# v2.4.1 注：LTX-2.5 官方最低显存要求为 16GB（22B 完整权重）。16GB 以下的
+# 档位只能依赖蒸馏/低比特量化权重，属于实验性配置，可能显存不足——note 字段
+# 会在 UI 中原样展示，不得夸大为官方支持。
 PRESETS: dict[str, dict[str, Any]] = {
     "ultra": {
         "label": "极致质量 (24GB+)",
         "width": 1280, "height": 720, "num_frames": 161,
         "num_inference_steps": 40, "guidance_scale": 3.5, "vram_gb": 24,
+        "note": "推荐 24GB 及以上显存",
     },
     "quality": {
         "label": "高质量 (16GB)",
         "width": 1024, "height": 576, "num_frames": 121,
         "num_inference_steps": 30, "guidance_scale": 3.0, "vram_gb": 16,
+        "note": "16GB 为官方最低显存要求",
     },
     "balanced": {
-        "label": "平衡 (12GB)",
+        "label": "平衡 (12GB·实验)",
         "width": 768, "height": 432, "num_frames": 97,
         "num_inference_steps": 25, "guidance_scale": 3.0, "vram_gb": 12,
+        "note": "低于官方最低 16GB：需蒸馏量化权重，可能显存不足",
     },
     "speed": {
-        "label": "速度优先 (8GB)",
+        "label": "速度优先 (8GB·实验)",
         "width": 512, "height": 320, "num_frames": 65,
         "num_inference_steps": 20, "guidance_scale": 2.5, "vram_gb": 8,
+        "note": "低于官方最低 16GB：需蒸馏量化权重，可能显存不足",
     },
     "draft": {
-        "label": "草稿 (4GB)",
+        "label": "草稿 (4GB·实验)",
         "width": 384, "height": 256, "num_frames": 33,
         "num_inference_steps": 12, "guidance_scale": 2.0, "vram_gb": 4,
+        "note": "低于官方最低 16GB：需蒸馏量化权重，可能显存不足",
     },
 }
 

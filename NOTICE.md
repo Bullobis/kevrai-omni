@@ -1,11 +1,11 @@
-# NOTICE — Third-party components distributed via Kevrai Studio
+# NOTICE — Third-party components distributed via Kevrai Omni
 
-This file lists every third-party model, engine, and asset that Kevrai Studio can
+This file lists every third-party model, engine, and asset that Kevrai Omni can
 download or bundle. **Each row's license governs that component, NOT the
-CC BY-NC-SA 4.0 license that covers Kevrai Studio itself** (see `LICENSE`).
+CC BY-NC-SA 4.0 license that covers Kevrai Omni itself** (see `LICENSE`).
 
-When you redistribute Kevrai Studio, you do NOT need to redistribute the
-third-party weights — Kevrai Studio downloads them on demand from each upstream
+When you redistribute Kevrai Omni, you do NOT need to redistribute the
+third-party weights — Kevrai Omni downloads them on demand from each upstream
 repository. If you DO redistribute them (e.g. in a pre-seeded bundle), you
 must comply with each upstream license, which usually requires attribution,
 non-commercial use, or both.
@@ -80,7 +80,7 @@ text.
 | 3d | TripoSG | VAST-AI/TripoSG | MIT | yes |
 | vision | CLIP ViT-L/14 | openai/clip-vit-large-patch14 | MIT | yes |
 | vision | InsightFace (buffalo_l) | buffalo_l | INSIGHTFACE-NON-COMMERCIAL | **NO** (InsightFace license is NC) |
-| vision | YOLOv10 | THU-MIG/yolov10 | AGPL-3.0 | conditional — **strong copyleft**: if you distribute a service that uses this, you must publish the complete corresponding source of the service under AGPL-3.0. Avoid using YOLOv10 in any Kevrai Studio build intended for redistribution. |
+| vision | YOLOv10 | THU-MIG/yolov10 | AGPL-3.0 | conditional — **strong copyleft**: if you distribute a service that uses this, you must publish the complete corresponding source of the service under AGPL-3.0. Avoid using YOLOv10 in any Kevrai Omni build intended for redistribution. |
 | pending | MiniMax Hailuo 2K | (not released) | UNKNOWN | n/a |
 
 ## Engines (inference backends)
@@ -114,20 +114,20 @@ text.
 
 ## User-imported models
 
-When a user imports a local model file (via "Import local"), Kevrai Studio
+When a user imports a local model file (via "Import local"), Kevrai Omni
 records the file's SHA-256 in `models/_local.json` but does NOT claim any
 license over the imported file. **The user remains solely responsible** for
 ensuring they have the right to use and redistribute whatever they import.
 
 ## A note on commercial use
 
-Kevrai Studio itself is **non-commercial** (CC BY-NC-SA 4.0). However, many of
+Kevrai Omni itself is **non-commercial** (CC BY-NC-SA 4.0). However, many of
 the third-party models and engines it can install are themselves under
 non-commercial licenses. Before using any model/engine to produce content you
 intend to commercialise, check the row above — anything marked `**NO**` in
 "Commercial use" requires purchasing a separate commercial license from the
 upstream rights-holder.
 
-This file is updated as part of each Kevrai Studio release. If you spot an
+This file is updated as part of each Kevrai Omni release. If you spot an
 inaccuracy or a new model whose license is missing, please open an issue at
-the upstream Kevrai Studio repository.
+the upstream Kevrai Omni repository.

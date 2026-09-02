@@ -1,6 +1,6 @@
 """Concurrency tests: parallel reads, idempotent imports.
 
-Verifies that Kevrai Studio's catalog and importer are safe under concurrent
+Verifies that Kevrai Omni's catalog and importer are safe under concurrent
 access. We don't spawn real network — we hammer the in-process loaders with
 threads and assert thread-safety invariants.
 """
