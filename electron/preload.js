@@ -361,6 +361,13 @@ const api = {
   },
   onDownloadProgress: (cb) => listen("download:progress", cb),
 
+  // ----- v2.5.0 Python runtime bootstrap -----
+  bootstrapStatus: () => invoke("kevrai:bootstrap-status"),
+  installPythonRuntime: () => invoke("kevrai:install-python"),
+  installPythonDeps: () => invoke("kevrai:install-deps"),
+  bootstrapRetry: () => invoke("kevrai:bootstrap-retry"),
+  onBootstrapProgress: (cb) => listen("bootstrap:progress", cb),
+
   // ----- Dialogs / paths / errors / shell -----
   pickFolder:   () => invoke("dialog:pickFolder"),
   pickFile:     () => invoke("dialog:pickFile"),
