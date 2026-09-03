@@ -176,8 +176,185 @@ function sidecarEnv() {
   };
 }
 
+// ---------------------------------------------------------------------------
+// v2.5.0 — Python runtime bootstrap: find / install Python from inside the app
+// ---------------------------------------------------------------------------
+// 设计：安装包保持小巧，Python 运行环境与引擎一样「随选下载」。
+// 解析顺序：KEVRAI_PYTHON 环境变量 > 软件托管的 python-runtime > 系统 Python。
+// 全部缺失时进入引导页，一键下载 Python embeddable（仅 Windows 自动化）。
+
+const MANAGED_PY_DIR = () => path.join(userDataDir(), "python-runtime");
+const BOOTSTRAP_PY_VERSION = "3.12.7";
+const PY_EMBED_ZIP_NAME = `python-${BOOTSTRAP_PY_VERSION}-embed-amd64.zip`;
+const PY_EMBED_MIRRORS = [
+  `https://registry.npmmirror.com/-/binary/python/${BOOTSTRAP_PY_VERSION}/${PY_EMBED_ZIP_NAME}`,
+  `https://mirrors.huaweicloud.com/python/${BOOTSTRAP_PY_VERSION}/${PY_EMBED_ZIP_NAME}`,
+  `https://www.python.org/ftp/python/${BOOTSTRAP_PY_VERSION}/${PY_EMBED_ZIP_NAME}`,
+];
+const GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py";
+const BOOTSTRAP_PIP_INDEX = "https://mirrors.tencent.com/pypi/simple/";
+
+let bootstrapBusy = false;
+let sidecarStderrTail = [];
+
+function findManagedPython() {
+  const exe = process.platform === "win32"
+    ? path.join(MANAGED_PY_DIR(), "python.exe")
+    : path.join(MANAGED_PY_DIR(), "bin", "python3");
+  try { return fs.existsSync(exe) ? exe : null; } catch (_) { return null; }
+}
+
+function findSystemPython() {
+  const { spawnSync } = require("node:child_process");
+  const cands = process.platform === "win32"
+    ? ["python", "py", "python3"]
+    : ["python3", "python"];
+  for (const c of cands) {
+    try {
+      const r = spawnSync(c, ["--version"], { timeout: 8000, windowsHide: true });
+      if (r.status === 0) return c;
+    } catch (_) { /* try next */ }
+  }
+  return null;
+}
+
+function resolvePython() {
+  const envPy = process.env.KEVRAI_PYTHON;
+  if (envPy) { try { if (fs.existsSync(envPy)) return envPy; } catch (_) {} }
+  return findManagedPython() || findSystemPython();
+}
+
+function requirementsPath() {
+  return path.join(path.dirname(path.dirname(SIDECAR_PY)), "requirements.txt");
+}
+
+function bootstrapProgress(stage, pct, text) {
+  logInfo(`[bootstrap] ${stage} ${pct}% ${text || ""}`);
+  notifyRenderer("bootstrap:progress", { stage, pct, text: String(text || "").slice(0, 300) });
+}
+
+// https download with redirect follow + mirror fallback.
+function downloadFile(urls, dest, stage) {
+  const https = require("node:https");
+  const tryOne = (url, redirectsLeft) => new Promise((resolve, reject) => {
+    const req = https.get(url, { headers: { "User-Agent": "kevrai-omni/2.5.0" }, timeout: 60000 }, (res) => {
+      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location && redirectsLeft > 0) {
+        res.resume();
+        let next = res.headers.location;
+        try { next = new URL(next, url).toString(); } catch (_) {}
+        return tryOne(next, redirectsLeft - 1).then(resolve, reject);
+      }
+      if (res.statusCode !== 200) {
+        res.resume();
+        return reject(new Error(`HTTP ${res.statusCode}: ${url}`));
+      }
+      const total = parseInt(res.headers["content-length"] || "0", 10);
+      let got = 0;
+      const out = fs.createWriteStream(dest);
+      res.on("data", (c) => {
+        got += c.length;
+        if (total > 0) bootstrapProgress(stage, Math.min(99, Math.round(got / total * 100)),
+          `${(got / 1048576).toFixed(1)} / ${(total / 1048576).toFixed(1)} MB`);
+      });
+      res.pipe(out);
+      out.on("finish", () => out.close(() => resolve()));
+      out.on("error", reject);
+    });
+    req.on("timeout", () => req.destroy(new Error("download timeout: " + url)));
+    req.on("error", reject);
+  });
+  return (async () => {
+    let lastErr = null;
+    for (const u of urls) {
+      try { await tryOne(u, 5); return; }
+      catch (e) { lastErr = e; logWarn(`download failed ${u}: ${e.message}`); }
+    }
+    throw lastErr || new Error("no download url");
+  })();
+}
+
+function runCmd(cmd, args, opts = {}) {
+  return new Promise((resolve, reject) => {
+    const p = spawn(cmd, args, { windowsHide: true, ...opts });
+    let tail = "";
+    const onOut = (d) => {
+      const t = d.toString().trimEnd();
+      tail = t.split("\n").slice(-2).join("\n");
+      if (opts.onLine) opts.onLine(tail);
+    };
+    p.stdout.on("data", onOut);
+    p.stderr.on("data", onOut);
+    p.on("error", reject);
+    p.on("exit", (code) => code === 0 ? resolve() : reject(new Error(`${cmd} exit ${code}: ${tail.slice(-200)}`)));
+  });
+}
+
+async function installManagedPythonWindows() {
+  const dir = MANAGED_PY_DIR();
+  fs.mkdirSync(dir, { recursive: true });
+  const zipPath = path.join(userDataDir(), PY_EMBED_ZIP_NAME);
+
+  bootstrapProgress("download", 0, "正在下载 Python 运行环境（约 11 MB）…");
+  await downloadFile(PY_EMBED_MIRRORS, zipPath, "download");
+
+  bootstrapProgress("extract", 0, "正在解压…");
+  // Windows 10+ 自带 bsdtar；失败则退回 PowerShell。
+  try {
+    await runCmd("tar", ["-xf", zipPath, "-C", dir]);
+  } catch (_) {
+    await runCmd("powershell", ["-NoProfile", "-Command",
+      `Expand-Archive -LiteralPath '${zipPath}' -DestinationPath '${dir}' -Force`]);
+  }
+  try { fs.unlinkSync(zipPath); } catch (_) {}
+
+  // embeddable 默认不带 site-packages 支持：取消 ._pth 里 "import site" 的注释，
+  // 否则 pip 装的依赖无法被 import。
+  bootstrapProgress("patch", 0, "配置嵌入式 Python…");
+  const pth = path.join(dir, `python${BOOTSTRAP_PY_VERSION.replace(/\.\d+$/, "")}._pth`);
+  try {
+    const txt = fs.readFileSync(pth, "utf-8");
+    fs.writeFileSync(pth, txt.replace(/^#\s*import site/m, "import site"));
+  } catch (e) { logWarn("._pth patch skipped:", e.message); }
+
+  const pyExe = path.join(dir, "python.exe");
+  bootstrapProgress("get-pip", 0, "正在安装 pip…");
+  const getPip = path.join(dir, "get-pip.py");
+  await downloadFile([GET_PIP_URL], getPip, "get-pip");
+  await runCmd(pyExe, [getPip, "--no-warn-script-location",
+    "-i", BOOTSTRAP_PIP_INDEX, "--extra-index-url", "https://pypi.org/simple"],
+    { onLine: (t) => bootstrapProgress("get-pip", 50, t) });
+  try { fs.unlinkSync(getPip); } catch (_) {}
+
+  await installDepsWith(pyExe);
+  return pyExe;
+}
+
+async function installDepsWith(pyExe) {
+  const req = requirementsPath();
+  bootstrapProgress("deps", 0, "正在安装软件运行依赖（首次约 2-5 分钟）…");
+  await runCmd(pyExe, ["-m", "pip", "install", "--no-warn-script-location",
+    "-r", req, "-i", BOOTSTRAP_PIP_INDEX, "--extra-index-url", "https://pypi.org/simple"],
+    { onLine: (t) => bootstrapProgress("deps", 50, t) });
+  bootstrapProgress("deps", 100, "依赖安装完成");
+}
+
+async function relaunchAfterBootstrap() {
+  sidecarRestartCount = 0;
+  sidecarManualStop = false;
+  sidecarStderrTail = [];
+  if (!startSidecar()) throw new Error("sidecar spawn failed after bootstrap");
+  const info = await waitForSidecar();
+  notifyRenderer("sidecar:health", { ok: true, info });
+  if (mainWindow) mainWindow.loadFile(path.join(__dirname, "..", "renderer", "index.html"));
+  return true;
+}
+
 function startSidecar() {
-  const py = process.env.KEVRAI_PYTHON || (process.platform === "win32" ? "python" : "python3");
+  const py = resolvePython();
+  if (!py) {
+    logError("no Python interpreter found — entering in-app bootstrap mode");
+    return "no-python";
+  }
   const cmd = [
     "-X", "utf8", "-u",
     "-m", "uvicorn", "app.main:app",
@@ -198,7 +375,12 @@ function startSidecar() {
     return false;
   }
   sidecarProc.stdout.on("data", (d) => logInfo("[sidecar]", d.toString().trimEnd()));
-  sidecarProc.stderr.on("data", (d) => logWarn("[sidecar-stderr]", d.toString().trimEnd()));
+  sidecarProc.stderr.on("data", (d) => {
+    const t = d.toString().trimEnd();
+    logWarn("[sidecar-stderr]", t);
+    sidecarStderrTail.push(t);
+    if (sidecarStderrTail.length > 80) sidecarStderrTail.shift();
+  });
   sidecarProc.on("error", (e) => logError("sidecar error event:", e.message));
   sidecarProc.on("exit", (code, signal) => {
     sidecarReady = false;
@@ -284,7 +466,7 @@ async function stopSidecar(graceMs = SHUTDOWN_TIMEOUT_MS) {
 
 let mainWindow = null;
 
-function createWindow() {
+function createWindow(bootstrapMode = false) {
   mainWindow = new BrowserWindow({
     width: 1380,
     height: 900,
@@ -316,7 +498,8 @@ function createWindow() {
   // Strip default menu (about/quit etc.) for a cleaner attack surface.
   try { Menu.setApplicationMenu(null); } catch (_) {}
 
-  mainWindow.loadFile(path.join(__dirname, "..", "renderer", "index.html"));
+  mainWindow.loadFile(path.join(__dirname, "..", "renderer",
+    bootstrapMode ? "bootstrap.html" : "index.html"));
 
   // Hard-deny any attempt to open a new window.
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -685,6 +868,50 @@ function registerIpc() {
     return true;
   });
 
+  // v2.5.0 — Python runtime bootstrap (in-app environment install)
+  ipcMain.handle("kevrai:bootstrap-status", async () => {
+    const tail = sidecarStderrTail.join("\n");
+    return {
+      platform: process.platform,
+      python: resolvePython(),
+      managed_python: findManagedPython(),
+      deps_missing: /ModuleNotFoundError|No module named|ImportError/.test(tail),
+      stderr_tail: sidecarStderrTail.slice(-8),
+      busy: bootstrapBusy,
+    };
+  });
+  ipcMain.handle("kevrai:install-python", async () => {
+    if (bootstrapBusy) throw new Error("安装进行中，请稍候");
+    if (process.platform !== "win32") {
+      throw new Error("自动安装目前仅支持 Windows。Linux/macOS 请手动执行：python3 -m pip install -r " + requirementsPath());
+    }
+    bootstrapBusy = true;
+    try {
+      await installManagedPythonWindows();
+      await relaunchAfterBootstrap();
+      return { ok: true };
+    } finally { bootstrapBusy = false; }
+  });
+  ipcMain.handle("kevrai:install-deps", async () => {
+    if (bootstrapBusy) throw new Error("安装进行中，请稍候");
+    const py = resolvePython();
+    if (!py) throw new Error("未找到 Python，请先安装 Python 环境");
+    bootstrapBusy = true;
+    try {
+      await installDepsWith(py);
+      await relaunchAfterBootstrap();
+      return { ok: true };
+    } finally { bootstrapBusy = false; }
+  });
+  ipcMain.handle("kevrai:bootstrap-retry", async () => {
+    if (bootstrapBusy) throw new Error("进行中，请稍候");
+    bootstrapBusy = true;
+    try {
+      await relaunchAfterBootstrap();
+      return { ok: true };
+    } finally { bootstrapBusy = false; }
+  });
+
   ipcMain.handle("kevrai:get-settings", async () => loadSettingsSync());
 
   ipcMain.handle("kevrai:put-settings", async (_e, s) => {
@@ -840,7 +1067,13 @@ async function bootstrap() {
   // webSecurity default is true; explicit here for clarity.
   try { session.defaultSession.webRequest.onBeforeRequest((_d, cb) => cb({ cancel: false })); } catch (_) {}
 
-  if (!startSidecar()) {
+  const sc = startSidecar();
+  if (sc === "no-python") {
+    // 没有任何 Python：进引导页，软件内一键安装运行环境。
+    createWindow(true);
+    return;
+  }
+  if (!sc) {
     app.quit();
     return;
   }
@@ -848,8 +1081,16 @@ async function bootstrap() {
     const info = await waitForSidecar();
     logInfo("sidecar healthy");
     notifyRenderer("sidecar:health", { ok: true, info });
+    createWindow();
   } catch (e) {
     logError("sidecar NOT ready:", e.message);
+    const tail = sidecarStderrTail.join("\n");
+    const depsMissing = /ModuleNotFoundError|No module named|ImportError/.test(tail);
+    if (depsMissing) {
+      // 有 Python 但缺依赖：同样进引导页，一键补装依赖。
+      createWindow(true);
+      return;
+    }
     dialog.showErrorBox(
       "Kevrai Omni — Python sidecar failed to start",
       `The Python inference sidecar could not be reached on http://${SIDECAR_HOST}:${SIDECAR_PORT}.\n\n` +
@@ -860,8 +1101,6 @@ async function bootstrap() {
     app.quit();
     return;
   }
-
-  createWindow();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

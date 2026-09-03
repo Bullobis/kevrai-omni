@@ -6,8 +6,18 @@
 **一个安装包 · 桌面快捷方式 · 引擎按需下载 · 模型从 huggingface.co 一键拉取 · 支持本地导入 · 全部开源**
 
 ![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)
-![Version](https://img.shields.io/badge/version-2.4.2-orange)
+![Version](https://img.shields.io/badge/version-2.5.0-orange)
 ![Tests](https://img.shields.io/badge/tests-323%20passed-brightgreen)
+
+---
+
+## ✨ v2.5.0 更新亮点（环境随选下载）
+
+| 新特性 | 说明 |
+|---|---|
+| 🐍 **Python 环境软件内一键安装** | 没装 Python 的 Windows 机器不再报错退出：进入「环境准备」页，一键下载 Python 3.12.7 embeddable（约 11MB，国内镜像三级回退）→ 解压到用户数据目录 → 装 pip → 装运行依赖 → 自动进主界面。安装包依旧小巧，环境与引擎一样随选下载 |
+| 🩺 启动诊断增强 | 有 Python 但缺依赖（ModuleNotFoundError）同样进引导页一键补装；stderr 尾部采集辅助定位 |
+| 🔒 不污染系统 | 托管 Python 装在用户数据目录，不写注册表、不需要管理员权限 |
 
 ---
 

@@ -1,7 +1,7 @@
 {
-  "version": "2.4.2",
-  "updated": "2026-09-02",
-  "notice": "v2.4.2: 修复设置保存崩溃与 HF Token 下发；代码质量清理；负面提示词默认清空。",
+  "version": "2.5.0",
+  "updated": "2026-09-03",
+  "notice": "v2.5.0: 软件内一键安装 Python 运行环境（随选下载，无需预装）。",
   "categories": [
     {
       "id": "llm",

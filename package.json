@@ -1,14 +1,14 @@
 {
   "name": "kevrai-omni",
   "productName": "Kevrai Omni",
-  "version": "2.4.2",
+  "version": "2.5.0",
   "description": "Kevrai Omni — one-click local AI workstation (LLM/TTS/Image/Video/3D/Audio/Super-Resolution). LTX-2.5 video generation, super search, llama.cpp + MNN dual engine, hardware-aware recommendation.",
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
     "dev": "cross-env ELECTRON_ENABLE_LOGGING=1 electron . --enable-logging --devtools",
     "test:python": "cd python && python -m pytest -q tests/",
-    "test:js": "node --check electron/main.js && node --check electron/preload.js && node --check renderer/app.js && node --check renderer/modules/api.js && node --check renderer/modules/models.js && node --check renderer/modules/search.js && node --check renderer/modules/ltx.js && node --check renderer/modules/engines.js && node --check renderer/modules/onboarding.js && node --check renderer/modules/downloads.js",
+    "test:js": "node --check electron/main.js && node --check electron/preload.js && node --check renderer/app.js && node --check renderer/modules/api.js && node --check renderer/modules/models.js && node --check renderer/modules/search.js && node --check renderer/modules/ltx.js && node --check renderer/modules/engines.js && node --check renderer/modules/onboarding.js && node --check renderer/modules/downloads.js && node --check renderer/bootstrap.js",
     "smoke": "node --check electron/main.js && node --check electron/preload.js && node --check renderer/app.js",
     "test:smoke": "bash scripts/smoke.sh",
     "build:win": "electron-builder --win --x64",
