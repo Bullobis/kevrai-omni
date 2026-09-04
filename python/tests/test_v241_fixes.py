@@ -62,11 +62,17 @@ def test_catalog_ltx25_gated_and_16gb():
     assert "12GB 显存本地运行" not in ltx["description"]
 
 
-def test_catalog_qwen38_community_identity():
+def test_catalog_qwen38_official_plus_community():
+    """v2.6.0: official Qwen/Qwen3.8-27B weights opened 2026-08-14, so it is now
+    the primary `repo`; the JonathanColetti uncensored quant is retained as the
+    optional `gguf_repo`."""
     q = {m["id"]: m for m in _catalog()["models"]}["qwen3.8-27b"]
-    assert q["repo"] == "JonathanColetti/Qwen3.8-27B-Uncensored-GGUF"
-    assert "社区" in q["name"]
+    assert q["repo"] == "Qwen/Qwen3.8-27B"
+    assert q["license"] == "Apache-2.0"
+    assert q["modality"]["multimodal"] is True
     assert q["gguf_repo"] == "JonathanColetti/Qwen3.8-27B-Uncensored-GGUF"
+    # primary sources must point at the official repo, not the community quant
+    assert q["primary_url"].rstrip("/").endswith("Qwen/Qwen3.8-27B")
 
 
 def test_catalog_schema_still_valid():

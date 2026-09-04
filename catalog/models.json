@@ -1,7 +1,7 @@
 {
-  "version": "2.5.0",
-  "updated": "2026-09-03",
-  "notice": "v2.5.0: 软件内一键安装 Python 运行环境（随选下载，无需预装）。",
+  "version": "2.6.0",
+  "updated": "2026-09-04",
+  "notice": "v2.6.0: 接入 MiniMax-Music3 全精度/ComfyUI/GGUF/量化/MLX 全家桶并逐条联网核验仓库；新增 13 个 2026 年 5 月后开放权重的高质量模型（Granite 4.2、MiniMax M3、Muse Glimmer、DeepSeek V4 Flash Vision、GLM-5.3、LFM2.5-VL、MOSS-TTS、dots.tts、Stable Audio 3、Magenta Realtime 2、Krea 2 等）；修正 14 处错误/失效仓库 slug，移除不存在的 Llama-4-Multilingual。",
   "categories": [
     {
       "id": "llm",
@@ -342,7 +342,7 @@
       "category": "llm",
       "name": "Mistral Small 24B",
       "repo": "mistralai/Mistral-Small-24B-Base-2501",
-      "gguf_repo": "bartowski/Mistral-Small-24B-Base-2501-GGUF",
+      "gguf_repo": "bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF",
       "size_gb": 48,
       "engine": [
         "llama.cpp"
@@ -351,12 +351,12 @@
       "trending": true,
       "description": "Mistral 24B，推理/多语言均衡。",
       "sources": [
-        "https://huggingface.co/bartowski/Mistral-Small-24B-Base-2501-GGUF/",
-        "https://hf-mirror.com/bartowski/Mistral-Small-24B-Base-2501-GGUF/",
-        "https://hf-mirror.us/bartowski/Mistral-Small-24B-Base-2501-GGUF/",
-        "https://hf-cn-mirror.com/bartowski/Mistral-Small-24B-Base-2501-GGUF/"
+        "https://huggingface.co/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/",
+        "https://hf-mirror.com/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/",
+        "https://hf-mirror.us/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/",
+        "https://hf-cn-mirror.com/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/"
       ],
-      "primary_url": "https://huggingface.co/bartowski/Mistral-Small-24B-Base-2501-GGUF/",
+      "primary_url": "https://huggingface.co/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/",
       "hardware": {
         "vram_gb": 18,
         "min_vram_gb": 12,
@@ -860,6 +860,107 @@
       ]
     },
     {
+      "id": "moss-tts-1.5",
+      "category": "tts",
+      "name": "MOSS-TTS v1.5 (OpenMOSS)",
+      "repo": "OpenMOSS-Team/MOSS-TTS-v1.5",
+      "gguf_repo": "",
+      "size_gb": 8.5,
+      "engine": [
+        "transformers"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "OpenMOSS/MOSI.AI 语音生成家族 v1.5（2026-05-25）：高保真、高表现力，覆盖稳定长文本、多说话人对话、声音/角色设计与实时流式 TTS，中英双语，Apache-2.0。",
+      "sources": [
+        "https://huggingface.co/OpenMOSS-Team/MOSS-TTS-v1.5/",
+        "https://hf-mirror.com/OpenMOSS-Team/MOSS-TTS-v1.5/",
+        "https://hf-mirror.us/OpenMOSS-Team/MOSS-TTS-v1.5/",
+        "https://hf-cn-mirror.com/OpenMOSS-Team/MOSS-TTS-v1.5/"
+      ],
+      "primary_url": "https://huggingface.co/OpenMOSS-Team/MOSS-TTS-v1.5/",
+      "hardware": {
+        "vram_gb": 8,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 17,
+        "notes": "权重约 8.5GB，CPU 可跑"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "中英双语 TTS，支持长文本/多说话人/流式"
+      },
+      "tags": [
+        "clone",
+        "moss",
+        "openmoss",
+        "trending",
+        "tts",
+        "voice",
+        "声音克隆",
+        "流式",
+        "热门",
+        "语音合成",
+        "配音"
+      ]
+    },
+    {
+      "id": "dots-tts-soar",
+      "category": "tts",
+      "name": "dots.tts-soar (MeanFlow 加速)",
+      "repo": "dots-studio/dots.tts-soar",
+      "gguf_repo": "",
+      "size_gb": 2.2,
+      "engine": [
+        "transformers"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "小红书 dots-studio 的 dots.tts SOAR 版（2026-06-04）：经 MeanFlow 蒸馏的少步快速 TTS，高自然度、Apache-2.0；同系列还有 mf-1step（单步）与 edit（编辑）版。",
+      "sources": [
+        "https://huggingface.co/dots-studio/dots.tts-soar/",
+        "https://hf-mirror.com/dots-studio/dots.tts-soar/",
+        "https://hf-mirror.us/dots-studio/dots.tts-soar/",
+        "https://hf-cn-mirror.com/dots-studio/dots.tts-soar/"
+      ],
+      "primary_url": "https://huggingface.co/dots-studio/dots.tts-soar/",
+      "hardware": {
+        "vram_gb": 4,
+        "min_vram_gb": 2,
+        "ram_gb": 8,
+        "disk_gb": 24,
+        "notes": "权重约 2.2GB；仓库含多个检查点"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "MeanFlow 蒸馏少步 TTS"
+      },
+      "tags": [
+        "dots",
+        "meanflow",
+        "trending",
+        "tts",
+        "voice",
+        "少步",
+        "快速tts",
+        "热门",
+        "语音合成",
+        "配音"
+      ]
+    },
+    {
       "id": "wan2.2-t2v",
       "category": "video",
       "name": "Wan 2.2 T2V A14B",
@@ -1258,28 +1359,28 @@
       "id": "hunyuanimage-3.0",
       "category": "image",
       "name": "HunyuanImage 3.0",
-      "repo": "Tencent-Hunyuan/HunyuanImage-3.0",
+      "repo": "tencent/HunyuanImage-3.0",
       "gguf_repo": "",
-      "size_gb": 16,
+      "size_gb": 83,
       "engine": [
         "diffusers"
       ],
-      "license": "Tencent",
+      "license": "Tencent Hunyuan Community License",
       "trending": true,
-      "description": "腾讯混元图像 3.0，中文/排版 SOTA。",
+      "description": "腾讯混元图像 3.0（2025-09-28 开源）：80B 总参/13B 激活的工业级原生多模态生图 MoE，中文与文字排版 SOTA、LMArena 文生图第一梯队。HF 权重在小写 tencent 组织（代码在 Tencent-Hunyuan）。",
       "sources": [
-        "https://huggingface.co/Tencent-Hunyuan/HunyuanImage-3.0/",
-        "https://hf-mirror.com/Tencent-Hunyuan/HunyuanImage-3.0/",
-        "https://hf-mirror.us/Tencent-Hunyuan/HunyuanImage-3.0/",
-        "https://hf-cn-mirror.com/Tencent-Hunyuan/HunyuanImage-3.0/"
+        "https://huggingface.co/tencent/HunyuanImage-3.0/",
+        "https://hf-mirror.com/tencent/HunyuanImage-3.0/",
+        "https://hf-mirror.us/tencent/HunyuanImage-3.0/",
+        "https://hf-cn-mirror.com/tencent/HunyuanImage-3.0/"
       ],
-      "primary_url": "https://huggingface.co/Tencent-Hunyuan/HunyuanImage-3.0/",
+      "primary_url": "https://huggingface.co/tencent/HunyuanImage-3.0/",
       "hardware": {
-        "vram_gb": 24,
-        "min_vram_gb": 16,
-        "ram_gb": 48,
-        "disk_gb": 40,
-        "notes": "MoE 图像生成"
+        "vram_gb": 40,
+        "min_vram_gb": 24,
+        "ram_gb": 64,
+        "disk_gb": 169,
+        "notes": "80B 总参 / 13B 激活 MoE；FP8/量化可降低门槛"
       },
       "tags": [
         "diffusers",
@@ -1492,28 +1593,28 @@
       "id": "seedvr2",
       "category": "superres",
       "name": "SeedVR2",
-      "repo": "ByteDance-Seed/SeedVR2",
+      "repo": "ByteDance-Seed/SeedVR2-3B",
       "gguf_repo": "",
-      "size_gb": 5,
+      "size_gb": 6,
       "engine": [
         "diffusers"
       ],
       "license": "Apache-2.0",
       "trending": true,
-      "description": "字节 SeedVR2 视频/图像超分。",
+      "description": "字节 SeedVR2（ICLR2026）视频/图像超分与修复：默认 3B，另有 7B；支持 FP16/FP8/GGUF 多精度，ComfyUI 生态成熟。",
       "sources": [
-        "https://huggingface.co/ByteDance-Seed/SeedVR2/",
-        "https://hf-mirror.com/ByteDance-Seed/SeedVR2/",
-        "https://hf-mirror.us/ByteDance-Seed/SeedVR2/",
-        "https://hf-cn-mirror.com/ByteDance-Seed/SeedVR2/"
+        "https://huggingface.co/ByteDance-Seed/SeedVR2-3B/",
+        "https://hf-mirror.com/ByteDance-Seed/SeedVR2-3B/",
+        "https://hf-mirror.us/ByteDance-Seed/SeedVR2-3B/",
+        "https://hf-cn-mirror.com/ByteDance-Seed/SeedVR2-3B/"
       ],
-      "primary_url": "https://huggingface.co/ByteDance-Seed/SeedVR2/",
+      "primary_url": "https://huggingface.co/ByteDance-Seed/SeedVR2-3B/",
       "hardware": {
         "vram_gb": 12,
         "min_vram_gb": 6,
         "ram_gb": 24,
-        "disk_gb": 15,
-        "notes": "字节 SeedVR2"
+        "disk_gb": 29,
+        "notes": "默认 3B；另有 7B（ByteDance-Seed/SeedVR2-7B），仓库含多种精度"
       },
       "tags": [
         "diffusers",
@@ -1798,7 +1899,7 @@
       "id": "triposr",
       "category": "3d",
       "name": "TripoSR",
-      "repo": "VAST-AI/TripoSR",
+      "repo": "VAST-AI-Research/TripoSR",
       "gguf_repo": "",
       "size_gb": 1.2,
       "engine": [
@@ -1806,14 +1907,14 @@
       ],
       "license": "MIT",
       "trending": true,
-      "description": "VAST+Stability 单图秒级 3D 重建。",
+      "description": "VAST + Stability 单图秒级 3D 重建（官方组织为 VAST-AI-Research）。",
       "sources": [
-        "https://huggingface.co/VAST-AI/TripoSR/",
-        "https://hf-mirror.com/VAST-AI/TripoSR/",
-        "https://hf-mirror.us/VAST-AI/TripoSR/",
-        "https://hf-cn-mirror.com/VAST-AI/TripoSR/"
+        "https://huggingface.co/VAST-AI-Research/TripoSR/",
+        "https://hf-mirror.com/VAST-AI-Research/TripoSR/",
+        "https://hf-mirror.us/VAST-AI-Research/TripoSR/",
+        "https://hf-cn-mirror.com/VAST-AI-Research/TripoSR/"
       ],
-      "primary_url": "https://huggingface.co/VAST-AI/TripoSR/",
+      "primary_url": "https://huggingface.co/VAST-AI-Research/TripoSR/",
       "hardware": {
         "vram_gb": 8,
         "min_vram_gb": 4,
@@ -1836,28 +1937,28 @@
       "id": "direct3d-s2",
       "category": "3d",
       "name": "Direct3D-S2",
-      "repo": "thu-ml-lab/Direct3D-S2",
+      "repo": "wushuang98/Direct3D-S2",
       "gguf_repo": "",
-      "size_gb": 6,
+      "size_gb": 6.5,
       "engine": [
         "direct3d-s2"
       ],
-      "license": "Apache-2.0",
+      "license": "MIT",
       "trending": true,
-      "description": "清华 THUML 直生 3D 大模型。",
+      "description": "Direct3D-S2（NeurIPS 2025，DreamTech/南大）：基于空间稀疏注意力(SSA)的高分辨率直生 3D 框架，SDF 体积生成、训练成本大幅下降，MIT。HF 权重 wushuang98/Direct3D-S2，代码 DreamTechAI/Direct3D-S2。",
       "sources": [
-        "https://huggingface.co/thu-ml-lab/Direct3D-S2/",
-        "https://hf-mirror.com/thu-ml-lab/Direct3D-S2/",
-        "https://hf-mirror.us/thu-ml-lab/Direct3D-S2/",
-        "https://hf-cn-mirror.com/thu-ml-lab/Direct3D-S2/"
+        "https://huggingface.co/wushuang98/Direct3D-S2/",
+        "https://hf-mirror.com/wushuang98/Direct3D-S2/",
+        "https://hf-mirror.us/wushuang98/Direct3D-S2/",
+        "https://hf-cn-mirror.com/wushuang98/Direct3D-S2/"
       ],
-      "primary_url": "https://huggingface.co/thu-ml-lab/Direct3D-S2/",
+      "primary_url": "https://huggingface.co/wushuang98/Direct3D-S2/",
       "hardware": {
         "vram_gb": 12,
-        "min_vram_gb": 6,
+        "min_vram_gb": 8,
         "ram_gb": 24,
         "disk_gb": 16,
-        "notes": ""
+        "notes": "8GB 可 CPU offload 运行；代码在 github.com/DreamTechAI/Direct3D-S2"
       },
       "tags": [
         "3d模型",
@@ -1912,28 +2013,28 @@
       "id": "trellis2",
       "category": "3d",
       "name": "Trellis 2",
-      "repo": "microsoft/TRELLIS.2",
+      "repo": "microsoft/TRELLIS.2-4B",
       "gguf_repo": "",
-      "size_gb": 10,
+      "size_gb": 8,
       "engine": [
         "trellis"
       ],
       "license": "MIT",
       "trending": true,
-      "description": "TRELLIS 2，多格式 3D 生成。",
+      "description": "微软 TRELLIS.2（2025-12 发布）：4B 原生结构化潜变量图生 3D 模型，3 秒生成、支持 PBR 材质，512³–1536³ 分辨率，MIT。权重仓库为 microsoft/TRELLIS.2-4B（代码在 github.com/microsoft/TRELLIS.2）。",
       "sources": [
-        "https://huggingface.co/microsoft/TRELLIS.2/",
-        "https://hf-mirror.com/microsoft/TRELLIS.2/",
-        "https://hf-mirror.us/microsoft/TRELLIS.2/",
-        "https://hf-cn-mirror.com/microsoft/TRELLIS.2/"
+        "https://huggingface.co/microsoft/TRELLIS.2-4B/",
+        "https://hf-mirror.com/microsoft/TRELLIS.2-4B/",
+        "https://hf-mirror.us/microsoft/TRELLIS.2-4B/",
+        "https://hf-cn-mirror.com/microsoft/TRELLIS.2-4B/"
       ],
-      "primary_url": "https://huggingface.co/microsoft/TRELLIS.2/",
+      "primary_url": "https://huggingface.co/microsoft/TRELLIS.2-4B/",
       "hardware": {
         "vram_gb": 12,
         "min_vram_gb": 6,
         "ram_gb": 24,
-        "disk_gb": 20,
-        "notes": "TRELLIS 2"
+        "disk_gb": 17,
+        "notes": "TRELLIS.2-4B，512³–1536³ 分辨率，输出 GLB/OBJ/PLY"
       },
       "tags": [
         "3d模型",
@@ -2134,49 +2235,54 @@
     {
       "id": "qwen3.8-27b",
       "category": "llm",
-      "name": "Qwen3.8 27B Uncensored（社区 GGUF 量化）",
-      "repo": "JonathanColetti/Qwen3.8-27B-Uncensored-GGUF",
-      "size_gb": 16.8,
+      "name": "Qwen3.8-27B（官方稠密多模态）",
+      "repo": "Qwen/Qwen3.8-27B",
+      "size_gb": 28,
       "engine": [
+        "vllm",
+        "sglang",
         "llama.cpp",
-        "mnn",
-        "ollama"
+        "transformers"
       ],
-      "license": "Apache-2.0（基座 Qwen3.8-27B）",
+      "license": "Apache-2.0",
       "trending": true,
-      "description": "社区开发者 JonathanColetti 基于 Qwen 官方 Qwen3.8-27B 制作的无审查微调 + GGUF 量化版（非 Qwen 官方仓库）：Q4_K_M 16.8GB，MTP 多 token 投机解码，附带 draft 模型(3.2GB)与视觉塔；IQ4_XS 15.3GB 可塞进 16GB 显存。HF 多个镜像可下（含 hf-cdn.sufy.com）。2026-08 热门单机旗舰。",
+      "description": "阿里 Qwen3.8-27B（2026-08-14 开源）：27B 稠密多模态模型，原生 262K 上下文，接受文本/图像/视频输入，SWE-bench Pro 61.7%，Apache-2.0。gguf_repo 另附社区去审查量化版。",
       "hardware": {
-        "vram_gb": 18,
-        "min_vram_gb": 12,
-        "ram_gb": 32,
-        "disk_gb": 17,
-        "notes": "Q4_K_M 16.8GB → 18GB 显存流畅；16GB 显存用 IQ4_XS(15.3GB)；纯 CPU 需 32GB 内存"
+        "vram_gb": 32,
+        "min_vram_gb": 16,
+        "ram_gb": 64,
+        "disk_gb": 56,
+        "notes": "BF16 约 56GB，量化版 16GB 起；单卡 A100/4090 可跑量化"
       },
       "sources": [
-        "https://huggingface.co/JonathanColetti/Qwen3.8-27B-Uncensored-GGUF/",
-        "https://hf-mirror.com/JonathanColetti/Qwen3.8-27B-Uncensored-GGUF/",
-        "https://hf-mirror.us/JonathanColetti/Qwen3.8-27B-Uncensored-GGUF/",
-        "https://hf-cn-mirror.com/JonathanColetti/Qwen3.8-27B-Uncensored-GGUF/",
-        "https://hf-cdn.sufy.com/JonathanColetti/Qwen3.8-27B-Uncensored-GGUF/"
+        "https://huggingface.co/Qwen/Qwen3.8-27B/",
+        "https://hf-mirror.com/Qwen/Qwen3.8-27B/",
+        "https://hf-mirror.us/Qwen/Qwen3.8-27B/",
+        "https://hf-cn-mirror.com/Qwen/Qwen3.8-27B/"
       ],
-      "primary_url": "https://huggingface.co/JonathanColetti/Qwen3.8-27B-Uncensored-GGUF/",
+      "primary_url": "https://huggingface.co/Qwen/Qwen3.8-27B/",
       "gguf_repo": "JonathanColetti/Qwen3.8-27B-Uncensored-GGUF",
       "mnn_repo": "taobao-mnn/Qwen3.8-27B-MNN",
       "modality": {
-        "multimodal": false,
-        "understand": [],
+        "multimodal": true,
+        "understand": [
+          "image",
+          "video"
+        ],
         "generate": [
           "text"
         ],
-        "notes": "单机旗舰，未见多模态声明"
+        "notes": "稠密模型，原生支持文本/图像/视频输入，262K 上下文"
       },
       "tags": [
         "LLM",
         "chat",
         "llama.cpp",
-        "mnn",
-        "ollama",
+        "multimodal",
+        "sglang",
         "trending",
+        "vllm",
+        "多模态",
         "大模型",
         "大语言模型",
         "对话",
@@ -2486,30 +2592,29 @@
       "id": "deepseek-v4-pro",
       "category": "llm",
       "name": "DeepSeek V4 Pro (1.6T MoE)",
-      "repo": "deepseek-ai/DeepSeek-V4",
-      "size_gb": 900,
+      "repo": "deepseek-ai/DeepSeek-V4-Pro",
+      "size_gb": 1599,
       "engine": [
         "vllm",
         "sglang"
       ],
       "license": "MIT",
       "trending": true,
-      "description": "DeepSeek 2026 旗舰：1.6T 参数 MoE，综合能力对标闭源前沿模型（AAI 排名开源第一梯队），MIT 完全开源可商用。",
+      "description": "DeepSeek 2026 旗舰：1.6T 总参 / 49B 激活 MoE，1M 上下文，综合能力对标闭源前沿（AAI 开源第一梯队），MIT 完全开源可商用。权重仓库为 deepseek-ai/DeepSeek-V4-Pro（0813 为后续更新版，已另列）。",
       "hardware": {
         "vram_gb": 1024,
         "min_vram_gb": 512,
-        "ram_gb": 1536,
-        "disk_gb": 900,
-        "notes": "需服务器级多卡（16×H100 起）；适合 vLLM 集群部署"
+        "ram_gb": 2048,
+        "disk_gb": 1599,
+        "notes": "FP4+FP8 混合权重约 1.6TB；需服务器级多卡集群（16×H100 起），vLLM/SGLang 部署"
       },
       "sources": [
-        "https://huggingface.co/deepseek-ai/DeepSeek-V4/",
-        "https://hf-mirror.com/deepseek-ai/DeepSeek-V4/",
-        "https://hf-mirror.us/deepseek-ai/DeepSeek-V4/",
-        "https://hf-cn-mirror.com/deepseek-ai/DeepSeek-V4/",
-        "https://hf-cdn.sufy.com/deepseek-ai/DeepSeek-V4/"
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/",
+        "https://hf-mirror.com/deepseek-ai/DeepSeek-V4-Pro/",
+        "https://hf-mirror.us/deepseek-ai/DeepSeek-V4-Pro/",
+        "https://hf-cn-mirror.com/deepseek-ai/DeepSeek-V4-Pro/"
       ],
-      "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4/",
+      "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/",
       "modality": {
         "multimodal": false,
         "understand": [],
@@ -2991,35 +3096,60 @@
       ]
     },
     {
-      "id": "glm-5.3-pending",
-      "category": "pending",
-      "name": "GLM-5.3（待开源）",
-      "repo": "zai-org/GLM-5.3",
-      "size_gb": 0,
-      "engine": [],
-      "license": "MIT",
-      "trending": false,
-      "description": "智谱 2026-08-19 发布 API，官方宣布权重 2026-08-28 开源：AAI 综合 60 分并列开源第一，复杂编码 / 防御性网络安全 / 长程任务强化。开源自会上架。",
-      "hardware": {
-        "vram_gb": 24,
-        "min_vram_gb": 16,
-        "ram_gb": 48,
-        "disk_gb": 24,
-        "notes": "预计与 GLM-5 部署门槛相近：24GB 显卡可跑量化版"
-      },
-      "sources": [
-        "https://huggingface.co/zai-org/GLM-5.3/",
-        "https://hf-mirror.com/zai-org/GLM-5.3/",
-        "https://hf-mirror.us/zai-org/GLM-5.3/",
-        "https://hf-cn-mirror.com/zai-org/GLM-5.3/",
-        "https://hf-cdn.sufy.com/zai-org/GLM-5.3/"
+      "id": "krea-2-turbo",
+      "category": "image",
+      "name": "Krea 2 Turbo",
+      "repo": "krea/Krea-2-Turbo",
+      "gguf_repo": "",
+      "size_gb": 13,
+      "engine": [
+        "diffusers",
+        "comfyui"
       ],
-      "primary_url": "https://huggingface.co/zai-org/GLM-5.3/",
+      "license": "Krea 社区许可（other，gated）",
+      "trending": true,
+      "description": "Krea 2 Turbo（2026-06-18）：Krea 新一代快速文生图/图像编辑模型的蒸馏加速版，质量与速度兼顾；同系列还有 Krea-2-Raw。gated 受控访问，需 HF 页面接受协议并配置 Token。",
+      "sources": [
+        "https://huggingface.co/krea/Krea-2-Turbo/",
+        "https://hf-mirror.com/krea/Krea-2-Turbo/",
+        "https://hf-mirror.us/krea/Krea-2-Turbo/",
+        "https://hf-cn-mirror.com/krea/Krea-2-Turbo/"
+      ],
+      "primary_url": "https://huggingface.co/krea/Krea-2-Turbo/",
+      "hardware": {
+        "vram_gb": 16,
+        "min_vram_gb": 8,
+        "ram_gb": 32,
+        "disk_gb": 63,
+        "notes": "权重约 13GB，仓库含多精度共约 63GB；gated"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "image"
+        ],
+        "notes": "文生图+图像编辑，gated"
+      },
       "tags": [
-        "pending",
-        "即将推出",
-        "待开源"
-      ]
+        "comfyui",
+        "diffusers",
+        "editing",
+        "image",
+        "krea",
+        "text to image",
+        "trending",
+        "turbo",
+        "图像生成",
+        "图像编辑",
+        "文生图",
+        "热门",
+        "绘图"
+      ],
+      "gated": true
     },
     {
       "id": "kimi-k3",
@@ -3076,29 +3206,29 @@
       "id": "qwen3.8-max",
       "category": "llm",
       "name": "Qwen3.8-Max (MoE)",
-      "repo": "Qwen/Qwen3.8-Max",
+      "repo": "Qwen/Qwen3.8-2.4T-A95B",
       "gguf_repo": "",
-      "size_gb": 1440,
+      "size_gb": 2446,
       "engine": [
         "vllm",
         "sglang"
       ],
-      "license": "Apache-2.0",
+      "license": "Qwen3.8-Max 许可（other，含营收门槛）",
       "trending": true,
-      "description": "阿里 Qwen3.8-Max，2.4T 总参 / 95B 激活 MoE，面向企业级部署。",
+      "description": "阿里 Qwen3.8-Max 开源底座（2026-08-12 开放权重）：2.4T 总参 / 95B 激活 MoE，纯文本思考模式、原生 262K 上下文，首个开源的 Max 级千问旗舰。仓库为 Qwen/Qwen3.8-2.4T-A95B（含 BF16 与 FP8）。",
       "sources": [
-        "https://huggingface.co/Qwen/Qwen3.8-Max/",
-        "https://hf-mirror.com/Qwen/Qwen3.8-Max/",
-        "https://hf-mirror.us/Qwen/Qwen3.8-Max/",
-        "https://hf-cn-mirror.com/Qwen/Qwen3.8-Max/"
+        "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/",
+        "https://hf-mirror.com/Qwen/Qwen3.8-2.4T-A95B/",
+        "https://hf-mirror.us/Qwen/Qwen3.8-2.4T-A95B/",
+        "https://hf-cn-mirror.com/Qwen/Qwen3.8-2.4T-A95B/"
       ],
-      "primary_url": "https://huggingface.co/Qwen/Qwen3.8-Max/",
+      "primary_url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/",
       "hardware": {
-        "vram_gb": 600,
-        "min_vram_gb": 300,
-        "ram_gb": 2048,
-        "disk_gb": 1440,
-        "notes": "多卡集群部署"
+        "vram_gb": 1024,
+        "min_vram_gb": 512,
+        "ram_gb": 3072,
+        "disk_gb": 4892,
+        "notes": "FP8 约 2.4TB、BF16 约 4.9TB；多卡集群部署，兼容 vLLM/SGLang"
       },
       "modality": {
         "multimodal": false,
@@ -3125,28 +3255,28 @@
       "id": "dots3-note-preview",
       "category": "llm",
       "name": "dots3-note preview (MoE)",
-      "repo": "",
+      "repo": "dots-studio/dots3-note-prev",
       "gguf_repo": "",
-      "size_gb": 170,
+      "size_gb": 288,
       "engine": [
         "vllm"
       ],
       "license": "自定义（小红书）",
       "trending": false,
-      "description": "小红书 dots3-note preview，280B 总参 / 16B 激活 MoE，文本+视觉+语音多模态理解。",
+      "description": "小红书 dots-studio dots3-note 预览版（2026-08）：280B 总参/16B 激活 MoE，文本+视觉+语音多模态理解。权重仓库 dots-studio/dots3-note-prev。",
       "sources": [
-        "https://huggingface.co/models?search=dots3",
-        "https://hf-mirror.com/models?search=dots3",
-        "https://hf-mirror.us/models?search=dots3",
-        "https://hf-cn-mirror.com/models?search=dots3"
+        "https://huggingface.co/dots-studio/dots3-note-prev/",
+        "https://hf-mirror.com/dots-studio/dots3-note-prev/",
+        "https://hf-mirror.us/dots-studio/dots3-note-prev/",
+        "https://hf-cn-mirror.com/dots-studio/dots3-note-prev/"
       ],
-      "primary_url": "https://huggingface.co/models?search=dots3",
+      "primary_url": "https://huggingface.co/dots-studio/dots3-note-prev/",
       "hardware": {
-        "vram_gb": 160,
-        "min_vram_gb": 80,
-        "ram_gb": 256,
-        "disk_gb": 170,
-        "notes": "多卡部署；官方仓库待确认"
+        "vram_gb": 64,
+        "min_vram_gb": 32,
+        "ram_gb": 128,
+        "disk_gb": 577,
+        "notes": "280B 总参/16B 激活 MoE，FP8 权重约 288GB"
       },
       "modality": {
         "multimodal": true,
@@ -3191,57 +3321,6 @@
         "pending",
         "即将推出",
         "待开源"
-      ]
-    },
-    {
-      "id": "llama4-multilingual",
-      "category": "llm",
-      "name": "Llama 4 多语言版",
-      "repo": "meta-llama/Llama-4-Multilingual",
-      "gguf_repo": "",
-      "size_gb": 160,
-      "engine": [
-        "vllm",
-        "sglang",
-        "llama.cpp"
-      ],
-      "license": "Llama 4 License",
-      "trending": true,
-      "description": "Meta Llama 4 多语言版，新增 50+ 低资源语言，生态成熟，Ollama/llama.cpp 全支持。",
-      "sources": [
-        "https://huggingface.co/meta-llama/Llama-4-Multilingual/",
-        "https://hf-mirror.com/meta-llama/Llama-4-Multilingual/",
-        "https://hf-mirror.us/meta-llama/Llama-4-Multilingual/",
-        "https://hf-cn-mirror.com/meta-llama/Llama-4-Multilingual/"
-      ],
-      "primary_url": "https://huggingface.co/meta-llama/Llama-4-Multilingual/",
-      "hardware": {
-        "vram_gb": 80,
-        "min_vram_gb": 40,
-        "ram_gb": 160,
-        "disk_gb": 160,
-        "notes": "视版本而定；GGUF 量化可降至消费级"
-      },
-      "modality": {
-        "multimodal": false,
-        "understand": [],
-        "generate": [
-          "text"
-        ],
-        "notes": "多语言版，未见多模态声明"
-      },
-      "tags": [
-        "LLM",
-        "chat",
-        "llama.cpp",
-        "sglang",
-        "trending",
-        "vllm",
-        "大模型",
-        "大语言模型",
-        "对话",
-        "热门",
-        "语言模型"
       ]
     },
     {
@@ -3301,22 +3380,22 @@
       "id": "magi2-preview",
       "category": "video",
       "name": "MAGI-2 Preview",
-      "repo": "",
+      "repo": "sand-ai/MAGI-2-preview",
       "gguf_repo": "",
       "size_gb": 200,
       "engine": [
         "comfyui"
       ],
-      "license": "自定义（Sand.ai）",
+      "license": "Apache-2.0",
       "trending": false,
-      "description": "Sand.ai MAGI-2 Preview，自研 MagiMoE 算子，与主流框架解耦较深，适合有自研能力团队。",
+      "description": "Sand.ai MAGI-2 Preview（2026-08-03 开放权重）：自研 MagiMoE 算子的图/文生视频模型，与主流框架解耦较深，适合有自研能力团队。",
       "sources": [
-        "https://huggingface.co/models?search=MAGI-2",
-        "https://hf-mirror.com/models?search=MAGI-2",
-        "https://hf-mirror.us/models?search=MAGI-2",
-        "https://hf-cn-mirror.com/models?search=MAGI-2"
+        "https://huggingface.co/sand-ai/MAGI-2-preview/",
+        "https://hf-mirror.com/sand-ai/MAGI-2-preview/",
+        "https://hf-mirror.us/sand-ai/MAGI-2-preview/",
+        "https://hf-cn-mirror.com/sand-ai/MAGI-2-preview/"
       ],
-      "primary_url": "https://huggingface.co/models?search=MAGI-2",
+      "primary_url": "https://huggingface.co/sand-ai/MAGI-2-preview/",
       "hardware": {
         "vram_gb": 640,
         "min_vram_gb": 320,
@@ -3346,7 +3425,7 @@
       "id": "lingbot-video",
       "category": "video",
       "name": "LingBot-Video 1.3B",
-      "repo": "",
+      "repo": "robbyant/lingbot-video-dense-1.3b",
       "gguf_repo": "",
       "size_gb": 5,
       "engine": [
@@ -3355,14 +3434,14 @@
       ],
       "license": "Apache-2.0",
       "trending": false,
-      "description": "蚂蚁灵波 LingBot-Video，Dense 1.3B 消费级可跑；MoE 30B 版需 512GB 系统内存 + FSDP。",
+      "description": "蚂蚁灵波 LingBot-Video：Dense 1.3B 消费级可跑（本条目）；另有 MoE 30B-A3B（robbyant/lingbot-video-moe-30b-a3b，需 512GB 系统内存 + FSDP）。FastVideo 提供 Diffusers 适配。",
       "sources": [
-        "https://huggingface.co/models?search=LingBot-Video",
-        "https://hf-mirror.com/models?search=LingBot-Video",
-        "https://hf-mirror.us/models?search=LingBot-Video",
-        "https://hf-cn-mirror.com/models?search=LingBot-Video"
+        "https://huggingface.co/robbyant/lingbot-video-dense-1.3b/",
+        "https://hf-mirror.com/robbyant/lingbot-video-dense-1.3b/",
+        "https://hf-mirror.us/robbyant/lingbot-video-dense-1.3b/",
+        "https://hf-cn-mirror.com/robbyant/lingbot-video-dense-1.3b/"
       ],
-      "primary_url": "https://huggingface.co/models?search=LingBot-Video",
+      "primary_url": "https://huggingface.co/robbyant/lingbot-video-dense-1.3b/",
       "hardware": {
         "vram_gb": 24,
         "min_vram_gb": 12,
@@ -3456,13 +3535,23 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      }
     },
     {
       "id": "ace-step-1.5",
       "category": "audio",
       "name": "ACE-Step 1.5",
-      "repo": "",
+      "repo": "ACE-Step/Ace-Step1.5",
       "gguf_repo": "",
       "size_gb": 3,
       "engine": [
@@ -3470,14 +3559,14 @@
       ],
       "license": "MIT",
       "trending": true,
-      "description": "ACE+StepFun ACE-Step 1.5，门槛最低，RTX 3090 约 10 秒出 4 分钟歌曲；⚠️ ComfyUI 勿加 --use-sage-attention 否则丢人声。",
+      "description": "ACE+StepFun ACE-Step 1.5，门槛最低，RTX 3090 约 10 秒出 4 分钟歌曲；官方仓库 ACE-Step/Ace-Step1.5（另有 v15-XL Turbo 系列）。⚠️ ComfyUI 勿加 --use-sage-attention 否则丢人声。",
       "sources": [
-        "https://huggingface.co/models?search=ACE-Step",
-        "https://hf-mirror.com/models?search=ACE-Step",
-        "https://hf-mirror.us/models?search=ACE-Step",
-        "https://hf-cn-mirror.com/models?search=ACE-Step"
+        "https://huggingface.co/ACE-Step/Ace-Step1.5/",
+        "https://hf-mirror.com/ACE-Step/Ace-Step1.5/",
+        "https://hf-mirror.us/ACE-Step/Ace-Step1.5/",
+        "https://hf-cn-mirror.com/ACE-Step/Ace-Step1.5/"
       ],
-      "primary_url": "https://huggingface.co/models?search=ACE-Step",
+      "primary_url": "https://huggingface.co/ACE-Step/Ace-Step1.5/",
       "hardware": {
         "vram_gb": 4,
         "min_vram_gb": 4,
@@ -3495,7 +3584,17 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      }
     },
     {
       "id": "happyshrimp-1.0",
@@ -3533,7 +3632,7 @@
       ],
       "license": "Apache-2.0",
       "trending": true,
-      "description": "Comfy-Org 官方为 ComfyUI 重打包的分发（HF 下载量 55 万+，社区最主流），含 FP16/INT8 多精度与原生 Text-to-Music 模板。",
+      "description": "Comfy-Org 官方为 ComfyUI 重打包的分发（HF 下载量 71 万+，社区最主流），含 FP16/INT8 多精度与原生 Text-to-Music 模板。",
       "sources": [
         "https://huggingface.co/Comfy-Org/MiniMax-Music-3",
         "https://hf-mirror.com/Comfy-Org/MiniMax-Music-3",
@@ -3558,7 +3657,17 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      }
     },
     {
       "id": "minimax-music3-gguf",
@@ -3572,7 +3681,7 @@
       ],
       "license": "未标注",
       "trending": true,
-      "description": "社区 GGUF 量化版（HF 下载量 23 万+），含多档位量化文件按需下载；配合 ComfyUI GGUF 加载节点使用，显著降低显存需求。",
+      "description": "社区 GGUF 量化版（HF 下载量 38 万+），含多档位量化文件按需下载；配合 ComfyUI GGUF 加载节点使用，显著降低显存需求。",
       "sources": [
         "https://huggingface.co/Serveurperso/MiniMax-Music3-GGUF",
         "https://hf-mirror.com/Serveurperso/MiniMax-Music3-GGUF",
@@ -3597,7 +3706,17 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      }
     },
     {
       "id": "minimax-music3-turbo-fp8",
@@ -3636,7 +3755,17 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      }
     },
     {
       "id": "minimax-music3-w4a8-comfyui",
@@ -3675,7 +3804,17 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      }
     },
     {
       "id": "minimax-music3-lora-fiona-crapple",
@@ -3714,7 +3853,17 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      }
     },
     {
       "id": "minimax-music3-latent-refiner",
@@ -3753,7 +3902,17 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      }
     },
     {
       "id": "minimax-music3-mlx",
@@ -3788,6 +3947,176 @@
         "music",
         "trending",
         "热门",
+        "音乐",
+        "音乐生成",
+        "音效",
+        "音频生成"
+      ],
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      }
+    },
+    {
+      "id": "stable-audio-3-medium",
+      "category": "audio",
+      "name": "Stable Audio 3 Medium",
+      "repo": "stabilityai/stable-audio-3-medium",
+      "gguf_repo": "",
+      "size_gb": 2.3,
+      "engine": [
+        "diffusers",
+        "comfyui"
+      ],
+      "license": "Stability 社区许可（other，gated）",
+      "trending": true,
+      "description": "Stability AI Stable Audio 3 中型版（2026-05-17）：新一代音乐+音效统一生成，同系列还有 small-music/small-sfx。gated 受控访问：需先在 HF 页面接受协议并在设置中填 HF Token。",
+      "sources": [
+        "https://huggingface.co/stabilityai/stable-audio-3-medium/",
+        "https://hf-mirror.com/stabilityai/stable-audio-3-medium/",
+        "https://hf-mirror.us/stabilityai/stable-audio-3-medium/",
+        "https://hf-cn-mirror.com/stabilityai/stable-audio-3-medium/"
+      ],
+      "primary_url": "https://huggingface.co/stabilityai/stable-audio-3-medium/",
+      "hardware": {
+        "vram_gb": 8,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 11,
+        "notes": "权重约 2.3GB；gated 需 HF Token"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "音乐/音效生成，gated"
+      },
+      "tags": [
+        "audio",
+        "diffusers",
+        "music",
+        "stability",
+        "stable-audio",
+        "trending",
+        "热门",
+        "音乐",
+        "音乐生成",
+        "音效",
+        "音频生成"
+      ],
+      "gated": true
+    },
+    {
+      "id": "magenta-realtime-2",
+      "category": "audio",
+      "name": "Magenta Realtime 2 (Google)",
+      "repo": "google/magenta-realtime-2",
+      "gguf_repo": "",
+      "size_gb": 15.6,
+      "engine": [
+        "transformers"
+      ],
+      "license": "CC-BY-4.0",
+      "trending": true,
+      "description": "Google Magenta 实时交互音乐生成模型 Realtime 2（2026-05-28）：可实时演奏/续写的交互式音乐模型，CC-BY-4.0 署名许可。",
+      "sources": [
+        "https://huggingface.co/google/magenta-realtime-2/",
+        "https://hf-mirror.com/google/magenta-realtime-2/",
+        "https://hf-mirror.us/google/magenta-realtime-2/",
+        "https://hf-cn-mirror.com/google/magenta-realtime-2/"
+      ],
+      "primary_url": "https://huggingface.co/google/magenta-realtime-2/",
+      "hardware": {
+        "vram_gb": 8,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 16,
+        "notes": "仓库含多格式约 15.6GB"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "实时/交互式音乐生成"
+      },
+      "tags": [
+        "audio",
+        "google",
+        "magenta",
+        "music",
+        "realtime",
+        "trending",
+        "交互式",
+        "实时音乐",
+        "热门",
+        "音乐",
+        "音乐生成",
+        "音效",
+        "音频生成"
+      ]
+    },
+    {
+      "id": "moss-soundeffect-2",
+      "category": "audio",
+      "name": "MOSS-SoundEffect v2.0 (OpenMOSS)",
+      "repo": "OpenMOSS-Team/MOSS-SoundEffect-v2.0",
+      "gguf_repo": "",
+      "size_gb": 1.4,
+      "engine": [
+        "diffusers",
+        "transformers"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "OpenMOSS 环境音效生成 v2.0（2026-05-25）：文本生成环境/拟声音效，轻量（权重约 1.4GB），Apache-2.0，适合视频与游戏配音效。",
+      "sources": [
+        "https://huggingface.co/OpenMOSS-Team/MOSS-SoundEffect-v2.0/",
+        "https://hf-mirror.com/OpenMOSS-Team/MOSS-SoundEffect-v2.0/",
+        "https://hf-mirror.us/OpenMOSS-Team/MOSS-SoundEffect-v2.0/",
+        "https://hf-cn-mirror.com/OpenMOSS-Team/MOSS-SoundEffect-v2.0/"
+      ],
+      "primary_url": "https://huggingface.co/OpenMOSS-Team/MOSS-SoundEffect-v2.0/",
+      "hardware": {
+        "vram_gb": 4,
+        "min_vram_gb": 2,
+        "ram_gb": 8,
+        "disk_gb": 12,
+        "notes": "权重约 1.4GB，轻量"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "文本→环境音效"
+      },
+      "tags": [
+        "audio",
+        "moss",
+        "music",
+        "openmoss",
+        "sfx",
+        "trending",
+        "拟声",
+        "热门",
+        "环境音",
         "音乐",
         "音乐生成",
         "音效",
@@ -4716,6 +5045,390 @@
         "大模型",
         "大语言模型",
         "对话",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "granite-4.2-8b",
+      "category": "llm",
+      "name": "Granite 4.2 8B (IBM)",
+      "repo": "ibm-granite/granite-4.2-8b",
+      "gguf_repo": "",
+      "size_gb": 9,
+      "engine": [
+        "transformers",
+        "llama.cpp",
+        "vllm"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "IBM Granite 4.2（2026-08-25 开放权重）：8B 稠密推理模型，可切换思考/非思考模式，128K 长上下文，Apache-2.0 可商用，消费级显卡友好。",
+      "sources": [
+        "https://huggingface.co/ibm-granite/granite-4.2-8b/",
+        "https://hf-mirror.com/ibm-granite/granite-4.2-8b/",
+        "https://hf-mirror.us/ibm-granite/granite-4.2-8b/",
+        "https://hf-cn-mirror.com/ibm-granite/granite-4.2-8b/"
+      ],
+      "primary_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/",
+      "hardware": {
+        "vram_gb": 16,
+        "min_vram_gb": 8,
+        "ram_gb": 32,
+        "disk_gb": 18,
+        "notes": "BF16 约 18GB，Q4 量化 8GB 起"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "纯文本，可切换思考模式"
+      },
+      "tags": [
+        "LLM",
+        "chat",
+        "granite",
+        "ibm",
+        "reasoning",
+        "trending",
+        "大模型",
+        "大语言模型",
+        "对话",
+        "推理",
+        "热门",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "granite-4.2-30b",
+      "category": "llm",
+      "name": "Granite 4.2 30B (IBM)",
+      "repo": "ibm-granite/granite-4.2-30b",
+      "gguf_repo": "",
+      "size_gb": 29,
+      "engine": [
+        "transformers",
+        "llama.cpp",
+        "vllm"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "IBM Granite 4.2 30B（2026-08-25）：30B 稠密推理模型，可切换思考模式、128K 上下文，企业合规友好（欧美开源），Apache-2.0。",
+      "sources": [
+        "https://huggingface.co/ibm-granite/granite-4.2-30b/",
+        "https://hf-mirror.com/ibm-granite/granite-4.2-30b/",
+        "https://hf-mirror.us/ibm-granite/granite-4.2-30b/",
+        "https://hf-cn-mirror.com/ibm-granite/granite-4.2-30b/"
+      ],
+      "primary_url": "https://huggingface.co/ibm-granite/granite-4.2-30b/",
+      "hardware": {
+        "vram_gb": 48,
+        "min_vram_gb": 20,
+        "ram_gb": 96,
+        "disk_gb": 59,
+        "notes": "BF16 约 59GB，Q4 量化约 20GB"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "纯文本，可切换思考模式"
+      },
+      "tags": [
+        "LLM",
+        "chat",
+        "granite",
+        "ibm",
+        "reasoning",
+        "trending",
+        "大模型",
+        "大语言模型",
+        "对话",
+        "推理",
+        "热门",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "minimax-m3",
+      "category": "llm",
+      "name": "MiniMax M3 (428B MoE 多模态)",
+      "repo": "MiniMaxAI/MiniMax-M3",
+      "gguf_repo": "",
+      "size_gb": 427,
+      "engine": [
+        "vllm",
+        "sglang",
+        "transformers"
+      ],
+      "license": "MiniMax 社区许可（other）",
+      "trending": true,
+      "description": "MiniMax M3（2026-06-01 发布）：428B 总参/23B 激活的稀疏注意力 MoE，1M 上下文，全上下文解码比 M2 快约 15×，原生多模态（图像理解），效率向旗舰。",
+      "sources": [
+        "https://huggingface.co/MiniMaxAI/MiniMax-M3/",
+        "https://hf-mirror.com/MiniMaxAI/MiniMax-M3/",
+        "https://hf-mirror.us/MiniMaxAI/MiniMax-M3/",
+        "https://hf-cn-mirror.com/MiniMaxAI/MiniMax-M3/"
+      ],
+      "primary_url": "https://huggingface.co/MiniMaxAI/MiniMax-M3/",
+      "hardware": {
+        "vram_gb": 512,
+        "min_vram_gb": 128,
+        "ram_gb": 1024,
+        "disk_gb": 1708,
+        "notes": "FP8 权重约 427GB，仓库含多精度共约 1.7TB；多卡部署，量化后门槛下降"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "image"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "稀疏 MoE，原生图像理解+文本"
+      },
+      "tags": [
+        "LLM",
+        "chat",
+        "minimax",
+        "moe",
+        "multimodal",
+        "trending",
+        "多模态",
+        "大模型",
+        "大语言模型",
+        "对话",
+        "热门",
+        "稀疏注意力",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "muse-glimmer-30b",
+      "category": "llm",
+      "name": "Muse Glimmer 30B (Meta)",
+      "repo": "meta-models/Muse-Glimmer-30B",
+      "gguf_repo": "",
+      "size_gb": 30,
+      "engine": [
+        "transformers",
+        "llama.cpp",
+        "vllm"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "Meta 超智实验室首个开放权重模型 Muse Glimmer（2026-08-10）：由旗舰 Muse 蒸馏，28B 解码器+2B 视觉编码器共 30B，面向本地 Agent 工作流（编码/文档分析/个人助理），Meta 首个采用 Apache-2.0 的模型，单张消费级显卡可跑。",
+      "sources": [
+        "https://huggingface.co/meta-models/Muse-Glimmer-30B/",
+        "https://hf-mirror.com/meta-models/Muse-Glimmer-30B/",
+        "https://hf-mirror.us/meta-models/Muse-Glimmer-30B/",
+        "https://hf-cn-mirror.com/meta-models/Muse-Glimmer-30B/"
+      ],
+      "primary_url": "https://huggingface.co/meta-models/Muse-Glimmer-30B/",
+      "hardware": {
+        "vram_gb": 32,
+        "min_vram_gb": 16,
+        "ram_gb": 64,
+        "disk_gb": 60,
+        "notes": "BF16 约 30GB，Q4 量化 16GB 起；另有官方/社区 GGUF"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "image"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "28B 解码器 + 2B 视觉编码器，本地 Agent 定位"
+      },
+      "tags": [
+        "LLM",
+        "agent",
+        "chat",
+        "meta",
+        "multimodal",
+        "muse",
+        "trending",
+        "多模态",
+        "大模型",
+        "大语言模型",
+        "对话",
+        "智能体",
+        "热门",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "deepseek-v4-flash-vision",
+      "category": "llm",
+      "name": "DeepSeek-V4-Flash-Vision-Exp (多模态)",
+      "repo": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+      "gguf_repo": "",
+      "size_gb": 305,
+      "engine": [
+        "vllm",
+        "sglang",
+        "transformers"
+      ],
+      "license": "MIT",
+      "trending": true,
+      "description": "DeepSeek V4 系列首个开源多模态模型（2026-08-31 实验版）：约 305B 参数，基于 V4-Flash，面向 Agent 的屏幕/文档/视觉理解，MIT 可商用。",
+      "sources": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/",
+        "https://hf-mirror.com/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/",
+        "https://hf-mirror.us/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/",
+        "https://hf-cn-mirror.com/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/"
+      ],
+      "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/",
+      "hardware": {
+        "vram_gb": 384,
+        "min_vram_gb": 160,
+        "ram_gb": 768,
+        "disk_gb": 305,
+        "notes": "实验版(Exp)；FP8 权重约 305GB，多卡部署"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "image"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "V4 家族首个多模态实验模型，面向 Agent 视觉"
+      },
+      "tags": [
+        "LLM",
+        "agent",
+        "chat",
+        "deepseek",
+        "multimodal",
+        "trending",
+        "vision",
+        "多模态",
+        "大模型",
+        "大语言模型",
+        "对话",
+        "热门",
+        "视觉理解",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "glm-5.3",
+      "category": "llm",
+      "name": "GLM-5.3 (智谱)",
+      "repo": "zai-org/GLM-5.3",
+      "gguf_repo": "",
+      "size_gb": 753,
+      "engine": [
+        "vllm",
+        "sglang",
+        "llama.cpp"
+      ],
+      "license": "GLM 许可（other）",
+      "trending": true,
+      "description": "智谱 GLM-5.3（2026-08-19 发 API、08-25 开放权重）：GlmMoeDsa 稀疏 MoE、1M 上下文，AAI 综合 60 分并列开源第一，复杂编码/防御性网络安全/长程任务强化。",
+      "sources": [
+        "https://huggingface.co/zai-org/GLM-5.3/",
+        "https://hf-mirror.com/zai-org/GLM-5.3/",
+        "https://hf-mirror.us/zai-org/GLM-5.3/",
+        "https://hf-cn-mirror.com/zai-org/GLM-5.3/"
+      ],
+      "primary_url": "https://huggingface.co/zai-org/GLM-5.3/",
+      "hardware": {
+        "vram_gb": 512,
+        "min_vram_gb": 48,
+        "ram_gb": 1024,
+        "disk_gb": 756,
+        "notes": "权重约 753GB；量化版可在大显存单卡/多卡运行"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "稀疏 MoE，1M 上下文，纯文本"
+      },
+      "tags": [
+        "LLM",
+        "chat",
+        "glm",
+        "moe",
+        "reasoning",
+        "trending",
+        "zhipu",
+        "大模型",
+        "大语言模型",
+        "对话",
+        "推理",
+        "智谱",
+        "热门",
+        "稀疏注意力",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "lfm2.5-vl-3b",
+      "category": "llm",
+      "name": "LFM2.5-VL-3B (Liquid·端侧 VLM)",
+      "repo": "LiquidAI/LFM2.5-VL-3B",
+      "gguf_repo": "",
+      "size_gb": 3.1,
+      "engine": [
+        "transformers",
+        "llama.cpp",
+        "onnxruntime"
+      ],
+      "license": "LFM 商业许可（other）",
+      "trending": true,
+      "description": "Liquid AI 端侧视觉语言模型（2026-08-12）：3.1B 非推理架构，主打低时延单轮，读文档/屏幕/实景并做目标坐标定位，可在手机、笔记本、单 GPU 甚至浏览器 WebGPU 客户端运行。",
+      "sources": [
+        "https://huggingface.co/LiquidAI/LFM2.5-VL-3B/",
+        "https://hf-mirror.com/LiquidAI/LFM2.5-VL-3B/",
+        "https://hf-mirror.us/LiquidAI/LFM2.5-VL-3B/",
+        "https://hf-cn-mirror.com/LiquidAI/LFM2.5-VL-3B/"
+      ],
+      "primary_url": "https://huggingface.co/LiquidAI/LFM2.5-VL-3B/",
+      "hardware": {
+        "vram_gb": 6,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 7,
+        "notes": "端侧/边缘部署，支持 WebGPU"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "image"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "端侧 VLM，屏幕/文档理解与目标定位"
+      },
+      "tags": [
+        "LLM",
+        "chat",
+        "edge",
+        "liquid",
+        "multimodal",
+        "trending",
+        "vision",
+        "vlm",
+        "多模态",
+        "大模型",
+        "大语言模型",
+        "对话",
+        "热门",
+        "端侧",
+        "视觉理解",
         "语言模型"
       ]
     },

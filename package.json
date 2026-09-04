@@ -1,8 +1,8 @@
 {
   "name": "kevrai-omni",
   "productName": "Kevrai Omni",
-  "version": "2.5.0",
-  "description": "Kevrai Omni — one-click local AI workstation (LLM/TTS/Image/Video/3D/Audio/Super-Resolution). LTX-2.5 video generation, super search, llama.cpp + MNN dual engine, hardware-aware recommendation.",
+  "version": "2.6.0",
+  "description": "Kevrai Omni — one-click local AI workstation (LLM/TTS/Image/Video/3D/Audio/Super-Resolution). MiniMax-Music3 music generation, LTX-2.5 video, super search, llama.cpp + MNN dual engine, hardware-aware recommendation.",
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
