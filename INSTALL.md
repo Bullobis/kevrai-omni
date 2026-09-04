@@ -1,11 +1,11 @@
-# Install — Kevrai Omni v2.5.0
+# Install — Kevrai Omni v2.6.0
 
 Kevrai Omni 采用**标准安装包**交付（不是解压即用的便携包）：安装后自动创建桌面快捷方式，
 推理引擎与模型不随安装包分发，首次使用时在软件内按需下载（已存在自动跳过，可检查更新）。
 
 ## Windows（推荐，面向普通用户）
 
-1. 到 [Releases](https://github.com/Bullobis/kevrai-omni/releases) 下载 `Kevrai-Omni-Setup-2.5.0.exe`
+1. 到 [Releases](https://github.com/Bullobis/kevrai-omni/releases) 下载 `Kevrai-Omni-Setup-2.6.0.exe`
 2. 双击安装 → 桌面自动出现 **Kevrai Omni** 快捷方式（也可在设置中改变安装目录）
 3. 双击快捷方式启动：若机器上没有 Python，会进入「环境准备」页，点一下
    「一键安装 Python 环境」即可（约 11 MB，国内镜像，装到用户数据目录，不污染系统）；
@@ -15,14 +15,14 @@ Kevrai Omni 采用**标准安装包**交付（不是解压即用的便携包）�
 
 | 形态 | 文件 | 使用方式 |
 |---|---|---|
-| AppImage | `Kevrai-Omni-2.5.0-x86_64.AppImage` | `chmod +x` 后双击或命令行运行 |
-| deb | `kevrai-omni_2.5.0_amd64.deb` | `sudo apt install ./kevrai-omni_2.5.0_amd64.deb` |
+| AppImage | `Kevrai-Omni-2.6.0-x86_64.AppImage` | `chmod +x` 后双击或命令行运行 |
+| deb | `kevrai-omni_2.6.0_amd64.deb` | `sudo apt install ./kevrai-omni_2.6.0_amd64.deb` |
 
 deb 安装会写入桌面项与开始菜单项；AppImage 无需安装。
 
 ## macOS
 
-下载 `Kevrai-Omni-2.5.0.dmg`（x64 / arm64 两版），拖入 Applications。
+下载 `Kevrai-Omni-2.6.0.dmg`（x64 / arm64 两版），拖入 Applications。
 内部构建未签名，首次打开请在「系统设置 → 隐私与安全性」中允许。
 
 ## 三步上手

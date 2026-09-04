@@ -1,13 +1,24 @@
 ﻿# Kevrai Omni
 
-> 一站式本地 AI 工作站：LLM · 多模态大模型 · TTS · **LTX-2.5 视频生成** · 图像生成 · 超分辨率 · 音频生成 · 3D 生成
-> One-stop local AI workstation: LLM, multimodal LLM, TTS, **LTX-2.5 video gen**, image gen, super-resolution, audio gen, 3D gen.
+> 一站式本地 AI 工作站：LLM · 多模态大模型 · TTS · **MiniMax-Music3 音乐生成** · **LTX-2.5 视频生成** · 图像生成 · 超分辨率 · 音频生成 · 3D 生成
+> One-stop local AI workstation: LLM, multimodal LLM, TTS, **MiniMax-Music3 music gen**, **LTX-2.5 video gen**, image gen, super-resolution, audio gen, 3D gen.
 
 **一个安装包 · 桌面快捷方式 · 引擎按需下载 · 模型从 huggingface.co 一键拉取 · 支持本地导入 · 全部开源**
 
 ![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)
-![Version](https://img.shields.io/badge/version-2.5.0-orange)
-![Tests](https://img.shields.io/badge/tests-323%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-2.6.0-orange)
+![Tests](https://img.shields.io/badge/tests-372%20passed-brightgreen)
+
+---
+
+## ✨ v2.6.0 更新亮点（MiniMax-Music3 接入 + 新模型 + 全目录核验）
+| 新特性 / 修复 | 说明 |
+|---|---|
+| 🎵 **MiniMax-Music3 全家桶接入并逐条核验** | 官方全精度 `MiniMaxAI/MiniMax-Music3`（8B Global LLM + 0.6B Local LLM + 2.4B Flow Matching + 123M Flow-VAE，32kHz 立体声、单首最长 5 分钟）、ComfyUI 官方重打包、GGUF 量化、Turbo-FP8、W4A8、风格 LoRA、Latent Refiner、MLX 共 8 个条目；配套 `sglang-omni` 引擎与专用 ComfyUI 节点；许可核实为 MiniMax-Music3 Community License（署名 + 2000 万美元营收门槛） |
+| 🆕 **新增 13 个 2026 年 5 月后开放权重的高质量模型** | LLM：Granite 4.2 8B/30B、MiniMax M3、Meta Muse Glimmer 30B、DeepSeek-V4-Flash-Vision、GLM-5.3（由「待开源」转正）、Liquid LFM2.5-VL-3B；TTS：MOSS-TTS v1.5、dots.tts-soar；音频：Stable Audio 3 Medium、Google Magenta Realtime 2、MOSS-SoundEffect v2；图像：Krea 2 Turbo。全部经 HuggingFace API 实查存在性、许可、体积、发布时间后入库 |
+| 📌 **修正 14 处错误/失效仓库 slug** | DeepSeek-V4-Pro、Qwen3.8-Max→`Qwen3.8-2.4T-A95B`、Qwen3.8-27B 转正官方权重、TRELLIS.2→`TRELLIS.2-4B`、HunyuanImage-3.0→小写 `tencent/`、SeedVR2→`-3B`、Direct3D-S2→`wushuang98`/`DreamTechAI`、TripoSR/TripoSG→`VAST-AI-Research`、chatterbox/IndexTTS/Kokoro 引擎地址、bartowski Mistral GGUF、ACE-Step 1.5、dots3-note、MAGI-2、LingBot 等 |
+| 🗑️ 移除虚构条目 | `meta-llama/Llama-4-Multilingual` 在官方模型列表中并不存在（Llama 4 仅 Scout/Maverick），已移除，避免重蹈「幽灵仓库」覆辙 |
+| 🧪 测试加固 | 新增 `test_v260_catalog.py`（49 项）：锁定全部修正 slug、新模型字段完整性、Music3 架构事实、引擎地址与目录不变量；全量 **372 passed** |
 
 ---
 
@@ -67,7 +78,7 @@
 | 视频生成 | 仅目录条目 | **LTX-2.5 一键生成面板**（参数可调、进度、取消、画廊） |
 | 搜索 | 名称/描述子串匹配 | **加权模糊搜索**：纠错、中文分词、高亮、分面、排序、历史 |
 | 引擎 | 硬编码 diffusers | **引擎市场（按需下载）**：llama.cpp、MNN、vLLM、ONNX Runtime、ComfyUI、**LTX-Video**、TTS/3D 引擎等 30 个 |
-| 模型来源 | 视频生成为主 | **110 模型 · 9 大类**，全部带 tags 与 modality 标注 |
+| 模型来源 | 视频生成为主 | **121 模型 · 9 大类**，带 tags 与 modality 标注 |
 | 安装包大小 | （含模型） | **安装包保持最小**，引擎与模型首次使用时下载到 `AppData/KevraiOmni/` |
 | 桌面快捷方式 | 无 | **自动创建桌面 + 开始菜单快捷方式** |
 | GGUF 量化 | 无 | **GGUF 全量化浏览**：仓库内全部 `.gguf` 文件单独下载 |
@@ -169,34 +180,34 @@ kevrai-studio/
 │   │   ├── engines.py       # 引擎管理器
 │   │   ├── importer.py      # HF 下载（断点续传）+ 本地导入
 │   │   └── ...
-│   └── tests/               # pytest（303 项）
+│   └── tests/               # pytest（372 项）
 ├── catalog/                 # 静态目录（随安装包发行）
-│   ├── models.json          # 110 模型（带 tags/modality）
-│   └── engines.json         # 30 引擎（含 ltx-video）
+│   ├── models.json          # 121 模型（带 tags/modality）
+│   └── engines.json         # 30 引擎（含 ltx-video、sglang-omni）
 ├── scripts/
 │   ├── build_windows.sh     # 打 Windows .exe
 │   └── release.sh           # gh release create
 ├── electron-builder.yml     # NSIS 配置
-└── package.json             # v2.4.0
+└── package.json             # v2.6.0
 ```
 
 ---
 
-## 模型市场（catalog/models.json · 110 条目）
+## 模型市场（catalog/models.json · 121 条目）
 
-按 9 大类组织，指向 huggingface.co 官方或正规社区量化仓库：
+按 9 大类组织，指向 huggingface.co 官方或正规社区量化仓库；每个条目均经 HuggingFace/GitHub API 实查核验：
 
 | 类别 | 代表条目 |
 |---|---|
-| LLM（多模态 + 纯文本） | Qwen3 32B/235B-A22B/30B-A3B、Qwen3-VL/Omni、Llama 3.3 70B、DeepSeek-V3/R1、Kimi K2、GLM-4.5、Mistral Small 24B、Gemma 3 27B、InternVL3 38B |
-| TTS | CosyVoice 2/3、Fish Speech 1.5、F5-TTS、Spark-TTS、Kokoro 82M、Chatterbox、IndexTTS、GPT-SoVITS |
-| 视频生成 | **LTX-2.5 / LTX-2.3**、Wan 2.2 T2V/I2V A14B、HunyuanVideo、CogVideoX 2B/5B、LTX-Video、Open-Sora 2.0、Step-Video |
-| 图像生成 | FLUX.1 [dev/schnell]、SDXL-Turbo、SD3.5 Large、Kolors、AuraFlow、HunyuanImage 3.0、ControlNet |
-| 超分辨率 | Real-ESRGAN、APISR、SUPIR、4x-UltraSharp、SeedVR2 |
-| 音频生成 | Stable Audio Open 1.0、MusicGen Large/Stereo、AudioLDM 2、DiffRhythm |
-| 3D 生成 | Hunyuan3D 2.1、TRELLIS-image、Trellis 2、TripoSR、TripoSG、Direct3D-S2、PartCrafter |
+| LLM（多模态 + 纯文本） | Qwen3/3.5/3.6/3.8 全系、DeepSeek-V4 Pro/Flash/Flash-Vision、GLM-5/5.2/5.3、Kimi K2.6/K3、**MiniMax M3**、**Granite 4.2 8B/30B**、**Meta Muse Glimmer 30B**、**LFM2.5-VL-3B**、Mistral、Gemma、GPT-OSS |
+| TTS | CosyVoice 2/3、Fish Speech 1.5、F5-TTS、Spark-TTS、Kokoro 82M、Chatterbox、IndexTTS、GPT-SoVITS、**MOSS-TTS v1.5、dots.tts-soar** |
+| 视频生成 | **LTX-2.5 / LTX-2.3**、MiniMax-H3、Wan 2.2、HunyuanVideo、CogVideoX、Open-Sora 2.0、Step-Video、MAGI-2、LingBot-Video |
+| 图像生成 | FLUX.1/FLUX.2、SDXL-Turbo、SD3.5、Kolors、**Krea 2 Turbo**、HunyuanImage 3.0、ControlNet |
+| 超分辨率 | Real-ESRGAN、APISR、SUPIR、4x-UltraSharp、SeedVR2-3B/7B |
+| 音频/音乐生成 | **MiniMax-Music3 全家桶（8 条目）**、**Stable Audio 3**、**Magenta Realtime 2**、**MOSS-SoundEffect v2**、Stable Audio Open、MusicGen、AudioLDM 2、DiffRhythm、ACE-Step 1.5 |
+| 3D 生成 | Hunyuan3D 2.1、TRELLIS / TRELLIS.2-4B、TripoSR、TripoSG、Direct3D-S2、PartCrafter |
 | 视觉/多模态工具 | CLIP ViT-L、InsightFace、YOLOv10 |
-| 待官方开源 | MiniMax Hailuo 2K（占位，官方仓库出现后自动上架） |
+| 待官方开源 | MiniMax Hailuo 2K、Wan 3.0、HappyShrimp、GLM-5-Code（占位，官方仓库出现后转正） |
 
 外加动态 GGUF 仓库浏览，每次启动从 huggingface.co 拉取文件树，列出**全部 .gguf 文件**单独下载。
 
