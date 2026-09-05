@@ -1,5 +1,5 @@
 {
-  "version": "2.6.0",
+  "version": "2.7.0",
   "updated": "2026-09-04",
   "notice": "v2.6.0: 接入 MiniMax-Music3 全精度/ComfyUI/GGUF/量化/MLX 全家桶并逐条联网核验仓库；新增 13 个 2026 年 5 月后开放权重的高质量模型（Granite 4.2、MiniMax M3、Muse Glimmer、DeepSeek V4 Flash Vision、GLM-5.3、LFM2.5-VL、MOSS-TTS、dots.tts、Stable Audio 3、Magenta Realtime 2、Krea 2 等）；修正 14 处错误/失效仓库 slug，移除不存在的 Llama-4-Multilingual。",
   "categories": [

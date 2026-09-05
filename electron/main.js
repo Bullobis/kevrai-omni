@@ -802,6 +802,27 @@ function registerIpc() {
     } });
   });
 
+  // v2.7.0 — Kevrai Agent (通用 AI 助手)
+  ipcMain.handle("kevrai:agent-status", async () => sidecarFetch("/api/agent/status"));
+  ipcMain.handle("kevrai:agent-chat", async (_e, opts) => {
+    assert(opts && typeof opts === "object", "opts: invalid");
+    return sidecarFetch("/api/agent/chat", { method: "POST", body: opts });
+  });
+  ipcMain.handle("kevrai:agent-sessions", async (_e, limit) => {
+    const l = (typeof limit === "number" && limit > 0) ? limit : 20;
+    return sidecarFetch(`/api/agent/sessions?limit=${l}`);
+  });
+  ipcMain.handle("kevrai:agent-session-messages", async (_e, sessionId, limit) => {
+    assert(typeof sessionId === "string" && sessionId.length > 0, "sessionId: invalid");
+    const l = (typeof limit === "number" && limit > 0) ? limit : 100;
+    return sidecarFetch(`/api/agent/sessions/${encodeURIComponent(sessionId)}/messages?limit=${l}`);
+  });
+  ipcMain.handle("kevrai:agent-prefs-get", async () => sidecarFetch("/api/agent/preferences"));
+  ipcMain.handle("kevrai:agent-prefs-set", async (_e, key, value) => {
+    assert(typeof key === "string" && key.length > 0, "key: invalid");
+    return sidecarFetch("/api/agent/preferences", { method: "PUT", body: { key, value } });
+  });
+
   // v2.4.0 — super search
   ipcMain.handle("api:search", async (_e, params) => {
     const p = (params && typeof params === "object") ? params : {};

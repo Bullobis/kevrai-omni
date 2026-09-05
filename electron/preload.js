@@ -294,6 +294,19 @@ const api = {
     return invoke("kevrai:drama-render-plan", opts);
   },
 
+  // ----- v2.7.0: Kevrai Agent (通用 AI 助手) -----
+  agentStatus: () => invoke("kevrai:agent-status"),
+  agentChat: (opts) => {
+    assert(opts && typeof opts === "object", "opts: invalid");
+    assertString(opts.message, "message", 5000);
+    assertString(opts.session_id, "session_id", 128);
+    return invoke("kevrai:agent-chat", opts);
+  },
+  agentSessions: (limit) => invoke("kevrai:agent-sessions", limit),
+  agentSessionMessages: (sessionId, limit) => invoke("kevrai:agent-session-messages", sessionId, limit),
+  agentGetPreferences: () => invoke("kevrai:agent-prefs-get"),
+  agentSetPreference: (key, value) => invoke("kevrai:agent-prefs-set", key, value),
+
   // ----- v2.4.0: super search -----
   search: (params) => {
     const p = (params == null || typeof params !== "object") ? {} : params;

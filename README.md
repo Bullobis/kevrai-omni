@@ -1,7 +1,7 @@
 ﻿# Kevrai Omni
 
-> 一站式本地 AI 工作站：LLM · 多模态大模型 · TTS · **MiniMax-Music3 音乐生成** · **LTX-2.5 视频生成** · 图像生成 · 超分辨率 · 音频生成 · 3D 生成
-> One-stop local AI workstation: LLM, multimodal LLM, TTS, **MiniMax-Music3 music gen**, **LTX-2.5 video gen**, image gen, super-resolution, audio gen, 3D gen.
+> 一站式本地 AI 工作站：LLM · 多模态大模型 · TTS · **MiniMax-Music3 音乐生成** · **LTX-2.5 视频生成** · 图像生成 · 超分辨率 · 音频生成 · 3D 生成 · **🤖 Kevrai Agent 智能助手**
+> One-stop local AI workstation: LLM, multimodal LLM, TTS, **MiniMax-Music3 music gen**, **LTX-2.5 video gen**, image gen, super-resolution, audio gen, 3D gen, **🤖 Kevrai Agent assistant**.
 
 **一个安装包 · 桌面快捷方式 · 引擎按需下载 · 模型从 huggingface.co 一键拉取 · 支持本地导入 · 全部开源**
 
@@ -10,6 +10,18 @@
 ![Tests](https://img.shields.io/badge/tests-372%20passed-brightgreen)
 
 ---
+
+## ✨ v2.7.0 更新亮点（Kevrai Agent 通用 AI 助手）
+
+| 功能 | 说明 |
+|---|---|
+| 🤖 **Kevrai Agent 通用 AI 助手** | 新增侧边栏「AI Agent」标签页：基于 ReAct 循环（Thought→Action→Observation，最多 12 步）的本地 Agent，用自然语言管理模型——硬件检测、模型搜索、智能推荐、下载规划、文本生成；11 个内置工具包装现有 catalog/hardware/download/engine 子系统 |
+| 🧠 **双模式推理** | 加载 MNN LLM 模型时进入完整 ReAct 推理模式（多步规划+工具调用）；未加载模型时自动回退 deterministic rule-based 模式（硬件查询→check_hardware、搜索查询→search_models、默认→引导加载模型），零依赖可用 |
+| 💾 **SQLite 持久记忆** | 会话历史、消息、用户偏好、任务历史存于 `APP_ROOT/agent/memory.sqlite3`；支持多会话切换、历史消息加载、偏好键值存储 |
+| 🌐 **完整 REST + WebSocket API** | 9 个 HTTP 端点（`/api/agent/status`、`/tools`、`/chat`、`/sessions`、`/sessions/{id}/messages`、`/preferences`）+ 1 个 WebSocket（`/ws/agent/{session_id}` 实时流式 step 事件）；与现有 `/v1/*` OpenAI 兼容端点并存，可供 OpenClaw 等外部 Agent 框架直接调用 Kevrai 本地模型 |
+| 🎨 **前端对话面板** | 聊天式 UI：消息气泡、工具调用标签、思考状态指示、会话下拉切换、新建会话、Enter 发送/Shift+Enter 换行；暗色主题适配，响应式布局 |
+| 🏗️ **架构借鉴 OpenClaw，定制为本地模型管理** | 学习 OpenClaw 2.0（MIT，2026-09-01 发布）的 Gateway+Runtime 分离、本地持久记忆、可插拔工具、模型无关路由设计；不完全照抄——Agent 运行在 Python sidecar 内，工具直接包装 Kevrai 现有子系统，无需额外网关进程 |
+| 🧪 **测试加固** | 新增 `test_v270_agent.py`（48 项）：ToolRegistry 8 + parse/extract 5 + AgentMemory 10 + ModelRouter 2 + CatalogTools 6 + SystemTools 6 + RuleBased 6 + ReAct 8（含 MockModelRouter 测试完整循环）；全量 **420 passed** |
 
 ## ✨ v2.6.0 更新亮点（MiniMax-Music3 接入 + 新模型 + 全目录核验）
 | 新特性 / 修复 | 说明 |
