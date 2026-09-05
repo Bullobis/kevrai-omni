@@ -1,325 +1,163 @@
-Kevrai Studio — Studio for local AI generation
-Copyright © 2026 Kevrai Studio contributors
+Kevrai Omni 社区许可协议 v1.0
+Kevrai Omni Community License v1.0
 
-This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0
-International License (CC BY-NC-SA 4.0).
+版权所有 © 2026 Kevrai Omni contributors.
 
-You are free to:
-  - Share — copy and redistribute the material in any medium or format
-  - Adapt — remix, transform, and build upon the material
+本协议是一份具有法律约束力的协议。在使用、复制、修改或分发本软件之前，
+请仔细阅读。只要你行使本协议授予的任何权利，即视为你已阅读、理解并同意
+受本协议约束。如果你不同意本协议的任何条款，请不要使用本软件。
 
-Under the following terms:
-  - Attribution — You must give appropriate credit, provide a link to the license,
-    and indicate if changes were made. You may do so in any reasonable manner, but
-    not in any way that suggests the licensor endorses you or your use.
-  - NonCommercial — You may not use the material for commercial purposes.
-  - ShareAlike — If you remix, transform, or build upon the material, you must
-    distribute your contributions under the same license as the original.
+------------------------------------------------------------------------
+第一条 定义
+------------------------------------------------------------------------
+1.1 "本软件"指 Kevrai Omni 的源代码、目标代码、文档、构建产物以及随附
+    的其他材料（`catalog/` 目录中所列的第三方模型、引擎与权重除外，
+    它们各自受其上游许可证约束，详见 `NOTICE.md`）。
+1.2 "衍生作品"指基于本软件或其任何部分进行修改、翻译、改编、合并或
+    形成的任何作品，包括但不限于补丁、插件、分支版本、封装版本以及
+    包含本软件或其衍生代码的更大作品。
+1.3 "分发"指以任何方式向第三方提供本软件或其衍生作品的副本，包括但
+    不限于下载、预装、SaaS 托管、打包发行、随硬件分发。
+1.4 "商业用途"指任何以获取直接或间接经济利益为目的的使用，包括但不限于：
+    (a) 将本软件或其衍生作品作为商品或服务的一部分进行销售、租赁、
+        授权或订阅收费；
+    (b) 在企业、机构或其他组织的生产环境中用于支撑其主营业务或
+        对外提供的产品/服务；
+    (c) 利用本软件或其衍生作品为客户提供有偿服务、咨询、定制开发
+        或技术支持；
+    (d) 在应用商店、软件市场或任何平台上发布并获得收入或流量分成。
+    个人学习、学术研究、技术评测、教学演示以及不对外提供服务的内部
+    非商业性试用，不属于商业用途。
+1.5 "授权方"指 Kevrai Omni 的版权所有者，即 Kevrai Omni contributors。
+1.6 "商业授权书"指授权方就特定商业用途向申请人签发的书面授权文件，
+    可以是纸质文件、带数字签名的电子文件或授权方官方渠道（如官方
+    邮箱、GitHub 组织账号）发出的书面确认。
 
-No additional restrictions — You may not apply legal terms or technological measures
-that legally restrict others from doing anything the license permits.
+------------------------------------------------------------------------
+第二条 版权授予
+------------------------------------------------------------------------
+在遵守本协议全部条款的前提下，授权方免费授予你一项全球范围的、非独占的、
+可撤销的（见第九条）版权许可，允许你：
+(a) 复制本软件；
+(b) 修改本软件，创作衍生作品；
+(c) 分发本软件及其衍生作品的副本；
+(d) 以源代码或目标代码形式再许可本软件及其衍生作品，但再许可的条款
+    不得低于本协议的保护水平，且不得移除本协议规定的商业使用申请义务。
 
-NOTICE FOR USERS OF KEVRAI OMNI:
-  - The source code of Kevrai Studio itself is licensed under CC BY-NC-SA 4.0
-    (this file). "NonCommercial" means: you may not sell the software, charge
-    for access to it, or use it as a hosted paid service. Internal use inside
-    a non-commercial organisation, personal use, academic use, and
-    non-revenue-generating community use are all permitted.
-  - Kevrai Studio DOWNLOADS and DISPLAYS third-party model weights and engine
-    binaries that are governed by their own licences (see NOTICE.md for the
-    complete per-model / per-engine license table). When you download or
-    redistribute a model or engine via Kevrai Studio, that component's own
-    license applies to it — not this one. Some upstream licences prohibit
-    commercial use even where this one wouldn't; the stricter license wins.
-  - You must NOT remove or alter this notice when redistributing.
+------------------------------------------------------------------------
+第三条 专利授予
+------------------------------------------------------------------------
+3.1 授权方免费授予你一项全球范围的、非独占的、可撤销的专利许可，允许
+    你为使用、制造、销售、进口或以其他方式利用本软件之目的，实施授权方
+    及其贡献者现在或将来拥有的、必然被本软件所侵犯的任何专利权利要求。
+3.2 如果你或你的关联方针对本软件或任何使用本软件的作品发起专利诉讼
+    （包括反诉或交叉请求），主张本软件直接或间接侵犯专利权，则本协议
+    授予你的所有专利许可自该诉讼提起之日起自动终止。
 
-Full legal text of the license:
-  https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+------------------------------------------------------------------------
+第四条 开源义务（出处保留与相同许可）
+------------------------------------------------------------------------
+4.1 你在分发本软件或其衍生作品时，必须：
+    (a) 保留本软件中包含的版权声明、本许可协议文本、`NOTICE.md` 文件
+        以及任何其他归属声明；
+    (b) 在衍生作品的显著位置注明"本作品基于 Kevrai Omni 构建"或同等
+        含义的声明，并提供指向本软件原始仓库的链接；
+    (c) 若你以目标代码形式分发衍生作品，必须同时以本协议第四条规定的
+        方式提供对应的完整源代码，或提供一个在至少三年内可公开访问的
+        源代码获取渠道。
+4.2 你分发的衍生作品必须以与本协议相同的许可条款（或经授权方书面认可的
+    兼容许可）进行许可，不得将本软件或其衍生作品重新许可为更宽松的专有
+    许可，除非你已根据第五条获得有效的商业授权书。
 
-Human-readable summary:
-  https://creativecommons.org/licenses/by-nc-sa/4.0/
+------------------------------------------------------------------------
+第五条 商业使用与授权申请
+------------------------------------------------------------------------
+5.1 本协议允许商业用途，但任何商业用途必须事先获得授权方签发的有效
+    《商业授权书》。未获得商业授权书之前，不得将本软件或其衍生作品
+    用于任何商业用途。
+5.2 申请商业授权，应当以书面形式向授权方提交，申请内容至少包括：
+    (a) 申请人的真实名称、统一社会信用代码（或同等注册编号）、联系人
+        及联系方式；
+    (b) 拟使用的本软件版本及使用方式（自用 / 再分发 / SaaS / 嵌入硬件
+        等）；
+    (c) 拟使用的业务场景、预计用户规模与部署规模；
+    (d) 是否会对衍生作品进行闭源分发，以及拟采用的分发模式。
+5.3 授权方应当在收到完整申请后的合理期限内（通常不超过 30 个工作日）
+    予以答复。授权方有权自主决定是否授予商业授权，并有权在商业授权书中
+    附加合理条件，包括但不限于授权费用、营收分成、署名要求、质量标准、
+    数据合规要求、地域或期限限制。
+5.4 获得商业授权书后，你应当按照商业授权书约定的范围、期限和条件使用
+    本软件。商业授权书与本协议不一致的，在该商业授权书约定的范围内优先
+    适用商业授权书；商业授权书未约定的事项，仍适用本协议。
+5.5 商业授权书不得转让，除非经授权方事先书面同意。
+5.6 非商业用途无需申请商业授权，但仍须遵守本协议其他条款。
 
-================================================================================
-Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public
-License ("License")
-================================================================================
+------------------------------------------------------------------------
+第六条 商标
+------------------------------------------------------------------------
+6.1 本协议不授予你使用授权方及其贡献者的商标、服务标记、商号、Logo 或
+    产品名称的任何权利，除非为满足第四条 4.1(b) 规定的归属声明之必要。
+6.2 你不得使用 "Kevrai"、"Kevrai Omni" 或其变体、Logo 进行任何可能导致
+    混淆、暗示你与授权方存在关联、赞助或背书关系的宣传，除非获得授权方
+    事先书面许可。
 
-By exercising the Licensed Rights (defined below), You accept and agree to be
-bound by the terms and conditions of this Creative Commons Attribution-
-NonCommercial-ShareAlike 4.0 International Public License ("License"). To the
-extent this License may be interpreted as a contract, You are granted the
-Licensed Rights in consideration of Your acceptance of these terms and
-conditions, and the Licensor grants You such rights in consideration of benefits
-the Licensor receives from making the Licensed Material available under these
-terms and conditions.
+------------------------------------------------------------------------
+第七条 免责声明
+------------------------------------------------------------------------
+本软件按"现状"（AS IS）提供，授权方及其贡献者在法律允许的最大范围内，
+不提供任何明示或默示的担保，包括但不限于对适销性、特定用途适用性、
+不侵权、无错误、不间断运行或安全性的默示担保。你自行承担使用本软件的
+全部风险，包括但不限于数据丢失、系统故障、模型输出不准确或第三方内容
+侵权等风险。
 
-Section 1 — Definitions.
+------------------------------------------------------------------------
+第八条 责任限制
+------------------------------------------------------------------------
+在法律允许的最大范围内，在任何情况下，授权方及其贡献者均不对因使用或
+无法使用本软件而导致的任何直接、间接、附带、特殊、惩罚性或后果性损害
+（包括但不限于利润损失、数据丢失、业务中断、采购替代商品或服务的成本、
+商誉损害）承担责任，无论该责任基于合同、侵权（包括过失）、严格责任或
+其他任何法律理论，即使已被告知发生该等损害的可能性。
 
-  a. Adapted Material means material subject to Copyright and Similar Rights
-     that is derived from or based upon the Licensed Material and in which the
-     Licensed Material is translated, altered, arranged, transformed, or
-     otherwise modified in a manner requiring permission under the Copyright
-     and Similar Rights held by the Licensor. For purposes of this License,
-     where the Licensed Material is a musical work, performance, or sound
-     recording, Adapted Material is always produced where the Licensed Material
-     is synched in timed relation with a moving image.
+------------------------------------------------------------------------
+第九条 协议终止
+------------------------------------------------------------------------
+9.1 如果你违反本协议的任何条款，本协议授予你的所有权利（包括版权许可、
+    专利许可）自动终止，无需授权方另行通知。
+9.2 协议终止后，你必须立即停止使用本软件，并销毁你持有的本软件及其衍生
+    作品的全部副本。但你在协议终止前已经合法向第三方分发的副本，其权利
+    义务不受影响，前提是该第三方继续遵守本协议。
+9.3 本协议的终止不影响第四条（开源义务）、第六条（商标）、第七条
+    （免责声明）、第八条（责任限制）以及第十条（其他）中按其性质应当
+    继续有效的条款。
 
-  b. Adapter's License means the license You apply to Your Adapted Material in
-     accordance with Section 3(b) — ShareAlike.
+------------------------------------------------------------------------
+第十条 其他
+------------------------------------------------------------------------
+10.1 本协议构成你与授权方之间关于本软件使用的完整协议，并取代此前就
+     同一事项达成的所有口头或书面协议。
+10.2 本协议的订立、效力、解释、履行及争议解决均适用中华人民共和国法律
+     （不含冲突法规则）。因本协议引起的或与本协议有关的任何争议，双方
+     应首先友好协商解决；协商不成的，任何一方均有权向授权方所在地有
+     管辖权的人民法院提起诉讼。
+10.3 如果本协议的任何条款被有管辖权的法院认定为无效、非法或不可执行，
+     该条款应在最小必要范围内予以限制或删除，其余条款仍保持完全有效。
+10.4 授权方未行使或延迟行使本协议项下的任何权利，不构成对该权利的放弃。
+10.5 授权方保留随时发布本协议新版本的权利。新版本发布后，你继续使用
+     本软件即视为接受新版本；你也可以选择继续使用受旧版本约束的旧版本
+     本软件。
 
-  c. BY-NC-SA Compatible License means a license listed at
-     https://creativecommons.org/compatiblelicenses, including
-     - GNU General Public License version 3 (GPL-3.0)
-     - GNU Free Documentation License version 1.3 (GFDL-1.3)
-     - and any later version published by the Free Software Foundation
-     - BSD-3-Clause
-     - and any license listed as compatible by Creative Commons from time to
-       time.
+------------------------------------------------------------------------
+附录 A：商业授权申请方式
+------------------------------------------------------------------------
+申请商业授权，请通过以下任一方式联系授权方：
+  - 邮箱：licensing@kevrai-omni.dev（请将邮件标题写为
+    "【商业授权申请】+ 申请人名称 + 用途简述"）
+  - GitHub：在 https://github.com/Bullobis/kevrai-omni 的 Issues 或
+    Discussions 中提交申请，并 @ 仓库所有者。
 
-  d. Copyright and Similar Rights means copyright and/or similar rights closely
-     related to copyright including, without limitation, performance, broadcast,
-     sound recording, and Sui Generis Database Rights, without regard to how
-     the rights are labeled or categorized. For purposes of this License, the
-     rights specified in Section 2(b)(1)-(2) are not Copyright and Similar
-     Rights.
+申请时请按第五条 5.2 所列内容提供信息。授权方将在收到完整申请后的合理
+期限内答复。
 
-  e. Effective Technological Measures means those measures that, in the absence
-     of proper authority, cannot be circumvented under laws fulfilling
-     obligations under Article 11 of the WIPO Copyright Treaty adopted on
-     December 20, 1996, and/or similar international agreements.
-
-  f. Exceptions and Limitations means fair use, fair dealing, and/or any other
-     exception or limitation to Copyright and Similar Rights that applies to
-     Your use of the Licensed Material.
-
-  g. License Elements means the license attributes listed in the name of a
-     Creative Commons Public License (the CC License). The License Elements of
-     this License are Attribution, NonCommercial, and ShareAlike.
-
-  h. Licensed Material means the artistic or literary work, database, or other
-     material to which the Licensor applied this License.
-
-  i. Licensed Rights means the rights granted to You subject to the terms and
-     conditions of this License, which are limited to all Copyright and Similar
-     Rights that apply to Your use of the Licensed Material and that the
-     Licensor has authority to license.
-
-  j. Licensor means the individual(s) or entity(ies) granting rights under this
-     License.
-
-  k. NonCommercial means not primarily intended for or directed towards
-     commercial advantage or monetary compensation. For purposes of this
-     License, the exchange of the Licensed Material for other material subject
-     to Copyright and Similar Rights by digital file-sharing or similar means
-     is NonCommercial provided there is no payment of monetary compensation in
-     connection with the exchange.
-
-  l. Share means to provide material to the public by any means or process that
-     requires permission under the Licensed Rights, such as reproduction, public
-     display, public performance, distribution, dissemination, communication,
-     or importation, and to make material available to the public including in
-     ways that members of the public may access the material from a place and
-     at a time individually chosen by them.
-
-  m. Sui Generis Database Rights means rights other than copyright resulting
-     from Directive 96/9/EC of the European Parliament and of the Council of
-     11 March 1996 on the legal protection of databases, as amended and/or
-     succeeded, as well as other essentially equivalent rights anywhere in the
-     world.
-
-  n. You means the individual or entity exercising the Licensed Rights under
-     this License. Your has a corresponding meaning.
-
-Section 2 — Scope.
-
-  a. License grant.
-     1. Subject to the terms and conditions of this License, the Licensor
-        hereby grants You a worldwide, royalty-free, non-sublicensable,
-        non-exclusive, irrevocable license to exercise the Licensed Rights in
-        the Licensed Material to:
-        A. reproduce and Share the Licensed Material, in whole or in part, for
-           NonCommercial purposes only; and
-        B. produce, reproduce, and Share Adapted Material for NonCommercial
-           purposes only.
-     2. Exceptions and Limitations. For the avoidance of doubt, where Exceptions
-        and Limitations apply to Your use, this License does not apply, and You
-        do not need to comply with its terms and conditions.
-     3. Term. The term of this License is specified in Section 6(a).
-     4. Media and formats; technical modifications allowed. The Licensor
-        authorizes You to exercise the Licensed Rights in all media and formats
-        whether now known or hereafter created, and to make technical
-        modifications necessary to exercise those rights. The Licensor waives
-        and/or agrees not to assert any right or authority to forbid You from
-        making technical modifications necessary to exercise the Licensed
-        Rights. For purposes of this License, simply making modifications
-        authorized by this Section 2(a)(4) never produces Adapted Material.
-
-  b. Downstream recipients.
-     1. Offer from the Licensor — Licensed Material. Every recipient of the
-        Licensed Material automatically receives an offer from the Licensor to
-        exercise the Licensed Rights under the terms and conditions of this
-        License.
-     2. Additional offer from the Licensor — Adapted Material. Every recipient
-        of Adapted Material from You automatically receives an offer from the
-        Licensor to exercise the Licensed Rights in the Adapted Material under
-        the conditions of the Adapter's License You apply.
-     3. No downstream restrictions. You may not offer or impose any additional
-        or different terms or conditions on, or apply any Effective
-        Technological Measures to, the Licensed Material if doing so restricts
-        exercise of the Licensed Rights by any recipient of the Licensed
-        Material.
-
-  c. No endorsement. Nothing in this License constitutes or may be construed as
-     permission to assert or imply that You are, or that Your use of the
-     Licensed Material is, connected with, or sponsored, endorsed, or granted
-     official status by, the Licensor or others designated to receive
-     attribution as provided in Section 3(a)(1)(A).
-
-Section 3 — License Conditions.
-
-  Your exercise of the Licensed Rights is expressly made subject to the
-  following conditions.
-
-  a. Attribution.
-     1. If You Share the Licensed Material (including in modified form), You
-        must:
-        A. retain the following if it is supplied by the Licensor with the
-           Licensed Material:
-           i. identification of the creator(s) of the Licensed Material and
-              any others designated to receive attribution, in any reasonable
-              manner requested by the Licensor (including by pseudonym if
-              designated);
-           ii. a copyright notice;
-           iii. a notice that refers to this License;
-           iv. a notice that refers to the disclaimer of warranties;
-           v. a URL or hyperlink to the Licensed Material to the extent
-              reasonably practicable;
-        B. indicate if You modified the Licensed Material and retain an
-           indication of any previous modifications; and
-        C. indicate the Licensed Material is licensed under this License, and
-           include the text of, or the URL or hyperlink to, this License.
-     2. You may satisfy the conditions in Section 3(a)(1) in any reasonable
-        manner based on the medium, means, and context in which You Share the
-        Licensed Material. For example, it may be reasonable to satisfy the
-        conditions by providing a URI or hyperlink to a resource that includes
-        the required information.
-     3. If requested by the Licensor, You must remove any of the information
-        required by Section 3(a)(1)(A) to the extent reasonably practicable.
-
-  b. ShareAlike.
-     In addition to the conditions in Section 3(a), if You Share Adapted
-     Material You produce, the following conditions also apply:
-     1. The Adapter's License You apply must be a Creative Commons license
-        with the same License Elements, this version or later, or a BY-NC-SA
-        Compatible License.
-     2. The Adapter's License You apply must be applied to all the Adapted
-        Material that You Share, in whole or in part.
-     3. You must include the text of, or the URL or hyperlink to, the Adapter's
-        License You apply, and indicate any changes You make to the Licensed
-     4. You may not offer or impose any additional or different terms or
-        conditions on, or apply any Effective Technological Measures to, the
-        Adapted Material that restrict exercise of the rights granted under
-     5. For the avoidance of doubt, Section 3(b) does not increase, decrease, or
-        otherwise affect the obligations You apply to the Licensed Material
-        under Section 2(b)(1) — Offer from the Licensor — Licensed Material,
-        or the rights granted to recipients of the Licensed Material.
-
-Section 4 — Sui Generis Database Rights.
-
-  Where the Licensed Material includes includes Sui Generis Database Rights that
-  apply to Your use:
-
-  a. for the avoidance of doubt, Section 2(a)(1) grants You the right to
-     extract, reuse, reproduce, and Share all or a substantial portion of the
-     contents of the database for NonCommercial purposes only;
-  b. if You include all or a substantial portion of the database contents in a
-     database in which You have Sui Generis Database Rights, then the database
-     in which You have Sui Generis Database Rights (but not its individual
-     contents) is Adapted Material, including for purposes of Section 3(b); and
-  c. You must comply with the conditions in Section 3(a) if You Share all or
-     a substantial portion of the contents of the database.
-
-For the avoidance of doubt, Section 4 supplements and does not replace Your
-obligations under this License where the Licensed Material includes includes
-Sui Generis Database Rights.
-
-Section 5 — Disclaimer of Warranties and Limitation of Liability.
-
-  a. Unless otherwise separately undertaken by the Licensor, to the extent
-     possible, the Licensor offers the Licensed Material as-is and as-
-     available, and makes no representations or warranties of any kind
-     concerning the Licensed Material, whether express, implied, statutory, or
-     other. This includes, without limitation, warranties of title,
-     merchantability, fitness for a particular purpose, non-infringement,
-     absence or of latent or other defects, accuracy, or the presence or absence
-     of errors, whether or not known or discoverable. Where disclaimers of
-     warranties are not allowed in full or in part, this disclaimer may not
-     apply to You.
-
-  b. To the extent possible, in no event will the Licensor be liable to You on
-     any legal theory (including, without limitation, negligence) or otherwise
-     for any direct, special, indirect, incidental, consequential, punitive,
-     exemplary, or other losses, costs, expenses, or damages arising out of
-     this License or use of the Licensed Material, even if the Licensor has
-     been advised of the possibility of such losses, costs, expenses, or
-     damages. Where a limitation of liability is not allowed in full or in
-     part, this limitation may not apply to You.
-
-  c. The disclaimer of warranties and limitation of liability provided above
-     shall be interpreted in a manner that, to the extent possible, most
-     closely approximates an absolute disclaimer and waiver of all liability.
-
-Section 6 — Term and Termination.
-
-  a. This License applies for the term of the Copyright and Similar Rights
-     licensed here. However However, if You fail to comply with this License,
-     Your rights under this License terminate automatically.
-
-  b. Where Your right to use the Licensed Material has been terminated under
-     Section 6(a), it reinstates:
-     1. automatically as of the date the violation is cured, provided it is
-        cured within 30 days of Your discovery of the violation; or
-     2. upon express reinstatement by the Licensor.
-     For the avoidance of doubt, Section 6(b) does not affect any right the
-     Licensor may have to seek remedies for Your violations of this License.
-
-  c. For the avoidance of doubt, the Licensor may also offer the Licensed
-     Material under separate terms or conditions or stop distributing the
-     Licensed Material at any time; however, doing so will not terminate this
-     License.
-
-  d. Sections 1, 5, 6, 7, and 8 survive termination of this License.
-
-Section 7 — Other Terms and Conditions.
-
-  a. The Licensor is not bound by any additional or different terms or
-     conditions communicated by You unless expressly agreed.
-
-  b. Any arrangements, understandings, or agreements regarding the Licensed
-     Material not stated herein are separate from and independent of the terms
-     and conditions of this License.
-
-Section 8 — Interpretation.
-
-  a. For the avoidance of doubt, this License does not, and shall not be
-     interpreted to, reduce, limit, restrict, or impose conditions on any use
-     of the Licensed Material that could be made without permission under
-     Copyright and Similar Rights.
-
-  b. To the extent possible, if any provision of this License is deemed
-     unenforceable, it shall be automatically reformed to the minimum extent
-     necessary to make it enforceable. If the provision cannot be reformed, it
-     shall be severed from this License without affecting the enforceability
-     of the remaining terms and conditions.
-
-  c. No term or condition of this License will be waived and no failure to
-     comply consented to unless expressly agreed to by the Licensor.
-
-  d. Nothing in this License constitutes or may be interpreted as a limitation
-     upon, or waiver of, any privileges and immunities that apply to the
-     Licensor or You, including from the legal processes of any jurisdiction
-     or authority.
-
-================================================================================
-END OF LICENSE
-================================================================================
+（注：上述邮箱与链接为占位示例，正式启用前请由版权所有者替换为真实的
+授权联系方式。）

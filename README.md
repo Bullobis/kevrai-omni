@@ -5,7 +5,7 @@
 
 **一个安装包 · 桌面快捷方式 · 引擎按需下载 · 模型从 huggingface.co 一键拉取 · 支持本地导入 · 全部开源**
 
-![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)
+![License: Kevrai Omni Community License v1.0](https://img.shields.io/badge/License-Kevrai%20Community%20v1.0-orange)
 ![Version](https://img.shields.io/badge/version-2.6.0-orange)
 ![Tests](https://img.shields.io/badge/tests-372%20passed-brightgreen)
 
@@ -259,12 +259,10 @@ bash scripts/release.sh
 
 ## License
 
-**Kevrai Omni 本身（源代码、文档与构建产物）采用
-[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
-(CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可。**
+**Kevrai Omni 本身（源代码、文档与构建产物）采用 [Kevrai Omni 社区许可协议 v1.0](./LICENSE)（Kevrai Omni Community License v1.0）。**
 
-> 未经商业授权，不得用于任何商业用途；若需商用，请联系作者获取许可。
+> 源码公开、可自由查看/修改/分发（非商业用途免费）；**允许商业用途，但任何商业使用必须事先向版权方申请并获得书面《商业授权书》**；分发衍生作品需以相同许可公开源码。商业授权申请方式见 `LICENSE` 附录 A。
 
 第三方模型、引擎与权重（`catalog/models.json` 所列）各自遵循其上游许可证
-（Apache-2.0、Llama-3、OpenRAIL、Tencent Hunyuan Community、LTX-Open、MusicGen CC BY-NC 4.0 等），
-与本项目自身的 CC BY-NC-SA 4.0 许可相互独立。详见 `NOTICE.md` 与 `LICENSE`。
+（Apache-2.0、Llama-3、OpenRAIL、Tencent Hunyuan Community、LTX-Open、MusicGen CC BY-NC 4.0、MiniMax-Music3 Community License 等），
+与本项目自身的 Kevrai Omni 社区许可相互独立。详见 `NOTICE.md` 与 `LICENSE`。
