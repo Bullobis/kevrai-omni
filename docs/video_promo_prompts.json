@@ -1,0 +1,169 @@
+{
+  "project": "Kevrai Omni Promotional Video",
+  "version": "2.7.0",
+  "total_duration_sec": 52,
+  "segments_count": 4,
+  "ratio": "16:9",
+  "model": "seedance_2.0_fast",
+  "global_theme": {
+    "visual_style": "dark tech, deep navy background (#0A0E1A), electric cyan-teal accent (#00D4FF), minimalist geometric, clean vector UI, glowing edges, subtle particle effects",
+    "color_palette": ["#0A0E1A", "#121316", "#1B1C1F", "#00D4FF", "#4A7DFF", "#FFFFFF"],
+    "lighting": "low-key, rim lighting, cyan glow from UI elements, soft ambient fill",
+    "camera_language": "slow push-in, smooth dolly, macro close-up on details, matching cuts between UI panels",
+    "motion_design": "one primary motion per shot, UI elements animate in with subtle ease, particles drift slowly, no fast shaky cam",
+    "audio_direction": "minimal electronic BGM, progressive synth, clean rational male voiceover (added in post), subtle UI click/woosh SFX (added in post)",
+    "narrative_motif": "tech to human — from fragmented AI model chaos to unified local workstation",
+    "brand_preserve": "logo hexagon shape and cyan color must stay consistent; no text generation in video (subtitles added in post); UI style matches reference images"
+  },
+  "global_negative_prompt": "watermark, logo overlay, text, subtitles, captions, lower thirds, garbled text, random letters, unreadable UI, distorted shapes, 3D render, photorealistic people, faces, hands, lens flare overload, motion blur, shaky camera, fast cuts, gradient background, purple/pink colors, orange colors, cartoon style, anime, stock footage, multiple scenes in one shot, logo deformation, hexagon distortion",
+  "reference_images": {
+    "@Image1": "https://aka.doubaocdn.com/s/SXVjV8uItB",
+    "@Image1_role": "Kevrai Omni logo — cyan hexagon K with neural network nodes. USE AS BRAND IDENTITY REFERENCE. Preserve hexagon shape, cyan color (#00D4FF), node-and-line K design, dark navy background.",
+    "@Image2": "https://aka.doubaocdn.com/s/JRWAeGuTYS",
+    "@Image2_role": "App dashboard UI — dark theme, left sidebar navigation, model cards in grid, cyan accents. USE AS UI STYLE REFERENCE. Preserve dark background (#121316), card design, sidebar layout, cyan accent color.",
+    "@Image3": "https://aka.doubaocdn.com/s/4YJGq6OZqc",
+    "@Image4_role": "Agent chat + music generation UI — chat bubbles, tool tags, waveform, input fields. USE AS UI COMPONENT REFERENCE.",
+    "@Image4": "https://aka.doubaocdn.com/s/eZKcKrp31b",
+    "@Image4_role": "Video generation + brand panel — video preview area, logo with wordmark, tag badges. USE AS LAYOUT REFERENCE."
+  },
+  "segments": [
+    {
+      "segment_id": 1,
+      "title": "Hook + Product Reveal",
+      "duration_sec": 13,
+      "start_time": 0,
+      "end_time": 13,
+      "positive_prompt": "Dark navy background, countless glowing model name fragments and code particles floating and drifting in 3D space, cyan and blue light points. Over 13 seconds the fragments slowly converge toward center, forming a glowing hexagonal K logo mark inspired by @Image1. Camera slow push-in from wide to medium. Low-key lighting with cyan rim glow. Minimalist tech aesthetic, clean geometric shapes, no text, no subtitles. The final 3 seconds hold on the completed glowing hexagon K logo with subtle particle aura.",
+      "negative_prompt": "watermark, text, subtitles, letters, words, readable characters, garbled code, 3D people, faces, hands, photorealistic, cartoon, fast motion, shaky cam, purple, pink, orange, gradient, lens flare, motion blur, logo deformation, hexagon distortion",
+      "theme_constraints": {
+        "primary_motion": "fragments converging to form logo",
+        "camera": "slow push-in, one continuous move",
+        "lighting": "low-key, cyan rim glow from particles",
+        "key_visual": "hexagon K logo formation (must match @Image1 shape and color)",
+        "no_text": true,
+        "duration_cue": "slow convergence over 13 seconds, hold final 3s"
+      },
+      "reference_images_used": ["@Image1"],
+      "narration_lines": [
+        {"time": 1.0, "text": "AI 模型爆发式增长，但在本地运行和管理它们，一直是个难题。"},
+        {"time": 7.0, "text": "Kevrai Omni，一站式本地 AI 工作站，让一切变得简单。"}
+      ],
+      "post_production": {
+        "subtitles": true,
+        "subtitle_style": "bottom center, white text with cyan outline, sans-serif, 28px",
+        "bgm": "ambient electronic intro, building tension",
+        "sfx": ["particle whoosh at 0s", "logo formation chime at 9s"]
+      }
+    },
+    {
+      "segment_id": 2,
+      "title": "Core Capabilities — Model Market + Hardware",
+      "duration_sec": 13,
+      "start_time": 13,
+      "end_time": 26,
+      "positive_prompt": "A sleek dark software interface inspired by @Image2, left sidebar navigation with icons, main area showing a grid of model cards with glowing cyan accents. Over 13 seconds, camera slowly dollies right across the interface, model cards animate in one by one with subtle glow. Cut to a hardware stats panel with animated progress bars for GPU VRAM and RAM, cyan-blue gradient fills. Then a recommendation card slides in with a cyan border glow. Clean minimalist UI, dark navy background, no text, no subtitles, no readable characters. Smooth matching cuts between panels.",
+      "negative_prompt": "watermark, text, subtitles, readable words, letters, garbled UI, unreadable text, 3D people, faces, hands, photorealistic, cartoon, fast cuts, shaky cam, purple, pink, orange, white background, light theme, gradient, motion blur, distorted cards, broken layout",
+      "theme_constraints": {
+        "primary_motion": "camera dolly across UI, cards animating in",
+        "camera": "smooth dolly right, then cut to macro on stats panel",
+        "lighting": "UI glow as primary light source, cyan accents",
+        "key_visual": "model market grid + hardware stats (must match @Image2 style)",
+        "no_text": true,
+        "duration_cue": "13 seconds, 3 matching cuts, each panel ~4s"
+      },
+      "reference_images_used": ["@Image2"],
+      "narration_lines": [
+        {"time": 14.0, "text": "121 个精选模型，覆盖大语言、图像、音频、视频、3D、超分辨率等八大类别。"},
+        {"time": 20.0, "text": "智能硬件检测，根据你的 CPU、显存、内存，精准推荐最适合的模型。"}
+      ],
+      "post_production": {
+        "subtitles": true,
+        "subtitle_style": "bottom center, white text with cyan outline",
+        "bgm": "steady electronic beat, building energy",
+        "sfx": ["UI card click at 14s", "progress bar whoosh at 20s", "recommendation ding at 23s"]
+      }
+    },
+    {
+      "segment_id": 3,
+      "title": "Key Features — Music + Video + Agent",
+      "duration_sec": 13,
+      "start_time": 26,
+      "end_time": 39,
+      "positive_prompt": "A dark music production interface inspired by @Image3, cyan audio waveform bars animating in a smooth equalizer pattern, input field area glowing. Over 13 seconds, three matching cuts: first, waveform bars pulse and flow with cyan-blue gradient; second, a video preview panel with a dark gradient placeholder and subtle scan line effect, play button glowing; third, a chat interface with message bubbles sliding in, small tool tags with cyan borders appearing one by one. All panels share dark navy background, cyan accent, clean rounded corners. No text, no subtitles, no readable characters. Smooth transitions with light sweep.",
+      "negative_prompt": "watermark, text, subtitles, readable words, letters, garbled UI, actual music notes, 3D people, faces, hands, photorealistic, cartoon, fast cuts, shaky cam, purple, pink, orange, white background, light theme, gradient background, motion blur, distorted bubbles, broken waveform",
+      "theme_constraints": {
+        "primary_motion": "waveform animation, then video scan, then chat bubbles",
+        "camera": "static macro on each panel, light sweep transition between cuts",
+        "lighting": "UI element glow, cyan waveform illumination",
+        "key_visual": "music waveform + video preview + agent chat (must match @Image3 style)",
+        "no_text": true,
+        "duration_cue": "13 seconds, 3 panels ~4s each with light sweep transitions"
+      },
+      "reference_images_used": ["@Image3", "@Image4"],
+      "narration_lines": [
+        {"time": 27.0, "text": "MiniMax-Music3，文生音乐，32kHz 立体声，最长五分钟。"},
+        {"time": 31.0, "text": "LTX-2.5 世界模型，文生视频，本地近实时渲染。"},
+        {"time": 35.0, "text": "Kevrai Agent，自然语言对话，帮你搜索、推荐、管理模型。"}
+      ],
+      "post_production": {
+        "subtitles": true,
+        "subtitle_style": "bottom center, white text with cyan outline",
+        "bgm": "energetic electronic, peak energy at 35s",
+        "sfx": ["waveform pulse at 27s", "video play click at 31s", "chat bubble pop at 35s"]
+      }
+    },
+    {
+      "segment_id": 4,
+      "title": "Value + Brand Close",
+      "duration_sec": 13,
+      "start_time": 39,
+      "end_time": 52,
+      "positive_prompt": "Dark navy background, a glowing shield icon and local folder icon floating side by side with cyan glow, particles orbiting around them. Over 13 seconds, camera slow push-in, the icons slowly dissolve into light particles that converge toward center forming the glowing hexagon K logo from @Image1. Below the logo, a subtle horizontal light line appears. The final 5 seconds hold on the complete logo with gentle pulsing glow and drifting particles, brand identity shot. Clean minimalist, no text, no subtitles, no wordmark text (added in post). Low-key lighting, cyan rim glow.",
+      "negative_prompt": "watermark, text, subtitles, letters, words, readable characters, wordmark text, brand name text, 3D people, faces, hands, photorealistic, cartoon, fast motion, shaky cam, purple, pink, orange, gradient, lens flare, motion blur, logo deformation, hexagon distortion, multiple logos",
+      "theme_constraints": {
+        "primary_motion": "icons dissolving to particles, converging to logo",
+        "camera": "slow push-in, hold on final logo",
+        "lighting": "low-key, logo glow as primary light, cyan aura",
+        "key_visual": "hexagon K logo final hold (must match @Image1 exactly)",
+        "no_text": true,
+        "duration_cue": "13 seconds, logo formation at 44s, hold final 8s"
+      },
+      "reference_images_used": ["@Image1"],
+      "narration_lines": [
+        {"time": 40.0, "text": "所有模型本地运行，隐私安全，无需云端 API。"},
+        {"time": 46.0, "text": "Kevrai Omni — 你的本地 AI 工作站。GitHub 开源，立即体验。"}
+      ],
+      "post_production": {
+        "subtitles": true,
+        "subtitle_style": "bottom center, white text with cyan outline, final line larger",
+        "bgm": "resolving electronic, final chord at 48s, fade out at 52s",
+        "sfx": ["shield chime at 40s", "logo formation swell at 44s", "final note at 48s"],
+        "overlay_text": [
+          {"time": 47.0, "duration": 5.0, "text": "Kevrai Omni", "style": "center, white, 48px, bold, with cyan glow"},
+          {"time": 48.5, "duration": 3.5, "text": "一站式本地 AI 工作站", "style": "center, #aaa, 24px"},
+          {"time": 49.5, "duration": 2.5, "text": "github.com/Bullobis/kevrai-omni", "style": "center, #00D4FF, 18px, monospace"}
+        ]
+      }
+    }
+  ],
+  "post_production_workflow": {
+    "step1": "Generate 4 video segments with image_to_video (no text, no subtitles, visuals only)",
+    "step2": "Generate voiceover audio with text_to_audio (Chinese male, rational clean tone, all 10 narration lines as one track)",
+    "step3": "Generate BGM audio (minimal electronic, 52 seconds)",
+    "step4": "Stitch 4 segments with ffmpeg concat",
+    "step5": "Add subtitles with ffmpeg drawtext (10 lines, timed per narration_lines)",
+    "step6": "Add overlay text in segment 4 (brand name, tagline, GitHub URL) with ffmpeg drawtext",
+    "step7": "Mix voiceover + BGM with ffmpeg amix (voiceover priority, BGM -12dB)",
+    "step8": "Add SFX (UI clicks, whooshes) at timed positions with ffmpeg",
+    "step9": "Final output: kevrai-omni-promo-52s.mp4 (H.264, AAC, 1920x1080, 24fps)"
+  },
+  "voiceover_spec": {
+    "language": "Chinese (Mandarin)",
+    "gender": "male",
+    "tone": "rational, clean, confident, moderate pace (~4 chars/sec)",
+    "emotion": "neutral-professional, slight warmth at brand close",
+    "total_lines": 10,
+    "estimated_duration_sec": 35,
+    "pauses_between_lines": "0.3-0.5s natural breathing pause"
+  }
+}

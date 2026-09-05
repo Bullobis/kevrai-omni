@@ -20,3 +20,7 @@ engines/
 .cache/
 .build-cache/
 dist-packages/
+docs/promo_assets/verify_*.jpg
+docs/promo_assets/*.wav
+docs/promo_assets/*_proc.wav
+docs/promo_assets/*.txt
