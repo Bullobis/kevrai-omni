@@ -259,10 +259,8 @@ bash scripts/release.sh
 
 ## License
 
-**Kevrai Omni 本身（源代码、文档与构建产物）采用 [Kevrai Omni 社区许可协议 v1.0](./LICENSE)（Kevrai Omni Community License v1.0）。**
+**Kevrai Omni itself (source code, documentation, and build artifacts) is licensed under the [Kevrai Omni Community License v1.0](./LICENSE) — a source-available license, full text in English.**
 
-> 源码公开、可自由查看/修改/分发（非商业用途免费）；**允许商业用途，但任何商业使用必须事先向版权方申请并获得书面《商业授权书》**；分发衍生作品需以相同许可公开源码。商业授权申请方式见 `LICENSE` 附录 A。
+> Source code is public and free for non-commercial use, modification, and distribution. **Commercial use is permitted but requires prior written Commercial Authorization from the Licensor.** Derivative works must be distributed under the same license. To apply for commercial authorization, contact: **2671369836@qq.com**. The Licensor expressly reserves the right to issue cease-and-desist / lawyer's letters (律师函) and pursue legal remedies for unauthorized commercial use.
 
-第三方模型、引擎与权重（`catalog/models.json` 所列）各自遵循其上游许可证
-（Apache-2.0、Llama-3、OpenRAIL、Tencent Hunyuan Community、LTX-Open、MusicGen CC BY-NC 4.0、MiniMax-Music3 Community License 等），
-与本项目自身的 Kevrai Omni 社区许可相互独立。详见 `NOTICE.md` 与 `LICENSE`。
+Third-party models, engines, and weights (listed in `catalog/models.json`) are each governed by their own upstream licenses (Apache-2.0, Llama-3, OpenRAIL, Tencent Hunyuan Community, LTX-Open, MusicGen CC BY-NC 4.0, MiniMax-Music3 Community License, etc.), independent of this project's own license. See `NOTICE.md` and `LICENSE` for details.

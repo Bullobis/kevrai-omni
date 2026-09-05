@@ -75,10 +75,11 @@
 ## 5. 版本
 - 应用 / sidecar / package 版本统一升至 **2.6.0**；模型条目 110 → **121**，引擎仍为 30
 
-## 6. 许可证变更（重要）
-- 本软件本体许可证由 **CC BY-NC-SA 4.0（禁止商用）** 变更为 **Kevrai Omni 社区许可协议 v1.0**（详见根目录 `LICENSE`）。
-- 新许可核心：**源码公开**、可自由查看/修改/分发（非商业用途免费）；**允许商业用途，但任何商业使用必须事先向版权方申请并获得书面《商业授权书》**；分发衍生作品需以相同许可开源。
-- 同步更新：`LICENSE`（重写）、`README.md`、`INSTALL.md`、`NOTICE.md`、`package.json`（`SEE LICENSE IN LICENSE`）、`electron-builder.yml`（copyright）。
-- 第三方模型/引擎/权重仍各自遵循其上游许可证，与本软件本体许可相互独立。
-- 商业授权申请方式见 `LICENSE` 附录 A（当前为占位邮箱，正式启用前请由版权所有者替换为真实联系方式）。
-- 本协议为法律文件模板，建议在正式商用授权前咨询专业律师审核。
+## 6. License Change (Important)
+- The project's own license has been changed from **CC BY-NC-SA 4.0 (non-commercial)** to the **Kevrai Omni Community License v1.0** (full English text in root `LICENSE`).
+- Core terms: **source code is public** and free for non-commercial use, modification, and distribution; **commercial use is permitted but requires prior written Commercial Authorization from the Licensor**; derivative works must be distributed under the same license.
+- The Licensor expressly reserves the right to issue cease-and-desist letters, lawyer's letters (律师函), and pursue injunctive relief, damages, and account of profits for unauthorized commercial use or any other breach.
+- Commercial authorization contact: **2671369836@qq.com** (see `LICENSE` Appendix A for application requirements).
+- Synced references: `LICENSE` (rewritten in English), `README.md`, `INSTALL.md`, `NOTICE.md`, `package.json` (`SEE LICENSE IN LICENSE`), `electron-builder.yml` (copyright).
+- Third-party models/engines/weights remain governed by their own upstream licenses, independent of the project's own license.
+- This license is a legal document; consult a qualified lawyer before relying on it for commercial transactions.
