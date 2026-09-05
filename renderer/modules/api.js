@@ -83,6 +83,13 @@ export const api = {
   dramaScript:       wrap("dramaScript",       (opts) => k().dramaScript(opts)),
   dramaStoryboard:   wrap("dramaStoryboard",   (opts) => k().dramaStoryboard(opts)),
   dramaRenderPlan:   wrap("dramaRenderPlan",   (opts) => k().dramaRenderPlan(opts)),
+  // v2.7.0 — Kevrai Agent (通用 AI 助手)
+  agentStatus:          wrap("agentStatus",          () => k().agentStatus()),
+  agentChat:            wrap("agentChat",            (opts) => k().agentChat(opts)),
+  agentSessions:        wrap("agentSessions",        (limit) => k().agentSessions(limit)),
+  agentSessionMessages: wrap("agentSessionMessages", (id, limit) => k().agentSessionMessages(id, limit)),
+  agentGetPreferences:  wrap("agentGetPreferences",  () => k().agentGetPreferences()),
+  agentSetPreference:   wrap("agentSetPreference",   (key, value) => k().agentSetPreference(key, value)),
   // v2.4.0 — super search
   search:            wrap("search",            (params) => k().search(params)),
   searchRecent:      wrap("searchRecent",      () => k().searchRecent()),

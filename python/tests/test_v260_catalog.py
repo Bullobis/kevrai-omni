@@ -186,7 +186,7 @@ def test_unique_ids_and_sources_after_edit():
 
 def test_catalog_version_bumped():
     _, data = _models()
-    assert data["version"] == "2.6.0"
+    assert data["version"] == "2.7.0"
     # every non-pending entry still carries a safe id
     for m in data["models"]:
         assert re.fullmatch(r"[A-Za-z0-9._-]+", m["id"])

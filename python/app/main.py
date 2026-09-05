@@ -1913,3 +1913,242 @@ def ltx_outputs(request: Request) -> dict[str, Any]:
                     "mtime": st.st_mtime,
                 })
     return {"outputs": items, "count": len(items), "dir": str(root)}
+
+
+# ===========================================================================
+# v2.7.0 — Kevrai Agent (general-purpose AI agent layer)
+# ===========================================================================
+# Inspired by OpenClaw's agent architecture (gateway + runtime, pluggable
+# tools, local memory, model-agnostic routing) but customised for Kevrai
+# Omni's local model-management context. The agent runs in the sidecar,
+# uses the local MNN LLM for reasoning when available, and falls back to a
+# deterministic rule-based mode when no LLM is loaded. Complements the
+# existing /v1/* OpenAI-compatible endpoints (which let external agents like
+# OpenClaw call Kevrai's local models).
+
+_AGENT_SINGLETON: dict[str, Any] = {}
+
+
+def _get_agent(request: Request):
+    """Lazily build and cache the agent singleton for this sidecar instance."""
+    if "agent" in _AGENT_SINGLETON:
+        return _AGENT_SINGLETON["agent"]
+    from .agent import Agent, AgentMemory, ModelRouter, ToolContext
+    from .agent.tools import build_default_registry
+
+    db_path = APP_ROOT / "agent" / "memory.sqlite3"
+    memory = AgentMemory(db_path)
+    router = ModelRouter()
+    registry = build_default_registry()
+
+    hw = _HW_CACHE["data"] or {}
+    # NOTE: detect_hardware is async; we must not call it here in this sync
+    # helper without awaiting (would store a coroutine instead of a dict).
+    # If the cache is empty, the check_hardware tool will detect on first
+    # use using a worker thread. The /api/hardware endpoint populates this
+    # cache when called by the UI.
+    ctx = ToolContext(
+        catalog=CATALOG,
+        engines_catalog=ENGINES,
+        hardware_info=hw,
+        memory=memory,
+        settings=getattr(request.app.state, "settings", None),
+        models_dir=MODELS_DIR,
+        app_root=APP_ROOT,
+    )
+    agent = Agent(memory=memory, router=router, registry=registry, ctx=ctx)
+    _AGENT_SINGLETON["agent"] = agent
+    return agent
+
+
+class AgentChatReq(BaseModel):
+    message: str = Field(min_length=1, max_length=5000)
+    session_id: str = Field(default="default", max_length=128)
+
+
+@app.get("/api/agent/tools")
+def agent_tools(request: Request) -> dict[str, Any]:
+    """List all tools available to the agent."""
+    agent = _get_agent(request)
+    return {"tools": agent.registry.list_tools(), "count": len(agent.registry.list_names())}
+
+
+@app.get("/api/agent/status")
+def agent_status(request: Request) -> dict[str, Any]:
+    """Agent runtime status (LLM readiness, model name, tool count)."""
+    agent = _get_agent(request)
+    ready, model_name = agent.router.is_ready()
+    return {
+        "llm_ready": ready,
+        "model_name": model_name,
+        "tool_count": len(agent.registry.list_names()),
+        "mode": "llm" if ready else "rule_based",
+    }
+
+
+@app.post("/api/agent/chat")
+async def agent_chat(req: AgentChatReq, request: Request) -> dict[str, Any]:
+    """Send a message to the agent and get the full result (non-streaming).
+
+    For real-time streaming of reasoning steps, use the WebSocket endpoint
+    ``/ws/agent/{session_id}`` instead.
+    """
+    agent = _get_agent(request)
+    if not agent.ctx.hardware_info:
+        try:
+            from .settings import load_settings as _ls
+            s = _ls()
+            agent.ctx.hardware_info = detect_hardware(Path(s.resolved_model_dir()))
+        except Exception:
+            pass
+    result = await agent.run(req.message, session_id=req.session_id)
+    return {
+        "ok": result.success,
+        "answer": result.answer,
+        "session_id": result.session_id,
+        "tools_used": result.tools_used,
+        "llm_used": result.llm_used,
+        "model_name": result.model_name,
+        "duration_ms": result.duration_ms,
+        "steps": [
+            {
+                "iteration": s.iteration,
+                "thought": s.thought,
+                "action_tool": s.action_tool,
+                "action_params": s.action_params,
+                "observation_ok": s.observation.get("ok") if s.observation else None,
+                "is_final": s.is_final,
+            }
+            for s in result.steps
+        ],
+        "error": result.error or "",
+    }
+
+
+@app.get("/api/agent/sessions")
+def agent_sessions(request: Request, limit: int = 50) -> dict[str, Any]:
+    """List agent conversation sessions (most recent first)."""
+    agent = _get_agent(request)
+    sessions = agent.memory.list_sessions(limit=max(1, min(limit, 200)))
+    return {"sessions": sessions, "count": len(sessions)}
+
+
+@app.get("/api/agent/sessions/{session_id}/messages")
+def agent_session_messages(
+    request: Request,
+    session_id: str = PathParam(...),
+    limit: int = 100,
+) -> dict[str, Any]:
+    """Get messages for a specific agent session."""
+    agent = _get_agent(request)
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", session_id or ""):
+        raise HTTPException(status_code=400, detail="invalid session_id")
+    msgs = agent.memory.get_messages(session_id, limit=max(1, min(limit, 500)))
+    return {"session_id": session_id, "messages": msgs, "count": len(msgs)}
+
+
+@app.delete("/api/agent/sessions/{session_id}")
+def agent_delete_session(request: Request, session_id: str = PathParam(...)) -> dict[str, Any]:
+    """Delete an agent session and all its messages."""
+    agent = _get_agent(request)
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", session_id or ""):
+        raise HTTPException(status_code=400, detail="invalid session_id")
+    ok = agent.memory.delete_session(session_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="session not found")
+    return {"ok": True, "session_id": session_id}
+
+
+@app.get("/api/agent/preferences")
+def agent_get_preferences(request: Request) -> dict[str, Any]:
+    """Get all stored agent preferences."""
+    agent = _get_agent(request)
+    return {"preferences": agent.memory.get_all_preferences()}
+
+
+class AgentPreferenceReq(BaseModel):
+    key: str = Field(min_length=1, max_length=128)
+    value: str = Field(max_length=2000)
+
+
+@app.put("/api/agent/preferences")
+def agent_set_preference(req: AgentPreferenceReq, request: Request) -> dict[str, Any]:
+    """Set (or update) an agent preference."""
+    agent = _get_agent(request)
+    agent.memory.set_preference(req.key, req.value)
+    return {"ok": True, "key": req.key, "value": req.value}
+
+
+@app.websocket("/ws/agent/{session_id}")
+async def ws_agent(websocket: WebSocket, session_id: str) -> None:
+    """Stream agent reasoning steps in real-time.
+
+    Protocol:
+      Client sends JSON: {"message": "user query"}
+      Server sends events:
+        {"event": "step", "iteration": N, "thought": "...", "action_tool": "...",
+         "action_params": {...}, "observation_ok": true/false}
+        {"event": "final", "answer": "...", "tools_used": [...], "duration_ms": N}
+        {"event": "error", "message": "..."}
+    """
+    await websocket.accept()
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", session_id or ""):
+        await websocket.send_json({"event": "error", "message": "invalid session_id"})
+        await websocket.close()
+        return
+
+    class _FakeReq:
+        app = websocket.app
+    agent = _get_agent(_FakeReq())  # type: ignore[arg-type]
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+            message = str(data.get("message") or "").strip()
+            if not message:
+                await websocket.send_json({"event": "error", "message": "empty message"})
+                continue
+            if len(message) > 5000:
+                await websocket.send_json({"event": "error", "message": "message too long (max 5000 chars)"})
+                continue
+
+            def _on_step(step):
+                try:
+                    loop = asyncio.get_event_loop()
+                    loop.call_soon_threadsafe(
+                        lambda: websocket.send_json({
+                            "event": "step",
+                            "iteration": step.iteration,
+                            "thought": step.thought,
+                            "action_tool": step.action_tool,
+                            "action_params": step.action_params,
+                            "observation_ok": (step.observation or {}).get("ok") if step.observation else None,
+                            "is_final": step.is_final,
+                        })
+                    )
+                except Exception:
+                    pass
+
+            agent.set_step_callback(_on_step)
+            try:
+                result = await agent.run(message, session_id=session_id)
+                await websocket.send_json({
+                    "event": "final",
+                    "answer": result.answer,
+                    "tools_used": result.tools_used,
+                    "llm_used": result.llm_used,
+                    "model_name": result.model_name,
+                    "duration_ms": result.duration_ms,
+                    "success": result.success,
+                    "error": result.error or "",
+                })
+            except Exception as e:
+                log.exception("agent websocket run failed")
+                await websocket.send_json({"event": "error", "message": str(e)})
+            finally:
+                agent.set_step_callback(None)
+    except WebSocketDisconnect:
+        pass
+    finally:
+        with contextlib.suppress(Exception):
+            await websocket.close()

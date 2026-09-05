@@ -12,6 +12,7 @@ import { renderEnvironmentsPage } from "./modules/environments.js";
 import { renderHardwarePage } from "./modules/hardware.js";
 import { renderMnnPage } from "./modules/mnn.js";
 import { renderDramaPage } from "./modules/drama.js";
+import { initAgent } from "./modules/agent.js";
 import { state, setState } from "./modules/state.js";
 import { applyTheme, wireThemeListener } from "./modules/theme.js";
 import { initModels, renderModelGrid, populateCategoryFilter,
@@ -188,6 +189,14 @@ function switchView(name) {
     if (root && !root.dataset.rendered) {
       root.dataset.rendered = "1";
       initLtx().catch((e) => toast("LTX-2.5 页加载失败：" + e.message, { kind: "err" }));
+    }
+  }
+  // v2.7.0 — Kevrai Agent page (init once).
+  if (name === "agent") {
+    const root = document.getElementById("pane-agent");
+    if (root && !root.dataset.rendered) {
+      root.dataset.rendered = "1";
+      initAgent().catch((e) => toast("Agent 页加载失败：" + e.message, { kind: "err" }));
     }
   }
 }
