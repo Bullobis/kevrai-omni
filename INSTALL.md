@@ -59,6 +59,6 @@ npm run build:win        # 产出 NSIS 安装包（需 Windows；Linux 下可用
 Windows 通过「设置 → 应用」卸载；默认保留 `AppData/KevraiOmni/` 中已下载的引擎与模型
 （重装后自动识别、无需重新下载）。如需彻底清理，手动删除该目录即可。
 
-## 许可
+## License
 
-Kevrai Omni 社区许可协议 v1.0 — 源码公开、可自由使用/修改/分发（非商业用途免费）；**允许商业用途，但任何商业使用必须事先向版权方申请并获得书面《商业授权书》**；分发衍生作品需以相同许可开源。详见项目根目录 `LICENSE`。第三方模型/引擎/权重各自遵循其上游许可。
+Kevrai Omni Community License v1.0 (English, see `LICENSE`) — source code is public and free for non-commercial use, modification, and distribution. **Commercial use is permitted but requires prior written Commercial Authorization from the Licensor** (apply: 2671369836@qq.com). Unauthorized commercial use may result in cease-and-desist / lawyer's letters and legal action. Derivative works must be open-sourced under the same license. Third-party models/engines/weights are governed by their own upstream licenses.
