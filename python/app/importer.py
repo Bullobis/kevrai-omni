@@ -17,6 +17,7 @@ import hashlib
 import json
 import os
 import shutil
+import httpx  # moved to top-level: used by module-scope DOWNLOAD_TIMEOUT
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -458,6 +459,18 @@ def hf_resolve_url(repo: str, filename: str, revision: str = "main") -> str:
     return f"{HF_RESOLVE}/{repo}/resolve/{revision}/{quote(filename, safe='/')}"
 
 
+# Per-URL timeout for the synchronous ``download_file`` helper.
+# Connect timeout tolerates slow CN mirrors; read timeout catches a
+# wedged upstream (previously ``None`` would hang forever). This is
+# NOT a total timeout, so multi-GB streams over hours are still allowed.
+DOWNLOAD_TIMEOUT = httpx.Timeout(
+    connect=15.0,
+    read=120.0,
+    write=30.0,
+    pool=10.0,
+)
+
+
 def download_file(
     url: str,
     target: Path,
@@ -479,7 +492,11 @@ def download_file(
     if pos > 0:
         headers["Range"] = f"bytes={pos}-"
     mode = "ab" if pos > 0 else "wb"
-    with httpx.Client(timeout=None, follow_redirects=True) as client:
+    # NOTE: layered timeout (connect/read/pool/write), NOT a single total
+    # timeout. A total would kill legitimate multi-GB model downloads
+    # that stream for hours. Previously timeout=None meant a wedged
+    # upstream froze the UI forever.
+    with httpx.Client(timeout=DOWNLOAD_TIMEOUT, follow_redirects=True) as client:
         with client.stream("GET", url, headers=headers) as r:
             r.raise_for_status()
             total = int(r.headers.get("Content-Length", "0")) + pos
