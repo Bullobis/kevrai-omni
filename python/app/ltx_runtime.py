@@ -125,7 +125,7 @@ def _as_strict_int(v: Any, name: str) -> int:
     try:
         return int(v)
     except (TypeError, ValueError):
-        raise LtxParamError(f"{name} must be an integer, got {v!r}")
+        raise LtxParamError(f"{name} must be an integer, got {v!r}") from None
 
 
 @dataclass
@@ -319,9 +319,15 @@ class LtxManager:
         task.state = TaskState.LOADING
 
         # Seed resolution
-        import random
+        import secrets
         if p.seed < 0:
-            task.seed_used = random.randint(0, 2**31 - 1)
+            # Use a CSPRNG to pick an unpredictable seed. LTX-2.5 seeds are
+            # user-visible (exported with the result), so a predictable
+            # Mersenne Twister seed is not appropriate: users could
+            # reproduce results without knowing our random state, or --
+            # in the opposite direction -- predict what seed we will
+            # generate next. 2**31 - 1 matches the previous range.
+            task.seed_used = secrets.randbelow(2**31)
         else:
             task.seed_used = int(p.seed)
 

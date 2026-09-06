@@ -163,11 +163,20 @@ HF_MIRROR_HOSTS: set[str] = {
 
 
 def _host_of(url: str) -> str:
+    """Extract a normalized host from a URL.
+
+    Strips a single leading ``www.`` prefix only. NOTE: do NOT use
+    ``str.lstrip("www.")`` — it strips *every* character in the set
+    {w, .}, so ``www.world.com`` would be mangled to ``orld.com``.
+    """
     try:
         h = urlparse(url).hostname or ""
     except Exception:
         return ""
-    return h.lower().lstrip("www.")
+    h = h.lower()
+    if h.startswith("www."):
+        h = h[4:]
+    return h
 
 
 def _swap_host(url: str, new_host: str) -> str:

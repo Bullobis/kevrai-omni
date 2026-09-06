@@ -797,7 +797,7 @@ async def download_start(request: Request, body: DownloadStartReq) -> dict[str, 
     except DownloadRefused as e:
         raise HTTPException(status_code=400, detail=f"refused url: {e}") from e
     except Exception:
-        raise HTTPException(status_code=400, detail="bad url")
+        raise HTTPException(status_code=400, detail="bad url") from None
 
     dest_dir = Path(settings.resolved_download_dir())
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -1357,7 +1357,7 @@ async def convert_start(req: ConvertStartReq, request: Request) -> dict[str, Any
     try:
         dst_resolved = dst.resolve()
     except Exception:  # noqa: BLE001
-        raise HTTPException(status_code=400, detail=f"输出路径非法：{req.dst}")
+        raise HTTPException(status_code=400, detail=f"输出路径非法：{req.dst}") from None
     if not str(dst_resolved).startswith(str(data_root)):
         raise HTTPException(
             status_code=400,
@@ -1388,9 +1388,9 @@ async def convert_start(req: ConvertStartReq, request: Request) -> dict[str, Any
             loop=asyncio.get_running_loop(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except RuntimeError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e)) from e
     return {"ok": True, "task_id": task.id}
 
 
