@@ -125,7 +125,7 @@ def _as_strict_int(v: Any, name: str) -> int:
     try:
         return int(v)
     except (TypeError, ValueError):
-        raise LtxParamError(f"{name} must be an integer, got {v!r}")
+        raise LtxParamError(f"{name} must be an integer, got {v!r}") from None
 
 
 @dataclass
