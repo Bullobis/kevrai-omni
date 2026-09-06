@@ -6,7 +6,10 @@ every character in the set {w, .} — so ``www.world.com`` was mangled to
 test pins the correct behaviour.
 """
 from __future__ import annotations
-import sys, pathlib
+
+import pathlib
+import sys
+
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from app.sources import _host_of  # noqa: E402

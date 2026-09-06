@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+import pathlib
+
 # Regression test for the download_file() timeout change.
 #
 # Prior to this fix, ``httpx.Client(timeout=None)`` was used in
@@ -6,7 +9,8 @@ from __future__ import annotations
 # the connection but stops sending bytes) would hang the UI forever.
 # We now use a layered ``httpx.Timeout`` (see ``DOWNLOAD_TIMEOUT`` in
 # ``app.importer``).
-import sys, pathlib
+import sys
+
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from app.importer import DOWNLOAD_TIMEOUT
 
