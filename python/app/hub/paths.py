@@ -1,6 +1,5 @@
 """Path-safety helpers shared by the hub package, ``engines.py`` and ``main.py``.
 
-Design reference: ``docs/DESIGN_V280_DUAL_SOURCE.md`` §4.3 (download layout) and
 the P0 hardening items H2 (Zip Slip) / H3 (import allowlist).
 
 These are **pure** functions — no network, no IO beyond ``Path.resolve()`` —
@@ -32,7 +31,6 @@ MAX_PART_LEN = 255
 
 class UnsafePathError(ValueError):
     """Raised when a relative path cannot be safely joined onto a root."""
-
 
 def split_parts(rel: str) -> list[str]:
     """Split a relative path into clean parts (``\\`` normalized to ``/``)."""

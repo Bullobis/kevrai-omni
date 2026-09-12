@@ -42,7 +42,6 @@ _LLM: Any = None  # MNN.llm.Llm instance (opaque)
 class MnnEngineMissing(RuntimeError):
     """Raised when the MNN pip package is not installed."""
 
-
 def _import_llm():
     try:
         from MNN.llm import create as _create

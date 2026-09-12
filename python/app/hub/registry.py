@@ -1,7 +1,5 @@
 """HubRegistry — fan-out, quota, merge/rank, dedupe, cursors, degradation.
 
-Design reference: ``docs/DESIGN_V280_DUAL_SOURCE.md`` §2.3 – §2.6, §4.3.
-
 The registry owns the three adapters and is the single place that:
 
 * allocates a per-source quota (curated first),
@@ -53,7 +51,6 @@ _MAX_CURSOR_BYTES = 2048
 
 class BadCursor(ValueError):
     """Raised when a client-supplied cursor cannot be decoded."""
-
 
 @dataclass
 class MergedPage:

@@ -1,6 +1,5 @@
 """Kevrai dual-source model hub — HuggingFace + ModelScope + local curated.
 
-Design reference: ``docs/DESIGN_V280_DUAL_SOURCE.md``.
 
 Public surface
 --------------

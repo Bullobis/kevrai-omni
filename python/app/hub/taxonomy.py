@@ -1,6 +1,5 @@
 """Pure mapping helpers: upstream signal → local taxonomy / engine / size.
 
-Design reference: ``docs/DESIGN_V280_DUAL_SOURCE.md`` §1.6 (category mapping)
 and §1.7 (``infer_engines()`` — the "全部兼容" landing point).
 
 **No network, no IO except reading ``catalog/engines.json`` once** (so inferred

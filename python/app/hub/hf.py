@@ -1,6 +1,5 @@
 """HuggingFace adapter for the dual-source hub.
 
-Design reference: ``docs/DESIGN_V280_DUAL_SOURCE.md`` §1.6 / §2.5.
 
 Reuse (no re-implementation):
 * ``app.importer._HF_API_MIRRORS``  — mirror rotation order.

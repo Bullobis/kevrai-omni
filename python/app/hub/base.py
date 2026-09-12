@@ -1,7 +1,5 @@
 """Core abstractions for the Kevrai dual-source model hub (HF + ModelScope).
 
-Design reference: ``docs/DESIGN_V280_DUAL_SOURCE.md`` §1.2 – §1.4.
-
 Everything in this module is **pure**: no network, no filesystem, and no
 imports from the rest of ``app`` (so it can never create a circular import,
 and every helper is unit-testable offline).

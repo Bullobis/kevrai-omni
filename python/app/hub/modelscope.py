@@ -1,6 +1,5 @@
 """ModelScope (魔搭) adapter for the dual-source hub.
 
-Design reference: ``docs/DESIGN_V280_DUAL_SOURCE.md`` §1.6 / §2.5 / §4.4.
 
 **Reuse over re-implementation** (design T02 hard requirement): the ModelScope
 URL shapes and the ``/repo/files`` parsing already exist in

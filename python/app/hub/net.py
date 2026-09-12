@@ -1,7 +1,5 @@
 """Network resilience primitives for the hub adapters.
 
-Design reference: ``docs/DESIGN_V280_DUAL_SOURCE.md`` §2.5.
-
 Everything here is injectable so tests stay **offline and fast**:
 
 * ``sleep`` — defaults to :func:`asyncio.sleep`; tests pass a recorder so retry

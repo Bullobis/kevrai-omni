@@ -1,6 +1,5 @@
 """A programmable, in-process fake hub server for offline tests.
 
-Design reference: ``docs/DESIGN_V280_DUAL_SOURCE.md`` §6.3.
 
 One single HTTP server (bound to port 0 — the kernel picks a free port, so CI
 never collides) serves **both** the HuggingFace and ModelScope response shapes,
