@@ -204,72 +204,59 @@ else
 fi
 
 # ----------------------------------------------------------------------
-step "6. Build installer + portable zip + update metadata"
+step "6. Build the portable zip"
 # ----------------------------------------------------------------------
 # ``--prepackaged`` reuses the staging directory we just re-branded, instead of
 # repackaging from scratch.  Without it electron-builder would extract a fresh
-# electron.exe (overwriting the icon/version resource we embedded in step 5)
-# and the shipped binary would identify itself as "Electron" again.
-if npx --yes electron-builder --win --x64 --publish never \
+# electron.exe — overwriting the icon/version resource embedded in step 5 — and
+# the shipped binary would identify itself as "Electron" again.
+npx --yes electron-builder --win --x64 zip --publish never \
+  --prepackaged "${APP_DIR}" \
+  --config.npmRebuild=false \
+  --config.extraMetadata.main="electron/main.js" \
+  --config.win.signAndEditExecutable=false \
+  || fail "electron-builder (zip) failed"
+
+if [ ! -f "${EXPECTED_ZIP}" ]; then
+  CANDIDATE_ZIP="$(ls -1 build/output/*.zip 2>/dev/null | head -1 || true)"
+  [ -n "${CANDIDATE_ZIP}" ] || fail "no portable .zip produced"
+  EXPECTED_ZIP="${CANDIDATE_ZIP}"
+fi
+echo "  ✓ portable zip: ${EXPECTED_ZIP}"
+
+# ----------------------------------------------------------------------
+step "7. Build the NSIS installer"
+# ----------------------------------------------------------------------
+# Caveat: building NSIS from Linux requires Wine, because electron-builder
+# generates the uninstaller by *executing* the freshly built installer, and
+# that step cannot be replaced by a native tool.  Where Wine is unavailable we
+# report it clearly and still deliver everything else, rather than failing the
+# whole build.
+NSIS_OK=0
+if npx --yes electron-builder --win --x64 nsis --publish never \
       --prepackaged "${APP_DIR}" \
       --config.npmRebuild=false \
       --config.extraMetadata.main="electron/main.js" \
       --config.win.signAndEditExecutable=false; then
-  :
+  NSIS_OK=1
+  echo "  ✓ NSIS installer built"
 else
-  # Some electron-builder versions refuse --prepackaged together with the
-  # nsis/zip targets.  In that case fall back to a full build and re-apply the
-  # metadata afterwards, which is slower but equivalent.
-  echo "  (--prepackaged unsupported here — falling back to full build)"
-  npx --yes electron-builder --win --x64 --publish never \
-    --config.npmRebuild=false \
-    --config.extraMetadata.main="electron/main.js" \
-    --config.win.signAndEditExecutable=false \
-    || fail "electron-builder failed"
-
-  if [ -n "${WINRES}" ]; then
-    reapply_json="$(mktemp -d)"
-    cp "assets/icons/icon-256.png" "${reapply_json}/icon.png" 2>/dev/null \
-      || cp "assets/icons/icon-1024.png" "${reapply_json}/icon.png"
-    cat > "${reapply_json}/winres.json" <<JSON
-{
-  "RT_GROUP_ICON": { "APP": { "0000": ["icon.png"] } },
-  "RT_VERSION": {
-    "#1": { "0000": {
-      "fixed": { "file_version": "${VERSION}.0", "product_version": "${VERSION}.0" },
-      "info": { "0409": {
-        "CompanyName": "Kevrai Omni contributors",
-        "FileDescription": "Kevrai Omni - One-click Local AI Workstation",
-        "FileVersion": "${VERSION}",
-        "InternalName": "${PRODUCT}",
-        "LegalCopyright": "Copyright (C) 2026 Kevrai Omni contributors",
-        "OriginalFilename": "${PRODUCT}.exe",
-        "ProductName": "${PRODUCT}",
-        "ProductVersion": "${VERSION}"
-      } } } }
-  }
-}
-JSON
-    "${WINRES}" patch --no-backup --in "${reapply_json}/winres.json" "${EXE}" || true
-
-    # The portable zip contains a copy of the executable; refresh it in place
-    # so the archive ships the re-branded binary too.
-    if [ -f "${EXPECTED_ZIP}" ]; then
-      tmp_zip="$(mktemp -d)"
-      if unzip -o -q "${EXPECTED_ZIP}" -d "${tmp_zip}" 2>/dev/null; then
-        cp "${EXE}" "${tmp_zip}/${PRODUCT}.exe"
-        rm -f "${EXPECTED_ZIP}"
-        (cd "${tmp_zip}" && zip -q -r -X "${ROOT}/${EXPECTED_ZIP}" .)
-      fi
-      rm -rf "${tmp_zip}"
-    fi
-  fi
+  echo ""
+  echo "  ⚠ NSIS installer could not be produced on this machine."
+  echo "    Reason: electron-builder needs Wine to run the generated installer"
+  echo "            when extracting the uninstaller, and Wine cannot execute"
+  echo "            PE binaries in this environment."
+  echo "    Options:"
+  echo "      • run  npm run build:win  on a Windows machine, or"
+  echo "      • install a working Wine (wine32:i386) and re-run this script."
+  echo "    The portable zip above is fully functional and needs no installer."
+  echo ""
 fi
 
 # ----------------------------------------------------------------------
-step "7. Verify the resulting artifacts (installer + portable zip + latest.yml)"
+step "8. Verify the resulting artifacts"
 # ----------------------------------------------------------------------
-if [ ! -f "${EXPECTED_EXE}" ]; then
+if [ "${NSIS_OK}" -eq 1 ] && [ ! -f "${EXPECTED_EXE}" ]; then
   CANDIDATE="$(ls -1 build/output/*.exe 2>/dev/null | head -1 || true)"
   [ -n "${CANDIDATE}" ] || fail "no .exe installer produced at ${EXPECTED_EXE}"
   EXPECTED_EXE="${CANDIDATE}"
@@ -281,8 +268,9 @@ if [ ! -f "${EXPECTED_ZIP}" ]; then
   EXPECTED_ZIP="${CANDIDATE_ZIP}"
 fi
 
-# latest.yml is required by electron-updater for in-app auto-update.
-if [ ! -f build/output/latest.yml ]; then
+# latest.yml is only emitted alongside a real installer; warn (don't fail)
+# when NSIS was skipped so the rest of the build still completes.
+if [ "${NSIS_OK}" -eq 1 ] && [ ! -f build/output/latest.yml ]; then
   fail "build/output/latest.yml missing — auto-update will not work (publish config?)"
 fi
 
@@ -301,8 +289,14 @@ verify_artifact() {
 }
 
 echo ""
-echo "✅ Build succeeded"
-verify_artifact "${EXPECTED_EXE}" "installer"
+if [ "${NSIS_OK}" -eq 1 ]; then
+  echo "✅ Build succeeded (installer + portable zip)"
+  verify_artifact "${EXPECTED_EXE}" "installer"
+  echo "   auto-update metadata: build/output/latest.yml"
+else
+  echo "✅ Build succeeded (portable zip)"
+  echo "   the NSIS installer was skipped — see the note above for how to"
+  echo "   produce it on a Windows machine"
+fi
 verify_artifact "${EXPECTED_ZIP}" "portable zip"
-echo "   auto-update metadata: build/output/latest.yml"
 
