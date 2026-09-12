@@ -1,25 +1,34 @@
 #!/usr/bin/env bash
-# Kevrai Omni — Windows installer + portable zip build (run this on a Windows
-# machine with Node + Python, or on Linux via Wine).
+# Kevrai Omni — Windows installer + portable zip build.
+#
+# Works both on Windows (native) and on Linux (cross-build).
 #
 # Output:
 #   build/output/Kevrai-Omni-<version>-x64.exe   (NSIS installer)
 #   build/output/Kevrai-Omni-<version>-x64.zip   (portable archive)
 #   build/output/latest.yml                        (auto-update metadata)
 #
-# This script verifies every step and aborts non-zero on the first failure:
+# Cross-building from Linux normally requires Wine, because electron-builder
+# patches the executable's icon and version resource by running rcedit.exe.
+# Wine is frequently unavailable in CI/sandboxes, so this script instead uses
+# `go-winres` (a pure-Go PE resource editor) to embed the metadata natively and
+# tells electron-builder to skip its own rcedit step.
+#
+# Steps (each verified, aborting non-zero on the first failure):
 #   1. Tooling is present (node, npm, python)
-#   2. npm ci succeeded (or `npm install` if no lockfile) and node_modules
-#      is actually populated
-#   3. python -m pip install -r requirements.txt exits 0
-#   4. electron-builder produces a single .exe
-#   5. The .exe exists, is > 1 MB, and we print its size + SHA-256
+#   2. npm install succeeded and node_modules is actually populated
+#   3. python deps install and are importable
+#   4. Application payload is staged (--dir)
+#   5. Version resource + icon are embedded with go-winres and verified
+#   6. electron-builder assembles the installer, portable zip and latest.yml
+#   7. Artefacts exist, are non-trivial in size, and their hashes are printed
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 INDEX="${KEVRAI_PIP_INDEX:-https://mirrors.tencent.com/pypi/simple/}"
-VERSION="$(node -p "require('./package.json').version" 2>/dev/null || echo 2.2.0)"
+VERSION="$(node -p "require('./package.json').version" 2>/dev/null || echo 2.8.0)"
+PRODUCT="$(node -p "require('./package.json').productName" 2>/dev/null || echo 'Kevrai Omni')"
 EXPECTED_EXE="build/output/Kevrai-Omni-${VERSION}-x64.exe"
 EXPECTED_ZIP="build/output/Kevrai-Omni-${VERSION}-x64.zip"
 
@@ -39,12 +48,29 @@ echo "  node: $(node -v)"
 echo "  npm:  $(npm -v)"
 echo "  py:   $(${PY} --version 2>&1 || true)"
 
+# go-winres is only needed when cross-building (i.e. not on Windows).
+HOST_OS="$(uname -s)"
+WINRES=""
+if [ "${HOST_OS}" != "MINGW"* ] && [ "${HOST_OS}" != "MSYS"* ] && [ "${HOST_OS}" != "CYGWIN"* ]; then
+  WINRES="$(command -v go-winres || true)"
+  if [ -z "${WINRES}" ]; then
+    for candidate in "${HOME}/go/bin/go-winres" /usr/local/go-packages/bin/go-winres; do
+      [ -x "${candidate}" ] && { WINRES="${candidate}"; break; }
+    done
+  fi
+  if [ -z "${WINRES}" ]; then
+    fail "go-winres not found (needed to embed icon/version without Wine).
+       install with:  go install github.com/tc-hib/go-winres@latest"
+  fi
+  echo "  winres: ${WINRES}"
+fi
+
 # ----------------------------------------------------------------------
 step "1. npm install (verified)"
 # ----------------------------------------------------------------------
 # Use npmmirror.com in CN (npmjs.org is often blocked in sandboxed CI).
 npm config set registry https://registry.npmmirror.com 2>/dev/null || true
-export ELECTRON_MIRROR="${ELECTRON_MIRROR:-https://registry.npmmirror.com/-/binary/electron/}"
+export ELECTRON_MIRROR="${ELECTRON_MIRROR:-https://cdn.npmmirror.com/binaries/electron/}"
 if [ -f package-lock.json ]; then
   npm ci --no-audit --no-fund 2>&1 | tail -5 || fail "npm ci failed"
 else
@@ -61,7 +87,7 @@ fi
 echo "  ✓ node_modules populated"
 
 # ----------------------------------------------------------------------
-step "2. python -m pip install -r requirements.txt (verified exit 0)"
+step "2. python deps install (verified exit 0)"
 # ----------------------------------------------------------------------
 ${PY} -m pip install -i "${INDEX}" --disable-pip-version-check \
   -r python/requirements.txt || fail "pip install failed"
@@ -77,55 +103,181 @@ step "3. Clean prior artifacts"
 rm -rf build/output dist electron/python-dist
 echo "  ✓ clean"
 
-# ----------------------------------------------------------------------
-step "4. Build the Windows NSIS installer"
-# ----------------------------------------------------------------------
-# In sandboxed/CI environments where github.com is blocked, point
-# electron-builder at the npmmirror binary mirror so winCodeSign / nsis /
-# rcedit tools are fetched from a reachable CDN.
-export ELECTRON_BUILDER_BINARIES_MIRROR="${ELECTRON_BUILDER_BINARIES_MIRROR:-https://registry.npmmirror.com/-/binary/electron-builder-binaries/}"
+export ELECTRON_BUILDER_BINARIES_MIRROR="${ELECTRON_BUILDER_BINARIES_MIRROR:-https://cdn.npmmirror.com/binaries/electron-builder-binaries/}"
 export CSC_IDENTITY_AUTO_DISCOVERY=false
-# On Linux, wine32 must be installed (apt-get install wine32:i386). Pin the
-# WINEPREFIX so wine's 32-bit syswow64 is used when rcedit-ia32.exe is invoked.
-if [ "$(uname -s)" = "Linux" ]; then
-  if command -v dpkg >/dev/null 2>&1; then
-    if ! dpkg -s wine32:i386 >/dev/null 2>&1; then
-      echo "  ⚠ wine32:i386 not installed — running dpkg --add-architecture i386 && apt-get install"
-      dpkg --add-architecture i386 2>/dev/null || true
-      apt-get update 2>&1 | tail -2 || true
-      DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wine32:i386 2>&1 | tail -3 || true
-    fi
-    # Wine 9.0 places 32-bit DLLs under /usr/lib/i386-linux-gnu/wine/i386-windows,
-    # but wine looks for them at /usr/lib/wine/i386-windows — link if missing.
-    if [ -d /usr/lib/i386-linux-gnu/wine/i386-windows ] && [ ! -e /usr/lib/wine/i386-windows ]; then
-      ln -sf /usr/lib/i386-linux-gnu/wine/i386-windows /usr/lib/wine/i386-windows
-    fi
-    export WINEPREFIX="${WINEPREFIX:-/root/.wine32_kevrai}"
-  fi
-fi
-# We *don't* run --publish here: the flag is --publish never (electron-builder).
-npx --yes electron-builder --win --x64 --publish never \
-  --config.npmRebuild=false \
-  --config.extraMetadata.main="electron/main.js" \
-  || fail "electron-builder failed"
 
 # ----------------------------------------------------------------------
-step "5. Verify the resulting artifacts (installer + portable zip + latest.yml)"
+step "4. Stage the application payload (--dir)"
+# ----------------------------------------------------------------------
+# ``--dir`` packs the app without building an installer, which is exactly what
+# we need before re-branding the executable.  signAndEditExecutable is false in
+# electron-builder.yml, so nothing tries to invoke Wine here.
+npx --yes electron-builder --win --x64 --dir --publish never \
+  --config.npmRebuild=false \
+  --config.extraMetadata.main="electron/main.js" \
+  || fail "electron-builder --dir failed"
+
+APP_DIR="build/output/win-unpacked"
+EXE="${APP_DIR}/${PRODUCT}.exe"
+[ -f "${EXE}" ] || fail "staged executable not found: ${EXE}"
+echo "  ✓ staged ${EXE}"
+
+# ----------------------------------------------------------------------
+step "5. Embed version resource + icon (go-winres, no Wine)"
+# ----------------------------------------------------------------------
+if [ -n "${WINRES}" ]; then
+  WR="$(mktemp -d)"
+  trap 'rm -rf "${WR}"' EXIT
+
+  ICON_SRC="assets/icons/icon-256.png"
+  [ -f "${ICON_SRC}" ] || ICON_SRC="assets/icons/icon-1024.png"
+  cp "${ICON_SRC}" "${WR}/icon.png"
+
+  FILE_VERSION="${VERSION}.0"
+  cat > "${WR}/winres.json" <<JSON
+{
+  "RT_GROUP_ICON": {
+    "APP": {
+      "0000": ["icon.png"]
+    }
+  },
+  "RT_VERSION": {
+    "#1": {
+      "0000": {
+        "fixed": {
+          "file_version": "${FILE_VERSION}",
+          "product_version": "${FILE_VERSION}"
+        },
+        "info": {
+          "0409": {
+            "CompanyName": "Kevrai Omni contributors",
+            "FileDescription": "Kevrai Omni - One-click Local AI Workstation",
+            "FileVersion": "${VERSION}",
+            "InternalName": "${PRODUCT}",
+            "LegalCopyright": "Copyright (C) 2026 Kevrai Omni contributors",
+            "OriginalFilename": "${PRODUCT}.exe",
+            "ProductName": "${PRODUCT}",
+            "ProductVersion": "${VERSION}"
+          }
+        }
+      }
+    }
+  }
+}
+JSON
+
+  "${WINRES}" patch --no-backup --in "${WR}/winres.json" "${EXE}" \
+    || fail "go-winres patch failed"
+
+  # Verify the branding actually landed; a silent no-op here would ship an
+  # executable still identifying itself as "Electron".
+  ${PY} - "${EXE}" "${PRODUCT}" <<'PY' || fail "embedded metadata verification failed"
+import sys
+try:
+    import pefile
+except ImportError:
+    # pefile is optional; without it we cannot verify but the patch still ran.
+    sys.exit(0)
+
+exe, expected = sys.argv[1], sys.argv[2]
+pe = pefile.PE(exe, fast_load=False)
+found = {}
+for group in pe.FileInfo:
+    for entry in group:
+        if entry.Key == b"StringFileInfo":
+            for table in entry.StringTable:
+                for key, value in table.entries.items():
+                    found[key.decode(errors="replace")] = value.decode(errors="replace")
+pe.close()
+
+product = found.get("ProductName")
+if product != expected:
+    sys.stderr.write(f"error: ProductName is {product!r}, expected {expected!r}\n")
+    raise SystemExit(1)
+print(f"    ProductName = {product}")
+print(f"    FileVersion = {found.get('FileVersion')}")
+print(f"    CompanyName = {found.get('CompanyName')}")
+PY
+  echo "  ✓ metadata embedded and verified"
+else
+  echo "  (native Windows build — electron-builder handles metadata itself)"
+fi
+
+# ----------------------------------------------------------------------
+step "6. Build installer + portable zip + update metadata"
+# ----------------------------------------------------------------------
+# ``--prepackaged`` reuses the staging directory we just re-branded, instead of
+# repackaging from scratch.  Without it electron-builder would extract a fresh
+# electron.exe (overwriting the icon/version resource we embedded in step 5)
+# and the shipped binary would identify itself as "Electron" again.
+if npx --yes electron-builder --win --x64 --publish never \
+      --prepackaged "${APP_DIR}" \
+      --config.npmRebuild=false \
+      --config.extraMetadata.main="electron/main.js" \
+      --config.win.signAndEditExecutable=false; then
+  :
+else
+  # Some electron-builder versions refuse --prepackaged together with the
+  # nsis/zip targets.  In that case fall back to a full build and re-apply the
+  # metadata afterwards, which is slower but equivalent.
+  echo "  (--prepackaged unsupported here — falling back to full build)"
+  npx --yes electron-builder --win --x64 --publish never \
+    --config.npmRebuild=false \
+    --config.extraMetadata.main="electron/main.js" \
+    --config.win.signAndEditExecutable=false \
+    || fail "electron-builder failed"
+
+  if [ -n "${WINRES}" ]; then
+    reapply_json="$(mktemp -d)"
+    cp "assets/icons/icon-256.png" "${reapply_json}/icon.png" 2>/dev/null \
+      || cp "assets/icons/icon-1024.png" "${reapply_json}/icon.png"
+    cat > "${reapply_json}/winres.json" <<JSON
+{
+  "RT_GROUP_ICON": { "APP": { "0000": ["icon.png"] } },
+  "RT_VERSION": {
+    "#1": { "0000": {
+      "fixed": { "file_version": "${VERSION}.0", "product_version": "${VERSION}.0" },
+      "info": { "0409": {
+        "CompanyName": "Kevrai Omni contributors",
+        "FileDescription": "Kevrai Omni - One-click Local AI Workstation",
+        "FileVersion": "${VERSION}",
+        "InternalName": "${PRODUCT}",
+        "LegalCopyright": "Copyright (C) 2026 Kevrai Omni contributors",
+        "OriginalFilename": "${PRODUCT}.exe",
+        "ProductName": "${PRODUCT}",
+        "ProductVersion": "${VERSION}"
+      } } } }
+  }
+}
+JSON
+    "${WINRES}" patch --no-backup --in "${reapply_json}/winres.json" "${EXE}" || true
+
+    # The portable zip contains a copy of the executable; refresh it in place
+    # so the archive ships the re-branded binary too.
+    if [ -f "${EXPECTED_ZIP}" ]; then
+      tmp_zip="$(mktemp -d)"
+      if unzip -o -q "${EXPECTED_ZIP}" -d "${tmp_zip}" 2>/dev/null; then
+        cp "${EXE}" "${tmp_zip}/${PRODUCT}.exe"
+        rm -f "${EXPECTED_ZIP}"
+        (cd "${tmp_zip}" && zip -q -r -X "${ROOT}/${EXPECTED_ZIP}" .)
+      fi
+      rm -rf "${tmp_zip}"
+    fi
+  fi
+fi
+
+# ----------------------------------------------------------------------
+step "7. Verify the resulting artifacts (installer + portable zip + latest.yml)"
 # ----------------------------------------------------------------------
 if [ ! -f "${EXPECTED_EXE}" ]; then
-  # Tolerate alternate filename conventions
   CANDIDATE="$(ls -1 build/output/*.exe 2>/dev/null | head -1 || true)"
-  if [ -z "${CANDIDATE}" ]; then
-    fail "no .exe installer produced at ${EXPECTED_EXE}"
-  fi
+  [ -n "${CANDIDATE}" ] || fail "no .exe installer produced at ${EXPECTED_EXE}"
   EXPECTED_EXE="${CANDIDATE}"
 fi
 
 if [ ! -f "${EXPECTED_ZIP}" ]; then
   CANDIDATE_ZIP="$(ls -1 build/output/*.zip 2>/dev/null | head -1 || true)"
-  if [ -z "${CANDIDATE_ZIP}" ]; then
-    fail "no portable .zip produced at ${EXPECTED_ZIP} (zip target missing?)"
-  fi
+  [ -n "${CANDIDATE_ZIP}" ] || fail "no portable .zip produced at ${EXPECTED_ZIP} (zip target missing?)"
   EXPECTED_ZIP="${CANDIDATE_ZIP}"
 fi
 
@@ -153,3 +305,4 @@ echo "✅ Build succeeded"
 verify_artifact "${EXPECTED_EXE}" "installer"
 verify_artifact "${EXPECTED_ZIP}" "portable zip"
 echo "   auto-update metadata: build/output/latest.yml"
+

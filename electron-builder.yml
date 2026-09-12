@@ -30,8 +30,11 @@ win:
       arch: [x64]
     - target: zip
       arch: [x64]
-  signtoolOptions:
-    sign: null
+  # The executable's icon and version resource are embedded by
+  # scripts/build_windows.sh using go-winres.  Letting electron-builder do it
+  # as well would require rcedit.exe under Wine, which is not available in
+  # every build environment — and would also overwrite our metadata.
+  signAndEditExecutable: false
 
 nsis:
   oneClick: false

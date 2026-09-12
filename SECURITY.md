@@ -108,7 +108,7 @@ conversation transcript has it. We:
 1. Refuse to use it in `scripts/release.sh` (script exits non-zero if
    `GITHUB_TOKEN` starts with the leaked prefix).
 2. Scan every file under `catalog/`, `python/`, `electron/`, `scripts/`,
-   `docs/`, `renderer/`, `package.json`, etc., and fail CI if the pattern
+   `renderer/`, `package.json`, etc., and fail CI if the pattern
    reappears anywhere except `SECURITY.md`, `RELEASE.md`,
    `scripts/release.sh`, `scripts/smoke.sh`, `scripts/build_windows.sh`
    (where it appears intentionally to refuse it).
