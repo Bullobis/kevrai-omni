@@ -63,6 +63,10 @@ export const api = {
   envUpgrade:    wrap("envUpgrade",    (opts) => k().envUpgrade(opts)),
   envInstallEngine: wrap("envInstallEngine", (opts) => k().envInstallEngine(opts)),
   measureSources:   wrap("measureSources",   (urls) => k().measureSources(urls)),
+  // v2.8.1 — source registry / health / manual lock.
+  getSourceRegistry: wrap("getSourceRegistry", () => k().getSourceRegistry()),
+  getSourceHealth:   wrap("getSourceHealth",   () => k().getSourceHealth()),
+  lockSource:        wrap("lockSource",        (id) => k().lockSource(id)),
   // v2.3.0 — hardware / recommendation / MNN runtime
   hardware:       wrap("hardware",       (opts) => k().hardware(opts || {})),
   recommend:      wrap("recommend",      (opts) => k().recommend(opts || {})),
@@ -104,6 +108,14 @@ export const api = {
   search:            wrap("search",            (params) => k().search(params)),
   searchRecent:      wrap("searchRecent",      () => k().searchRecent()),
   searchClearRecent: wrap("searchClearRecent", () => k().searchClearRecent()),
+  // v2.8.0 — dual-source hub (HF + ModelScope). Guarded so an old preload
+  // (which lacks these) throws a catchable error rather than a TypeError.
+  hubSources:   wrap("hubSources",   () => k().hubSources()),
+  hubSearch:    wrap("hubSearch",    (params) => k().hubSearch(params)),
+  hubModel:     wrap("hubModel",     (params) => k().hubModel(params)),
+  hubFiles:     wrap("hubFiles",     (params) => k().hubFiles(params)),
+  hubDownload:  wrap("hubDownload",  (params) => k().hubDownload(params)),
+  hubJob:       wrap("hubJob",       (jobId) => k().hubJob(jobId)),
   // v2.4.0 — LTX-2.5 video generation
   ltxCapabilities:   wrap("ltxCapabilities",   () => k().ltxCapabilities()),
   ltxGenerate:       wrap("ltxGenerate",       (opts) => k().ltxGenerate(opts)),

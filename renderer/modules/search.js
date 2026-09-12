@@ -15,12 +15,26 @@ let searchState = {
   trendingOnly: false, sort: "relevance", page: 1, pageSize: 60,
   items: [], facets: null, suggestions: [], recent: [], elapsedMs: 0, count: 0,
   loading: false,
+  // v2.8.0 — hub cursor pagination
+  sources: ["curated", "hf", "modelscope"],
+  cursor: "",              // opaque cursor for the next page ("" = none)
+  hasMore: false,
+  loadingMore: false,      // re-entrancy guard for loadMore()
+  seenKeys: new Set(),     // cross-page dedupe (hub + ":" + repo)
+  degraded: false,
+  warnings: [],
+  reqSeq: 0,               // request-generation guard (H5)
+  lastError: null,
+  usingHub: false,         // true when the last successful search used hub
 };
 let highlightIdx = -1;
 let recentDropdown = null;
 
 export function initSearch(grid) {
   vgrid = grid;
+  // v2.8.0 — incremental loading: pull the next page when the grid nears its
+  // bottom edge. loadMore() self-guards against re-entrancy and end-of-list.
+  if (vgrid) vgrid.onNearEnd = () => { loadMore().catch(() => {}); };
   wireToolbar();
   // Load recent searches once
   api.searchRecent().then((r) => {
@@ -160,37 +174,234 @@ function toggleRecentDropdown(show) {
   });
 }
 
+// v2.8.0 — single dedupe key for cross-page / cross-source results.
+function keyOf(m) {
+  return `${m.hub || "curated"}:${(m.repo || m.id || "").toLowerCase()}`;
+}
+
+// v2.8.0 — three-fold backward-compat bridge (§3.5):
+//   1) old preload without hubSearch  → fall back to api.search()
+//   2) sidecar without /api/hub/*      → fall back to api.search()
+// /api/hub/search itself never 5xx's, so (2) is a rare safety net.
+async function callHubSearch(params) {
+  if (!window.kevrai || typeof window.kevrai.hubSearch !== "function") {
+    return { fallback: true, r: await api.search(toLegacyParams(params)) };
+  }
+  try {
+    return { fallback: false, r: await api.hubSearch(params) };
+  } catch (_) {
+    return { fallback: true, r: await api.search(toLegacyParams(params)) };
+  }
+}
+
+function toLegacyParams(params) {
+  return {
+    q: params.q, category: params.category, engine: params.engine,
+    license: params.license, size_bucket: searchState.sizeBucket,
+    trending: searchState.trendingOnly ? 1 : 0, sort: params.sort,
+    page: 1, page_size: searchState.pageSize,
+  };
+}
+
 export async function runSearch(opts = {}) {
   if (opts.resetPage) searchState.page = 1;
+  const mySeq = ++searchState.reqSeq;   // H5: generation guard
   searchState.loading = true;
+  searchState.lastError = null;
   updateCount("搜索中…");
+  clearLoadMoreBar();
+
+  const params = {
+    q: searchState.q,
+    sources: searchState.sources,
+    category: searchState.cat,
+    engine: searchState.engine,
+    license: searchState.license,
+    sort: searchState.sort,
+    page_size: searchState.pageSize,
+  };
+
   let r;
   try {
-    r = await api.search({
-      q: searchState.q, category: searchState.cat, engine: searchState.engine,
-      license: searchState.license, size_bucket: searchState.sizeBucket,
-      trending: searchState.trendingOnly ? 1 : 0, sort: searchState.sort,
-      page: searchState.page, page_size: searchState.pageSize,
-    });
+    r = await callHubSearch(params);
   } catch (e) {
+    if (mySeq !== searchState.reqSeq) return;   // stale — discard
     searchState.loading = false;
+    searchState.lastError = String(e && e.message || e);
     updateCount("搜索失败");
+    renderLoadError();
     return;
   }
+
+  // Discard out-of-order responses (fast typing: a slow early response must
+  // not overwrite a newer one).
+  if (mySeq !== searchState.reqSeq) return;
+
   const body = r?.body || r || {};
+  const isHub = !r.fallback;
+  searchState.usingHub = isHub;
+
   searchState.items = body.items || [];
   searchState.facets = body.facets || null;
   searchState.suggestions = body.suggestions || [];
-  searchState.count = body.count || 0;
+  searchState.count = body.count != null ? body.count
+    : (body.items ? body.items.length : 0);
   searchState.elapsedMs = body.elapsed_ms || 0;
+  searchState.cursor = body.next_cursor || "";
+  searchState.hasMore = !!body.has_more;
+  searchState.degraded = !!body.degraded;
+  searchState.warnings = body.warnings || [];
   searchState.loading = false;
+
+  // Reset cross-page dedupe for the new result set.
+  searchState.seenKeys = new Set(searchState.items.map(keyOf));
 
   setState({ searchResults: searchState.items });
   vgrid.setItems(searchState.items);
-  updateCount(`${searchState.count} 条 · ${searchState.elapsedMs}ms`);
+  updateCount(formatCount());
   renderFacets();
+  renderDegradedBanner();
   renderNoResults();
+  updateLoadMoreBar();
   if (searchState.q.trim()) toggleRecentDropdown(true);
+}
+
+// v2.8.0 — fetch and append the next page. No-op when a request is already in
+// flight, when there is no cursor, or when the list is exhausted.
+export async function loadMore() {
+  if (searchState.loading || searchState.loadingMore) return;
+  if (!searchState.hasMore || !searchState.cursor) return;
+  const mySeq = searchState.reqSeq;      // snapshot; discard if a new search starts
+  searchState.loadingMore = true;
+  if (vgrid && typeof vgrid.setLoading === "function") vgrid.setLoading(true);
+  updateLoadMoreBar();
+  try {
+    const r = await callHubSearch({
+      q: searchState.q,
+      sources: searchState.sources,
+      category: searchState.cat,
+      engine: searchState.engine,
+      license: searchState.license,
+      sort: searchState.sort,
+      page_size: searchState.pageSize,
+      cursor: searchState.cursor,
+    });
+    if (mySeq !== searchState.reqSeq) return;   // query changed mid-flight
+    const body = r?.body || r || {};
+    const fresh = (body.items || []).filter((m) => {
+      const k = keyOf(m);
+      if (searchState.seenKeys.has(k)) return false;
+      searchState.seenKeys.add(k);
+      return true;
+    });
+    searchState.items = searchState.items.concat(fresh);
+    searchState.cursor = body.next_cursor || "";
+    searchState.hasMore = !!body.has_more;
+    searchState.degraded = !!body.degraded;
+    searchState.warnings = body.warnings || [];
+    setState({ searchResults: searchState.items });
+    if (vgrid && typeof vgrid.appendItems === "function") {
+      vgrid.appendItems(fresh);
+    } else if (vgrid) {
+      vgrid.setItems(searchState.items);
+    }
+    updateCount(formatCount());
+    renderDegradedBanner();
+  } catch (e) {
+    if (mySeq !== searchState.reqSeq) return;
+    searchState.lastError = String(e && e.message || e);
+  } finally {
+    if (mySeq === searchState.reqSeq) {
+      searchState.loadingMore = false;
+      if (vgrid && typeof vgrid.setLoading === "function") vgrid.setLoading(false);
+      updateLoadMoreBar();
+    }
+  }
+}
+
+function formatCount() {
+  const n = searchState.items.length;
+  const base = `${searchState.count || n} 条`;
+  const online = searchState.usingHub ? " · 在线" : "";
+  const more = searchState.hasMore ? " · 滚动加载更多" : "";
+  return `${base}${online} · ${searchState.elapsedMs}ms${more}`;
+}
+
+function clearLoadMoreBar() {
+  const el = document.querySelector("#loadmore-bar");
+  if (el) { el.hidden = true; el.innerHTML = ""; }
+}
+
+// v2.8.0 — load / empty / error / end-of-list indicator under the grid.
+function updateLoadMoreBar() {
+  let bar = document.querySelector("#loadmore-bar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "loadmore-bar";
+    bar.className = "vgrid-loadmore";
+    const grid = document.querySelector("#models-grid");
+    if (grid && grid.parentNode) grid.parentNode.insertBefore(bar, grid.nextSibling);
+    else return;
+  }
+  if (searchState.loadingMore) {
+    bar.hidden = false;
+    bar.innerHTML = `<span class="mut tiny">正在加载更多…</span>`;
+    return;
+  }
+  if (searchState.hasMore) {
+    bar.hidden = true;
+    bar.innerHTML = "";
+    return;
+  }
+  // Exhausted: show a friendly bottom marker (only if we actually have rows).
+  if (searchState.items.length > 0) {
+    bar.hidden = false;
+    bar.innerHTML = `<span class="mut tiny">已到底部 · 共 ${searchState.items.length} 条</span>`;
+  } else {
+    bar.hidden = true;
+    bar.innerHTML = "";
+  }
+}
+
+function renderLoadError() {
+  let bar = document.querySelector("#loadmore-bar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "loadmore-bar";
+    bar.className = "vgrid-loadmore";
+    const grid = document.querySelector("#models-grid");
+    if (grid && grid.parentNode) grid.parentNode.insertBefore(bar, grid.nextSibling);
+    else return;
+  }
+  bar.hidden = false;
+  bar.innerHTML = `<span class="mut tiny">加载失败 · <button class="link-btn" id="loadmore-retry">重试</button></span>`;
+  const btn = bar.querySelector("#loadmore-retry");
+  if (btn) btn.addEventListener("click", () => runSearch({ resetPage: true }));
+}
+
+// v2.8.0 — degraded banner: remote sources are down, only local results show.
+function renderDegradedBanner() {
+  let host = document.querySelector("#hub-degraded-banner");
+  if (!searchState.degraded || !searchState.warnings.length) {
+    if (host) host.remove();
+    return;
+  }
+  if (!host) {
+    host = document.createElement("div");
+    host.id = "hub-degraded-banner";
+    host.className = "hub-degraded-banner";
+    const facets = document.querySelector("#facets-bar");
+    const toolbar = document.querySelector("#pane-market .toolbar");
+    if (facets) facets.parentNode.insertBefore(host, facets);
+    else if (toolbar) toolbar.after(host);
+    else return;
+  }
+  const labels = searchState.warnings
+    .map((w) => `${w.hub || "远程"}（${w.code || "失败"}）`).join("、");
+  host.innerHTML = `在线检索暂不可用（${escapeHtml(labels)}），当前仅显示本地精选结果。
+    <button class="link-btn" id="hub-degraded-retry">重试</button>`;
+  const btn = host.querySelector("#hub-degraded-retry");
+  if (btn) btn.addEventListener("click", () => runSearch({ resetPage: true }));
 }
 
 function updateCount(text) {

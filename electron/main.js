@@ -36,7 +36,7 @@ const SIDECAR_HOST = "127.0.0.1";
 const SIDECAR_HEALTH_TIMEOUT_MS = 30_000;
 const SIDECAR_HEALTH_INTERVAL_MS = 2_000;
 const SHUTDOWN_TIMEOUT_MS = 5_000;
-const ALLOW_DEFAULT = ["huggingface.co", "github.com"];
+const ALLOW_DEFAULT = ["huggingface.co", "github.com", "modelscope.cn"];
 const SIDECAR_RESTART_MAX = 3;
 
 // Packaged: <resources>/python/app/main.py (extraResources).
@@ -133,6 +133,7 @@ const DEFAULT_SETTINGS = {
   modelDir: "",
   engineDir: "",
   hfToken: "",                // v2.4.1 — HuggingFace token for gated repos
+  msToken: "",                // v2.8.0 — ModelScope (魔搭) token, optional
 };
 
 function loadSettingsSync() {
@@ -146,14 +147,31 @@ function loadSettingsSync() {
 async function loadSettings() { return loadSettingsSync(); }
 
 async function saveSettings(next) {
-  // whitelist persisted keys
+  // whitelist persisted keys. v2.8.0: `hfToken`/`msToken` MUST be here —
+  // they were declared in DEFAULT_SETTINGS but never persisted (bug), so a
+  // typed-in token silently vanished on restart.
   const allowed = ["theme", "hardwareAccel", "telemetry",
-                   "allowlistAdvanced", "allowlist", "modelDir", "engineDir"];
+                   "allowlistAdvanced", "allowlist", "modelDir", "engineDir",
+                   "hfToken", "msToken"];
   const out = {};
   for (const k of allowed) if (k in next) out[k] = next[k];
   await fsp.writeFile(SETTINGS_PATH, JSON.stringify({ ...loadSettingsSync(), ...out }, null, 2),
                       { encoding: "utf-8", mode: 0o600 });
-  return loadSettingsSync();
+  const merged = loadSettingsSync();
+  // Tokens are consumed by the *sidecar* (it makes the remote requests), not by
+  // Electron. Persist locally AND push to Python so gated/private repos work.
+  // Best-effort: a sidecar that is still booting must not fail the save.
+  if ("hfToken" in out || "msToken" in out) {
+    try {
+      await sidecarFetch("/api/settings", {
+        method: "PUT",
+        body: { hf_token: merged.hfToken || "", ms_token: merged.msToken || "" },
+      });
+    } catch (e) {
+      logWarn("token sync to sidecar failed", String(e && e.message || e));
+    }
+  }
+  return merged;
 }
 
 // ---------------------------------------------------------------------------
@@ -779,6 +797,20 @@ function registerIpc() {
     return sidecarFetch("/api/sources/measure", { method: "POST", body });
   });
 
+  // v2.8.1 — source registry / health / lock (design T03).
+  ipcMain.handle("kevrai:source-registry", async () => {
+    return sidecarFetch("/api/sources/registry");
+  });
+  ipcMain.handle("kevrai:source-health", async () => {
+    return sidecarFetch("/api/sources/health");
+  });
+  ipcMain.handle("kevrai:lock-source", async (_e, body) => {
+    assert(body && typeof body === "object", "body: invalid");
+    const sourceId = (typeof body.source_id === "string") ? body.source_id : "";
+    assert(sourceId.length <= 128, "source_id: too long");
+    return sidecarFetch("/api/sources/lock", { method: "POST", body: { source_id: sourceId } });
+  });
+
   // --- v2.3.0: hardware / recommendation / MNN runtime ----------------------
   ipcMain.handle("kevrai:hardware", async (_e, opts) => {
     const o = (opts && typeof opts === "object") ? opts : {};
@@ -1066,6 +1098,64 @@ function registerIpc() {
   ipcMain.handle("kevrai:put-settings", async (_e, s) => {
     assert(s && typeof s === "object", "settings: invalid");
     return saveSettings(s);
+  });
+
+  // ----- v2.8.0 dual-source hub (HF + ModelScope) -----
+  // These forward to the sidecar's /api/hub/* endpoints. Host validation for
+  // hub downloads is enforced server-side (Python allowlist); the renderer is
+  // trusted only for the *shape* of the parameters.
+  ipcMain.handle("kevrai:hub-sources", async () => sidecarFetch("/api/hub/sources"));
+
+  ipcMain.handle("kevrai:hub-search", async (_e, opts) => {
+    const o = (opts && typeof opts === "object") ? opts : {};
+    const qs = new URLSearchParams();
+    if (typeof o.q === "string") qs.set("q", o.q.slice(0, 200));
+    if (typeof o.sources === "string") qs.set("sources", o.sources.slice(0, 120));
+    if (typeof o.category === "string") qs.set("category", o.category.slice(0, 64));
+    if (typeof o.engine === "string") qs.set("engine", o.engine.slice(0, 64));
+    if (typeof o.license === "string") qs.set("license", o.license.slice(0, 128));
+    if (typeof o.sort === "string") qs.set("sort", o.sort.slice(0, 32));
+    if (o.page_size != null) qs.set("page_size", String(Math.max(1, Math.min(100, parseInt(o.page_size, 10) || 30))));
+    if (typeof o.cursor === "string") qs.set("cursor", o.cursor.slice(0, 4096));
+    return sidecarFetch(`/api/hub/search?${qs.toString()}`);
+  });
+
+  ipcMain.handle("kevrai:hub-model", async (_e, opts) => {
+    const o = (opts && typeof opts === "object") ? opts : {};
+    assert(isString(o.hub, 32), "hub: invalid");
+    assert(isString(o.repo, 256), "repo: invalid");
+    const qs = new URLSearchParams({ hub: o.hub, repo: o.repo });
+    if (typeof o.revision === "string") qs.set("revision", o.revision.slice(0, 128));
+    return sidecarFetch(`/api/hub/model?${qs.toString()}`);
+  });
+
+  ipcMain.handle("kevrai:hub-files", async (_e, opts) => {
+    const o = (opts && typeof opts === "object") ? opts : {};
+    assert(isString(o.hub, 32), "hub: invalid");
+    assert(isString(o.repo, 256), "repo: invalid");
+    const qs = new URLSearchParams({ hub: o.hub, repo: o.repo });
+    if (typeof o.revision === "string") qs.set("revision", o.revision.slice(0, 128));
+    return sidecarFetch(`/api/hub/model/files?${qs.toString()}`);
+  });
+
+  ipcMain.handle("kevrai:hub-download", async (_e, opts) => {
+    const o = (opts && typeof opts === "object") ? opts : {};
+    assert(isString(o.hub, 32), "hub: invalid");
+    assert(isString(o.repo, 256), "repo: invalid");
+    assert(Array.isArray(o.files), "files: must be an array");
+    const files = o.files.filter((f) => typeof f === "string" && f.length <= 1024).slice(0, 200);
+    assert(files.length > 0, "files: empty after validation");
+    const body = {
+      hub: o.hub, repo: o.repo,
+      revision: typeof o.revision === "string" ? o.revision.slice(0, 128) : "",
+      files, auto_pick: o.auto_pick !== false,
+    };
+    return sidecarFetch("/api/hub/download", { method: "POST", body });
+  });
+
+  ipcMain.handle("kevrai:hub-job", async (_e, jobId) => {
+    assert(isString(jobId, 128), "jobId: invalid");
+    return sidecarFetch(`/api/hub/jobs/${encodeURIComponent(jobId)}`);
   });
 
   ipcMain.handle("kevrai:start-download", async (_e, opts) => {

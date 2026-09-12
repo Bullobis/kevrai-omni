@@ -40,14 +40,29 @@ def test_gated_download_requires_token(client):
 
 
 def test_settings_hf_token_roundtrip(client):
+    """v2.8.0 P0-1: the token is still *persisted* but never echoed in
+    plaintext. The old assertion (``hf_token == "hf_test_123"``) directly
+    contradicted the P0-1 hardening, so it now verifies both halves of the
+    new contract: presence flag is true AND the secret is absent.
+    """
     r = client.put("/api/settings", json={"hf_token": "hf_test_123"})
     assert r.status_code == 200
+    assert "hf_token" not in r.json()          # never echoed
+    assert r.json()["hf_token_set"] is True    # presence is still observable
+
     r2 = client.get("/api/settings")
     assert r2.status_code == 200
-    assert r2.json()["hf_token"] == "hf_test_123"
+    assert "hf_token" not in r2.json()
+    assert r2.json()["hf_token_set"] is True
+
+    # The value is genuinely persisted on disk (round-trips through settings).
+    from app.settings import load_settings
+    assert load_settings().hf_token == "hf_test_123"
+
     # 清回去，避免影响其他用例
     client.put("/api/settings", json={"hf_token": ""})
-    assert client.get("/api/settings").json()["hf_token"] == ""
+    assert client.get("/api/settings").json()["hf_token_set"] is False
+    assert load_settings().hf_token == ""
 
 
 def test_non_gated_download_unaffected_by_token(client):

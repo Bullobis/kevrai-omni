@@ -100,10 +100,39 @@ class Settings(BaseModel):
     # auto_pick enabled by default; user can disable to always use primary_url
     auto_pick_best_source: bool = True
 
+    # --- v2.8.1: source registry + scheduler policy (design §2.3.3) ---
+    # User-defined extra sources (preset sources live in sources_registry.py).
+    # Example: {"id":"my-mirror","origin":"https://my.hf.mirror",
+    #           "type":"hf_mirror","path_rule":"hf_path",
+    #           "default_weight":1.0,"enabled":true}
+    source_registry: list[dict[str, Any]] = Field(default_factory=list)
+    source_health_persist: bool = True    # persist health to source_health.json
+    probe_cache_ttl_s: int = 300          # probe-result cache TTL (seconds)
+    probe_concurrency: int = 8            # max parallel probes (matches sources.PROBE_CONCURRENCY)
+    cooldown_fail_threshold: int = 3      # consecutive failures -> cooling
+    cooldown_seconds: float = 300.0       # cooling duration
+    ewma_alpha: float = 0.4               # EWMA smoothing factor
+    size_profile_threshold_mb: int = 512  # < threshold => latency profile, else throughput
+    # Locked source id — when set, the scheduler forces this source first.
+    locked_source: str = ""
+    # --- GitCode: pluggable, disabled by default, NO unverified URLs ---
+    gitcode_enabled: bool = False
+    gitcode_repo_api: str = ""            # user fills after self-verifying; "" disables
+
     # HuggingFace token — required for gated repos (e.g. Lightricks/LTX-2.5).
     # The user must also accept the model's license agreement on the HF repo
     # page; the token alone is not sufficient for gated access.
     hf_token: str = ""
+
+    # ModelScope (魔搭) access token — optional; public reads need no token.
+    ms_token: str = ""
+
+    # Dual-source hub configuration (v2.8.0)
+    hub_enabled_sources: list[str] = Field(
+        default_factory=lambda: ["curated", "hf", "modelscope"]
+    )
+    hub_page_size: int = 30
+    hub_cache_ttl_s: int = 90
 
     # Anything else, key-by-key
     extra: dict[str, Any] = Field(default_factory=dict)

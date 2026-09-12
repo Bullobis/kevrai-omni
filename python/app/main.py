@@ -86,6 +86,24 @@ from .settings import (
     load_settings,
     save_settings,
 )
+from .hub import (
+    BadCursor,
+    HUB_CURATED,
+    HUB_HF,
+    HUB_MODELSCOPE,
+    build_registry,
+    cross_source_candidates,
+    get_registry,
+    reset_registry,
+)
+from .hub.base import ALL_HUBS, SearchSpec, is_valid_repo
+from .hub.paths import UnsafePathError, hub_dest_root, is_within, safe_join
+from .sources_registry import (
+    SourceMeta,
+    SourceRegistry,
+    normalize_user_mirrors,
+)
+from .source_scheduler import SourceScheduler
 
 # ---------------------------------------------------------------------------
 # GZip compression (super optimization: shrink JSON responses on the wire)
@@ -207,11 +225,22 @@ async def _lifespan(app: FastAPI):
     converter_service.configure_tools_dir(APP_ROOT / "tools")
     # LTX-2.5 video generation manager (outputs to data_root/outputs/ltx)
     app.state.ltx = LtxManager(APP_ROOT / "outputs" / "ltx")
+    # Dual-source hub registry (HF + ModelScope + curated). Adapters own their
+    # httpx clients, so the lifespan must aclose() them on shutdown.
+    app.state.hub = build_registry(settings)
+    # v2.8.1 — source metadata registry + health (design §2.4).
+    app.state.source_registry = _build_source_registry(settings)
+    # Aggregated multi-file download jobs (in-process; restart clears them).
+    app.state.hub_jobs = {}
     log.info("kevrai-sidecar started", extra={"version": __version__, "data_root": str(APP_ROOT)})
     try:
         yield
     finally:
         log.info("kevrai-sidecar stopping")
+        hub = getattr(app.state, "hub", None)
+        if hub is not None:
+            with contextlib.suppress(Exception):
+                await hub.aclose()
         dl: Downloader = app.state.downloader
         with contextlib.suppress(Exception):
             await dl.aclose()
@@ -345,6 +374,28 @@ class SettingsUpdate(BaseModel):
     allow_custom_blocked_mirrors: bool | None = None
     debug_http_logs: bool | None = None
     hf_token: str | None = None
+    ms_token: str | None = None
+    hub_enabled_sources: list[str] | None = None
+    hub_page_size: int | None = None
+    hub_cache_ttl_s: int | None = None
+
+
+#: Settings that must never be echoed back in plaintext (P0-1).
+_SENSITIVE_SETTINGS: frozenset[str] = frozenset({"hf_token", "ms_token"})
+
+
+def _redact_settings(settings: Settings) -> dict[str, Any]:
+    """Return ``model_dump()`` with secret values replaced by a presence flag.
+
+    The renderer never read these from the Python sidecar (it uses Electron's
+    own settings store), so redaction is a zero-frontend-risk hardening.
+    ``*_set`` booleans let the UI show "已配置" without leaking the secret.
+    """
+    data = settings.model_dump()
+    for key in _SENSITIVE_SETTINGS:
+        value = data.pop(key, "")
+        data[f"{key}_set"] = bool(str(value or "").strip())
+    return data
 
 
 class DownloadStartReq(BaseModel):
@@ -398,6 +449,78 @@ def _get_engine_manager(request: Request) -> EngineManager:
     return request.app.state.engine_manager
 
 
+def _get_hub(request: Request):
+    """Return the hub registry, rebuilding it if settings changed mid-flight.
+
+    ``get_registry`` keys off the settings object identity, so a ``PUT
+    /api/settings`` (which replaces ``app.state.settings``) transparently
+    refreshes tokens/mirrors for the adapters.
+    """
+    settings = _get_settings(request)
+    return get_registry(settings)
+
+
+def _build_source_registry(settings: Settings) -> SourceRegistry:
+    """Construct the source registry from settings (design §2.3.3 / §2.4.7)."""
+    persist_path = None
+    if bool(getattr(settings, "source_health_persist", True)):
+        persist_path = default_data_root() / "source_health.json"
+    reg = SourceRegistry(
+        persist_path=persist_path,
+        cache_ttl_s=float(getattr(settings, "probe_cache_ttl_s", 300) or 300),
+        fail_threshold=int(getattr(settings, "cooldown_fail_threshold", 3) or 3),
+        cooldown_seconds=float(getattr(settings, "cooldown_seconds", 300.0) or 300.0),
+    )
+    # Normalise the legacy ``extra_model_mirrors`` into non-preset user sources.
+    for meta in normalize_user_mirrors(
+        getattr(settings, "extra_model_mirrors", []) or [],
+        existing_ids=set(reg.sources.keys()),
+    ):
+        reg.add_source(meta)
+    # User-defined sources from the new ``source_registry`` setting.
+    for raw in getattr(settings, "source_registry", []) or []:
+        if isinstance(raw, dict):
+            meta = SourceMeta.from_dict({**raw, "preset": False})
+            if meta.id:
+                reg.add_source(meta)
+    # GitCode is opt-in only (design §2.6): enable the preset entry when the
+    # user has both flipped the switch and supplied a verified template.
+    gc = reg.get("gitcode")
+    if gc is not None:
+        template = str(getattr(settings, "gitcode_repo_api", "") or "").strip()
+        gc.enabled = bool(getattr(settings, "gitcode_enabled", False)) and bool(template)
+    reg.load()
+    return reg
+
+
+def _get_source_registry(request: Request) -> SourceRegistry:
+    reg = getattr(request.app.state, "source_registry", None)
+    if reg is None:
+        reg = _build_source_registry(_get_settings(request))
+        request.app.state.source_registry = reg
+    return reg
+
+
+def _get_scheduler(request: Request) -> SourceScheduler:
+    settings = _get_settings(request)
+    reg = _get_source_registry(request)
+    return SourceScheduler(
+        reg,
+        ewma_alpha=float(getattr(settings, "ewma_alpha", 0.4) or 0.4),
+        size_threshold_mb=float(getattr(settings, "size_profile_threshold_mb", 512) or 512),
+        cache_ttl_s=float(getattr(settings, "probe_cache_ttl_s", 300) or 300),
+    )
+
+
+def _hub_error_detail(e: Exception, hub: str = "", repo: str = "") -> dict[str, Any]:
+    """Map adapter exceptions to the error-body contract of design §2.6."""
+    if isinstance(e, LookupError):
+        return {"error": "model_not_found", "hub": hub, "repo": repo}
+    if isinstance(e, ValueError):
+        return {"error": "bad_repo", "hub": hub, "repo": repo}
+    return {"error": "upstream_unavailable", "hub": hub, "repo": repo}
+
+
 # ---------------------------------------------------------------------------
 # Existing routes — DO NOT change response shapes
 # ---------------------------------------------------------------------------
@@ -420,6 +543,7 @@ def categories() -> dict[str, Any]:
         {"id": "3d",        "label": "3D 生成 / 3D"},
         {"id": "vision",    "label": "视觉工具 / Vision"},
         {"id": "pending",   "label": "待官方开源 / Pending"},
+        {"id": "other",     "label": "其它 / Other"},
     ]}
 
 
@@ -500,6 +624,13 @@ def gguf_repos() -> dict[str, Any]:
     return {"repos": out}
 
 
+#: Extensions that may be imported as a model file or archive (P0-3).
+_IMPORT_ALLOWED_EXTS: frozenset[str] = frozenset({
+    ".gguf", ".safetensors", ".bin", ".pt", ".pth", ".ckpt", ".onnx",
+    ".mnn", ".json", ".zip", ".tar", ".gz", ".tgz", ".txt", ".md", ".yaml", ".yml",
+})
+
+
 @app.post("/api/models/import")
 async def import_model(req: ImportReq, request: Request) -> dict[str, Any]:
     bucket: _TokenBucket = request.app.state.import_bucket
@@ -509,7 +640,30 @@ async def import_model(req: ImportReq, request: Request) -> dict[str, Any]:
             detail="import rate limit exceeded (3/min)",
         )
 
-    src = Path(req.path).expanduser().resolve()
+    # P0-3: reject NUL bytes / control chars before touching the filesystem.
+    raw = str(req.path or "")
+    if not raw or "\x00" in raw or any(ord(c) < 32 for c in raw):
+        raise HTTPException(status_code=400, detail="invalid path")
+
+    src = Path(raw).expanduser().resolve()
+    try:
+        if not src.exists():
+            raise HTTPException(status_code=400, detail="path does not exist")
+        if src.is_file() and src.suffix.lower() not in _IMPORT_ALLOWED_EXTS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"unsupported file extension: {src.suffix or '(none)'}",
+            )
+        # A directory import must not swallow a user data dir; refuse obviously
+        # dangerous roots (filesystem root / home) — they are never model dirs.
+        if src.is_dir():
+            if src == Path(src.anchor) or src == Path.home():
+                raise HTTPException(status_code=400, detail="refusing to import this directory")
+    except HTTPException:
+        raise
+    except (OSError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=f"invalid path: {e}") from e
+
     settings = _get_settings(request)
     info = import_local(
         src,
@@ -700,7 +854,8 @@ def platform_key() -> str:
 @app.get("/api/settings")
 def get_settings(request: Request) -> dict[str, Any]:
     s = _get_settings(request)
-    return s.model_dump()
+    # P0-1: never echo secrets back to the renderer.
+    return _redact_settings(s)
 
 
 @app.put("/api/settings")
@@ -715,6 +870,15 @@ def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]:
             setattr(s, k, v)
     save_settings(s, request.app.state.settings_path)
     request.app.state.settings = s
+    # Settings identity changed → rebuild the hub registry so new tokens/mirrors
+    # take effect immediately without a restart.
+    reset_registry()
+    # v2.8.1 — rebuild the source registry so new mirrors / GitCode settings apply.
+    prev_reg = getattr(request.app.state, "source_registry", None)
+    if prev_reg is not None:
+        with contextlib.suppress(Exception):
+            prev_reg.save()
+    request.app.state.source_registry = _build_source_registry(s)
     # Update downloader concurrency — only rebuild when the concurrency limit
     # actually changes. Rebuilding unconditionally orphans every in-flight
     # download task (progress/cancel return 404 while the download continues)
@@ -723,7 +887,352 @@ def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]:
     old_dl: Downloader | None = getattr(request.app.state, "downloader", None)
     if old_dl is None or old_dl.max_concurrent != new_concurrency:
         request.app.state.downloader = Downloader(max_concurrent=new_concurrency)
-    return s.model_dump()
+    # P0-1: redact secrets in the PUT echo too.
+    return _redact_settings(s)
+
+
+# ---------------------------------------------------------------------------
+# Dual-source hub (v2.8.0) — HuggingFace + ModelScope + curated
+# ---------------------------------------------------------------------------
+# All routes are NEW (`/api/hub/*`); no existing path or response shape changes.
+
+
+class HubDownloadReq(BaseModel):
+    hub: str
+    repo: str
+    revision: str = ""
+    files: list[str] = Field(default_factory=list)
+    auto_pick: bool = True
+
+
+def _hub_query_spec(
+    *,
+    q: str,
+    sources: str,
+    category: str,
+    engine: str,
+    license_: str,
+    sort: str,
+    page_size: int,
+) -> SearchSpec:
+    """Build a normalized :class:`SearchSpec` from raw query params."""
+    raw_sources = [s.strip() for s in str(sources or "").split(",") if s.strip()]
+    spec = SearchSpec(
+        q=str(q or ""),
+        category=str(category or ""),
+        engine=str(engine or ""),
+        license=str(license_ or ""),
+        sort=str(sort or "relevance"),
+        page_size=int(page_size or 30),
+        sources=raw_sources or list(ALL_HUBS),
+    )
+    return spec.normalized()
+
+
+@app.get("/api/hub/sources")
+def hub_sources(request: Request) -> dict[str, Any]:
+    """List available sources plus their circuit/token state (design §2.7)."""
+    hub = _get_hub(request)
+    sources = hub.health()
+    return {"sources": sources, "enabled": hub.enabled_sources()}
+
+
+@app.get("/api/hub/search")
+async def hub_search(
+    request: Request,
+    q: str = "",
+    sources: str = "curated,hf,modelscope",
+    category: str = "",
+    engine: str = "",
+    license: str = "",
+    sort: str = "relevance",
+    page_size: int = 30,
+    cursor: str = "",
+    strict: int = 0,
+) -> dict[str, Any]:
+    """Merged dual-source search with cursor pagination (design §2.3).
+
+    Never returns 5xx for an upstream failure: a broken source is reported in
+    ``warnings`` with ``degraded: true`` and HTTP 200 (design §2.6). Pass
+    ``strict=1`` to get a 502 instead (for diagnostics/tests).
+    """
+    t0 = time.monotonic()
+    spec = _hub_query_spec(
+        q=q, sources=sources, category=category, engine=engine,
+        license_=license, sort=sort, page_size=page_size,
+    )
+    hub = _get_hub(request)
+    try:
+        page = await hub.search(spec, cursor)
+    except BadCursor:
+        raise HTTPException(status_code=400, detail={"error": "bad_cursor"}) from None
+    except Exception as e:  # noqa: BLE001 — degrade, never 500
+        log.warning("hub.search failed", extra={"err": str(e)})
+        if strict:
+            raise HTTPException(
+                status_code=502,
+                detail={"error": "upstream_unavailable"},
+            ) from e
+        return {
+            "items": [], "next_cursor": "", "has_more": False,
+            "page_size": spec.page_size, "counts": {},
+            "counts_note": "远程总数为上游估算值，非精确去重后计数",
+            "facets": {"engines": [], "licenses": [], "categories": [], "sizes": []},
+            "facets_scope": "curated_full" if spec.sources == [HUB_CURATED] else "loaded",
+            "degraded": True,
+            "warnings": [{"hub": "", "code": "exception", "message": str(e)[:200]}],
+            "elapsed_ms": int((time.monotonic() - t0) * 1000),
+        }
+
+    if strict and page.degraded and not page.items:
+        raise HTTPException(
+            status_code=502,
+            detail={"error": "upstream_unavailable", "warnings": page.warnings},
+        )
+
+    items = [m.to_dict() for m in page.items]
+    facets = _hub_facets(page.items)
+    return {
+        "items": items,
+        "next_cursor": page.next_cursor,
+        "has_more": page.has_more,
+        "page_size": spec.page_size,
+        "counts": page.counts,
+        "counts_note": "远程总数为上游估算值，非精确去重后计数",
+        "facets": facets,
+        "facets_scope": "curated_full" if spec.sources == [HUB_CURATED] else "loaded",
+        "degraded": page.degraded,
+        "warnings": page.warnings,
+        "elapsed_ms": int((time.monotonic() - t0) * 1000),
+    }
+
+
+def _hub_facets(items: list[Any]) -> dict[str, Any]:
+    """Facets over the *loaded* page range (design §2.3 honesty note)."""
+    engines: dict[str, int] = {}
+    licenses: dict[str, int] = {}
+    categories: dict[str, int] = {}
+    for m in items:
+        for e in getattr(m, "engine", []) or []:
+            engines[str(e)] = engines.get(str(e), 0) + 1
+        lic = str(getattr(m, "license", "") or "")
+        if lic:
+            licenses[lic] = licenses.get(lic, 0) + 1
+        cat = str(getattr(m, "category", "") or "")
+        if cat:
+            categories[cat] = categories.get(cat, 0) + 1
+    return {
+        "engines": [{"value": k, "count": v} for k, v in sorted(engines.items(), key=lambda kv: -kv[1])],
+        "licenses": [{"value": k, "count": v} for k, v in sorted(licenses.items(), key=lambda kv: -kv[1])],
+        "categories": [{"value": k, "count": v} for k, v in sorted(categories.items(), key=lambda kv: -kv[1])],
+        "sizes": [],
+    }
+
+
+@app.get("/api/hub/model")
+async def hub_model(
+    request: Request,
+    hub: str = HUB_CURATED,
+    repo: str = "",
+    revision: str = "",
+) -> dict[str, Any]:
+    """Remote model detail. ``repo`` travels as a query param (design §1.4)."""
+    if hub not in ALL_HUBS:
+        raise HTTPException(status_code=400, detail={"error": "unknown_hub", "hub": hub})
+    if not is_valid_repo(repo):
+        raise HTTPException(status_code=400, detail={"error": "bad_repo", "repo": repo})
+    reg = _get_hub(request)
+    try:
+        model = await reg.detail(hub, repo)
+    except LookupError:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "model_not_found", "hub": hub, "repo": repo},
+        ) from None
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=_hub_error_detail(e, hub, repo)) from e
+    return {"model": model.to_dict(), "also_on": model.also_on, "degraded": False}
+
+
+@app.get("/api/hub/model/files")
+async def hub_model_files(
+    request: Request,
+    hub: str = HUB_CURATED,
+    repo: str = "",
+    revision: str = "",
+) -> dict[str, Any]:
+    """File listing + format-driven engine inference (design §1.7 / §4.1)."""
+    if hub not in ALL_HUBS:
+        raise HTTPException(status_code=400, detail={"error": "unknown_hub", "hub": hub})
+    if not is_valid_repo(repo):
+        raise HTTPException(status_code=400, detail={"error": "bad_repo", "repo": repo})
+    reg = _get_hub(request)
+    try:
+        result = await reg.files(hub, repo, revision)
+    except LookupError:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "model_not_found", "hub": hub, "repo": repo},
+        ) from None
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=_hub_error_detail(e, hub, repo)) from e
+    return result
+
+
+@app.post("/api/hub/download")
+async def hub_download(request: Request, body: HubDownloadReq) -> dict[str, Any]:
+    """Multi-file download orchestration (design §2.7 / §4.3).
+
+    Every file gets its own ``task_id`` from the shared :class:`Downloader`;
+    progress/cancel/WS reuse the existing endpoints unchanged.
+    """
+    settings = _get_settings(request)
+    if body.hub not in ALL_HUBS:
+        raise HTTPException(status_code=400, detail={"error": "unknown_hub", "hub": body.hub})
+    if not is_valid_repo(body.repo):
+        raise HTTPException(status_code=400, detail={"error": "bad_repo", "repo": body.repo})
+    files = [str(f) for f in (body.files or []) if isinstance(f, str) and f]
+    if not files:
+        raise HTTPException(status_code=400, detail="files required")
+    if len(files) > 200:
+        raise HTTPException(status_code=400, detail="too many files (max 200)")
+
+    reg = _get_hub(request)
+    try:
+        listing = await reg.files(body.hub, body.repo, body.revision)
+    except LookupError:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "model_not_found", "hub": body.hub, "repo": body.repo},
+        ) from None
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=_hub_error_detail(e, body.hub, body.repo)) from e
+
+    by_path = {str(f.get("path") or ""): f for f in listing.get("files", [])}
+    download_root = Path(settings.resolved_download_dir())
+    dest_root = hub_dest_root(download_root, body.hub, body.repo)
+
+    # Total size guard (settings.max_model_size_gb).
+    total = sum(int(by_path.get(p, {}).get("size", 0) or 0) for p in files)
+    max_bytes = max(1, int(settings.max_model_size_gb)) * (1024 ** 3)
+    if total > max_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "model_too_large", "size_bytes": total, "max_bytes": max_bytes},
+        )
+
+    extra_mirrors = getattr(settings, "extra_model_mirrors", []) or []
+    also_on = listing.get("also_on") or []
+    dl: Downloader = _get_downloader(request)
+    jobs: dict[str, Any] = getattr(request.app.state, "hub_jobs", None) or {}
+    request.app.state.hub_jobs = jobs
+    job_id = uuid.uuid4().hex
+    tasks_out: list[dict[str, Any]] = []
+    skipped: list[dict[str, Any]] = []
+    task_meta: dict[str, dict[str, Any]] = {}
+
+    for rel in files:
+        info = by_path.get(rel)
+        if info is None:
+            skipped.append({"path": rel, "reason": "not_in_repo"})
+            continue
+        try:
+            dest = safe_join(dest_root, rel)
+        except UnsafePathError:
+            skipped.append({"path": rel, "reason": "unsafe_path"})
+            continue
+        if dest.exists() and int(dest.stat().st_size) == int(info.get("size") or 0):
+            skipped.append({"path": rel, "reason": "already_exists"})
+            continue
+
+        candidates = info.get("candidates") or cross_source_candidates(
+            hub=body.hub, repo=body.repo, path=rel, revision=body.revision,
+            also_on=also_on, extra_mirrors=extra_mirrors,
+        )
+        if not candidates:
+            candidates = [reg.adapter(body.hub).resolve_url(body.repo, rel, body.revision)]
+        candidates = [c for c in candidates if c]
+
+        chosen = candidates[0]
+        if body.auto_pick and len(candidates) > 1:
+            try:
+                from .sources import measure_sources, pick_best
+                ranking = await measure_sources(candidates)
+                best = pick_best(ranking)
+                if best is not None:
+                    chosen = str(best["url"])
+            except Exception as e:  # noqa: BLE001 — probe glitch must not block
+                log.warning("hub download probe failed", extra={"err": str(e)})
+
+        headers: dict[str, str] = {}
+        try:
+            ad = reg.adapter(body.hub)
+            if ad is not None:
+                headers = ad.auth_headers() or {}
+        except Exception:  # pragma: no cover
+            headers = {}
+        try:
+            task_id = await dl.start(chosen, dest, sha256="", extra_headers=headers or None)
+        except Exception as e:  # noqa: BLE001 — one file failing must not abort the job
+            skipped.append({"path": rel, "reason": f"start_failed: {str(e)[:80]}"})
+            continue
+        tasks_out.append({"task_id": task_id, "path": rel, "dest": str(dest)})
+        task_meta[task_id] = {"path": rel, "dest": str(dest), "size": int(info.get("size") or 0)}
+
+    jobs[job_id] = {"tasks": task_meta, "dest_root": str(dest_root),
+                    "created_at": time.time()}
+    # Bound the in-process job table (restart-only lifetime, §2.7).
+    if len(jobs) > 200:
+        for stale in sorted(jobs, key=lambda k: jobs[k].get("created_at", 0))[:100]:
+            jobs.pop(stale, None)
+    return {"job_id": job_id, "dest_root": str(dest_root),
+            "tasks": tasks_out, "skipped": skipped}
+
+
+@app.get("/api/hub/jobs/{job_id}")
+async def hub_job(request: Request, job_id: str) -> dict[str, Any]:
+    """Aggregated progress for a multi-file hub download job."""
+    if not _MODEL_ID_RE.fullmatch(job_id or ""):
+        raise HTTPException(status_code=400, detail="invalid job_id")
+    jobs = getattr(request.app.state, "hub_jobs", {}) or {}
+    job = jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    dl: Downloader = _get_downloader(request)
+    tasks_snap: list[dict[str, Any]] = []
+    files_done = files_failed = 0
+    bytes_total = bytes_done = 0
+    for task_id, meta in job.get("tasks", {}).items():
+        snap = await dl.progress(task_id)
+        status = "unknown"
+        done_b = 0
+        if snap is not None:
+            status = str(snap.get("status") or snap.get("state") or "running")
+            done_b = int(snap.get("downloaded") or snap.get("bytes_done") or 0)
+        if status in {"done", "completed", "success"}:
+            files_done += 1
+        elif status in {"failed", "error", "canceled", "cancelled"}:
+            files_failed += 1
+        expected = int(meta.get("size") or 0)
+        bytes_total += expected
+        bytes_done += min(done_b, expected) if expected else done_b
+        tasks_snap.append({"task_id": task_id, "path": meta.get("path"),
+                           "dest": meta.get("dest"), "status": status,
+                           "bytes_done": done_b, "bytes_total": expected})
+    files_total = len(job.get("tasks", {}))
+    ratio = (bytes_done / bytes_total) if bytes_total else (files_done / files_total if files_total else 0.0)
+    if files_failed and files_done + files_failed == files_total:
+        status = "failed" if files_done == 0 else "partial"
+    elif files_total and files_done == files_total:
+        status = "done"
+    else:
+        status = "running"
+    return {
+        "job_id": job_id, "files_total": files_total, "files_done": files_done,
+        "files_failed": files_failed, "bytes_total": bytes_total,
+        "bytes_done": bytes_done, "ratio": round(min(1.0, max(0.0, ratio)), 4),
+        "status": status, "dest_root": job.get("dest_root"), "tasks": tasks_snap,
+    }
 
 
 @app.post("/api/download/start")
@@ -756,14 +1265,26 @@ async def download_start(request: Request, body: DownloadStartReq) -> dict[str, 
 
     # Auto-pick the best source (measure latency + throughput for the first
     # 64 KiB of each), or fall back to the primary URL.
+    #
+    # v2.8.1 (design §2.4): the measurement is routed through the
+    # SourceScheduler, which adds graded scoring, EWMA history, circuit-breaker
+    # cooling (dead sources are skipped without a network call) and a probe
+    # cache. `pick_best` semantics are preserved: the first OK entry wins, and
+    # an empty-but-nonempty ranking still yields the 422 fast-fail below.
     chosen_url: str
     ranking: list[dict[str, Any]] = []
+    skipped: list[str] = []
     if auto_pick and len(candidates) > 1:
-        from .sources import measure_sources, pick_best
+        from .sources import pick_best
         try:
-            ranking = await measure_sources(candidates)
+            sched = _get_scheduler(request)
+            result = await sched.select(
+                candidates, file_size=0, purpose="model",
+            )
+            ranking = result.ranking
+            skipped = result.skipped
         except Exception as e:
-            log.warning("sources.measure failed", extra={"err": str(e)})
+            log.warning("sources.select failed", extra={"err": str(e)})
             ranking = []
         best = pick_best(ranking)
         if best is None:
@@ -771,8 +1292,9 @@ async def download_start(request: Request, body: DownloadStartReq) -> dict[str, 
             # error instead of spawning a background task that is guaranteed to
             # fail. (If the probe itself crashed, `ranking` is empty and we fall
             # through to the primary URL so a probe glitch can't block a real
-            # download.)
-            if ranking:
+            # download.) Dead/ cooling sources are also skipped, so a wholly
+            # unreachable set surfaces here rather than after a timeout.
+            if ranking or skipped:
                 raise HTTPException(
                     status_code=422,
                     detail={
@@ -838,6 +1360,7 @@ async def download_start(request: Request, body: DownloadStartReq) -> dict[str, 
         "url": chosen_url,
         "candidates_tried": len(candidates),
         "ranking": ranking[:5],  # top-5 for UI display
+        "skipped": skipped[:10],  # v2.8.1 — cooling sources skipped this round
         "dest": str(dest),
     }
 
@@ -845,16 +1368,79 @@ async def download_start(request: Request, body: DownloadStartReq) -> dict[str, 
 @app.post("/api/sources/measure")
 async def sources_measure(request: Request, body: dict[str, Any]) -> dict[str, Any]:
     """Measure latency + throughput for a list of candidate URLs and return
-    a ranking (best first). Does not start any download — read-only probe."""
-    from .sources import measure_sources
+    a ranking (best first). Does not start any download — read-only probe.
+
+    v2.8.1 (design §2.4): routed through the SourceScheduler so the ranking
+    carries graded ``score`` + ``source_type`` + ``cooling`` fields and honours
+    the probe cache. Pass ``force=true`` to bypass the cache (used by the UI
+    "一键重新测速" button).
+    """
     urls = body.get("urls") or []
     if not isinstance(urls, list) or not urls:
         raise HTTPException(status_code=400, detail="urls list required")
     urls = [str(u) for u in urls if isinstance(u, str) and u][:32]
     if not urls:
         raise HTTPException(status_code=400, detail="urls list empty")
-    ranking = await measure_sources(urls)
-    return {"ranking": ranking, "best": ranking[0] if ranking else None}
+    force = bool(body.get("force"))
+    file_size = 0
+    try:
+        file_size = int(body.get("file_size") or 0)
+    except (TypeError, ValueError):
+        file_size = 0
+    sched = _get_scheduler(request)
+    try:
+        result = await sched.select(
+            urls, file_size=file_size, purpose="model", force=force,
+        )
+    except Exception as e:
+        log.warning("sources.select failed", extra={"err": str(e)})
+        from .sources import measure_sources
+        ranking = await measure_sources(urls)
+        return {"ranking": ranking, "best": ranking[0] if ranking else None,
+                "skipped": [], "from_cache": False}
+    ranking = result.ranking
+    return {
+        "ranking": ranking,
+        "best": ranking[0] if ranking else None,
+        "skipped": result.skipped,
+        "from_cache": result.from_cache,
+    }
+
+
+@app.get("/api/sources/registry")
+async def sources_registry(request: Request) -> dict[str, Any]:
+    """Return the full source registry: metadata + health for every source."""
+    reg = _get_source_registry(request)
+    return {"sources": reg.snapshot(), "cooling": _get_scheduler(request).skipped_cooling()}
+
+
+@app.get("/api/sources/health")
+async def sources_health(request: Request) -> dict[str, Any]:
+    """Return per-source health (EWMA latency/throughput, success rate, breaker)."""
+    reg = _get_source_registry(request)
+    health = {sid: h.to_dict() for sid, h in reg.health.items()}
+    return {"health": health, "cooling": _get_scheduler(request).skipped_cooling()}
+
+
+@app.post("/api/sources/lock")
+async def sources_lock(request: Request, body: dict[str, Any]) -> dict[str, Any]:
+    """Lock (or unlock) a preferred source id.
+
+    Saving to settings makes the choice durable and visible to
+    ``SourceScheduler.select`` (which hoists the locked source to the top).
+    Pass ``{"source_id": ""}`` to clear the lock.
+    """
+    source_id = str(body.get("source_id") or "").strip()
+    if source_id:
+        reg = _get_source_registry(request)
+        enabled_ids = {m.id for m in reg.enabled_sources("")}
+        if source_id not in reg.sources or source_id not in enabled_ids:
+            raise HTTPException(status_code=404, detail="unknown or disabled source")
+    s = _get_settings(request).model_copy()
+    s.locked_source = source_id
+    save_settings(s, request.app.state.settings_path)
+    request.app.state.settings = s
+    return {"locked": source_id}
 
 
 @app.get("/api/download/{task_id}")

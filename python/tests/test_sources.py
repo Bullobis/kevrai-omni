@@ -128,3 +128,46 @@ async def test_measure_sources_dedups():
     url = "http://127.0.0.1:1/never"
     ranking = await measure_sources([url, url, url])
     assert len(ranking) == 1
+
+
+# ---------------------------------------------------------------------------
+# v2.8.1 compatibility additions (existing 5 cases above are unchanged).
+# ---------------------------------------------------------------------------
+
+
+def test_probe_to_dict_new_fields_present_legacy_unchanged():
+    """`SourceProbe.to_dict()` gains fields but keeps every legacy key."""
+    p = SourceProbe(url="u", host="h", ok=True, latency_ms=1.0,
+                    speed_mbps=2.0, status=200, size_bytes=10)
+    d = p.to_dict()
+    for legacy in ("url", "host", "ok", "latency_ms", "speed_mbps",
+                   "status", "size_bytes", "error"):
+        assert legacy in d
+    # new v2.8.1 keys
+    assert d["source_id"] == ""
+    assert d["source_type"] == ""
+    assert d["from_cache"] is False
+
+
+def test_score_fallback_still_linear():
+    """The stateless fallback `_score` keeps the legacy linear ordering."""
+    fast = SourceProbe(url="f", host="f", ok=True, latency_ms=10,
+                       speed_mbps=20, status=200, size_bytes=1)
+    slow = SourceProbe(url="s", host="s", ok=True, latency_ms=10,
+                       speed_mbps=5, status=200, size_bytes=1)
+    assert _score(fast) > _score(slow)
+    broke = SourceProbe(url="b", host="b", ok=False, latency_ms=0,
+                        speed_mbps=0, status=500, size_bytes=0)
+    assert _score(broke) == -1e9
+
+
+@pytest.mark.asyncio
+async def test_measure_sources_registry_param_preserves_signature():
+    """Passing no registry keeps the old list-of-dicts return shape."""
+    url = "http://127.0.0.1:1/never"
+    ranking = await measure_sources([url])
+    assert isinstance(ranking, list) and ranking
+    r = ranking[0]
+    for key in ("url", "host", "ok", "latency_ms", "speed_mbps", "status",
+                "size_bytes", "error"):
+        assert key in r
