@@ -53,7 +53,6 @@ class DownloadStatus(str, Enum):
 class DownloadRefused(Exception):
     """Raised when URL fails validation (unsupported scheme, etc.)."""
 
-
 def _check_url(url: str, *, enforce_allowlist: bool = False) -> None:
     """Validate a URL.
 

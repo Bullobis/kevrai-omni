@@ -1,7 +1,5 @@
 """Source scheduler — graded scoring + EWMA + circuit-breaker + probe cache.
 
-Design reference: ``docs/DESIGN_V281_SOURCES.md`` §2.4.
-
 This module is the **pure decision layer**. It owns no HTTP client; probing is
 delegated to :func:`app.sources.measure_sources`, storage to
 :class:`app.sources_registry.SourceRegistry`. Everything here is a pure function

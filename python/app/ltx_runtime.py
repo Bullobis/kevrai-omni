@@ -36,18 +36,14 @@ from typing import Any
 class LtxError(Exception):
     """Base error for the LTX runtime."""
 
-
 class LtxParamError(LtxError):
     """Invalid generation parameters."""
-
 
 class LtxEngineMissing(LtxError):
     """torch / diffusers (or the LTX pipeline class) is not installed."""
 
-
 class LtxBusyError(LtxError):
     """Another generation task is already running."""
-
 
 # ---------------------------------------------------------------------------
 # Parameter validation
@@ -468,7 +464,6 @@ def _generate(pipe: Any, p: LtxParams, task: LtxTask) -> Any:
 
 class _Cancelled(Exception):
     """Raised inside the step callback to abort generation."""
-
 
 def _write_video(frames: Any, out: Path, *, fps: int, fmt: str) -> None:
     """Write frames to MP4 (imageio-ffmpeg) or GIF."""

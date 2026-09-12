@@ -1,7 +1,5 @@
 """Source metadata registry + runtime health (v2.8.1).
 
-Design reference: ``docs/DESIGN_V281_SOURCES.md`` §2.3, §2.6.
-
 The registry upgrades the old "bare list of mirror URLs" into a *metadata
 registry*: each source is a :class:`SourceMeta` (type / path rule / default
 weight / token need / enabled / preset), and each source accrues a

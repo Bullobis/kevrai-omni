@@ -52,7 +52,6 @@ CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id, created_
 CREATE INDEX IF NOT EXISTS idx_messages_role ON messages(role);
 """
 
-
 class AgentMemory:
     """SQLite-backed persistent memory for the agent.
 

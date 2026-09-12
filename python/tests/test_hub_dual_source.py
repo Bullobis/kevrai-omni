@@ -1,6 +1,5 @@
 """Dual-source hub tests — smoke (S) + extreme (E) + P0 regression assertions.
 
-Design reference: ``docs/DESIGN_V280_DUAL_SOURCE.md`` §6.2 / §6.4.
 
 **100% offline.** The only HTTP that happens is against the in-process
 ``FakeHubServer`` (port 0). No real hostname is ever contacted. Assertions are

@@ -74,7 +74,6 @@ _SYSTEM_PROMPT_TEMPLATE = """你是 **Kevrai Agent**，Kevrai Omni 本地 AI 工
 
 现在开始处理用户请求。记住：先 Thought，再 Action（工具）或 Final Answer。"""
 
-
 @dataclass
 class AgentStep:
     """A single step in the agent's ReAct loop."""

@@ -1,6 +1,5 @@
 """Local curated adapter — wraps the existing ``search.py`` engine.
 
-Design reference: ``docs/DESIGN_V280_DUAL_SOURCE.md`` §1.2 / §1.5.
 
 **Reuse, never re-implement.** The curated source is the 121 hand-verified
 entries in ``catalog/models.json``. Its scoring, CJK handling and facets already

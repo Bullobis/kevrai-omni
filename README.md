@@ -4,16 +4,16 @@
 > One-stop local AI workstation: LLM, multimodal LLM, TTS, **MiniMax-Music3 music gen**, **LTX-2.5 video gen**, image gen, super-resolution, audio gen, 3D gen, **🤖 Kevrai Agent assistant**.
 
 <p align="center">
-  <img src="docs/assets/logo.png" alt="Kevrai Omni Logo" width="120" />
+  <img src="assets/media/logo.png" alt="Kevrai Omni Logo" width="120" />
 </p>
 
 **一个安装包 · 桌面快捷方式 · 引擎按需下载 · 模型从 huggingface.co 一键拉取 · 支持本地导入 · 全部开源**
 
 ## 🎬 宣传视频 (52秒)
 
-[![Kevrai Omni 宣传视频](docs/assets/logo.png)](docs/kevrai-omni-promo.mp4)
+[![Kevrai Omni 宣传视频](assets/media/logo.png)](assets/media/promo.mp4)
 
-> 点击播放 [docs/kevrai-omni-promo.mp4](docs/kevrai-omni-promo.mp4)。视频涵盖：模型市场、硬件检测、MiniMax-Music3 音乐生成、LTX-2.5 视频生成、Kevrai Agent 智能助手、本地隐私。
+> 点击播放 [assets/media/promo.mp4](assets/media/promo.mp4)。视频涵盖：模型市场、硬件检测、MiniMax-Music3 音乐生成、LTX-2.5 视频生成、Kevrai Agent 智能助手、本地隐私。
 
 ![License: Kevrai Omni Community License v2.1](https://img.shields.io/badge/License-Kevrai%20Community%20v2.1-orange)
 ![Version](https://img.shields.io/badge/version-2.8.0-orange)

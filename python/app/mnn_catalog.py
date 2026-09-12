@@ -209,7 +209,6 @@ MARKET: list[dict[str, Any]] = [
 ]
 
 
-
 # 模型能力标注（对话/视觉模型）——供 OpenClaw 阅读技能与前端能力展示使用
 MODALITY: dict[str, dict] = {
     'qwen3.5-2b-dflash-mnn': {'multimodal': False, 'understand': [], 'generate': ['text'], 'notes': '端侧文本模型'},

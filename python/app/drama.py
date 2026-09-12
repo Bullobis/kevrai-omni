@@ -186,18 +186,14 @@ def _craft_guidance(mode: str, style_anchor: str = "") -> str:
 class DramaAgentError(RuntimeError):
     """短剧编排器可预期错误（映射为 4xx 或 409）。"""
 
-
 class LlmNotReady(DramaAgentError):
     """对话 AI 未就绪（MNN 模型未加载）。"""
-
 
 class LlmOutputError(DramaAgentError):
     """对话 AI 输出无法解析为结构化数据。"""
 
-
 class UnknownModelError(DramaAgentError):
     """用户选择的模型 ID 不在 catalog 中。"""
-
 
 # ---------------------------------------------------------------------------
 # 内部工具
@@ -409,7 +405,6 @@ _BRAINSTORM_PROMPT = """请围绕用户的创意进行头脑风暴引导。
    目标观众与平台调性、视觉风格（请锚定具体导演/动画流派）与时长。问题要具体、可回答，帮助下一步生成剧本。
 3. 问题要贴合"{mode_label}"的结构与节奏。用中文回答，问题之间要有递进关系。"""
 
-
 def brainstorm(topic: str, mode: str = DEFAULT_STORY_MODE) -> dict[str, Any]:
     """创意头脑风暴：返回引导方向与 5 个开放式问题。"""
     mode = _normalize_mode(mode)
@@ -489,7 +484,6 @@ _SCRIPT_PROMPT = """请基于以下创意与头脑风暴结论，按专业剧作
 - {first_shot_rule}
 - visual_prompt 必须具体到光影、构图、情绪；3D 场景可渲染
 - dialogue 使用口语化、高冲突台词，中文"""
-
 
 def _format_answers(answers: Any) -> str:
     if not answers:
