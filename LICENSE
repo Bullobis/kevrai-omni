@@ -1,10 +1,16 @@
 ===============================================================================
                     KEVRAI OMNI COMMUNITY LICENSE
-                           Version 1.0
+                           Version 2.0
 ===============================================================================
 
 Copyright (c) 2026 Kevrai Omni contributors.
 All rights not expressly granted to you in this License are reserved.
+
+"Kevrai Omni Community License v2.0" is a source-available license. It is
+NOT an Open Source Initiative (OSI) approved open source license, because it
+imposes a Commercial Use authorization requirement. However, it grants broad
+non-commercial use rights, including the right to view, study, modify, and
+redistribute the source code.
 
 -------------------------------------------------------------------------------
 Preamble
@@ -24,8 +30,13 @@ all use of the Software and destroy all copies in your possession or control.
 
 The Software is made available with source code publicly accessible. You may
 freely use, study, modify, and distribute the Software for non-commercial
-purposes. Commercial use is permitted ONLY after you have obtained a prior
+purposes. Commercial Use is permitted ONLY after you have obtained a prior
 written Commercial Authorization from the Licensor, as set forth in Article 5.
+
+The Licensor intends this License to be enforceable worldwide. Where any
+provision is held unenforceable in a particular jurisdiction, the remaining
+provisions shall continue in full force and effect, and the provision shall
+be interpreted to the maximum extent permitted by such jurisdiction's law.
 
 ===============================================================================
 ARTICLE 1 — DEFINITIONS
@@ -33,8 +44,9 @@ ARTICLE 1 — DEFINITIONS
 
 1.1 "Software" means the Kevrai Omni computer program, including its source
     code, object code, documentation, configuration files, build scripts,
-    graphical assets, and any other materials distributed with or as part of
-    Kevrai Omni, in each case as made available by the Licensor.
+    graphical assets, user interface designs, logos (subject to Article 13),
+    and any other materials distributed with or as part of Kevrai Omni, in
+    each case as made available by the Licensor.
 
     For the avoidance of doubt, "Software" does NOT include any third-party
     model weights, engine binaries, datasets, or other components listed in
@@ -54,10 +66,14 @@ ARTICLE 1 — DEFINITIONS
     (a) providing copies for download;
     (b) pre-installing the Software on hardware;
     (c) offering the Software as a hosted, software-as-a-service (SaaS),
-        platform-as-a-service (PaaS), or any other remotely accessible service;
+        platform-as-a-service (PaaS), infrastructure-as-a-service (IaaS), or
+        any other remotely accessible service (see also "Network Use" in
+        Section 1.12);
     (d) distributing the Software as part of a commercial product or bundle;
     (e) distributing the Software through an application store, software
-        marketplace, or any digital distribution channel.
+        marketplace, or any digital distribution channel;
+    (f) making the Source Code available via a public version control
+        repository, package registry, or code hosting platform.
 
 1.4 "Commercial Use" means any use of the Software or its Derivative Works
     that is primarily intended for or directed toward commercial advantage or
@@ -76,7 +92,13 @@ ARTICLE 1 — DEFINITIONS
         or traffic share is generated;
     (e) using the Software or its Derivative Works to generate content, data,
         or outputs that are sold, licensed, or otherwise monetized, where the
-        Software is a material component of the value proposition.
+        Software is a material component of the value proposition;
+    (f) using the Software or its Derivative Works by any entity with more
+        than ten (10) employees or more than USD 1,000,000 in annual revenue,
+        unless such use is solely for internal evaluation, testing, or
+        prototyping that does not support revenue-generating operations;
+    (g) using the Software or its Derivative Works to compete with the
+        Licensor's own commercial products or services.
 
     The following do NOT constitute Commercial Use, provided they do not
     otherwise fall within the foregoing categories:
@@ -85,7 +107,10 @@ ARTICLE 1 — DEFINITIONS
     (iii) technical evaluation, benchmarking, or review;
     (iv) internal non-commercial trial or prototyping within an organization
          that is not used to support revenue-generating operations or
-         external customer-facing products or services.
+         external customer-facing products or services, and that does not
+         exceed ninety (90) consecutive days in duration;
+    (v) contributing bug fixes, documentation improvements, or code
+         contributions back to the Software's official repository.
 
 1.5 "Licensor" means the copyright holder of the Software, namely Kevrai
     Omni contributors, and any successor in interest.
@@ -94,9 +119,11 @@ ARTICLE 1 — DEFINITIONS
     Licensor to a specific licensee, granting permission to use the Software
     or its Derivative Works for specified Commercial Use purposes. A
     Commercial Authorization may be in the form of a signed paper document,
-    an electronically signed document, or a written confirmation issued
-    through the Licensor's official contact channels (including the email
-    address listed in Appendix A).
+    an electronically signed document (including via valid electronic signature
+    platforms), or a written confirmation issued through the Licensor's
+    official contact channels (including the email address listed in
+    Appendix A). A Commercial Authorization is personal to the named licensee
+    and may not be assigned or transferred except as expressly permitted.
 
 1.7 "Notice File" means the `NOTICE.md` file distributed with the Software,
     which contains attribution information, third-party component license
@@ -106,26 +133,90 @@ ARTICLE 1 — DEFINITIONS
     to the Software, whether in source code, object code, documentation, or
     any other form.
 
+1.9 "Affiliate" means, with respect to any entity, any other entity that
+    directly or indirectly controls, is controlled by, or is under common
+    control with such entity, where "control" means the ownership of more than
+    fifty percent (50%) of the voting securities or the power to direct the
+    management and policies of such entity. For the avoidance of doubt, a
+    Commercial Authorization issued to one entity does not extend to its
+    Affiliates unless expressly stated in the Commercial Authorization.
+
+1.10 "Effective Date" means the date on which you first access, install,
+     copy, or use the Software, whichever occurs first.
+
+1.11 "Source Code" means the preferred form of the Software for making
+     modifications, including all source code files, build scripts,
+     configuration files, documentation, and any other files necessary to
+     compile, build, and run the Software.
+
+1.12 "Network Use" means any use of the Software or its Derivative Works in
+     which the Software is made available to, or accessed by, users over a
+     computer network (including the internet, an intranet, a virtual private
+     network, or any other network), whether or not such use is for
+     Commercial Use. Network Use includes, without limitation, offering the
+     Software as a SaaS, PaaS, or IaaS service, providing access to the
+     Software via an API, web interface, or remote procedure call, and
+     embedding the Software in a network-accessible application or service.
+     For the avoidance of doubt, Network Use constitutes Distribution for
+     purposes of this License.
+
+1.13 "User Data" means any data, content, or information that is input into,
+     processed by, generated by, or stored through the Software or its
+     Derivative Works by or on behalf of you or your end users, including but
+     not limited to personal data, sensitive personal data, model inputs and
+     outputs, configuration data, and usage data.
+
+1.14 "Security Incident" means any actual or reasonably suspected
+     unauthorized access, use, disclosure, alteration, or destruction of the
+     Software, User Data, or any system on which the Software is deployed,
+     including but not limited to data breaches, malware infections,
+     unauthorized privilege escalation, and denial-of-service attacks that
+     materially affect the availability or integrity of the Software.
+
+1.15 "Prohibited Use" means any use of the Software or its Derivative Works
+     that is prohibited under Article 7 (Responsible AI Use and Prohibited
+     Uses) or Appendix C (Prohibited Uses List).
+
+1.16 "Third-Party Component" means any software, model weight, dataset,
+     engine binary, library, framework, or other component that is not part
+     of the Software but is referenced by, downloaded by, or used in
+     conjunction with the Software, including but not limited to the items
+     listed in the `catalog/` directory and the `NOTICE.md` file.
+
+1.17 "Contribution" means any work of authorship, including source code,
+     documentation, bug fixes, feature additions, or other modifications, that
+     is submitted by you to the Licensor for inclusion in the Software,
+     whether via a pull request, patch, issue comment, or any other
+     submission mechanism.
+
 ===============================================================================
 ARTICLE 2 — COPYRIGHT GRANT
 ===============================================================================
 
 2.1 Subject to your full compliance with all terms and conditions of this
     License, the Licensor hereby grants to you a worldwide, royalty-free,
-    non-exclusive, revocable (pursuant to Article 10) copyright license to:
+    non-exclusive, revocable (pursuant to Article 16) copyright license to:
     (a) reproduce the Software in any medium or format;
     (b) modify the Software and create Derivative Works;
     (c) distribute the Software and its Derivative Works, in whole or in
         part, in source or object code form;
-    (d) sublicense the Software and its Derivative Works, provided that any
+    (d) publicly perform and publicly display the Software and its Derivative
+        Works;
+    (e) sublicense the Software and its Derivative Works, provided that any
         such sublicense is made under terms no less protective of the Licensor
         than this License, and that the sublicense does not remove or
         circumvent the Commercial Use authorization requirement set forth in
-        Article 5.
+        Article 5 or the Network Use source disclosure requirement set forth in
+        Section 4.7.
 
 2.2 The license granted in this Article 2 is conditional upon your ongoing
-    compliance with Articles 4 (Conditions), 5 (Commercial Use
-    Authorization), and all other applicable terms of this License.
+    compliance with Articles 4 (Conditions), 5 (Commercial Use Authorization),
+    6 (Data Privacy and Security), 7 (Responsible AI Use), 8 (Export
+    Control), and all other applicable terms of this License.
+
+2.3 No license is granted under any copyright in any Third-Party Component.
+    Your use of any Third-Party Component is governed solely by such
+    component's own upstream license.
 
 ===============================================================================
 ARTICLE 3 — PATENT GRANT
@@ -139,7 +230,7 @@ ARTICLE 3 — PATENT GRANT
     alone (and not by any combination of the Software with any other
     software, hardware, or material).
 
-3.2 If you or any of your affiliates, direct or indirect, initiate or
+3.2 If you or any of your Affiliates, direct or indirect, initiate or
     threaten to initiate any patent litigation, claim, counterclaim, or
     cross-claim against any person or entity (including the Licensor or any
     contributor) alleging that the Software, or any work incorporating or
@@ -148,8 +239,14 @@ ARTICLE 3 — PATENT GRANT
     automatically as of the date such litigation, claim, or threat is first
     made.
 
+3.3 The patent license in this Article 3 does not extend to any patent claims
+    that are infringed by: (a) modifications to the Software made by you or
+    any third party; (b) combination of the Software with any other software,
+    hardware, or material; or (c) use of the Software in a manner not
+    expressly permitted by this License.
+
 ===============================================================================
-ARTICLE 4 — CONDITIONS (OPEN SOURCE OBLIGATIONS)
+ARTICLE 4 — CONDITIONS AND OPEN SOURCE OBLIGATIONS
 ===============================================================================
 
 4.1 Preservation of Notices. When you distribute the Software or any
@@ -167,7 +264,9 @@ ARTICLE 4 — CONDITIONS (OPEN SOURCE OBLIGATIONS)
     (b) provide a hyperlink or reference to the original Software repository
         at https://github.com/Bullobis/kevrai-omni;
     (c) indicate in a reasonable manner that you have modified the Software,
-        if applicable.
+        if applicable;
+    (d) not remove, alter, or obscure any attribution, copyright notice, or
+        license information contained in the Software.
 
 4.3 Source Code Availability. If you distribute the Software or any Derivative
     Work in object code or executable form, you must simultaneously:
@@ -190,6 +289,10 @@ ARTICLE 4 — CONDITIONS (OPEN SOURCE OBLIGATIONS)
     conditions, or technological protection measures on the Software or any
     Derivative Work that restrict the exercise of rights granted under this
     License by any recipient, except as expressly permitted by this License.
+    You may not use digital rights management (DRM), encryption, or any other
+    technological measure to restrict recipients from exercising the rights
+    granted under this License, except as required by applicable law or as
+    expressly authorized in writing by the Licensor.
 
 4.6 Third-Party Components. The Software may incorporate or reference
     third-party components (including model weights, engines, and libraries)
@@ -198,6 +301,43 @@ ARTICLE 4 — CONDITIONS (OPEN SOURCE OBLIGATIONS)
     third-party component's license is more restrictive than this License, the
     more restrictive terms apply to that component. The Licensor makes no
     representation or warranty regarding any third-party component.
+
+    You are solely responsible for verifying that your use of any Third-Party
+    Component complies with such component's upstream license. In particular,
+    you must not use any Third-Party Component that is licensed for
+    non-commercial use only for any Commercial Use, unless you have obtained
+    a separate commercial license from the upstream rights-holder of such
+    component. The NOTICE.md file identifies certain Third-Party Components
+    that are subject to non-commercial restrictions; this list is for
+    convenience only and is not exhaustive.
+
+4.7 Network Use Source Disclosure. If you make the Software or any Derivative
+    Work available to users over a network (Network Use), you must make the
+    complete corresponding Source Code of the Software and all Derivative Works
+    available to all such network users, free of charge, under the terms of
+    this License. This obligation applies regardless of whether the Network Use
+    is for Commercial Use or non-commercial use. You may satisfy this
+    obligation by:
+    (a) providing a prominent, easily accessible link to the Source Code
+        repository in the user interface or API documentation of the
+        network-accessible service; or
+    (b) providing the Source Code upon request to any network user within
+        thirty (30) days of such request, at no charge beyond the reasonable
+        cost of delivery.
+
+    For the avoidance of doubt, this Section 4.7 is intended to ensure that
+    the copyleft obligations of this License apply to Network Use in a manner
+    analogous to Section 13 of the GNU Affero General Public License version 3
+    (AGPLv3), but without incorporating the AGPLv3 itself.
+
+4.8 Integration with Separate Works. The Software may be aggregated with
+    separate and independent works that are not Derivative Works, provided
+    that: (a) the aggregation does not cause the Software to be subject to
+    the terms of any other license; (b) the separate works are not
+    modifications of the Software; and (c) all copies of the Software in the
+    aggregation remain subject to this License. Mere aggregation of the
+    Software with a separate work on a storage medium or distribution medium
+    does not cause the separate work to be a Derivative Work.
 
 ===============================================================================
 ARTICLE 5 — COMMERCIAL USE AUTHORIZATION
@@ -218,15 +358,25 @@ ARTICLE 5 — COMMERCIAL USE AUTHORIZATION
     (a) the legal name, registration number (e.g., unified social credit code
         or equivalent), principal place of business, and contact information
         of the applicant;
-    (b) the specific version(s) of the Software you intend to use;
-    (c) a detailed description of the intended Commercial Use, including
+    (b) the names and contact information of any Affiliates that will use the
+        Software under the Commercial Authorization, if applicable;
+    (c) the specific version(s) of the Software you intend to use;
+    (d) a detailed description of the intended Commercial Use, including
         whether it involves internal use, redistribution, SaaS/PaaS hosting,
         embedding in hardware, or any other form;
-    (d) the intended business scenario, target market, and estimated user
+    (e) the intended business scenario, target market, and estimated user
         scale and deployment scale;
-    (e) whether you intend to distribute any Derivative Work in closed-source
+    (f) whether you intend to distribute any Derivative Work in closed-source
         or proprietary form, and if so, the proposed distribution model;
-    (f) any other information reasonably requested by the Licensor.
+    (g) a description of the data types and volumes expected to be processed
+        through the Software, including whether any personal data or sensitive
+        personal data will be processed;
+    (h) a description of the security measures you have implemented or will
+        implement to protect the Software and User Data;
+    (i) any other information reasonably requested by the Licensor.
+
+    A template for the Commercial Authorization application is provided in
+    Appendix B.
 
 5.3 Evaluation and Grant. The Licensor shall use reasonable endeavors to
     respond to a complete application within thirty (30) business days of
@@ -236,11 +386,14 @@ ARTICLE 5 — COMMERCIAL USE AUTHORIZATION
     but not limited to:
     (a) authorization fees, royalties, or revenue-sharing arrangements;
     (b) attribution and branding requirements;
-    (c) quality, security, and data compliance standards;
+    (c) quality, security, data protection, and compliance standards;
     (d) geographic, field-of-use, or temporal limitations;
     (e) reporting and audit obligations;
     (f) requirements to contribute improvements or bug fixes back to the
-        Software community.
+        Software community;
+    (g) requirements to maintain adequate insurance;
+    (h) requirements to comply with applicable laws and regulations, including
+        data protection laws, AI regulations, and export control laws.
 
 5.4 Scope of Commercial Authorization. A Commercial Authorization is personal
     to the named licensee and applies only to the specific Commercial Use,
@@ -254,7 +407,9 @@ ARTICLE 5 — COMMERCIAL USE AUTHORIZATION
 
 5.5 Non-Transferability. A Commercial Authorization may not be assigned,
     sublicensed, or otherwise transferred to any third party without the
-    prior written consent of the Licensor.
+    prior written consent of the Licensor. Any purported assignment or
+    transfer in violation of this Section 5.5 shall be null and void ab
+    initio.
 
 5.6 Non-Commercial Use Exempt. Non-Commercial Use of the Software, as defined
     in Section 1.4, does not require a Commercial Authorization, but remains
@@ -265,166 +420,605 @@ ARTICLE 5 — COMMERCIAL USE AUTHORIZATION
     Commercial Authorization or as a waiver of the Licensor's right to require
     Commercial Authorization for any Commercial Use.
 
-===============================================================================
-ARTICLE 6 — ENFORCEMENT AND REMEDIES
-===============================================================================
+5.8 Material Change Notification. If you hold a valid Commercial Authorization
+    and there is any material change in your use of the Software (including
+    but not limited to a change in the nature or scope of Commercial Use, a
+    change in control of your entity, or a material expansion of deployment
+    scale), you must notify the Licensor in writing within fifteen (15)
+    business days of such change. The Licensor may require you to enter into
+    an amended Commercial Authorization to cover such changed use.
 
-6.1 Right to Issue Cease-and-Desist and Lawyer's Letters. The Licensor
-    expressly reserves the right, in its sole discretion, to issue
-    cease-and-desist letters, lawyer's letters (律师函), formal legal
-    notices, and other written demands to any person or entity that the
-    Licensor reasonably believes is using, distributing, or exploiting the
-    Software or any Derivative Work in violation of this License, including
-    without limitation any unauthorized Commercial Use. The issuance of such a
-    letter or notice does not waive any right or remedy available to the
-    Licensor at law or in equity.
-
-6.2 Injunctive Relief. You acknowledge that any breach or threatened breach of
-    this License, including any unauthorized Commercial Use, may cause
-    irreparable harm to the Licensor for which monetary damages may be an
-    inadequate remedy. Accordingly, the Licensor shall be entitled to seek
-    injunctive relief, specific performance, and other equitable remedies (in
-    addition to any other remedies available at law) in any court of competent
-    jurisdiction, without the requirement to post a bond or prove actual
-    damages.
-
-6.3 Damages and Account of Profits. In the event of any breach of this
-    License, the Licensor shall be entitled to recover from the breaching
-    party:
-    (a) all actual damages suffered by the Licensor as a result of the breach;
-    (b) an account of all profits, revenues, or other benefits derived by the
-        breaching party from the unauthorized use, distribution, or
-        exploitation of the Software or any Derivative Work;
-    (c) statutory damages, where available under applicable law;
-    (d) punitive or exemplary damages, where permitted by applicable law, in
-        cases of willful or egregious breach.
-
-6.4 Limited Cure Period. In the case of a non-commercial, unintentional, and
-    non-willful breach of this License (excluding any unauthorized Commercial
-    Use, which is not subject to cure), the breaching party may cure such
-    breach within thirty (30) days of receiving written notice from the
-    Licensor. If the breach is cured within such period, the Licensor may, in
-    its sole discretion, elect not to pursue further remedies for that
-    specific breach. This cure right does not apply to:
-    (a) any unauthorized Commercial Use;
-    (b) any willful or repeated breach;
-    (c) any breach that causes material harm to the Licensor or any third
-        party;
-    (d) any breach of Article 5 (Commercial Use Authorization) or Article 6
-        (Enforcement and Remedies).
-
-6.5 Audit Rights. If you hold a valid Commercial Authorization, the Licensor
-    shall have the right, upon reasonable prior written notice (not less than
-    ten (10) business days), to audit or cause an independent third party to
-    audit your use of the Software and its Derivative Works, solely to verify
-    compliance with the terms of the Commercial Authorization and this
-    License. Such audit shall be conducted during normal business hours and in
-    a manner that minimizes disruption to your operations. If the audit
-    reveals material non-compliance, you shall bear the reasonable costs of
-    the audit in addition to any other remedies available to the Licensor.
-
-6.6 Costs and Attorneys' Fees. In any legal action or proceeding arising out
-    of or relating to this License, the prevailing party shall be entitled to
-    recover its reasonable costs, expenses, and attorneys' fees (including
-    fees incurred in connection with the issuance of cease-and-desist or
-    lawyer's letters) from the non-prevailing party, in addition to any other
-    relief granted.
-
-6.7 Reservation of Rights. The remedies set forth in this Article 6 are
-    cumulative and not exclusive. The Licensor reserves all rights and
-    remedies available at law, in equity, under statute, or otherwise,
-    including but not limited to claims for copyright infringement, patent
-    infringement, trademark infringement, breach of contract, and unfair
-    competition. Nothing in this License shall be construed as limiting the
-    Licensor's right to pursue any or all such remedies concurrently or
-    sequentially.
+5.9 Records. If you hold a valid Commercial Authorization, you must maintain
+    accurate records of your use of the Software and its Derivative Works for
+    a period of at least three (3) years following the expiration or
+    termination of the Commercial Authorization, and you must make such records
+    available to the Licensor upon reasonable request for audit purposes.
 
 ===============================================================================
-ARTICLE 7 — TRADEMARKS
+ARTICLE 6 — DATA PRIVACY AND SECURITY
 ===============================================================================
 
-7.1 No Trademark License. This License does not grant you any right, title,
-    or interest in or to any trademark, service mark, trade name, logo, or
-    product name of the Licensor or any contributor, except solely to the
-    extent necessary to satisfy the attribution requirement set forth in
-    Section 4.2.
+6.1 Data Controller Responsibility. If you use the Software or its Derivative
+    Works to process User Data, you are solely responsible for:
+    (a) determining the legal basis for processing such User Data;
+    (b) complying with all applicable data protection and privacy laws and
+        regulations, including but not limited to the Personal Information
+        Protection Law of the People's Republic of China (PIPL), the General
+        Data Protection Regulation (GDPR) (EU) 2016/679, the California
+        Consumer Privacy Act (CCPA), and any other applicable data protection
+        laws;
+    (c) providing all required notices to data subjects and obtaining any
+        required consents;
+    (d) implementing appropriate technical and organizational measures to
+        protect User Data from unauthorized access, use, disclosure,
+        alteration, or destruction.
 
-7.2 No Confusing Use. You may not use the names "Kevrai", "Kevrai Omni", or
-    any variant, abbreviation, or logo thereof, in any manner that is likely
-    to cause confusion, or that implies or suggests any affiliation,
-    sponsorship, endorsement, or partnership with or by the Licensor, without
-    the prior written consent of the Licensor.
+6.2 No Data Collection by Licensor. The Licensor does not collect, store, or
+    process any User Data through the Software. The Software is designed to
+    run locally on your own infrastructure, and the Licensor has no access to
+    User Data processed through the Software. You acknowledge and agree that
+    the Licensor is not a data processor or data controller with respect to any
+    User Data processed through the Software.
+
+6.3 Data Localization and Cross-Border Transfer. If you transfer User Data
+    across national borders, you are solely responsible for complying with all
+    applicable cross-border data transfer laws and regulations, including but
+    not limited to the cross-border data transfer requirements under PIPL and
+    GDPR. The Licensor makes no representation or warranty regarding the
+    permissibility of any cross-border data transfer.
+
+6.4 Security Incident Notification. If you become aware of or reasonably
+    suspect a Security Incident affecting the Software or User Data processed
+    through the Software, you must:
+    (a) take immediate remedial action to contain and mitigate the Security
+        Incident;
+    (b) notify the Licensor in writing within seventy-two (72) hours of
+        becoming aware of or reasonably suspecting the Security Incident,
+        unless applicable law requires a shorter notification period;
+    (c) provide the Licensor with all information reasonably necessary to
+        assess the scope and impact of the Security Incident;
+    (d) cooperate with the Licensor in any investigation or remediation
+        efforts.
+
+    This notification obligation applies regardless of whether the Security
+    Incident is your fault or the fault of any third party.
+
+6.5 Security Measures for Commercial Users. If you hold a valid Commercial
+    Authorization, you must implement and maintain reasonable and appropriate
+    security measures to protect the Software and User Data, including but not
+    limited to:
+    (a) access controls and authentication mechanisms;
+    (b) encryption of User Data at rest and in transit;
+    (c) regular security assessments and vulnerability scanning;
+    (d) secure software development practices for any Derivative Works;
+    (e) logging and monitoring of access to and use of the Software;
+    (f) incident response and disaster recovery procedures;
+    (g) personnel security and training measures.
+
+6.6 Data Deletion. Upon termination of this License or any Commercial
+    Authorization, you must, upon request of the Licensor or as required by
+    applicable law, delete or anonymize all User Data processed through the
+    Software in your possession or control, and certify such deletion in
+    writing upon request.
+
+6.7 Subprocessor Management. If you engage any third party to process User
+    Data on your behalf in connection with the Software, you must ensure that
+    such third party is bound by data protection obligations no less protective
+    than those set forth in this Article 6, and you remain fully liable for
+    any acts or omissions of such third party.
 
 ===============================================================================
-ARTICLE 8 — DISCLAIMER OF WARRANTY
+ARTICLE 7 — RESPONSIBLE AI USE AND PROHIBITED USES
 ===============================================================================
 
-8.1 THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTY OF
-    ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE. THE LICENSOR
-    AND ITS CONTRIBUTORS HEREBY DISCLAIM ALL WARRANTIES, INCLUDING BUT NOT
-    LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-    PURPOSE, TITLE, NON-INFRINGEMENT, ACCURACY, COMPLETENESS, UNINTERRUPTED
-    OPERATION, ERROR-FREE PERFORMANCE, AND ABSENCE OF VIRUSES OR OTHER
-    HARMFUL COMPONENTS.
+7.1 Responsible Use Obligation. You agree to use the Software and its
+    Derivative Works in a responsible manner that complies with all applicable
+    laws, regulations, and ethical standards. You are solely responsible for
+    any content, outputs, or actions generated through or by the Software, and
+    for ensuring that such content, outputs, or actions do not violate
+    applicable law or the rights of any third party.
 
-8.2 YOU ACKNOWLEDGE THAT THE SOFTWARE MAY CONTAIN DEFECTS, ERRORS, OR
-    INACCURACIES, AND THAT THE SOFTWARE MAY NOT MEET YOUR REQUIREMENTS OR
-    OPERATE WITHOUT INTERRUPTION. YOU USE THE SOFTWARE AT YOUR OWN RISK.
+7.2 Prohibited Uses. You may NOT use the Software or its Derivative Works for
+    any Prohibited Use, including but not limited to the uses set forth in
+    Appendix C (Prohibited Uses List). The Prohibited Uses List in Appendix C
+    is illustrative and non-exhaustive; the Licensor may update the Prohibited
+    Uses List from time to time by posting an updated version in the
+    Software's official repository, and any such update shall apply to your use
+    of the Software from the date of posting.
 
-8.3 THE LICENSOR DOES NOT WARRANT THAT THE SOFTWARE WILL OPERATE IN
-    COMBINATION WITH ANY HARDWARE, SOFTWARE, SYSTEM, OR DATA, OR THAT ANY
-    DEFECTS IN THE SOFTWARE WILL BE CORRECTED.
+7.3 AI Safety and Compliance. If you use the Software or its Derivative Works
+    to deploy, operate, or provide access to any AI model or AI system, you
+    must:
+    (a) comply with all applicable AI laws and regulations, including but not
+        limited to the Interim Measures for the Management of Generative
+        Artificial Intelligence Services (China), the EU AI Act (Regulation
+        (EU) 2024/1689), and any other applicable AI regulations;
+    (b) implement appropriate content moderation and safety filtering mechanisms
+        for any AI outputs generated through the Software;
+    (c) provide clear and conspicuous disclosures to end users when content,
+        decisions, or actions are generated by AI;
+    (d) implement human oversight for any AI system that makes decisions with
+        material real-world effects, including but not limited to financial
+        transactions, contract execution, employment decisions, legal
+        decisions, healthcare decisions, and access to essential services;
+    (e) maintain records of AI system deployments and make such records
+        available to regulatory authorities upon request, as required by
+        applicable law.
 
-8.4 SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OF IMPLIED WARRANTIES, SO
-    THE ABOVE EXCLUSIONS MAY NOT APPLY TO YOU IN FULL. IN SUCH JURISDICTIONS,
-    THE IMPLIED WARRANTIES ARE LIMITED TO THE GREATEST EXTENT PERMITTED BY
-    LAW.
+7.4 No Circumvention of Safety Features. You may not, and may not permit any
+    third party to, circumvent, disable, remove, or interfere with any safety
+    features, content filters, or access controls implemented in the Software
+    or any AI model accessed through the Software. You may not attempt to
+    jailbreak, prompt-inject, or otherwise manipulate any AI model to produce
+    harmful, illegal, or prohibited content.
+
+7.5 High-Risk AI Systems. If you use the Software or its Derivative Works to
+    deploy any AI system that is classified as "high-risk" under any
+    applicable AI regulation (including but not limited to the EU AI Act), you
+    must comply with all additional obligations applicable to high-risk AI
+    systems, including but not limited to risk assessment, data governance,
+    technical documentation, record-keeping, transparency, human oversight,
+    accuracy, robustness, cybersecurity, and conformity assessment obligations.
+
+7.6 Liability for AI Outputs. You acknowledge and agree that the Licensor is
+    not responsible for any content, outputs, decisions, or actions generated
+    through or by the Software or any AI model accessed through the Software.
+    You are solely liable for any harm, loss, or damage arising from such
+    content, outputs, decisions, or actions, including but not limited to
+    claims for defamation, copyright infringement, privacy violations, or
+    personal injury.
 
 ===============================================================================
-ARTICLE 9 — LIMITATION OF LIABILITY
+ARTICLE 8 — EXPORT CONTROL AND SANCTIONS
 ===============================================================================
 
-9.1 TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE
-    LICENSOR OR ANY OF ITS CONTRIBUTORS, LICENSORS, AFFILIATES, DIRECTORS,
-    OFFICERS, EMPLOYEES, OR AGENTS BE LIABLE FOR ANY DIRECT, INDIRECT,
-    INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE, OR CONSEQUENTIAL DAMAGES
-    WHATSOEVER, INCLUDING BUT NOT LIMITED TO:
-    (a) LOSS OF PROFITS, REVENUE, BUSINESS, OR GOODWILL;
-    (b) LOSS OF DATA, CONTENT, OR INFORMATION;
-    (c) BUSINESS INTERRUPTION OR DOWNTIME;
-    (d) COST OF PROCURING SUBSTITUTE GOODS OR SERVICES;
-    (e) PROPERTY DAMAGE;
-    (f) PERSONAL INJURY OR WRONGFUL DEATH;
-    ARISING OUT OF OR IN CONNECTION WITH THE SOFTWARE, THIS LICENSE, OR YOUR
-    USE OF OR INABILITY TO USE THE SOFTWARE, WHETHER BASED ON CONTRACT,
-    TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY, BREACH OF STATUTORY DUTY,
-    OR ANY OTHER LEGAL THEORY, EVEN IF THE LICENSOR HAS BEEN ADVISED OF THE
-    POSSIBILITY OF SUCH DAMAGES, AND EVEN IF A LIMITED REMEDY SET FORTH HEREIN
-    FAILS OF ITS ESSENTIAL PURPOSE.
+8.1 Export Control Compliance. You must comply with all applicable export
+    control laws and regulations of the People's Republic of China, the United
+    States, the European Union, and any other applicable jurisdiction,
+    including but not limited to:
+    (a) the Export Control Law of the People's Republic of China;
+    (b) the U.S. Export Administration Regulations (EAR) administered by the
+        Bureau of Industry and Security (BIS);
+    (c) the EU Dual-Use Regulation (Regulation (EU) 2021/821);
+    (d) any applicable encryption export control regulations;
+    (e) any applicable AI-specific export control regulations, including
+        restrictions on the export of AI software, AI models, and AI-related
+        technology.
 
-9.2 THE FOREGOING LIMITATIONS SHALL APPLY TO THE MAXIMUM EXTENT PERMITTED BY
-    APPLICABLE LAW. SOME JURISDICTIONS DO NOT ALLOW THE LIMITATION OR
-    EXCLUSION OF LIABILITY FOR CERTAIN TYPES OF DAMAGES, SO SOME OF THE ABOVE
-    LIMITATIONS MAY NOT APPLY TO YOU.
+8.2 No Export to Restricted Persons or Destinations. You may not, directly or
+    indirectly, export, re-export, transfer, or make available the Software or
+    any Derivative Work to:
+    (a) any country, territory, or person subject to comprehensive sanctions
+        or embargoes by any applicable jurisdiction;
+    (b) any person or entity listed on any applicable sanctions list,
+        including but not limited to the U.S. Treasury Department's Office of
+        Foreign Assets Control (OFAC) Specially Designated Nationals and
+        Blocked Persons List, the EU Consolidated List of Persons, Groups and
+        Entities Subject to EU Financial Sanctions, and any Chinese government
+        sanctions list;
+    (c) any person or entity engaged in activities prohibited by applicable
+        export control or sanctions laws, including but not limited to
+        activities related to weapons of mass destruction, military
+        proliferation, terrorism, or human rights abuses;
+    (d) any end use that is prohibited by applicable export control laws,
+        including but not limited to nuclear, chemical, or biological weapons
+        proliferation, missile technology development, or military end uses
+        where prohibited.
 
-9.3 NOTHING IN THIS LICENSE SHALL LIMIT OR EXCLUDE ANY LIABILITY THAT CANNOT
-    BE LIMITED OR EXCLUDED UNDER APPLICABLE LAW, INCLUDING BUT NOT LIMITED TO
-    LIABILITY FOR FRAUD, WILLFUL MISCONDUCT, OR PERSONAL INJURY CAUSED BY
-    NEGLIGENCE WHERE SUCH LIMITATION IS PROHIBITED BY LAW.
+8.3 Re-export Restrictions. If you export or re-export the Software or any
+    Derivative Work, you must ensure that the recipient complies with all
+    applicable export control and sanctions laws, and you must not re-export
+    the Software or any Derivative Work in a manner that would violate such
+    laws. You must include appropriate export control notices and restrictions
+    in any distribution of the Software or any Derivative Work.
+
+8.4 Diversion Prohibition. You may not engage in any transaction or activity
+    that is designed to, or would reasonably be expected to, divert the
+    Software or any Derivative Work to any person, destination, or end use
+    prohibited by applicable export control or sanctions laws.
+
+8.5 Record-Keeping. If you engage in any export, re-export, or
+    international transfer of the Software or any Derivative Work, you must
+    maintain accurate records of such transactions for a period of at least
+    five (5) years, and you must make such records available to the Licensor
+    or any competent regulatory authority upon request.
+
+8.6 No Liability for Export Compliance. The Licensor makes no representation or
+    warranty regarding the permissibility of any export, re-export, or
+    international transfer of the Software or any Derivative Work. You are
+    solely responsible for determining whether any export license or other
+    authorization is required for any such transfer, and for obtaining any such
+    license or authorization.
 
 ===============================================================================
-ARTICLE 10 — TERMINATION
+ARTICLE 9 — CONTRIBUTIONS
 ===============================================================================
 
-10.1 Automatic Termination for Breach. If you breach any term or condition of
+9.1 Contributor License Grant. By submitting a Contribution to the Licensor
+    for inclusion in the Software, you hereby grant to the Licensor and to
+    all recipients of the Software distributed under this License a
+    worldwide, perpetual, irrevocable, royalty-free, non-exclusive license
+    under all copyrights in your Contribution to reproduce, modify, create
+    derivative works of, publicly perform, publicly display, distribute, and
+    sublicense your Contribution, in whole or in part, in any medium or
+    format.
+
+9.2 Patent License for Contributions. By submitting a Contribution to the
+    Licensor for inclusion in the Software, you hereby grant to the Licensor
+    and to all recipients of the Software distributed under this License a
+    worldwide, perpetual, irrevocable, royalty-free, non-exclusive license
+    under all patent claims that you own or control, now or in the future,
+    to make, have made, use, sell, offer to sell, import, and otherwise
+    transfer your Contribution, solely to the extent that such patent claims
+    are necessarily infringed by your Contribution alone or by combination of
+    your Contribution with the Software.
+
+9.3 Representation of Right to Contribute. You represent and warrant that:
+    (a) you are the sole author and owner of all right, title, and interest
+        in and to your Contribution, or you have sufficient rights to grant
+        the licenses set forth in this Article 9;
+    (b) your Contribution does not infringe, misappropriate, or violate any
+        third party's intellectual property rights, including but not limited
+        to copyright, patent, trademark, trade secret, or privacy rights;
+    (c) your Contribution is your original work, or if it includes any
+        third-party material, you have obtained all necessary permissions and
+        licenses to include such material in your Contribution and to grant
+        the licenses set forth in this Article 9;
+    (d) you are not aware of any claims, demands, or actions pending or
+        threatened against you relating to your Contribution;
+    (e) if your Contribution is made in the course of your employment, you
+        have obtained all necessary permissions from your employer to submit
+        the Contribution and to grant the licenses set forth in this Article 9.
+
+9.4 Moral Rights. To the extent permitted by applicable law, you hereby waive
+    any and all moral rights (including rights of attribution, integrity,
+    paternity, and withdrawal) in your Contribution that you may have, to the
+    extent necessary to permit the use, modification, and distribution of your
+    Contribution as permitted under this License. If applicable law does not
+    permit waiver of moral rights, you agree not to assert such moral rights
+    against the Licensor or any recipient of the Software.
+
+9.5 No Obligation to Accept. The Licensor has no obligation to accept,
+    include, or use any Contribution. The Licensor may, in its sole
+    discretion, accept, reject, modify, or remove any Contribution at any
+    time.
+
+9.6 Feedback. Any feedback, suggestions, or ideas that you provide to the
+    Licensor regarding the Software (including but not limited to feature
+    requests, bug reports, and improvement suggestions) may be used by the
+    Licensor to improve the Software or to develop other products or services,
+    without any obligation to you. You agree that the Licensor is free to use
+    any such feedback for any purpose, including but not limited to
+    developing, manufacturing, marketing, selling, or distributing products or
+    services that incorporate such feedback.
+
+===============================================================================
+ARTICLE 10 — SECURITY VULNERABILITY DISCLOSURE
+===============================================================================
+
+10.1 Safe Harbor for Good-Faith Security Researchers. The Licensor hereby
+     affirms that it will not initiate or threaten any legal action against
+     any person who, in good faith, discovers, reports, or assists in the
+     remediation of a security vulnerability in the Software, provided that
+     such person:
+     (a) acts in good faith and with the intent to improve the security of the
+         Software;
+     (b) does not access, use, or disclose any User Data, personal data, or
+         proprietary information of the Licensor or any third party, except as
+         reasonably necessary to demonstrate the vulnerability;
+     (c) does not modify, alter, or damage the Software or any system on
+         which the Software is deployed, except as reasonably necessary to
+         demonstrate the vulnerability;
+     (d) does not deny service to any user or disrupt the operation of the
+         Software;
+     (e) promptly reports the vulnerability to the Licensor in accordance with
+         the process set forth in Appendix D;
+     (f) allows the Licensor a reasonable period of time to remediate the
+         vulnerability before disclosing it publicly (coordinated disclosure);
+     (g) does not exploit the vulnerability for any purpose other than
+         demonstrating its existence to the Licensor.
+
+10.2 Vulnerability Reporting Process. Security vulnerabilities should be
+     reported to the Licensor in accordance with the Security Vulnerability
+     Reporting Policy set forth in Appendix D. The Licensor acknowledges
+     receipt of all vulnerability reports and uses reasonable endeavors to
+     respond to valid reports within a reasonable timeframe.
+
+10.3 Coordinated Disclosure Timeline. The Licensor requests that security
+     researchers allow a minimum of ninety (90) days from the date of
+     reporting a vulnerability before disclosing it publicly, unless the
+     Licensor agrees in writing to a shorter disclosure period. The Licensor
+     may request an extension of the disclosure period if additional time is
+     needed to remediate the vulnerability, and the Licensor will keep the
+     researcher informed of the remediation progress.
+
+10.4 No Waiver of Rights. Nothing in this Article 10 shall be construed as a
+     waiver of any right or remedy available to the Licensor against any
+     person who does not act in good faith or who violates any provision of
+     this Article 10 or applicable law. The safe harbor in Section 10.1
+     applies only to acts undertaken in compliance with this Article 10.
+
+10.5 Bug Bounty. The Licensor may, from time to time, operate a bug bounty
+     program that provides rewards for valid vulnerability reports. The terms
+     and conditions of any such bug bounty program shall be published in the
+     Software's official repository. In the event of any conflict between a
+     bug bounty program and this Article 10, the bug bounty program terms
+     shall prevail solely with respect to the specific rewards and procedures
+     set forth in the bug bounty program.
+
+===============================================================================
+ARTICLE 11 — INDEMNIFICATION
+===============================================================================
+
+11.1 Indemnification by Commercial Users. If you engage in any Commercial Use
+     of the Software or any Derivative Work (whether or not you hold a valid
+     Commercial Authorization), you agree to indemnify, defend, and hold
+     harmless the Licensor and its contributors, Affiliates, directors,
+     officers, employees, agents, and representatives (collectively, the
+     "Licensor Indemnified Parties") from and against any and all claims,
+     demands, actions, proceedings, damages, losses, liabilities, costs, and
+     expenses (including reasonable attorneys' fees and costs) arising out of
+     or relating to:
+     (a) your use of the Software or any Derivative Work for Commercial Use;
+     (b) any breach by you of any term or condition of this License or any
+         valid Commercial Authorization;
+     (c) any claim that your use of the Software or any Derivative Work, or
+         any content, outputs, or actions generated through the Software,
+         infringes, misappropriates, or violates any third party's
+         intellectual property rights, privacy rights, or other legal rights;
+     (d) any claim arising from your processing of User Data, including but
+         not limited to claims for data breaches, privacy violations, or
+         non-compliance with applicable data protection laws;
+     (e) any claim arising from your deployment or operation of any AI system
+         through the Software, including but not limited to claims for harmful
+         AI outputs, AI safety failures, or non-compliance with applicable AI
+         regulations;
+     (f) any claim arising from your violation of any applicable export control
+         or sanctions laws in connection with the Software;
+     (g) any Prohibited Use by you or any person acting on your behalf.
+
+11.2 Indemnification Procedure. The Licensor shall:
+     (a) promptly notify you in writing of any claim for which indemnification
+         is sought under this Article 11;
+     (b) allow you to assume the defense of such claim with counsel reasonably
+         satisfactory to the Licensor;
+     (c) provide you with reasonable assistance in the defense of such claim,
+         at your expense.
+
+     The Licensor may participate in the defense of any claim with its own
+     counsel at its own expense. You may not settle any claim for which
+     indemnification is sought without the prior written consent of the
+     Licensor, which consent shall not be unreasonably withheld, conditioned,
+     or delayed. Any settlement that imposes any obligation or admission of
+     wrongdoing on the Licensor shall require the Licensor's express written
+     consent.
+
+11.3 Survival. The indemnification obligations set forth in this Article 11
+     shall survive the termination or expiration of this License or any
+     Commercial Authorization.
+
+11.4 Non-Commercial Users. For the avoidance of doubt, the indemnification
+     obligations in this Article 11 apply only to Commercial Use.
+     Non-commercial users are not required to indemnify the Licensor, except
+     in cases of willful misconduct, gross negligence, or fraud.
+
+===============================================================================
+ARTICLE 12 — ENFORCEMENT AND REMEDIES
+===============================================================================
+
+12.1 Right to Issue Cease-and-Desist and Lawyer's Letters. The Licensor
+     expressly reserves the right, in its sole discretion, to issue
+     cease-and-desist letters, lawyer's letters (律师函), formal legal
+     notices, demand letters, and other written demands to any person or
+     entity that the Licensor reasonably believes is using, distributing, or
+     exploiting the Software or any Derivative Work in violation of this
+     License, including without limitation any unauthorized Commercial Use, any
+     Prohibited Use, or any violation of Article 4.7 (Network Use). The
+     issuance of such a letter or notice does not waive any right or remedy
+     available to the Licensor at law or in equity.
+
+12.2 Injunctive Relief. You acknowledge that any breach or threatened breach of
+     this License, including any unauthorized Commercial Use, any Prohibited
+     Use, or any violation of the Network Use source disclosure obligation, may
+     cause irreparable harm to the Licensor for which monetary damages may be
+     an inadequate remedy. Accordingly, the Licensor shall be entitled to seek
+     injunctive relief, specific performance, and other equitable remedies (in
+     addition to any other remedies available at law) in any court of competent
+     jurisdiction, without the requirement to post a bond or prove actual
+     damages.
+
+12.3 Damages and Account of Profits. In the event of any breach of this
+     License, the Licensor shall be entitled to recover from the breaching
+     party:
+     (a) all actual damages suffered by the Licensor as a result of the breach;
+     (b) an account of all profits, revenues, or other benefits derived by the
+         breaching party from the unauthorized use, distribution, or
+         exploitation of the Software or any Derivative Work;
+     (c) statutory damages, where available under applicable law;
+     (d) punitive or exemplary damages, where permitted by applicable law, in
+         cases of willful or egregious breach;
+     (e) liquidated damages for unauthorized Commercial Use, in an amount equal
+         to the greater of: (i) the reasonable licensing fees that the Licensor
+         would have charged for the unauthorized Commercial Use, or (ii) USD
+         10,000 per instance of unauthorized Commercial Use, or (iii) the
+         actual damages suffered by the Licensor, whichever is greatest. The
+         parties agree that this liquidated damages provision is a reasonable
+         estimate of the Licensor's probable loss in the event of unauthorized
+         Commercial Use and is not a penalty.
+
+12.4 Limited Cure Period. In the case of a non-commercial, unintentional, and
+     non-willful breach of this License (excluding any unauthorized Commercial
+     Use, any Prohibited Use, and any violation of Article 4.7 (Network Use),
+     none of which is subject to cure), the breaching party may cure such
+     breach within thirty (30) days of receiving written notice from the
+     Licensor. If the breach is cured within such period, the Licensor may, in
+     its sole discretion, elect not to pursue further remedies for that
+     specific breach. This cure right does not apply to:
+     (a) any unauthorized Commercial Use;
+     (b) any Prohibited Use;
+     (c) any violation of Article 4.7 (Network Use source disclosure);
+     (d) any willful or repeated breach;
+     (e) any breach that causes material harm to the Licensor or any third
+         party;
+     (f) any breach of Article 5 (Commercial Use Authorization), Article 6
+         (Data Privacy and Security), Article 7 (Responsible AI Use), Article 8
+         (Export Control), or Article 12 (Enforcement and Remedies).
+
+12.5 Audit Rights. If you hold a valid Commercial Authorization, the Licensor
+     shall have the right, upon reasonable prior written notice (not less than
+     ten (10) business days), to audit or cause an independent third party to
+     audit your use of the Software and its Derivative Works, solely to verify
+     compliance with the terms of the Commercial Authorization and this
+     License. Such audit shall be conducted during normal business hours and in
+     a manner that minimizes disruption to your operations. The Licensor may
+     conduct no more than one (1) audit per calendar year, unless a prior audit
+     revealed material non-compliance, in which case the Licensor may conduct
+     additional audits as reasonably necessary. If the audit reveals material
+     non-compliance, you shall bear the reasonable costs of the audit in
+     addition to any other remedies available to the Licensor.
+
+12.6 Costs and Attorneys' Fees. In any legal action or proceeding arising out
+     of or relating to this License, the prevailing party shall be entitled to
+     recover its reasonable costs, expenses, and attorneys' fees (including
+     fees incurred in connection with the issuance of cease-and-desist or
+     lawyer's letters) from the non-prevailing party, in addition to any other
+     relief granted.
+
+12.7 Reservation of Rights. The remedies set forth in this Article 12 are
+     cumulative and not exclusive. The Licensor reserves all rights and
+     remedies available at law, in equity, under statute, or otherwise,
+     including but not limited to claims for copyright infringement, patent
+     infringement, trademark infringement, breach of contract, unfair
+     competition, and tortious interference. Nothing in this License shall be
+     construed as limiting the Licensor's right to pursue any or all such
+     remedies concurrently or sequentially.
+
+12.8 Specific Performance. The parties acknowledge that the Licensor's rights
+     under this License are unique and that monetary damages may be inadequate
+     to compensate the Licensor for any breach. Accordingly, the Licensor shall
+     be entitled to seek specific performance and other equitable remedies for
+     any breach or threatened breach of this License, in addition to any other
+     remedies available at law or in equity.
+
+===============================================================================
+ARTICLE 13 — TRADEMARKS
+===============================================================================
+
+13.1 No Trademark License. This License does not grant you any right, title,
+     or interest in or to any trademark, service mark, trade name, logo, or
+     product name of the Licensor or any contributor, except solely to the
+     extent necessary to satisfy the attribution requirement set forth in
+     Section 4.2.
+
+13.2 No Confusing Use. You may not use the names "Kevrai", "Kevrai Omni", or
+     any variant, abbreviation, or logo thereof, in any manner that is likely
+     to cause confusion, or that implies or suggests any affiliation,
+     sponsorship, endorsement, or partnership with or by the Licensor, without
+     the prior written consent of the Licensor.
+
+13.3 Quality Control for Authorized Use. If the Licensor grants you written
+     permission to use any trademark, service mark, trade name, or logo of the
+     Licensor, you must use such mark in accordance with any quality control
+     guidelines provided by the Licensor, and you may not use such mark in any
+     manner that disparages the Licensor or the Software, or that damages the
+     goodwill associated with such mark.
+
+13.4 No Implied License. No course of dealing or usage of trade shall be
+     construed as granting any license or right to use any trademark, service
+     mark, trade name, or logo of the Licensor. All rights in and to such
+     marks are expressly reserved by the Licensor.
+
+===============================================================================
+ARTICLE 14 — DISCLAIMER OF WARRANTY
+===============================================================================
+
+14.1 THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTY OF
+     ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE. THE LICENSOR
+     AND ITS CONTRIBUTORS HEREBY DISCLAIM ALL WARRANTIES, INCLUDING BUT NOT
+     LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+     PURPOSE, TITLE, NON-INFRINGEMENT, ACCURACY, COMPLETENESS, UNINTERRUPTED
+     OPERATION, ERROR-FREE PERFORMANCE, AND ABSENCE OF VIRUSES OR OTHER
+     HARMFUL COMPONENTS.
+
+14.2 YOU ACKNOWLEDGE THAT THE SOFTWARE MAY CONTAIN DEFECTS, ERRORS, OR
+     INACCURACIES, AND THAT THE SOFTWARE MAY NOT MEET YOUR REQUIREMENTS OR
+     OPERATE WITHOUT INTERRUPTION. YOU USE THE SOFTWARE AT YOUR OWN RISK.
+
+14.3 THE LICENSOR DOES NOT WARRANT THAT THE SOFTWARE WILL OPERATE IN
+     COMBINATION WITH ANY HARDWARE, SOFTWARE, SYSTEM, OR DATA, OR THAT ANY
+     DEFECTS IN THE SOFTWARE WILL BE CORRECTED. THE LICENSOR DOES NOT WARRANT
+     THAT THE SOFTWARE IS FREE OF SECURITY VULNERABILITIES OR THAT IT WILL
+     PROTECT USER DATA FROM UNAUTHORIZED ACCESS OR USE.
+
+14.4 NO AI OUTPUT WARRANTY. THE LICENSOR MAKES NO WARRANTY REGARDING ANY
+     CONTENT, OUTPUTS, DECISIONS, OR ACTIONS GENERATED THROUGH OR BY THE
+     SOFTWARE OR ANY AI MODEL ACCESSED THROUGH THE SOFTWARE. ANY SUCH CONTENT,
+     OUTPUTS, DECISIONS, OR ACTIONS ARE PROVIDED "AS IS" WITHOUT WARRANTY OF
+     ANY KIND. YOU ARE SOLELY RESPONSIBLE FOR ANY USE OR RELIANCE ON SUCH
+     CONTENT, OUTPUTS, DECISIONS, OR ACTIONS.
+
+14.5 SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OF IMPLIED WARRANTIES, SO
+     THE ABOVE EXCLUSIONS MAY NOT APPLY TO YOU IN FULL. IN SUCH JURISDICTIONS,
+     THE IMPLIED WARRANTIES ARE LIMITED TO THE GREATEST EXTENT PERMITTED BY
+     LAW.
+
+===============================================================================
+ARTICLE 15 — LIMITATION OF LIABILITY
+===============================================================================
+
+15.1 TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE
+     LICENSOR OR ANY OF ITS CONTRIBUTORS, LICENSORS, AFFILIATES, DIRECTORS,
+     OFFICERS, EMPLOYEES, OR AGENTS BE LIABLE FOR ANY DIRECT, INDIRECT,
+     INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE, OR CONSEQUENTIAL DAMAGES
+     WHATSOEVER, INCLUDING BUT NOT LIMITED TO:
+     (a) LOSS OF PROFITS, REVENUE, BUSINESS, OR GOODWILL;
+     (b) LOSS OF DATA, CONTENT, OR INFORMATION;
+     (c) BUSINESS INTERRUPTION OR DOWNTIME;
+     (d) COST OF PROCURING SUBSTITUTE GOODS OR SERVICES;
+     (e) PROPERTY DAMAGE;
+     (f) PERSONAL INJURY OR WRONGFUL DEATH;
+     (g) LOSS OF PRIVACY OR DATA BREACH;
+     (h) ANY HARM ARISING FROM AI OUTPUTS OR AI SYSTEM DEPLOYED THROUGH THE
+         SOFTWARE;
+     ARISING OUT OF OR IN CONNECTION WITH THE SOFTWARE, THIS LICENSE, OR YOUR
+     USE OF OR INABILITY TO USE THE SOFTWARE, WHETHER BASED ON CONTRACT,
+     TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY, BREACH OF STATUTORY DUTY,
+     OR ANY OTHER LEGAL THEORY, EVEN IF THE LICENSOR HAS BEEN ADVISED OF THE
+     POSSIBILITY OF SUCH DAMAGES, AND EVEN IF A LIMITED REMEDY SET FORTH HEREIN
+     FAILS OF ITS ESSENTIAL PURPOSE.
+
+15.2 THE FOREGOING LIMITATIONS SHALL APPLY TO THE MAXIMUM EXTENT PERMITTED BY
+     APPLICABLE LAW. SOME JURISDICTIONS DO NOT ALLOW THE LIMITATION OR
+     EXCLUSION OF LIABILITY FOR CERTAIN TYPES OF DAMAGES, SO SOME OF THE ABOVE
+     LIMITATIONS MAY NOT APPLY TO YOU.
+
+15.3 NOTHING IN THIS LICENSE SHALL LIMIT OR EXCLUDE ANY LIABILITY THAT CANNOT
+     BE LIMITED OR EXCLUDED UNDER APPLICABLE LAW, INCLUDING BUT NOT LIMITED TO
+     LIABILITY FOR FRAUD, WILLFUL MISCONDUCT, GROSS NEGLIGENCE, OR PERSONAL
+     INJURY CAUSED BY NEGLIGENCE WHERE SUCH LIMITATION IS PROHIBITED BY LAW.
+
+15.4 TOTAL LIABILITY CAP. NOTWITHSTANDING ANYTHING TO THE CONTRARY IN THIS
+     LICENSE, THE TOTAL AGGREGATE LIABILITY OF THE LICENSOR AND ITS
+     CONTRIBUTORS, AFFILIATES, DIRECTORS, OFFICERS, EMPLOYEES, AND AGENTS
+     ARISING OUT OF OR IN CONNECTION WITH THIS LICENSE OR THE SOFTWARE SHALL
+     NOT EXCEED THE GREATER OF: (a) USD 100, OR (b) THE TOTAL AMOUNT OF FEES
+     PAID BY YOU TO THE LICENSOR FOR THE SOFTWARE IN THE TWELVE (12) MONTHS
+     PRECEDING THE EVENT GIVING RISE TO THE CLAIM. THIS LIMITATION SHALL NOT
+     APPLY TO LIABILITY FOR FRAUD, WILLFUL MISCONDUCT, OR GROSS NEGLIGENCE.
+
+===============================================================================
+ARTICLE 16 — TERMINATION
+===============================================================================
+
+16.1 Automatic Termination for Breach. If you breach any term or condition of
      this License, all rights and licenses granted to you under this License
      (including the copyright license under Article 2 and the patent license
      under Article 3) shall terminate automatically and immediately, without
      the need for any notice from the Licensor, unless the breach is a
      non-commercial, unintentional, and curable breach as described in
-     Section 6.4 and is cured within the applicable cure period.
+     Section 12.4 and is cured within the applicable cure period.
 
-10.2 Effect of Termination. Upon termination of this License for any reason:
+16.2 Effect of Termination. Upon termination of this License for any reason:
      (a) you must immediately cease all use, reproduction, modification, and
          distribution of the Software and all Derivative Works;
      (b) you must destroy or permanently delete all copies of the Software and
@@ -434,33 +1028,46 @@ ARTICLE 10 — TERMINATION
          terminate, except that copies lawfully distributed to third parties
          prior to termination may continue to be used by such third parties
          solely to the extent such third parties remain in compliance with this
-         License.
+         License;
+     (d) any Commercial Authorization held by you shall terminate immediately,
+         unless the Commercial Authorization expressly provides for survival upon
+         termination of this License.
 
-10.3 Survival. The following provisions shall survive termination of this
-     License: Article 1 (Definitions), Article 6 (Enforcement and Remedies),
-     Article 7 (Trademarks), Article 8 (Disclaimer of Warranty), Article 9
-     (Limitation of Liability), Article 10 (Termination), and Article 11
-     (General Provisions), together with any other provisions that by their
-     nature are intended to survive termination.
+16.3 Survival. The following provisions shall survive termination of this
+     License: Article 1 (Definitions), Article 6 (Data Privacy and Security),
+     Article 7 (Responsible AI Use), Article 8 (Export Control), Article 9
+     (Contributions), Article 11 (Indemnification), Article 12 (Enforcement
+     and Remedies), Article 13 (Trademarks), Article 14 (Disclaimer of
+     Warranty), Article 15 (Limitation of Liability), Article 16
+     (Termination), and Article 17 (General Provisions), together with any
+     other provisions that by their nature are intended to survive termination.
 
-10.4 No Waiver by Termination. Termination of this License shall not affect
+16.4 No Waiver by Termination. Termination of this License shall not affect
      any right or remedy of the Licensor that has accrued prior to or as a
      result of such termination, including the right to seek damages,
      injunctive relief, or any other remedy for any breach that occurred prior
      to termination.
 
+16.5 Termination for Convenience by Licensor. The Licensor may terminate this
+     License at any time, for any reason or no reason, by providing thirty
+     (30) days' prior written notice to you. Upon such termination, you must
+     comply with the obligations set forth in Section 16.2. For the avoidance
+     of doubt, termination for convenience by the Licensor does not affect any
+     rights or remedies that have accrued prior to the effective date of
+     termination.
+
 ===============================================================================
-ARTICLE 11 — GENERAL PROVISIONS
+ARTICLE 17 — GENERAL PROVISIONS
 ===============================================================================
 
-11.1 Entire Agreement. This License, together with any valid Commercial
+17.1 Entire Agreement. This License, together with any valid Commercial
      Authorization issued under Article 5, constitutes the entire agreement
      between you and the Licensor with respect to the subject matter hereof,
      and supersedes all prior or contemporaneous agreements, understandings,
      negotiations, and communications, whether oral or written, relating to
      such subject matter.
 
-11.2 Governing Law and Jurisdiction. This License shall be governed by and
+17.2 Governing Law and Jurisdiction. This License shall be governed by and
      construed in accordance with the laws of the People's Republic of China
      (excluding its conflict-of-laws rules). Any dispute, controversy, or
      claim arising out of or in connection with this License, including its
@@ -472,20 +1079,20 @@ ARTICLE 11 — GENERAL PROVISIONS
      Nations Convention on Contracts for the International Sale of Goods shall
      not apply.
 
-11.3 Severability. If any provision of this License is held by a court or
+17.3 Severability. If any provision of this License is held by a court or
      tribunal of competent jurisdiction to be invalid, illegal, or
      unenforceable, such provision shall be modified to the minimum extent
      necessary to make it valid, legal, and enforceable, or, if such
      modification is not possible, severed from this License. The remaining
      provisions shall continue in full force and effect.
 
-11.4 No Waiver. No failure or delay by the Licensor in exercising any right,
+17.4 No Waiver. No failure or delay by the Licensor in exercising any right,
      power, or remedy under this License shall operate as a waiver thereof, nor
      shall any single or partial exercise of any right, power, or remedy
      preclude any other or further exercise thereof or the exercise of any
      other right, power, or remedy.
 
-11.5 New Versions. The Licensor reserves the right to publish new versions of
+17.5 New Versions. The Licensor reserves the right to publish new versions of
      this License from time to time. Upon publication of a new version, you
      may elect to continue using the Software under the version of this License
      under which you originally received the Software, or to accept the new
@@ -493,19 +1100,88 @@ ARTICLE 11 — GENERAL PROVISIONS
      effective. The Licensor shall make reasonable efforts to notify users of
      new versions through the Software's official repository.
 
-11.6 Contact. For all inquiries regarding this License, Commercial
-     Authorization applications, enforcement matters, or breach notifications,
-     please contact the Licensor at the address specified in Appendix A.
+17.6 Contact. For all inquiries regarding this License, Commercial
+     Authorization applications, enforcement matters, breach notifications, or
+     security vulnerability reports, please contact the Licensor at the address
+     specified in Appendix A.
 
-11.7 Headings. The headings and article titles in this License are for
+17.7 Headings. The headings and article titles in this License are for
      convenience of reference only and shall not affect the interpretation of
      any provision.
 
-11.8 Language. This License is executed in the English language. Any
+17.8 Language. This License is executed in the English language. Any
      translation of this License into any other language is provided for
      convenience only and shall not be binding. In the event of any
      inconsistency between the English version and any translation, the
      English version shall prevail.
+
+17.9 Notices. All notices, requests, demands, and other communications
+     required or permitted to be given under this License shall be in writing
+     and shall be deemed to have been duly given: (a) when delivered
+     personally; (b) when sent by email (with confirmation of receipt), to the
+     email address specified in Appendix A; or (c) when sent by internationally
+     recognized courier, with proof of delivery. Any party may change its
+     notice address by providing written notice to the other party in
+     accordance with this Section 17.9.
+
+17.10 Force Majeure. Neither party shall be liable for any failure or delay in
+     performing its obligations under this License to the extent such failure
+     or delay is caused by events beyond the reasonable control of such party,
+     including but not limited to acts of God, war, terrorism, civil
+     disturbance, government action, pandemic, epidemic, natural disaster,
+     labor strike, supply chain disruption, or internet infrastructure failure.
+     The party affected by a force majeure event shall promptly notify the other
+     party in writing and shall use reasonable endeavors to mitigate the effects
+     of the force majeure event and resume performance as soon as reasonably
+     practicable.
+
+17.11 Assignment by Licensor. The Licensor may assign, transfer, or delegate
+     any or all of its rights and obligations under this License to any third
+     party, including but not limited to an Affiliate or a successor in
+     interest, without your consent. Upon any such assignment, the assignee
+     shall assume all rights and obligations of the Licensor under this
+     License, and all references to the "Licensor" in this License shall be
+     deemed to refer to the assignee.
+
+17.12 No Partnership or Joint Venture. Nothing in this License shall be
+     construed as creating a partnership, joint venture, agency, or employment
+     relationship between the parties. Neither party shall have the authority
+     to bind the other party or to act on behalf of the other party, except as
+     expressly authorized in writing.
+
+17.13 Construction. This License shall be construed without regard to any
+     presumption or rule requiring construction against the party drafting the
+     instrument. The parties acknowledge that each party has had the
+     opportunity to review and negotiate this License and that any rule of
+     construction against the drafter shall not apply.
+
+17.14 Electronic Signatures. Any Commercial Authorization, notice, or other
+     communication required or permitted to be in writing under this License
+     may be executed or delivered by electronic signature or electronic means,
+     including but not limited to PDF documents with electronic signatures,
+     DocuSign, Adobe Sign, or any other recognized electronic signature
+     platform. Any such electronic signature shall have the same legal effect
+     as a handwritten signature.
+
+17.15 Counterparts. Any Commercial Authorization may be executed in one or more
+     counterparts, each of which shall be deemed an original, but all of which
+     together shall constitute one and the same instrument. Execution and
+     delivery of counterparts by electronic means (including by PDF or
+     electronic signature platform) shall be deemed to constitute valid
+     execution and delivery.
+
+17.16 Limitation Period. Any claim or cause of action arising out of or
+     relating to this License or the Software must be commenced within two (2)
+     years after the claim or cause of action accrues, except where applicable
+     law provides for a longer limitation period that cannot be waived by
+     contract.
+
+17.17 Compliance with Laws. You must comply with all applicable laws, rules,
+     and regulations in connection with your use of the Software and its
+     Derivative Works, including but not limited to anti-corruption laws,
+     anti-money laundering laws, anti-terrorism laws, consumer protection laws,
+     intellectual property laws, data protection laws, AI regulations, and
+     export control laws.
 
 ===============================================================================
 APPENDIX A — COMMERCIAL AUTHORIZATION APPLICATION AND CONTACT
@@ -517,8 +1193,8 @@ of this License, please contact the Licensor in writing at:
     Email: 2671369836@qq.com
 
 When submitting a Commercial Authorization application, please include all
-information required under Section 5.2. Please use the following email subject
-line format:
+information required under Section 5.2. A template is provided in Appendix B.
+Please use the following email subject line format:
 
     [Commercial Authorization Application] <Your Legal Name> — <Brief
     Description of Intended Use>
@@ -530,6 +1206,303 @@ response.
 For urgent enforcement matters (including suspected unauthorized Commercial
 Use), please mark your email as "URGENT — License Enforcement" in the subject
 line.
+
+For security vulnerability reports, please follow the process set forth in
+Appendix D and use the subject line format:
+
+    [Security Vulnerability Report] <Brief Description> — <Date>
+
+===============================================================================
+APPENDIX B — COMMERCIAL AUTHORIZATION APPLICATION TEMPLATE
+===============================================================================
+
+Please copy and complete this template when applying for a Commercial
+Authorization. Submit the completed application to the email address in
+Appendix A.
+
+-------------------------------------------------------------------------------
+SECTION 1 — APPLICANT INFORMATION
+-------------------------------------------------------------------------------
+
+1.1 Legal Name of Applicant:
+1.2 Registration Number (e.g., unified social credit code or equivalent):
+1.3 Country of Incorporation / Registration:
+1.4 Principal Place of Business:
+1.5 Mailing Address:
+1.6 Primary Contact Name:
+1.7 Primary Contact Title:
+1.8 Primary Contact Email:
+1.9 Primary Contact Phone:
+1.10 Website:
+
+-------------------------------------------------------------------------------
+SECTION 2 — AFFILIATES
+-------------------------------------------------------------------------------
+
+2.1 Will any Affiliates of the Applicant use the Software under this
+    Commercial Authorization?  [ ] Yes  [ ] No
+2.2 If yes, list all Affiliates (legal name, country, relationship):
+
+-------------------------------------------------------------------------------
+SECTION 3 — SOFTWARE VERSION
+-------------------------------------------------------------------------------
+
+3.1 Specific version(s) of the Software you intend to use:
+3.2 Will you use the Software as-is, or will you create Derivative Works?
+    [ ] As-is  [ ] Derivative Works (describe below)
+3.3 If Derivative Works, describe the nature and scope of modifications:
+
+-------------------------------------------------------------------------------
+SECTION 4 — INTENDED COMMERCIAL USE
+-------------------------------------------------------------------------------
+
+4.1 Type of Commercial Use (check all that apply):
+    [ ] Internal business operations
+    [ ] Redistribution of the Software or Derivative Works
+    [ ] SaaS / PaaS / IaaS hosting
+    [ ] Embedding in hardware
+    [ ] Paid services / consulting / custom development
+    [ ] Application store / marketplace distribution
+    [ ] Content generation for monetization
+    [ ] Other (describe):
+
+4.2 Detailed description of intended Commercial Use:
+
+4.3 Business scenario and target market:
+
+4.4 Estimated number of end users:
+
+4.5 Estimated deployment scale (number of instances / servers / devices):
+
+4.6 Will you distribute any Derivative Work in closed-source or proprietary
+    form?  [ ] Yes  [ ] No
+4.7 If yes, describe the proposed distribution model:
+
+-------------------------------------------------------------------------------
+SECTION 5 — DATA AND SECURITY
+-------------------------------------------------------------------------------
+
+5.1 Types of data expected to be processed through the Software:
+    [ ] Personal data  [ ] Sensitive personal data  [ ] Business data
+    [ ] Public data  [ ] Other (describe):
+5.2 Estimated volume of data processed per month:
+5.3 Will data be transferred across national borders?  [ ] Yes  [ ] No
+5.4 If yes, describe the cross-border transfer mechanism and legal basis:
+5.5 Describe the security measures you have implemented or will implement to
+    protect the Software and User Data (access controls, encryption,
+    vulnerability scanning, incident response, etc.):
+
+-------------------------------------------------------------------------------
+SECTION 6 — AI COMPLIANCE
+-------------------------------------------------------------------------------
+
+6.1 Will you deploy or operate any AI model or AI system through the Software?
+    [ ] Yes  [ ] No
+6.2 If yes, describe the AI system(s) and their intended use:
+6.3 Will the AI system(s) make decisions with material real-world effects?
+    [ ] Yes  [ ] No
+6.4 If yes, describe the human oversight mechanisms:
+6.5 Describe the content moderation and safety filtering mechanisms:
+
+-------------------------------------------------------------------------------
+SECTION 7 — EXPORT CONTROL
+-------------------------------------------------------------------------------
+
+7.1 Will the Software be exported, re-exported, or transferred internationally?
+    [ ] Yes  [ ] No
+7.2 If yes, list the destination countries/regions:
+7.3 Confirm that you will comply with all applicable export control and
+    sanctions laws:  [ ] Yes  [ ] No
+
+-------------------------------------------------------------------------------
+SECTION 8 — ADDITIONAL INFORMATION
+-------------------------------------------------------------------------------
+
+8.1 Any additional information you wish to provide:
+
+8.2 Any specific terms or conditions you are requesting:
+
+-------------------------------------------------------------------------------
+SECTION 9 — DECLARATION
+-------------------------------------------------------------------------------
+
+I, the undersigned, declare that:
+(a) I am authorized to submit this application on behalf of the Applicant;
+(b) the information provided in this application is true, accurate, and
+    complete to the best of my knowledge;
+(c) I will immediately notify the Licensor of any material change in the
+    information provided;
+(d) I will use the Software strictly in accordance with the Kevrai Omni
+    Community License v2.0 and any Commercial Authorization granted.
+
+Signature: ___________________________  Date: _______________
+Name: ___________________________
+Title: ___________________________
+Company: ___________________________
+
+===============================================================================
+APPENDIX C — PROHIBITED USES LIST
+===============================================================================
+
+This Appendix C sets forth a non-exhaustive list of Prohibited Uses under
+Article 7. The Licensor may update this list from time to time by posting an
+updated version in the Software's official repository.
+
+C.1 Illegal Content and Activities
+    You may not use the Software or its Derivative Works to:
+    (a) generate, distribute, or facilitate any content that is illegal under
+        applicable law, including but not limited to child sexual abuse material
+        (CSAM), bestiality, or non-consensual sexual content;
+    (b) generate, distribute, or facilitate content that incites violence,
+        terrorism, or hatred against any group based on race, ethnicity,
+        national origin, religion, gender, sexual orientation, disability, or
+        any other protected characteristic;
+    (c) generate, distribute, or facilitate content that constitutes harassment,
+        bullying, stalking, or doxxing of any individual;
+    (d) generate, distribute, or facilitate defamatory, libelous, or slanderous
+        content;
+    (e) generate, distribute, or facilitate content that infringes any third
+        party's intellectual property rights, including but not limited to
+        copyright, trademark, patent, or trade secret rights;
+    (f) facilitate any illegal activity, including but not limited to fraud,
+        money laundering, drug trafficking, weapons manufacturing, or human
+        trafficking.
+
+C.2 Harmful AI Outputs
+    You may not use the Software or its Derivative Works to:
+    (a) generate deepfakes or synthetic media that depicts real individuals
+        without their consent, including but not limited to non-consensual
+        intimate imagery (NCII), fake speeches, or fake actions;
+    (b) generate content designed to spread disinformation, misinformation, or
+        manipulate elections, public opinion, or financial markets;
+    (c) generate content that provides instructions for causing harm to oneself
+        or others, including but not limited to instructions for suicide,
+        self-harm, violence, or the manufacture of weapons, explosives, or
+        dangerous substances;
+    (d) generate content that violates the privacy rights of any individual,
+        including but not limited to generating personal information about
+        identifiable individuals without their consent;
+    (e) deploy AI systems that make autonomous decisions with material real-world
+        effects without adequate human oversight, including but not limited to
+        decisions regarding employment, credit, insurance, housing, healthcare,
+        education, or access to essential services;
+    (f) use AI systems for mass surveillance, social scoring, or predictive
+        policing in a manner that violates applicable law or human rights.
+
+C.3 Security Abuse
+    You may not use the Software or its Derivative Works to:
+    (a) develop, distribute, or facilitate malware, ransomware, spyware,
+        trojans, worms, or any other malicious software;
+    (b) conduct or facilitate unauthorized access to computer systems, networks,
+        or data (hacking), including but not limited to brute-force attacks,
+        credential stuffing, or exploitation of security vulnerabilities;
+    (c) conduct or facilitate denial-of-service (DoS) or distributed
+        denial-of-service (DDoS) attacks;
+    (d) circumvent, disable, or interfere with any security features, content
+        filters, or access controls implemented in the Software or any AI model
+        accessed through the Software;
+    (e) attempt to jailbreak, prompt-inject, or otherwise manipulate any AI
+        model to produce harmful, illegal, or prohibited content;
+    (f) extract, copy, or reverse engineer any AI model weights or proprietary
+        algorithms accessed through the Software, except as expressly permitted
+        by the applicable upstream license.
+
+C.4 Commercial Misuse
+    You may not use the Software or its Derivative Works to:
+    (a) engage in any Commercial Use without a valid Commercial Authorization
+        issued under Article 5;
+    (b) misrepresent the source, origin, or capabilities of the Software or any
+        AI model accessed through the Software;
+    (c) use the Software or any AI model accessed through the Software to
+        compete with the Licensor's own commercial products or services, except
+        as expressly authorized by a valid Commercial Authorization;
+    (d) remove, alter, or obscure any attribution, copyright notice, license
+        information, or trademark notices contained in the Software;
+    (e) use the name "Kevrai", "Kevrai Omni", or any variant thereof in a
+        manner that implies or suggests affiliation, sponsorship, endorsement, or
+        partnership with or by the Licensor, without the prior written consent of
+        the Licensor.
+
+C.5 Data Misuse
+    You may not use the Software or its Derivative Works to:
+    (a) process personal data or sensitive personal data in violation of
+        applicable data protection laws and regulations;
+    (b) transfer personal data across national borders in violation of applicable
+        cross-border data transfer laws;
+    (c) collect, process, or store personal data without providing required
+        notices or obtaining required consents;
+    (d) use the Software to scrape, harvest, or collect personal data from
+        websites or online services in violation of applicable law or the terms
+        of service of such websites or services;
+    (e) retain User Data longer than necessary for the purpose for which it was
+        collected, or after termination of this License, except as required by
+        applicable law.
+
+===============================================================================
+APPENDIX D — SECURITY VULNERABILITY REPORTING POLICY
+===============================================================================
+
+D.1 Purpose. This Appendix D sets forth the process for reporting security
+    vulnerabilities in the Software and the terms under which the Licensor
+    will handle such reports. This policy is intended to encourage good-faith
+    security research and to ensure that vulnerabilities are reported and
+    remediated in a coordinated and responsible manner.
+
+D.2 Reporting Channel. Security vulnerabilities should be reported to the
+    Licensor by email at the address specified in Appendix A, with the subject
+    line format:
+
+        [Security Vulnerability Report] <Brief Description> — <Date>
+
+    The report should include, at a minimum:
+    (a) a detailed description of the vulnerability, including the affected
+        component(s), version(s), and configuration(s);
+    (b) steps to reproduce the vulnerability, including any proof-of-concept
+        code or exploit;
+    (c) an assessment of the potential impact and severity of the
+        vulnerability;
+    (d) any suggested remediation or mitigation measures;
+    (e) the reporter's name and contact information (unless the reporter wishes
+        to remain anonymous).
+
+D.3 Acknowledgment and Response. The Licensor acknowledges receipt of all
+    vulnerability reports within five (5) business days. The Licensor uses
+    reasonable endeavors to:
+    (a) validate and assess the reported vulnerability within fifteen (15)
+        business days of receipt;
+    (b) provide the reporter with an initial assessment of the vulnerability
+        and an estimated timeline for remediation;
+    (c) keep the reporter informed of the remediation progress;
+    (d) acknowledge the reporter's contribution in any security advisory or
+        release notes, if the reporter consents to such acknowledgment.
+
+D.4 Coordinated Disclosure. The Licensor requests that security researchers
+    allow a minimum of ninety (90) days from the date of reporting a
+    vulnerability before disclosing it publicly. The Licensor may request an
+    extension of the disclosure period if additional time is needed to
+    remediate the vulnerability, and the Licensor will keep the researcher
+    informed of the remediation progress. The Licensor may agree to a shorter
+    disclosure period in writing if the vulnerability is being actively
+    exploited in the wild or if there is an urgent need for public disclosure.
+
+D.5 Safe Harbor. Good-faith security researchers who comply with this Appendix
+    D and Article 10 (Security Vulnerability Disclosure) are protected from
+    legal action by the Licensor as set forth in Section 10.1. The safe harbor
+    applies only to acts undertaken in compliance with this Appendix D and
+    Article 10.
+
+D.6 Bug Bounty. The Licensor may, from time to time, operate a bug bounty
+    program that provides rewards for valid vulnerability reports. The terms
+    and conditions of any such bug bounty program shall be published in the
+    Software's official repository. In the event of any conflict between a bug
+    bounty program and this Appendix D, the bug bounty program terms shall
+    prevail solely with respect to the specific rewards and procedures set forth
+    in the bug bounty program.
+
+D.7 No Warranty. The Licensor makes no representation or warranty regarding the
+    security of the Software or the absence of security vulnerabilities. The
+    Software is provided "AS IS" as set forth in Article 14 (Disclaimer of
+    Warranty).
 
 ===============================================================================
 END OF LICENSE

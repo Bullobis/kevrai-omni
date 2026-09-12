@@ -2,7 +2,7 @@
 
 This file lists every third-party model, engine, and asset that Kevrai Omni can
 download or bundle. **Each row's license governs that component, NOT the
-Kevrai Omni Community License v1.0 that covers Kevrai Omni itself** (see `LICENSE`).
+Kevrai Omni Community License v2.0 that covers Kevrai Omni itself** (see `LICENSE`).
 
 When you redistribute Kevrai Omni, you do NOT need to redistribute the
 third-party weights — Kevrai Omni downloads them on demand from each upstream
@@ -121,7 +121,7 @@ ensuring they have the right to use and redistribute whatever they import.
 
 ## A note on commercial use
 
-Kevrai Omni itself is under the **Kevrai Omni Community License v1.0** (English, see `LICENSE`): commercial use is allowed, but **any commercial use requires prior written Commercial Authorization from the Licensor** (apply via 2671369836@qq.com). The Licensor expressly reserves the right to issue cease-and-desist letters, lawyer's letters (律师函), and pursue injunctive relief, damages, and account of profits for unauthorized commercial use. However, many of the third-party models and engines it can install are themselves under non-commercial licenses. Before using any model/engine to produce content you intend to commercialise, check the row above — anything marked `**NO**` in "Commercial use" requires purchasing a separate commercial license from the upstream rights-holder, in addition to any authorization required for Kevrai Omni itself.
+Kevrai Omni itself is under the **Kevrai Omni Community License v2.0** (English, see `LICENSE`): commercial use is allowed, but **any commercial use requires prior written Commercial Authorization from the Licensor** (apply via 2671369836@qq.com). The Licensor expressly reserves the right to issue cease-and-desist letters, lawyer's letters (律师函), and pursue injunctive relief, damages, and account of profits for unauthorized commercial use. However, many of the third-party models and engines it can install are themselves under non-commercial licenses. Before using any model/engine to produce content you intend to commercialise, check the row above — anything marked `**NO**` in "Commercial use" requires purchasing a separate commercial license from the upstream rights-holder, in addition to any authorization required for Kevrai Omni itself.
 
 This file is updated as part of each Kevrai Omni release. If you spot an
 inaccuracy or a new model whose license is missing, please open an issue at
