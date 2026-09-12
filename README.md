@@ -15,7 +15,7 @@
 
 > 点击播放 [docs/kevrai-omni-promo.mp4](docs/kevrai-omni-promo.mp4)。视频涵盖：模型市场、硬件检测、MiniMax-Music3 音乐生成、LTX-2.5 视频生成、Kevrai Agent 智能助手、本地隐私。
 
-![License: Kevrai Omni Community License v2.0](https://img.shields.io/badge/License-Kevrai%20Community%20v2.0-orange)
+![License: Kevrai Omni Community License v2.1](https://img.shields.io/badge/License-Kevrai%20Community%20v2.1-orange)
 ![Version](https://img.shields.io/badge/version-2.6.0-orange)
 ![Tests](https://img.shields.io/badge/tests-372%20passed-brightgreen)
 
@@ -281,10 +281,10 @@ bash scripts/release.sh
 
 ## License
 
-**Kevrai Omni itself (source code, documentation, and build artifacts) is licensed under the [Kevrai Omni Community License v2.0](./LICENSE) — a source-available license, full text in English.**
+**Kevrai Omni itself (source code, documentation, and build artifacts) is licensed under the [Kevrai Omni Community License v2.1](./LICENSE) — a source-available license, full text in English.**
 
 > Source code is public and free for non-commercial use, modification, and distribution. **Commercial use is permitted but requires prior written Commercial Authorization from the Licensor.** Derivative works must be distributed under the same license. To apply for commercial authorization, contact: **2671369836@qq.com**. The Licensor expressly reserves the right to issue cease-and-desist / lawyer's letters (律师函) and pursue legal remedies for unauthorized commercial use.
 >
-> **v2.0 (2026-09):** The license has been comprehensively expanded to 17 articles + 4 appendices, adding: data privacy & security (PIPL/GDPR compliance, 72-hour incident notification), responsible AI use & prohibited uses (EU AI Act / China Generative AI Measures compliance), export control & sanctions, contributor license agreement, security vulnerability safe harbor, commercial user indemnification, strengthened Network Use (SaaS) source disclosure, and liquidated damages for unauthorized commercial use. See `RELEASE_NOTES_LICENSE_v2.0.md` for the full changelog.
+> **v2.1 (2026-09):** The license now spans 19 articles + 6 appendices. v2.0 added data privacy & security (PIPL/GDPR, 72-hour incident notification), responsible AI use & prohibited uses (EU AI Act / China Generative AI Measures), export control & sanctions, contributor license agreement, security-vulnerability safe harbor, commercial-user indemnification, Network Use (SaaS) source disclosure, and liquidated damages. **v2.1 further adds:** anti-evasion / license-integrity rules (no circumvention via affiliates, cloud providers, restructuring, threshold-splitting), AI training/distillation & non-compete restrictions, a precise copyleft boundary (linking/IPC/containers) with an explanatory guide, fork-renaming rules, "Effective Source Code" standard, patent non-assertion covenant, commercial insurance, government-use rules, AI-content labeling/provenance, tiered dispute resolution (negotiation → mediation → PRC court; optional CIETAC arbitration for cross-border), PRC statutory/punitive damages and behavior/evidence/property preservation, plus a commercial-user compliance checklist. See `RELEASE_NOTES_LICENSE_v2.1.md`.
 
 Third-party models, engines, and weights (listed in `catalog/models.json`) are each governed by their own upstream licenses (Apache-2.0, Llama-3, OpenRAIL, Tencent Hunyuan Community, LTX-Open, MusicGen CC BY-NC 4.0, MiniMax-Music3 Community License, etc.), independent of this project's own license. See `NOTICE.md` and `LICENSE` for details.
