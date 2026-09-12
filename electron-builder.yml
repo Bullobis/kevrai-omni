@@ -1,7 +1,10 @@
 appId: io.github.kevrai.studio
 productName: Kevrai Omni
 copyright: Copyright © 2026 Kevrai Omni contributors. Licensed under Kevrai Omni Community License v2.1 (commercial use requires prior written authorization).
-artifactName: ${productName}-${version}-${arch}.${ext}
+# artifactName 硬编码无空格品牌名，避免 GitHub 把空格转成点导致
+# latest.yml 中的 URL 与实际资产名不匹配（electron-updater 会 404）。
+# productName 仍为 "Kevrai Omni"，仅用于窗口标题/开始菜单等显示。
+artifactName: Kevrai-Omni-${version}-${arch}.${ext}
 files:
   - "electron/**/*"
   - "renderer/**/*"
@@ -18,14 +21,15 @@ extraResources:
     filter: ["**/*.py", "**/*.toml", "**/*.txt"]
 
 # ---------- Windows: installer (NSIS) + portable zip, both published ----------
+# Per-target artifactName is NOT supported by electron-builder 25 (target item
+# only accepts {target, arch}); the top-level artifactName template applies to
+# both, producing Kevrai Omni-<version>-x64.exe and -x64.zip.
 win:
   target:
     - target: nsis
       arch: [x64]
-      artifactName: ${productName}-Setup-${version}.${ext}
     - target: zip
       arch: [x64]
-      artifactName: ${productName}-${version}-win-${arch}.${ext}
   signtoolOptions:
     sign: null
 
