@@ -61,4 +61,4 @@ Windows 通过「设置 → 应用」卸载；默认保留 `AppData/KevraiOmni/`
 
 ## License
 
-Kevrai Omni Community License v2.0 (English, see `LICENSE`) — source code is public and free for non-commercial use, modification, and distribution. **Commercial use is permitted but requires prior written Commercial Authorization from the Licensor** (apply: 2671369836@qq.com). Unauthorized commercial use may result in cease-and-desist / lawyer's letters and legal action. Derivative works must be open-sourced under the same license. Third-party models/engines/weights are governed by their own upstream licenses.
+Kevrai Omni Community License v2.1 (English, see `LICENSE`) — source code is public and free for non-commercial use, modification, and distribution. **Commercial use is permitted but requires prior written Commercial Authorization from the Licensor** (apply: 2671369836@qq.com). Unauthorized commercial use may result in cease-and-desist / lawyer's letters and legal action. Derivative works must be open-sourced under the same license. Third-party models/engines/weights are governed by their own upstream licenses.
