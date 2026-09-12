@@ -25,3 +25,9 @@ docs/promo_assets/
 # crash dumps
 core.*
 core
+
+# 签名材料（私钥/证书/密钥环）—— 严禁提交
+.signing/
+*.key
+*.p12
+*.pfx
