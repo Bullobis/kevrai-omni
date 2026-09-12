@@ -155,8 +155,8 @@ else
   cat > "${NOTES_FILE}" <<EOF
 # Kevrai Omni ${VERSION}
 
-Windows: installer (\`Kevrai Omni-Setup-${VERSION}.exe\`) + portable zip
-(\`Kevrai Omni-${VERSION}-win-x64.zip\`). Linux: AppImage + deb.
+Windows: installer (\`Kevrai-Omni-${VERSION}-x64.exe\`) + portable zip
+(\`Kevrai-Omni-${VERSION}-x64.zip\`). Linux: AppImage + deb.
 Auto-update metadata (\`latest.yml\` / \`latest-linux.yml\`) is included so
 the in-app updater can discover and verify this release.
 
@@ -168,8 +168,8 @@ the in-app updater can discover and verify this release.
 - Lazy installer: the installer itself is small; engines/models download on first use.
 
 ## Quick start
-1. Windows: run \`Kevrai Omni-Setup-${VERSION}.exe\` (installer) or unzip
-   \`Kevrai Omni-${VERSION}-win-x64.zip\` (portable).
+1. Windows: run \`Kevrai-Omni-${VERSION}-x64.exe\` (installer) or unzip
+   \`Kevrai-Omni-${VERSION}-x64.zip\` (portable).
 2. Launch from desktop shortcut (installer) or the unzipped folder (portable).
 3. Open "AI 引擎" tab → install \`llama.cpp\` (first time).
 4. Open "模型市场" → pick a model → download, or use GGUF 全量化.

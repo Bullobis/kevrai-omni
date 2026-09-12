@@ -3,9 +3,9 @@
 # machine with Node + Python, or on Linux via Wine).
 #
 # Output:
-#   build/output/Kevrai Omni-Setup-<version>.exe   (NSIS installer)
-#   build/output/Kevrai Omni-<version>-win-x64.zip  (portable archive)
-#   build/output/latest.yml                           (auto-update metadata)
+#   build/output/Kevrai-Omni-<version>-x64.exe   (NSIS installer)
+#   build/output/Kevrai-Omni-<version>-x64.zip   (portable archive)
+#   build/output/latest.yml                        (auto-update metadata)
 #
 # This script verifies every step and aborts non-zero on the first failure:
 #   1. Tooling is present (node, npm, python)
@@ -20,8 +20,8 @@ cd "$(dirname "$0")/.."
 
 INDEX="${KEVRAI_PIP_INDEX:-https://mirrors.tencent.com/pypi/simple/}"
 VERSION="$(node -p "require('./package.json').version" 2>/dev/null || echo 2.2.0)"
-EXPECTED_EXE="build/output/Kevrai Omni-Setup-${VERSION}.exe"
-EXPECTED_ZIP="build/output/Kevrai Omni-${VERSION}-win-x64.zip"
+EXPECTED_EXE="build/output/Kevrai-Omni-${VERSION}-x64.exe"
+EXPECTED_ZIP="build/output/Kevrai-Omni-${VERSION}-x64.zip"
 
 step() { printf "\n\033[36m==>\033[0m %s\n" "$1"; }
 fail() { printf "\n\033[31m==>\033[0m %s\n" "$1" >&2; exit 1; }
