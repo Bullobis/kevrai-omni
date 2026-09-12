@@ -1,5 +1,5 @@
 ﻿#!/usr/bin/env bash
-# Kevrai Studio — release runbook.
+# Kevrai Omni — release runbook.
 #
 # Pre-flight checks (all must pass):
 #   * `gh` CLI installed and authenticated
@@ -18,7 +18,7 @@ cd "$(dirname "$0")/.."
 
 INDEX="${KEVRAI_PIP_INDEX:-https://mirrors.tencent.com/pypi/simple/}"
 VERSION="$(node -p "require('./package.json').version" 2>/dev/null || echo 1.0.0)"
-REPO="${REPO:-Bullobis/kevrai-studio}"
+REPO="${REPO:-Bullobis/kevrai-omni}"
 TAG="${TAG:-v${VERSION}}"
 
 DRY_RUN=0
@@ -119,7 +119,18 @@ fi
 step "6. Collect artifacts"
 # ----------------------------------------------------------------------
 shopt -s nullglob
-ARTIFACTS=( build/output/*.exe build/output/*.AppImage build/output/*.deb )
+# Installers + portable archives + auto-update metadata (latest*.yml) +
+# differential-update blockmaps. latest.yml / latest-linux.yml are REQUIRED
+# for electron-updater to discover and verify updates.
+ARTIFACTS=(
+  build/output/*.exe
+  build/output/*.zip
+  build/output/*.AppImage
+  build/output/*.deb
+  build/output/*.dmg
+  build/output/latest*.yml
+  build/output/*.blockmap
+)
 if [ "${#ARTIFACTS[@]}" -eq 0 ]; then
   fail "no artifacts found in build/output/"
 fi
@@ -134,30 +145,38 @@ step "7. Generate release notes"
 # ----------------------------------------------------------------------
 NOTES_FILE="build/output/RELEASE_NOTES.md"
 mkdir -p "$(dirname "${NOTES_FILE}")"
-cat > "${NOTES_FILE}" <<EOF
-# Kevrai Studio ${VERSION}
+# Prefer the project's curated release notes for this version; fall back to a
+# generic generated note so the script never ships empty release text.
+PROJECT_NOTES="RELEASE_NOTES_${VERSION}.md"
+if [ -f "${PROJECT_NOTES}" ]; then
+  cp "${PROJECT_NOTES}" "${NOTES_FILE}"
+  info "using ${PROJECT_NOTES} as release notes"
+else
+  cat > "${NOTES_FILE}" <<EOF
+# Kevrai Omni ${VERSION}
 
-One installer, no bundled engines, full desktop shortcut on Windows.
+Windows: installer (\`Kevrai Omni-Setup-${VERSION}.exe\`) + portable zip
+(\`Kevrai Omni-${VERSION}-win-x64.zip\`). Linux: AppImage + deb.
+Auto-update metadata (\`latest.yml\` / \`latest-linux.yml\`) is included so
+the in-app updater can discover and verify this release.
 
 ## Highlights
-- Model market: 60+ curated open models (LLM / TTS / Image / Video / 3D / Audio / SR).
+- Model market: 120+ curated open models (LLM / TTS / Image / Video / 3D / Audio / SR).
 - Engine market: on-demand downloads (llama.cpp, MNN, ONNX Runtime, vLLM, …).
-- Local model import (folder or single file).
-- GGUF repo enumeration (all quantizations of a repo are listable).
-- Lazy installer: the .exe itself is small; engines download on first use.
-
-## Security note
-This release ships with a strict allowlist of model hosts (\`huggingface.co\`)
-and engine hosts (\`github.com\` / \`pypi.org\` / \`mirrors.tencent.com\`).
-The phishing domain \`hf-cdn.sufy.com\` is explicitly blocked.
+- Kevrai Agent: pluggable skill packs + short-drama studio.
+- In-app auto-update (electron-updater, GitHub releases).
+- Lazy installer: the installer itself is small; engines/models download on first use.
 
 ## Quick start
-1. Install \`Kevrai Studio-Setup-${VERSION}.exe\`.
-2. Launch from desktop shortcut.
+1. Windows: run \`Kevrai Omni-Setup-${VERSION}.exe\` (installer) or unzip
+   \`Kevrai Omni-${VERSION}-win-x64.zip\` (portable).
+2. Launch from desktop shortcut (installer) or the unzipped folder (portable).
 3. Open "AI 引擎" tab → install \`llama.cpp\` (first time).
-4. Open "模型市场" → pick a model → HF 主页 to download, or use GGUF 全量化.
+4. Open "模型市场" → pick a model → download, or use GGUF 全量化.
 EOF
-info "release notes written to ${NOTES_FILE}"
+  info "generated fallback release notes (${PROJECT_NOTES} not found)"
+fi
+info "release notes: ${NOTES_FILE}"
 
 # ----------------------------------------------------------------------
 step "8. ${DRY_RUN:+dry-run }Create the release"
@@ -169,7 +188,7 @@ if [ "${DRY_RUN}" -eq 1 ]; then
     echo "      ${a} \\"
   done
   echo "      --repo ${REPO} \\"
-  echo "      --title 'Kevrai Studio ${VERSION}' \\"
+  echo "      --title 'Kevrai Omni ${VERSION}' \\"
   echo "      --notes-file ${NOTES_FILE}"
   echo ""
   echo "✅ Dry-run complete. No release was created."
@@ -179,7 +198,7 @@ fi
 GH_TOKEN="${GITHUB_TOKEN}" gh release create "${TAG}" \
   "${ARTIFACTS[@]}" \
   --repo "${REPO}" \
-  --title "Kevrai Studio ${VERSION}" \
+  --title "Kevrai Omni ${VERSION}" \
   --notes-file "${NOTES_FILE}" \
   || fail "gh release create failed"
 

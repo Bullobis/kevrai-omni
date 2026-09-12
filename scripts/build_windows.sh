@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Kevrai Studio — Windows installer build (run this on a Windows machine with
-# Node + Python, or on Linux via Wine).
+# Kevrai Omni — Windows installer + portable zip build (run this on a Windows
+# machine with Node + Python, or on Linux via Wine).
 #
 # Output:
-#   build/output/Kevrai Studio Setup-1.0.0.exe  (NSIS, desktop shortcut)
+#   build/output/Kevrai Omni-Setup-<version>.exe   (NSIS installer)
+#   build/output/Kevrai Omni-<version>-win-x64.zip  (portable archive)
+#   build/output/latest.yml                           (auto-update metadata)
 #
 # This script verifies every step and aborts non-zero on the first failure:
 #   1. Tooling is present (node, npm, python)
@@ -18,7 +20,8 @@ cd "$(dirname "$0")/.."
 
 INDEX="${KEVRAI_PIP_INDEX:-https://mirrors.tencent.com/pypi/simple/}"
 VERSION="$(node -p "require('./package.json').version" 2>/dev/null || echo 2.2.0)"
-EXPECTED_EXE="build/output/Kevrai Studio Setup-${VERSION}.exe"
+EXPECTED_EXE="build/output/Kevrai Omni-Setup-${VERSION}.exe"
+EXPECTED_ZIP="build/output/Kevrai Omni-${VERSION}-win-x64.zip"
 
 step() { printf "\n\033[36m==>\033[0m %s\n" "$1"; }
 fail() { printf "\n\033[31m==>\033[0m %s\n" "$1" >&2; exit 1; }
@@ -107,27 +110,46 @@ npx --yes electron-builder --win --x64 --publish never \
   || fail "electron-builder failed"
 
 # ----------------------------------------------------------------------
-step "5. Verify the resulting .exe"
+step "5. Verify the resulting artifacts (installer + portable zip + latest.yml)"
 # ----------------------------------------------------------------------
 if [ ! -f "${EXPECTED_EXE}" ]; then
   # Tolerate alternate filename conventions
   CANDIDATE="$(ls -1 build/output/*.exe 2>/dev/null | head -1 || true)"
   if [ -z "${CANDIDATE}" ]; then
-    fail "no .exe produced at ${EXPECTED_EXE}"
+    fail "no .exe installer produced at ${EXPECTED_EXE}"
   fi
   EXPECTED_EXE="${CANDIDATE}"
 fi
 
-SIZE_BYTES="$(stat -c %s "${EXPECTED_EXE}" 2>/dev/null || stat -f %z "${EXPECTED_EXE}")"
-SIZE_MB="$(awk -v b="${SIZE_BYTES}" 'BEGIN { printf "%.1f", b/1024/1024 }')"
-if [ "${SIZE_BYTES}" -lt 1048576 ]; then
-  fail "executable too small (${SIZE_BYTES} bytes) — likely truncated build"
+if [ ! -f "${EXPECTED_ZIP}" ]; then
+  CANDIDATE_ZIP="$(ls -1 build/output/*.zip 2>/dev/null | head -1 || true)"
+  if [ -z "${CANDIDATE_ZIP}" ]; then
+    fail "no portable .zip produced at ${EXPECTED_ZIP} (zip target missing?)"
+  fi
+  EXPECTED_ZIP="${CANDIDATE_ZIP}"
 fi
 
-SHA256="$(sha256sum "${EXPECTED_EXE}" 2>/dev/null | awk '{print $1}' || shasum -a 256 "${EXPECTED_EXE}" | awk '{print $1}')"
+# latest.yml is required by electron-updater for in-app auto-update.
+if [ ! -f build/output/latest.yml ]; then
+  fail "build/output/latest.yml missing — auto-update will not work (publish config?)"
+fi
+
+verify_artifact() {
+  local f="$1" label="$2"
+  local sb smb sha
+  sb="$(stat -c %s "${f}" 2>/dev/null || stat -f %z "${f}")"
+  smb="$(awk -v b="${sb}" 'BEGIN { printf "%.1f", b/1024/1024 }')"
+  if [ "${sb}" -lt 1048576 ]; then
+    fail "${label} too small (${sb} bytes) — likely truncated build"
+  fi
+  sha="$(sha256sum "${f}" 2>/dev/null | awk '{print $1}' || shasum -a 256 "${f}" | awk '{print $1}')"
+  echo "   ${label}: ${f}"
+  echo "     size:   ${smb} MiB (${sb} bytes)"
+  echo "     sha256: ${sha}"
+}
 
 echo ""
 echo "✅ Build succeeded"
-echo "   file:   ${EXPECTED_EXE}"
-echo "   size:   ${SIZE_MB} MiB (${SIZE_BYTES} bytes)"
-echo "   sha256: ${SHA256}"
+verify_artifact "${EXPECTED_EXE}" "installer"
+verify_artifact "${EXPECTED_ZIP}" "portable zip"
+echo "   auto-update metadata: build/output/latest.yml"

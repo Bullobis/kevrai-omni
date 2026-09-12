@@ -76,7 +76,12 @@ const api = {
   getAppVersion: () => invoke("kevrai:check-updates")
     .then((r) => r && r.currentVersion ? r.currentVersion : "")
     .catch(() => ""),
-  checkUpdates:  () => invoke("kevrai:check-updates"),
+  checkUpdates:     () => invoke("kevrai:check-updates"),
+  downloadUpdate:   () => invoke("kevrai:download-update"),
+  installUpdate:    () => invoke("kevrai:install-update"),
+  onUpdateProgress: (cb) => listen("kevrai:update-progress", cb),
+  onUpdateDownloaded:(cb) => listen("kevrai:update-downloaded", cb),
+  onUpdateError:    (cb) => listen("kevrai:update-error", cb),
 
   // ----- Settings -----
   getSettings:   () => invoke("kevrai:get-settings"),

@@ -569,6 +569,117 @@ function safePathWithin(base, candidate) {
 }
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Auto-update (electron-updater ↔ GitHub releases)
+// ---------------------------------------------------------------------------
+// In packaged builds electron-builder writes resources/app-update.yml from
+// the `publish` block in electron-builder.yml; electron-updater then reads
+// latest.yml / latest-linux.yml from the matching GitHub release. In dev
+// (unpackaged) there is no app-update.yml, so we short-circuit with a `dev`
+// flag instead of throwing. Every failure is returned as {error} — never
+// rejected — so the renderer can show a friendly toast. Progress and the
+// "downloaded" event are pushed to the renderer via notifyRenderer.
+
+let _auInstance = null;
+let _auChecking = false;
+let _auPending = null; // {version, releaseNotes}
+
+function getAutoUpdater() {
+  if (_auInstance) return _auInstance;
+  if (!app.isPackaged) return null; // dev: no app-update.yml
+  try {
+    const { autoUpdater } = require("electron-updater");
+    autoUpdater.autoDownload = false;        // user confirms before downloading
+    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.on("download-progress", (p) => {
+      notifyRenderer("kevrai:update-progress", {
+        percent: Math.round(p.percent || 0),
+        bytesPerSecond: p.bytesPerSecond || 0,
+        transferred: p.transferred || 0,
+        total: p.total || 0,
+      });
+    });
+    autoUpdater.on("update-downloaded", (info) => {
+      notifyRenderer("kevrai:update-downloaded", {
+        version: info && info.version ? info.version : (_auPending && _auPending.version),
+      });
+    });
+    autoUpdater.on("error", (e) => {
+      notifyRenderer("kevrai:update-error", { message: (e && e.message) ? e.message : String(e) });
+    });
+    _auInstance = autoUpdater;
+    return _auInstance;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function checkForUpdates() {
+  const currentVersion = app.getVersion();
+  if (!app.isPackaged) {
+    return { updateAvailable: false, currentVersion, dev: true };
+  }
+  const au = getAutoUpdater();
+  if (!au) return { updateAvailable: false, currentVersion, error: "auto-updater unavailable" };
+  if (_auChecking) return { updateAvailable: false, currentVersion, busy: true };
+  _auChecking = true;
+  try {
+    return await new Promise((resolve) => {
+      let settled = false;
+      const timer = setTimeout(() => finish({ updateAvailable: false, currentVersion, error: "check timeout" }), 30000);
+      function finish(payload) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        au.removeListener("update-available", onAvail);
+        au.removeListener("update-not-available", onNotAvail);
+        au.removeListener("error", onErr);
+        resolve(payload);
+      }
+      function onAvail(info) {
+        _auPending = { version: info.version, releaseNotes: info.releaseNotes || null };
+        finish({
+          updateAvailable: true,
+          currentVersion,
+          version: info.version,
+          releaseNotes: info.releaseNotes || null,
+        });
+      }
+      function onNotAvail() { finish({ updateAvailable: false, currentVersion }); }
+      function onErr(e) { finish({ updateAvailable: false, currentVersion, error: (e && e.message) ? e.message : String(e) }); }
+      au.once("update-available", onAvail);
+      au.once("update-not-available", onNotAvail);
+      au.once("error", onErr);
+      au.checkForUpdates().catch(onErr);
+    });
+  } finally {
+    _auChecking = false;
+  }
+}
+
+async function downloadUpdate() {
+  const au = getAutoUpdater();
+  if (!au) return { ok: false, error: "auto-updater unavailable" };
+  try {
+    await au.downloadUpdate();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e && e.message) ? e.message : String(e) };
+  }
+}
+
+function installUpdate() {
+  const au = getAutoUpdater();
+  if (!au) return { ok: false, error: "auto-updater unavailable" };
+  try {
+    au.quitAndInstall();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e && e.message) ? e.message : String(e) };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // IPC handlers — all validate inputs.
 // ---------------------------------------------------------------------------
 
@@ -1033,10 +1144,12 @@ function registerIpc() {
     });
   });
 
-  ipcMain.handle("kevrai:check-updates", async () => {
-    // Stub for future auto-update integration; safe & deterministic for now.
-    return { updateAvailable: false, currentVersion: app.getVersion() };
-  });
+  // Auto-update (electron-updater). Results never reject; errors come back
+  // as {error} so the renderer can toast gracefully. Progress / downloaded /
+  // error events are pushed as kevrai:update-progress / -downloaded / -error.
+  ipcMain.handle("kevrai:check-updates",  async () => checkForUpdates());
+  ipcMain.handle("kevrai:download-update", async () => downloadUpdate());
+  ipcMain.handle("kevrai:install-update",  async () => installUpdate());
 }
 
 // ---------------------------------------------------------------------------
