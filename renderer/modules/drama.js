@@ -14,6 +14,10 @@ function esc(s) {
 
 // 当前会话状态
 let _opts = null;        // dramaOptions 返回
+let _topic = "";         // 创意主题（修复原隐式全局）
+let _mode = "micro_film"; // 剧作基调：micro_film 微电影三幕式 / hook_drama 短视频钩子驱动
+let _styleAnchor = "";   // 风格锚点（导演/动画流派）
+let _storycraft = null;  // 剧作方法论库 storycraft_reference()
 let _angle = "";         // 头脑风暴方向
 let _questions = [];     // 引导问题
 let _answers = {};       // 用户回答 {q1: ...}
@@ -62,6 +66,14 @@ async function refresh(root) {
   } catch (e) {
     _opts = null;
   }
+  if (!_storycraft) {
+    try {
+      const sc = await api.dramaStorycraft();
+      _storycraft = sc?.body || sc || null;
+    } catch (e) {
+      _storycraft = null;
+    }
+  }
   renderStatus(root);
   renderStep1(root);
 }
@@ -93,11 +105,61 @@ function renderStatus(root) {
 // Step 1 — 头脑风暴
 // ---------------------------------------------------------------------------
 
+const DIRECTOR_GROUP_LABEL = {
+  oriental_life: "东方生活流/家庭治愈",
+  neon_retro: "港风霓虹/怀旧胶片",
+  symmetric_author: "高饱和作者美学",
+  cold_precise: "极简冷冽/精密构图",
+  poetic_natural: "诗性自然/影展作者",
+  social_realist: "社会现实主义/纪实",
+};
+
+function _styleAnchorOptions() {
+  if (!_storycraft) return "";
+  const groups = [];
+  const dirs = _storycraft.director_styles || {};
+  for (const [g, items] of Object.entries(dirs)) {
+    const opts = (items || []).map((d) =>
+      `<option value="${esc(d.anchor || "")}">${esc(d.anchor || "")}（${esc(d.fit || "")}）</option>`
+    ).join("");
+    if (opts) groups.push(`<optgroup label="真人·${esc(DIRECTOR_GROUP_LABEL[g] || g)}">${opts}</optgroup>`);
+  }
+  const anim = Array.isArray(_storycraft.animation_styles) ? _storycraft.animation_styles : [];
+  const aopts = anim.map((v) =>
+    `<option value="${esc(v.anchor || "")}">${esc(v.anchor || "")}（${esc(v.fit || "")}）</option>`
+  ).join("");
+  if (aopts) groups.push(`<optgroup label="动画流派">${aopts}</optgroup>`);
+  return groups.join("");
+}
+
 function renderStep1(root) {
   const el = $("#drama-step1", root);
+  const modes = (_storycraft?.modes) || {};
+  const mf = modes.micro_film || {};
+  const hd = modes.hook_drama || {};
   el.innerHTML = `
     <h3 class="section">① 头脑风暴</h3>
     <p class="hint">输入一个模糊创意，AI 导演会引导你锚定故事方向。</p>
+    <label class="field">
+      <span>剧作基调</span>
+      <div class="drama-mode-row" id="drama-mode-row">
+        <label class="drama-mode-opt">
+          <input type="radio" name="drama-mode" value="micro_film" ${_mode === "micro_film" ? "checked" : ""}>
+          <span><b>微电影三幕式</b><em>${esc(mf.label || "铺陈→冲突→高潮落点，人物弧完整")}</em></span>
+        </label>
+        <label class="drama-mode-opt">
+          <input type="radio" name="drama-mode" value="hook_drama" ${_mode === "hook_drama" ? "checked" : ""}>
+          <span><b>短视频钩子驱动</b><em>${esc(hd.label || "3秒强钩子→冲突堆叠→爽点释放")}</em></span>
+        </label>
+      </div>
+    </label>
+    <label class="field">
+      <span>风格锚点（具体到导演/动画流派，防止风格漂移；可留空由 AI 自选）</span>
+      <select id="drama-style-anchor">
+        <option value="">— 不指定 / AI 自选 —</option>
+        ${_styleAnchorOptions()}
+      </select>
+    </label>
     <label class="field">
       <span>创意主题</span>
       <textarea id="drama-topic" rows="2" maxlength="1000"
@@ -107,10 +169,17 @@ function renderStep1(root) {
     <div id="drama-bs-out"></div>
   `;
   const topicEl = $("#drama-topic", root);
+  const styleEl = $("#drama-style-anchor", root);
+  if (_styleAnchor && styleEl) styleEl.value = _styleAnchor;
+  $("#drama-mode-row", root).querySelectorAll("input[name='drama-mode']").forEach((rb) => {
+    rb.addEventListener("change", () => { if (rb.checked) _mode = rb.value; });
+  });
+  if (styleEl) styleEl.addEventListener("change", () => { _styleAnchor = styleEl.value; });
   $("#drama-bt-bs", root).addEventListener("click", async () => {
     const topic = topicEl.value.trim();
     if (!topic) { toast("请先输入创意主题", { kind: "err" }); return; }
     _topic = topic;
+    _styleAnchor = styleEl ? styleEl.value : "";
     await brainstorm(root, topic);
   });
 }
@@ -119,9 +188,9 @@ async function brainstorm(root, topic) {
   if (_busy) return;
   _busy = true;
   const out = $("#drama-bs-out", root);
-  out.innerHTML = `<p class="hint">AI 导演思考中（调用本地对话模型）…</p>`;
+  out.innerHTML = `<p class="hint">AI 导演思考中（调用本地对话模型，基调：${_mode === "hook_drama" ? "钩子驱动" : "微电影三幕式"}）…</p>`;
   try {
-    const r = await api.dramaBrainstorm({ topic });
+    const r = await api.dramaBrainstorm({ topic, mode: _mode });
     const body = r?.body || r || {};
     _angle = body.angle || "";
     _questions = Array.isArray(body.questions) ? body.questions : [];
@@ -166,7 +235,10 @@ async function genScript(root) {
   step2.hidden = false;
   step2.innerHTML = `<h3 class="section">② 剧本生成中…</h3><p class="hint">正在调用对话 AI 创作结构化剧本（可能需要几十秒）</p>`;
   try {
-    const r = await api.dramaScript({ topic: _topic, angle: _angle, answers: _answers });
+    const r = await api.dramaScript({
+      topic: _topic, angle: _angle, answers: _answers,
+      mode: _mode, style_anchor: _styleAnchor,
+    });
     _script = r?.body?.script || r?.script || null;
     if (!_script) throw new Error("未返回剧本");
     renderScript(root);
@@ -182,17 +254,36 @@ function renderScript(root) {
   const s = _script;
   const chars = (s.characters || []).map((c) => `
     <div class="drama-char">
-      <b>${esc(c.name)}</b> ${esc(c.age || "")}<br/>
+      <b>${esc(c.name)}</b> ${esc(c.age || "")}
+      ${c.role ? `<span class="pill">${esc(c.role)}</span>` : ""}<br/>
       <span class="sub">外形：${esc(c.appearance || "—")}</span><br/>
       <span class="sub">音色：${esc(c.voice || "—")}</span>
+      ${c.motivation ? `<br/><span class="sub">动机：${esc(c.motivation)}</span>` : ""}
+      ${c.arc ? `<br/><span class="sub">成长弧：${esc(c.arc)}</span>` : ""}
+      ${c.key_prop ? `<br/><span class="sub">关键道具：${esc(c.key_prop)}</span>` : ""}
     </div>`).join("");
+  // 场景登记清单（先登记后使用）
+  const registry = Array.isArray(s.scene_registry) ? s.scene_registry : [];
+  const registryHtml = registry.length ? `
+    <details class="drama-details" open>
+      <summary>主要故事场景登记（${registry.length}）</summary>
+      ${registry.map((r) => `
+        <div class="sub">· <b>${esc(r.name || r.scene_code || "")}</b>
+          ${r.kind ? `［${esc(r.kind)}］` : ""} ${esc(r.mood || "")}
+          ${r.props ? `｜关键陈设：${esc(r.props)}` : ""}</div>`).join("")}
+    </details>` : "";
+  const autoAdded = s.registry_auto_added || [];
+  const warnHtml = autoAdded.length
+    ? `<p class="hint err">提示：以下场景模型未预先登记，已自动补登记：${esc(autoAdded.join("、"))}</p>` : "";
   const scenes = (s.scenes || []).map((sc) => `
     <div class="drama-scene">
-      <div class="sub"><b>场景 ${sc.scene_id}</b> · ${esc(sc.location || "")} · ${esc(sc.time || "")}</div>
+      <div class="sub"><b>场景 ${sc.scene_id}</b> · ${esc(sc.location || "")} · ${esc(sc.time || "")}
+        ${sc.beat ? `<span class="pill">节拍·${esc(sc.beat)}</span>` : ""}</div>
       <div class="sub">${esc(sc.summary || "")}</div>
       ${(sc.shots || []).map((sh) => `
         <div class="drama-shot">
           <span class="pill">镜 ${sh.shot_id}</span>
+          ${sh.beat ? `<span class="pill">${esc(sh.beat)}</span>` : ""}
           <span class="sub">${esc(sh.shot_type || "中景")} / ${esc(sh.camera || "固定")} / ${sh.duration_s}s</span>
           <div class="sub">${esc(sh.action || "")}</div>
           ${sh.dialogue ? `<div class="sub">🎙 ${esc(sh.dialogue)}</div>` : ""}
@@ -203,13 +294,17 @@ function renderScript(root) {
     <div class="drama-block">
       <div class="name">${esc(s.title || "未命名短剧")}</div>
       <div class="sub">${esc(s.logline || "")}</div>
+      ${s.synopsis ? `<details class="drama-details" open><summary>剧情梗概</summary><div class="sub">${esc(s.synopsis).replace(/\n/g, "<br>")}</div></details>` : ""}
       <div class="sub">
         <span class="pill">${esc(s.genre || "未知")}</span>
         <span class="pill">${esc(s.style || "")}</span>
+        ${s.mode_label ? `<span class="pill">${esc(s.mode_label)}</span>` : ""}
         <span class="pill">${esc(s.music_mood || "")}</span>
         <span class="pill">${s.shot_count || 0} 镜</span>
         <span class="pill">≈ ${s.est_duration_s || 0}s</span>
       </div>
+      ${warnHtml}
+      ${registryHtml}
       <h4>角色</h4>${chars || `<p class="hint">无</p>`}
       <h4>分场</h4>${scenes}
       <div class="row"><button id="drama-bt-sb" class="primary">③ 生成分镜表</button></div>
@@ -246,6 +341,7 @@ function renderStoryboard(root) {
     <div class="drama-shot">
       <div class="sub">
         <span class="pill">镜 ${sh.shot_id}</span>
+        ${sh.beat ? `<span class="pill">${esc(sh.beat)}</span>` : ""}
         <span class="sub">${esc(sh.shot_type || "")} / ${esc(sh.camera || "")} / ${sh.duration_s}s</span>
       </div>
       <div class="sub">🎙 ${esc(sh.dialogue || "（无台词）")}</div>

@@ -79,6 +79,7 @@ export const api = {
   convertCancel:  wrap("convertCancel",  (id) => k().convertCancel(id)),
   // Drama Agent (AI 短剧生成)
   dramaOptions:      wrap("dramaOptions",      () => k().dramaOptions()),
+  dramaStorycraft:   wrap("dramaStorycraft",   () => k().dramaStorycraft()),
   dramaBrainstorm:   wrap("dramaBrainstorm",   (opts) => k().dramaBrainstorm(opts)),
   dramaScript:       wrap("dramaScript",       (opts) => k().dramaScript(opts)),
   dramaStoryboard:   wrap("dramaStoryboard",   (opts) => k().dramaStoryboard(opts)),
@@ -90,6 +91,10 @@ export const api = {
   agentSessionMessages: wrap("agentSessionMessages", (id, limit) => k().agentSessionMessages(id, limit)),
   agentGetPreferences:  wrap("agentGetPreferences",  () => k().agentGetPreferences()),
   agentSetPreference:   wrap("agentSetPreference",   (key, value) => k().agentSetPreference(key, value)),
+  // v2.8.0 — 可插拔技能库
+  agentSkills:          wrap("agentSkills",          () => k().agentSkills()),
+  agentToggleSkill:     wrap("agentToggleSkill",     (id, enabled) => k().agentToggleSkill(id, enabled)),
+  agentResetSkills:     wrap("agentResetSkills",     () => k().agentResetSkills()),
   // v2.4.0 — super search
   search:            wrap("search",            (params) => k().search(params)),
   searchRecent:      wrap("searchRecent",      () => k().searchRecent()),

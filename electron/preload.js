@@ -293,6 +293,7 @@ const api = {
     }
     return invoke("kevrai:drama-render-plan", opts);
   },
+  dramaStorycraft: () => invoke("kevrai:drama-storycraft"),
 
   // ----- v2.7.0: Kevrai Agent (通用 AI 助手) -----
   agentStatus: () => invoke("kevrai:agent-status"),
@@ -306,6 +307,14 @@ const api = {
   agentSessionMessages: (sessionId, limit) => invoke("kevrai:agent-session-messages", sessionId, limit),
   agentGetPreferences: () => invoke("kevrai:agent-prefs-get"),
   agentSetPreference: (key, value) => invoke("kevrai:agent-prefs-set", key, value),
+  // ----- v2.8.0: 可插拔技能库 -----
+  agentSkills: () => invoke("kevrai:agent-skills"),
+  agentToggleSkill: (skillId, enabled) => {
+    assertString(skillId, "skillId", 64);
+    assert(typeof enabled === "boolean", "enabled: must be boolean");
+    return invoke("kevrai:agent-toggle-skill", skillId, enabled);
+  },
+  agentResetSkills: () => invoke("kevrai:agent-reset-skills"),
 
   // ----- v2.4.0: super search -----
   search: (params) => {

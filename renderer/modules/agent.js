@@ -26,6 +26,7 @@ export async function initAgent() {
   root.innerHTML = _renderShell();
   _wireEvents(root);
   await _refreshStatus();
+  _loadSkills();
   _loadSessionList();
 }
 
@@ -44,6 +45,19 @@ function _renderShell() {
           <select id="agent-session-select" class="agent-session-select" title="历史会话"></select>
         </div>
       </div>
+      <details class="agent-skills-panel" id="agent-skills-panel">
+        <summary>
+          🧩 技能库
+          <span class="agent-skills-summary" id="agent-skills-summary">加载中…</span>
+        </summary>
+        <div class="agent-skills-body">
+          <div class="agent-skills-toolbar">
+            <span class="hint">勾选即可为 Agent 添加技能（核心技能不可关闭），设置会自动保存。</span>
+            <button id="agent-skills-reset" class="btn btn-sm" type="button">恢复默认</button>
+          </div>
+          <div id="agent-skills-list" class="agent-skills-list">加载中…</div>
+        </div>
+      </details>
       <div id="agent-messages" class="agent-messages"></div>
       <div class="agent-input-area">
         <textarea id="agent-input" class="agent-input" rows="2"
@@ -92,6 +106,42 @@ function _wireEvents(root) {
       _loadSessionMessages();
     }
   });
+
+  // 技能库：开关（事件委托）+ 恢复默认
+  const skillsList = $("#agent-skills-list", root);
+  if (skillsList) {
+    skillsList.addEventListener("change", async (e) => {
+      const cb = e.target.closest(".agent-skill-toggle");
+      if (!cb) return;
+      const id = cb.dataset.id;
+      cb.disabled = true;
+      try {
+        await api.agentToggleSkill(id, cb.checked);
+        toast(cb.checked ? `已添加技能：${id}` : `已关闭技能：${id}`, { kind: "ok" });
+        await Promise.all([_loadSkills(), _refreshStatus()]);
+      } catch (err) {
+        cb.checked = !cb.checked; // 回滚 UI
+        toast(`切换失败：${err.message || err}`, { kind: "err" });
+      } finally {
+        cb.disabled = false;
+      }
+    });
+  }
+  const resetBtn = $("#agent-skills-reset", root);
+  if (resetBtn) {
+    resetBtn.addEventListener("click", async () => {
+      resetBtn.disabled = true;
+      try {
+        await api.agentResetSkills();
+        toast("已恢复默认技能", { kind: "ok" });
+        await Promise.all([_loadSkills(), _refreshStatus()]);
+      } catch (err) {
+        toast(`恢复失败：${err.message || err}`, { kind: "err" });
+      } finally {
+        resetBtn.disabled = false;
+      }
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -114,6 +164,49 @@ async function _refreshStatus() {
   } catch (e) {
     console.warn("agent status failed:", e);
   }
+}
+
+// ---------------------------------------------------------------------------
+// 技能库（可插拔技能，v2.8.0）
+// ---------------------------------------------------------------------------
+async function _loadSkills() {
+  const list = document.getElementById("agent-skills-list");
+  const summary = document.getElementById("agent-skills-summary");
+  if (!list) return;
+  try {
+    const res = await api.agentSkills();
+    const skills = res.skills || [];
+    const active = res.active_count ?? skills.filter((s) => s.enabled).length;
+    if (summary) {
+      summary.textContent = `${active}/${res.count ?? skills.length} 启用 · ${res.active_tool_count ?? ""} 个工具`;
+    }
+    list.innerHTML = skills.map(_renderSkillRow).join("") || '<span class="hint">暂无技能</span>';
+  } catch (e) {
+    list.innerHTML = `<span class="hint">技能库加载失败：${esc(e.message || e)}</span>`;
+    if (summary) summary.textContent = "加载失败";
+  }
+}
+
+function _renderSkillRow(s) {
+  const locked = !!s.required;
+  const tools = (s.tool_names || []).map((t) =>
+    `<span class="agent-tool-tag">${esc(t)}</span>`
+  ).join("");
+  return `
+    <div class="agent-skill-row ${s.enabled ? "is-on" : "is-off"}">
+      <label class="agent-skill-head">
+        <input type="checkbox" class="agent-skill-toggle" data-id="${esc(s.id)}"
+          ${s.enabled ? "checked" : ""} ${locked ? "disabled" : ""}>
+        <span class="agent-skill-icon">${esc(s.icon || "🧩")}</span>
+        <span class="agent-skill-name">${esc(s.name)}
+          ${locked ? '<span class="agent-skill-lock" title="必备技能，不可关闭">必备</span>' : ""}
+          ${s.default_enabled && !locked ? '<span class="agent-skill-default">默认</span>' : ""}
+        </span>
+      </label>
+      <p class="agent-skill-desc">${esc(s.description || "")}</p>
+      <div class="agent-skill-tools">${tools}</div>
+    </div>
+  `;
 }
 
 async function _loadSessionList() {

@@ -51,6 +51,9 @@ _SYSTEM_PROMPT_TEMPLATE = """你是 **Kevrai Agent**，Kevrai Omni 本地 AI 工
 ## 可用工具
 {tools_block}
 
+## 已启用技能（领域方法论，按此使用对应工具）
+{skills_block}
+
 ## 工具使用准则
 - 推荐模型前，**必须先调用 check_hardware** 了解用户显存/内存/磁盘。
 - 不确定模型是否存在时，先用 search_models 搜索，再用 model_info 查看详情。
@@ -58,6 +61,7 @@ _SYSTEM_PROMPT_TEMPLATE = """你是 **Kevrai Agent**，Kevrai Omni 本地 AI 工
 - 用户要下载模型时，用 download_model 获取下载计划（实际下载由 UI 队列执行）。
 - 用户表达反复出现的偏好时（如"我喜欢用小模型"、"我只要开源模型"），
   用 set_preference 记住；回答前可用 get_preferences 查看已有偏好。
+- 只调用"可用工具"中列出的工具；被禁用技能的工具不可用，不要尝试调用。
 - 工具结果中的 error 字段要认真对待：如果工具失败，反思原因并尝试替代方案。
 - 不要编造不存在的模型 ID 或工具名。
 - 回答简洁、实用，用中文。涉及模型时给出名称、大小、适用硬件、许可类型。
@@ -124,13 +128,25 @@ class Agent:
         router: ModelRouter | None = None,
         registry: ToolRegistry | None = None,
         ctx: ToolContext | None = None,
+        skill_manager: Any = None,
     ) -> None:
         self.memory = memory
         self.router = router or ModelRouter()
-        self.registry = registry or build_default_registry()
+        # A SkillManager (v2.8.0) owns the active registry and rebuilds it when
+        # skills are enabled/disabled. A plain registry stays supported.
+        self.skills = skill_manager
+        if self.skills is not None:
+            self.registry = self.skills.build_registry()
+        else:
+            self.registry = registry or build_default_registry()
         self.ctx = ctx or ToolContext()
         self.ctx.memory = memory
         self._step_callback: Callable[[AgentStep], None] | None = None
+
+    def reload_skills(self) -> None:
+        """Rebuild the active tool registry after skills are toggled."""
+        if self.skills is not None:
+            self.registry = self.skills.build_registry()
 
     def set_step_callback(self, cb: Callable[[AgentStep], None] | None) -> None:
         """Set a callback invoked after each ReAct step (for streaming UI)."""
@@ -141,6 +157,10 @@ class Agent:
     # ------------------------------------------------------------------
     def _build_system_prompt(self) -> str:
         tools_block = self.registry.build_tool_prompt_block()
+        if self.skills is not None:
+            skills_block = self.skills.build_guidance_block() or "（暂无额外技能）"
+        else:
+            skills_block = "（暂无额外技能）"
         prefs = self.memory.get_all_preferences() if self.memory else {}
         if prefs:
             preferences_block = "\n".join(f"- {k}: {v}" for k, v in prefs.items())
@@ -159,6 +179,7 @@ class Agent:
 
         return (_SYSTEM_PROMPT_TEMPLATE
             .replace("{tools_block}", tools_block)
+            .replace("{skills_block}", skills_block)
             .replace("{preferences_block}", preferences_block)
             .replace("{hardware_block}", hardware_block))
 
@@ -194,8 +215,99 @@ class Agent:
         msg_lower = message.lower()
         steps: list[AgentStep] = []
 
-        # Hardware check trigger
-        if any(w in msg_lower for w in ["硬件", "显存", "vram", "配置", "我能跑", "我的电脑"]):
+        def _has(name: str) -> bool:
+            return self.registry.get(name) is not None
+
+        # --- Short-drama studio (deterministic methodology, works offline) ---
+        if _has("drama_storycraft") and any(
+            w in msg_lower for w in ["短剧", "微电影", "剧本", "分镜", "剧情片", "故事板", "剧作"]
+        ):
+            mode = "hook_drama" if any(
+                w in msg_lower for w in ["爽剧", "逆袭", "钩子", "打脸", "竖屏短剧"]
+            ) else "micro_film"
+            step = AgentStep(iteration=1, action_tool="drama_storycraft", action_params={"mode": mode})
+            obs = self.registry.execute("drama_storycraft", {"mode": mode}, self.ctx)
+            step.observation = obs
+            steps.append(step)
+            if obs.get("ok") is not False:
+                ref = obs.get("reference", {})
+                modes = ref.get("modes", {})
+                beats = ref.get("beats", {})
+                sel = modes.get(mode, {})
+                act_lines = "\n".join(
+                    f"  - {a.get('name')}（{a.get('ratio')}）：{a.get('goal')}"
+                    for a in sel.get("acts", [])
+                )
+                result.answer = (
+                    f"【短剧创作工坊】当前采用基调：{sel.get('label', mode)}\n{act_lines}\n\n"
+                    f"可用情绪节拍：{'、'.join(beats.values())}\n\n"
+                    "标准流水线：① drama_brainstorm 头脑风暴 → ② drama_compose_script 结构化剧本"
+                    "（含剧情梗概/人物小传/场景登记/分镜节拍）→ ③ drama_storyboard 分镜表 → "
+                    "④ drama_render_plan 多模态渲染计划。\n"
+                    "（头脑风暴与剧本生成需要先在 MNN 引擎页加载对话 AI；你也可以直接到"
+                    "「短剧 Agent」页按四步操作。）"
+                )
+                result.tools_used.append("drama_storycraft")
+                result.steps = steps
+                return result
+
+        # --- Media prompt studio (deterministic, works offline) ---
+        if _has("build_image_prompt") and any(
+            w in msg_lower for w in ["提示词", "negative", "负面词", "正向词"]
+        ):
+            if any(w in msg_lower for w in ["视频", "video"]):
+                tool, modality = "build_video_prompt", "视频"
+            elif any(w in msg_lower for w in ["音乐", "配乐", "music", "音频"]):
+                tool, modality = "build_music_prompt", "音乐"
+            else:
+                tool, modality = "build_image_prompt", "图像"
+            # best-effort subject extraction: strip the trigger words
+            subject = message
+            for junk in ["帮我", "生成", "写一个", "一个", "图像", "图片", "视频", "音乐",
+                         "提示词", "正向", "负面", ":", "："]:
+                subject = subject.replace(junk, " ")
+            subject = subject.strip(" ，,。.")[:120] or "主体"
+            params = (
+                {"subject": subject, "action": "主体自然运动"} if tool == "build_video_prompt"
+                else {"mood": subject} if tool == "build_music_prompt"
+                else {"subject": subject}
+            )
+            step = AgentStep(iteration=1, action_tool=tool, action_params=params)
+            obs = self.registry.execute(tool, params, self.ctx)
+            step.observation = obs
+            steps.append(step)
+            if obs.get("ok") is not False and "error" not in obs:
+                constraints = "\n".join(f"  - {c}" for c in obs.get("theme_constraints", []))
+                result.answer = (
+                    f"【{modality}提示词包】\n正向：{obs.get('positive', '')}\n\n"
+                    f"负面：{obs.get('negative', '')}\n\n主题约束：\n{constraints}\n\n"
+                    "（规则模式按关键词抽取主体；加载对话 AI 后可结合上下文生成更贴合的提示词。）"
+                )
+                result.tools_used.append(tool)
+                result.steps = steps
+                return result
+
+        # --- Writing studio: outline scaffold works offline ---
+        if _has("writing_outline") and any(w in msg_lower for w in ["大纲", "提纲"]):
+            params = {"topic": message[:200], "doc_type": "通用"}
+            step = AgentStep(iteration=1, action_tool="writing_outline", action_params=params)
+            obs = self.registry.execute("writing_outline", params, self.ctx)
+            step.observation = obs
+            steps.append(step)
+            if obs.get("ok") is not False and obs.get("outline"):
+                lines = ["【写作大纲骨架】"]
+                for sec in obs["outline"]:
+                    lines.append(f"{sec['index']}. {sec['heading']}")
+                lines.append("\n加载对话 AI 后用 use_llm=true 可让本地模型把每部分扩写成要点。")
+                result.answer = "\n".join(lines)
+                result.tools_used.append("writing_outline")
+                result.steps = steps
+                return result
+
+        # Hardware check trigger (only if the local_system skill is enabled)
+        if _has("check_hardware") and any(
+            w in msg_lower for w in ["硬件", "显存", "vram", "配置", "我能跑", "我的电脑"]
+        ):
             step = AgentStep(iteration=1, action_tool="check_hardware")
             obs = self.registry.execute("check_hardware", {}, self.ctx)
             step.observation = obs
@@ -210,8 +322,10 @@ class Agent:
                 result.steps = steps
                 return result
 
-        # Search trigger
-        if any(w in msg_lower for w in ["搜索", "找", "有什么", "推荐", "search"]):
+        # Search trigger (only if the model_catalog skill is enabled)
+        if _has("search_models") and any(
+            w in msg_lower for w in ["搜索", "找", "有什么", "推荐", "search"]
+        ):
             # Extract category hint
             category = None
             for cat, keywords in _CATEGORY_KEYWORDS.items():
@@ -243,18 +357,21 @@ class Agent:
             return result
 
         # Default: explain that LLM is not loaded
+        enabled = self.registry.list_names()
         result.answer = (
-            "Kevrai Agent 已就绪，但当前未加载对话 AI 模型，因此我只能执行基础工具操作"
-            "（硬件检测、模型搜索、推荐）。\n\n"
+            "Kevrai Agent 已就绪，但当前未加载对话 AI 模型，因此我只能执行已启用技能的"
+            "确定性工具操作。\n\n"
             "如需完整的智能对话能力，请：\n"
             "1. 在「AI 引擎」页安装 MNN 引擎\n"
             "2. 在「模型市场」下载一个 LLM 对话模型（如 Qwen、Granite、DeepSeek 等）\n"
             "3. 在「MNN 引擎」页加载模型\n\n"
-            "加载后我就能进行复杂推理、多步规划和文本生成。\n\n"
+            f"当前已启用 {len(enabled)} 个工具：{', '.join(enabled)}。\n"
+            "你可以在 Agent 面板顶部「🧩 技能库」里勾选添加/移除技能。\n\n"
             "你现在可以问我：\n"
             "- \"我的硬件能跑什么模型？\"\n"
             "- \"搜索音乐生成模型\"\n"
-            "- \"推荐适合8GB显存的图像模型\""
+            "- \"帮我做个短剧，用钩子驱动基调\"\n"
+            "- \"给这张图写一套带负面词的图像提示词\""
         )
         result.steps = steps
         return result

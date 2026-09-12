@@ -14,6 +14,7 @@ from __future__ import annotations
 from .agent import Agent, AgentSession, AgentStep, AgentResult
 from .memory import AgentMemory
 from .tool_registry import ToolRegistry, Tool, ToolContext
+from .skill import Skill, SkillManager
 from .model_router import ModelRouter
 
 __all__ = [
@@ -25,5 +26,7 @@ __all__ = [
     "ToolRegistry",
     "Tool",
     "ToolContext",
+    "Skill",
+    "SkillManager",
     "ModelRouter",
 ]

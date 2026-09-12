@@ -1423,6 +1423,8 @@ class DramaScriptReq(BaseModel):
     topic: str = Field(default="", max_length=1000)
     angle: str = Field(default="", max_length=500)
     answers: Any = None
+    mode: str = Field(default="micro_film", max_length=40)
+    style_anchor: str = Field(default="", max_length=200)
 
 
 class DramaRenderPlanReq(BaseModel):
@@ -1443,11 +1445,20 @@ def drama_options(request: Request) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"获取短剧选项失败：{e}") from e
 
 
+@app.get("/api/drama/storycraft")
+def drama_storycraft() -> dict[str, Any]:
+    """剧作方法论库：两种基调结构、节拍、导演/动画风格锚点、题材库、四段产物。"""
+    try:
+        return {"ok": True, **drama_agent.storycraft_reference()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取剧作方法论失败：{e}") from e
+
+
 @app.post("/api/drama/brainstorm")
 async def drama_brainstorm(req: DramaScriptReq) -> dict[str, Any]:
     """创意头脑风暴：返回引导方向 + 开放式问题（updream 式）。"""
     try:
-        res = await asyncio.to_thread(drama_agent.brainstorm, req.topic)
+        res = await asyncio.to_thread(drama_agent.brainstorm, req.topic, req.mode)
         return {"ok": True, **res}
     except drama_agent.LlmNotReady as e:
         raise HTTPException(status_code=409, detail=str(e)) from e
@@ -1462,7 +1473,8 @@ async def drama_script(req: DramaScriptReq) -> dict[str, Any]:
     """基于创意 + 头脑风暴结论生成结构化剧本。"""
     try:
         script = await asyncio.to_thread(
-            drama_agent.generate_script, req.topic, req.angle, req.answers
+            drama_agent.generate_script,
+            req.topic, req.angle, req.answers, req.mode, req.style_anchor,
         )
         return {"ok": True, "script": script}
     except drama_agent.LlmNotReady as e:
@@ -1934,12 +1946,14 @@ def _get_agent(request: Request):
     if "agent" in _AGENT_SINGLETON:
         return _AGENT_SINGLETON["agent"]
     from .agent import Agent, AgentMemory, ModelRouter, ToolContext
-    from .agent.tools import build_default_registry
+    from .agent.tools import build_skill_manager
 
     db_path = APP_ROOT / "agent" / "memory.sqlite3"
     memory = AgentMemory(db_path)
     router = ModelRouter()
-    registry = build_default_registry()
+    # v2.8.0: pluggable skills; enable/disable state persists next to memory.
+    skill_state = APP_ROOT / "agent" / "skills.json"
+    skill_manager = build_skill_manager(skill_state)
 
     hw = _HW_CACHE["data"] or {}
     # NOTE: detect_hardware is async; we must not call it here in this sync
@@ -1956,7 +1970,7 @@ def _get_agent(request: Request):
         models_dir=MODELS_DIR,
         app_root=APP_ROOT,
     )
-    agent = Agent(memory=memory, router=router, registry=registry, ctx=ctx)
+    agent = Agent(memory=memory, router=router, ctx=ctx, skill_manager=skill_manager)
     _AGENT_SINGLETON["agent"] = agent
     return agent
 
@@ -1983,6 +1997,66 @@ def agent_status(request: Request) -> dict[str, Any]:
         "model_name": model_name,
         "tool_count": len(agent.registry.list_names()),
         "mode": "llm" if ready else "rule_based",
+    }
+
+
+@app.get("/api/agent/skills")
+def agent_skills(request: Request) -> dict[str, Any]:
+    """List all pluggable skills with enabled state and bundled tool names."""
+    agent = _get_agent(request)
+    if agent.skills is None:
+        return {"skills": [], "count": 0, "active_count": 0}
+    skills = agent.skills.list_skills()
+    active = sum(1 for s in skills if s["enabled"])
+    return {
+        "skills": skills,
+        "count": len(skills),
+        "active_count": active,
+        "active_tool_count": len(agent.registry.list_names()),
+    }
+
+
+class SkillToggleReq(BaseModel):
+    enabled: bool
+
+
+@app.post("/api/agent/skills/reset")
+def agent_reset_skills(request: Request) -> dict[str, Any]:
+    """Restore default skill enablement and rebuild the registry.
+
+    Declared before the ``{skill_id}`` route so "reset" is not captured as a
+    skill id.
+    """
+    agent = _get_agent(request)
+    if agent.skills is None:
+        raise HTTPException(status_code=404, detail="skill system unavailable")
+    agent.skills.reset()
+    agent.reload_skills()
+    return {"ok": True, "skills": agent.skills.list_skills(),
+            "active_tool_count": len(agent.registry.list_names())}
+
+
+@app.post("/api/agent/skills/{skill_id}")
+def agent_toggle_skill(skill_id: str, req: SkillToggleReq, request: Request) -> dict[str, Any]:
+    """Enable or disable a skill, persist it, and rebuild the active registry."""
+    agent = _get_agent(request)
+    if agent.skills is None:
+        raise HTTPException(status_code=404, detail="skill system unavailable")
+    if not re.fullmatch(r"[a-z][a-z0-9_]{1,63}", skill_id or ""):
+        raise HTTPException(status_code=400, detail="invalid skill_id")
+    try:
+        spec = agent.skills.set_enabled(skill_id, bool(req.enabled))
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"unknown skill: {skill_id}")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    # Rebuild the registry the agent dispatches to.
+    agent.reload_skills()
+    return {
+        "ok": True,
+        "skill": spec,
+        "active_tool_count": len(agent.registry.list_names()),
+        "active_tools": agent.registry.list_names(),
     }
 
 

@@ -749,3 +749,32 @@ html[data-theme="light"] .mnn-chat-log { background: rgba(255, 255, 255, 0.55); 
   .agent-container { height: calc(100vh - 140px); }
   .agent-msg { max-width: 92%; }
 }
+
+/* v2.8.0 — 可插拔技能库面板 */
+.agent-skills-panel { border: 1px solid var(--border, #333); border-radius: 10px; background: var(--card, #1b1c1f); margin-bottom: 10px; overflow: hidden; }
+.agent-skills-panel > summary { cursor: pointer; padding: 9px 14px; font-size: 13px; font-weight: 600; user-select: none; list-style: none; display: flex; align-items: center; gap: 8px; }
+.agent-skills-panel > summary::-webkit-details-marker { display: none; }
+.agent-skills-panel[open] > summary { border-bottom: 1px solid var(--border, #333); }
+.agent-skills-summary { font-size: 11px; font-weight: 400; color: var(--mut, #999); }
+.agent-skills-body { padding: 10px 14px 12px; }
+.agent-skills-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.agent-skills-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.agent-skill-row { border: 1px solid var(--border, #333); border-radius: 8px; padding: 8px 10px; background: var(--bg, #121316); }
+.agent-skill-row.is-off { opacity: 0.62; }
+.agent-skill-head { display: flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px; }
+.agent-skill-head input { margin: 0; cursor: pointer; }
+.agent-skill-icon { font-size: 15px; }
+.agent-skill-name { font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+.agent-skill-lock, .agent-skill-default { font-size: 9px; padding: 0 5px; border-radius: 6px; font-weight: 500; }
+.agent-skill-lock { background: rgba(255, 184, 107, 0.15); color: #ffb86b; border: 1px solid rgba(255,184,107,0.3); }
+.agent-skill-default { background: rgba(122,163,255,0.12); color: #7aa3ff; border: 1px solid rgba(122,163,255,0.25); }
+.agent-skill-desc { font-size: 11px; color: var(--mut, #999); margin: 5px 0 6px; line-height: 1.45; }
+.agent-skill-tools { display: flex; flex-wrap: wrap; gap: 3px; }
+
+/* v2.8.0 — 短剧基调选择器 */
+.drama-mode-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.drama-mode-opt { display: flex; align-items: flex-start; gap: 7px; flex: 1; min-width: 220px; border: 1px solid var(--border, #333); border-radius: 8px; padding: 8px 10px; cursor: pointer; background: var(--bg, #121316); }
+.drama-mode-opt input { margin-top: 3px; }
+.drama-mode-opt span { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.drama-mode-opt em { font-style: normal; font-size: 11px; color: var(--mut, #999); line-height: 1.4; }
+.drama-mode-opt:has(input:checked) { border-color: var(--accent, #4a7dff); background: rgba(74,125,255,0.08); }

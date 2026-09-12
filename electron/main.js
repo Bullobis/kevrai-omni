@@ -767,19 +767,24 @@ function registerIpc() {
 
   // Drama Agent (AI 短剧生成) — python/app/drama.py
   ipcMain.handle("kevrai:drama-options", async () => sidecarFetch("/api/drama/options"));
+  ipcMain.handle("kevrai:drama-storycraft", async () => sidecarFetch("/api/drama/storycraft"));
   ipcMain.handle("kevrai:drama-brainstorm", async (_e, opts) => {
     assert(opts && typeof opts === "object", "opts: invalid");
     assertString(opts.topic, "opts.topic", 1000);
     return sidecarFetch("/api/drama/brainstorm", { method: "POST", body: {
       topic: opts.topic,
+      mode: opts.mode === "hook_drama" ? "hook_drama" : "micro_film",
     } });
   });
   ipcMain.handle("kevrai:drama-script", async (_e, opts) => {
     assert(opts && typeof opts === "object", "opts: invalid");
     assertString(opts.topic, "opts.topic", 1000);
-    const body = { topic: opts.topic };
+    const body = { topic: opts.topic, mode: opts.mode === "hook_drama" ? "hook_drama" : "micro_film" };
     if (typeof opts.angle === "string" && opts.angle.length > 0) {
       body.angle = String(opts.angle).slice(0, 500);
+    }
+    if (typeof opts.style_anchor === "string" && opts.style_anchor.length > 0) {
+      body.style_anchor = String(opts.style_anchor).slice(0, 200);
     }
     if (opts.answers != null) body.answers = opts.answers;
     return sidecarFetch("/api/drama/script", { method: "POST", body });
@@ -822,6 +827,18 @@ function registerIpc() {
     assert(typeof key === "string" && key.length > 0, "key: invalid");
     return sidecarFetch("/api/agent/preferences", { method: "PUT", body: { key, value } });
   });
+
+  // v2.8.0 — 可插拔技能库
+  ipcMain.handle("kevrai:agent-skills", async () => sidecarFetch("/api/agent/skills"));
+  ipcMain.handle("kevrai:agent-toggle-skill", async (_e, skillId, enabled) => {
+    assert(typeof skillId === "string" && /^[a-z][a-z0-9_]{1,63}$/.test(skillId), "skillId: invalid");
+    assert(typeof enabled === "boolean", "enabled: invalid");
+    return sidecarFetch(`/api/agent/skills/${encodeURIComponent(skillId)}`, {
+      method: "POST", body: { enabled },
+    });
+  });
+  ipcMain.handle("kevrai:agent-reset-skills", async () =>
+    sidecarFetch("/api/agent/skills/reset", { method: "POST", body: {} }));
 
   // v2.4.0 — super search
   ipcMain.handle("api:search", async (_e, params) => {
