@@ -21,3 +21,7 @@ engines/
 .build-cache/
 dist-packages/
 docs/promo_assets/
+
+# crash dumps
+core.*
+core
