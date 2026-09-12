@@ -51,6 +51,11 @@ export const api = {
   pickFile:      wrap("pickFile",      () => k().pickFile()),
   openExternal:  wrap("openExternal",  (url) => k().openExternal(url)),
   checkUpdates:  wrap("checkUpdates",  () => k().checkUpdates()),
+  downloadUpdate: wrap("downloadUpdate", () => k().downloadUpdate()),
+  installUpdate:  wrap("installUpdate",  () => k().installUpdate()),
+  onUpdateProgress:   (cb) => k().onUpdateProgress(cb),
+  onUpdateDownloaded: (cb) => k().onUpdateDownloaded(cb),
+  onUpdateError:      (cb) => k().onUpdateError(cb),
   getAppVersion: wrap("getAppVersion", () => k().getAppVersion()),
   // v2.2.0 — multi-source & environment management
   envStatus:     wrap("envStatus",     () => k().envStatus()),

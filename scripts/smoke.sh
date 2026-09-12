@@ -192,8 +192,11 @@ checks = [
     ("createDesktopShortcut: true", "desktop shortcut ON"),
     ("target:", "target: present"),
     ("nsis", "NSIS target used"),
+    ("zip", "portable zip target used"),
     ("asar: true", "asar enabled"),
-    ("publish: null", "publish: null (release script handles)"),
+    ("provider: github", "publish provider github"),
+    ("owner: Bullobis", "publish owner Bullobis"),
+    ("repo: kevrai-omni", "publish repo kevrai-omni"),
 ]
 for needle, desc in checks:
     if needle not in yaml_text:

@@ -24,6 +24,7 @@ import { wireSettings, openSettings, closeSettings } from "./modules/settings.js
 import { wireDownloads, showDownloads } from "./modules/downloads.js";
 import { wireDragDrop } from "./modules/dragdrop.js";
 import { wireOnboarding } from "./modules/onboarding.js";
+import { wireUpdate } from "./modules/update.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -225,14 +226,8 @@ function wireGlobalUI() {
   // Header buttons
   const refresh = $("[data-action=refresh]");
   if (refresh) refresh.addEventListener("click", () => loadAll());
-  const updates = $("[data-action=check-updates]");
-  if (updates) updates.addEventListener("click", async () => {
-    try {
-      const r = await api.checkUpdates();
-      if (r?.updateAvailable) toast(`可用新版本：${r.updateAvailable}`, { kind: "ok" });
-      else toast(`已是最新版本 (v${r?.currentVersion || "?"})`, { kind: "ok" });
-    } catch (_) {}
-  });
+  // check-updates button is owned by modules/update.js (wireUpdate) — full
+  // check -> download -> install flow with progress overlay.
   const detect = $("[data-action=detect-gpu]");
   if (detect) detect.addEventListener("click", async () => {
     try {
@@ -275,6 +270,7 @@ async function bootstrap() {
   wireDownloads();
   wireDragDrop();
   wireGlobalUI();
+  wireUpdate();
   wireThemeListener();
 
   // Initial settings fetch (for theme)

@@ -379,6 +379,37 @@
     </div>
   </div>
 
+  <!-- Auto-update overlay -->
+  <div id="update-overlay" class="overlay" role="dialog" aria-modal="true"
+       aria-labelledby="update-title" hidden aria-hidden="true">
+    <div class="overlay-card update-card" role="document">
+      <header>
+        <h2 id="update-title">软件更新</h2>
+        <button class="ghost icon" data-action="close-update" aria-label="关闭">×</button>
+      </header>
+      <div id="update-body" class="update-body">
+        <p class="mut" id="update-status">正在检查更新…</p>
+        <div id="update-progress-wrap" hidden>
+          <div class="update-progress-bar"><div class="update-progress-fill" id="update-progress-fill"></div></div>
+          <p class="mut update-progress-text" id="update-progress-text">0%</p>
+        </div>
+        <div id="update-info" hidden>
+          <p>当前版本：<span id="update-current">—</span></p>
+          <p>最新版本：<span id="update-latest">—</span></p>
+          <details id="update-notes-wrap" hidden>
+            <summary>更新说明</summary>
+            <div id="update-notes" class="update-notes"></div>
+          </details>
+        </div>
+      </div>
+      <footer class="update-actions">
+        <button class="secondary" data-action="close-update">关闭</button>
+        <button class="primary" id="btn-update-download" hidden>下载更新</button>
+        <button class="primary" id="btn-update-install" hidden>重启并安装</button>
+      </footer>
+    </div>
+  </div>
+
   <!-- Download overlay (created on demand) -->
 
   <!-- Drop mask -->

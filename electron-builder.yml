@@ -17,12 +17,15 @@ extraResources:
     to: "python"
     filter: ["**/*.py", "**/*.toml", "**/*.txt"]
 
-# ---------- Windows: ONE installer, creates desktop shortcut, does NOT bundle engines ----------
+# ---------- Windows: installer (NSIS) + portable zip, both published ----------
 win:
   target:
     - target: nsis
       arch: [x64]
-  artifactName: ${productName}-Setup-${version}.${ext}
+      artifactName: ${productName}-Setup-${version}.${ext}
+    - target: zip
+      arch: [x64]
+      artifactName: ${productName}-${version}-win-${arch}.${ext}
   signtoolOptions:
     sign: null
 
@@ -58,7 +61,11 @@ mac:
   category: public.app-category.developer-tools
   icon: assets/icons/icon-1024.png
 
-# ---------- Common: compression, no publishing (release script handles it) ----------
+# ---------- Common: compression, asar, GitHub publish (generates latest.yml) ----------
+# `publish` is configured so electron-builder emits update metadata
+# (latest.yml / latest-linux.yml / latest-mac.yml) even with --publish never.
+# Actual upload is done by scripts/release.sh (gh release create), which also
+# uploads these metadata files so electron-updater can find them.
 compression: normal
 asar: true
 icon: assets/icons/icon.ico
@@ -66,4 +73,10 @@ icon: assets/icons/icon.ico
 directories:
   output: build/output
   buildResources: build
-publish: null
+
+publish:
+  provider: github
+  owner: Bullobis
+  repo: kevrai-omni
+  releaseType: release
+  vPrefixedTagName: true
