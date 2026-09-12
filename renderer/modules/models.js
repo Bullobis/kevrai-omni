@@ -48,14 +48,23 @@ function renderCard(m) {
     : escapeHtml(m.description || "");
   const scoreTag = (m._score && m._score > 0)
     ? `<span class="pill score" title="相关度 ${m._score}">·</span>` : "";
+  // v2.8.0 — remote cards: show the hub badge and, when the size is unknown,
+  // say so explicitly instead of rendering "0 B" / NaN (E28).
+  const hubBadge = (m.hub && m.hub !== "curated")
+    ? `<span class="pill hub-${escapeHtml(m.hub)}">${escapeHtml(m.hub_display || m.hub)}</span>` : "";
+  const sizePill = m.size_known === false || (!m.size_gb && m.hub && m.hub !== "curated")
+    ? `<span class="pill">大小未知</span>`
+    : (m.size_gb ? `<span class="pill">${(+m.size_gb).toFixed(1)} GB</span>` : "");
   root.innerHTML = `
     <div class="card-head">
       <div class="card-title">${nameHtml}</div>
       <div class="card-pills">
-        ${m.size_gb ? `<span class="pill">${(+m.size_gb).toFixed(1)} GB</span>` : ""}
+        ${sizePill}
+        ${hubBadge}
         ${m.license ? `<span class="pill">${escapeHtml(m.license)}</span>` : ""}
         ${m.trending ? `<span class="pill warn">🔥 trending</span>` : ""}
         ${engineList.includes("mnn") ? `<span class="pill ok">MNN 可选</span>` : ""}
+        ${m.import_only ? `<span class="pill">仅下载/导入</span>` : ""}
         ${scoreTag}
       </div>
     </div>
@@ -120,6 +129,39 @@ export function populateCategoryFilter() {
 
 const detailHost = () => document.querySelector("#detail-panel");
 
+// v2.8.0 — small LRU for remote detail (design §3.6). Keyed by hub:repo so
+// clicking the same card repeatedly does not refetch. Cleared only on restart.
+const DETAIL_CACHE_MAX = 50;
+const remoteDetailCache = new Map();
+
+function cacheGet(key) {
+  if (!remoteDetailCache.has(key)) return null;
+  const v = remoteDetailCache.get(key);
+  remoteDetailCache.delete(key);
+  remoteDetailCache.set(key, v);   // refresh LRU position
+  return v;
+}
+
+function cacheSet(key, value) {
+  remoteDetailCache.set(key, value);
+  while (remoteDetailCache.size > DETAIL_CACHE_MAX) {
+    remoteDetailCache.delete(remoteDetailCache.keys().next().value);
+  }
+}
+
+// v2.8.0 — fetch hub detail for a remote card, falling back to the legacy
+// local detail endpoint when the model is curated or the bridge is absent.
+async function fetchHubDetail(item) {
+  const key = `${item.hub}:${item.repo}`;
+  const hit = cacheGet(key);
+  if (hit) return hit;
+  const r = await withTimeout(api.hubModel({ hub: item.hub, repo: item.repo }), 6_000);
+  const body = (r && r.body) ? r.body : r;
+  const model = body ? (body.model || body) : null;
+  if (model) cacheSet(key, model);
+  return model;
+}
+
 // Reject a promise after `ms` so the UI never hangs on a dead network call.
 function withTimeout(promise, ms) {
   return Promise.race([
@@ -133,12 +175,23 @@ export async function showDetail(item) {
   if (!host) return;
   host.innerHTML = renderSkeleton(item);
 
+  const isRemote = !!(item.hub && item.hub !== "curated" && item.repo);
   let detail = item;
+
+  if (isRemote && window.kevrai && typeof window.kevrai.hubModel === "function") {
+    try {
+      const remote = await fetchHubDetail(item);
+      if (remote) detail = { ...item, ...remote };
+    } catch (_) { /* keep lite detail; banner below explains */ }
+  }
+
   try {
-    // Detail API responds instantly since v2.3.0 (no sync GGUF enumeration).
-    const r = await withTimeout(api.modelDetail(item.id || item.owner_repo), 4_000);
-    if (r && r.body) detail = r.body;
-    else if (r) detail = r;
+    // Curated / cached path: the local detail API responds instantly.
+    if (!isRemote) {
+      const r = await withTimeout(api.modelDetail(item.id || item.owner_repo), 4_000);
+      if (r && r.body) detail = r.body;
+      else if (r) detail = r;
+    }
   } catch (_) { /* keep lite detail */ }
 
   // Fast path: hand-curated gguf_repos already carry their file lists.
@@ -244,14 +297,23 @@ function renderDetail(m, gguf) {
                  : (m.engine ? [m.engine] : []));
   const ggufFiles = Array.isArray(gguf?.files) ? gguf.files : [];
   const hw = m.hardware || {};
+  const isRemote = !!(m.hub && m.hub !== "curated");
+  // v2.8.0 — remote repos live on HF or ModelScope; link to the right host.
+  const repoHost = m.hub === "modelscope" ? "https://modelscope.cn/models" : "https://huggingface.co";
+  const repoLabel = m.hub === "modelscope" ? "在 魔搭 ModelScope 查看" : "在 Hugging Face 查看";
+  const sizePill = m.size_known === false || (!m.size_gb && isRemote)
+    ? `<span class="pill">大小未知</span>`
+    : (m.size_gb ? `<span class="pill">${(+m.size_gb).toFixed(1)} GB</span>` : "");
   return `
     <header class="panel-head">
       <h2 id="detail-title">${escapeHtml(m.name || m.id)}</h2>
       <div class="card-pills">
-        ${m.size_gb ? `<span class="pill">${(+m.size_gb).toFixed(1)} GB</span>` : ""}
+        ${sizePill}
+        ${isRemote ? `<span class="pill hub-${escapeHtml(m.hub)}">${escapeHtml(m.hub_display || m.hub)}</span>` : ""}
         ${m.license ? `<span class="pill">${escapeHtml(m.license)}</span>` : ""}
         ${m.category ? `<span class="pill">${escapeHtml(m.category)}</span>` : ""}
         ${engines.includes("mnn") ? `<span class="pill ok">MNN 可选</span>` : ""}
+        ${m.import_only ? `<span class="pill">仅下载/导入</span>` : ""}
         ${m.gated ? `<span class="pill warn">gated 受控访问</span>` : ""}
       </div>
     </header>
@@ -260,8 +322,8 @@ function renderDetail(m, gguf) {
 
     ${m.repo ? `<p>
       <button class="secondary small" data-action="open-external"
-              data-url="https://huggingface.co/${escapeHtml(m.repo)}">
-        在 Hugging Face 查看
+              data-url="${repoHost}/${escapeHtml(m.repo)}">
+        ${repoLabel}
       </button>
     </p>` : ""}
 

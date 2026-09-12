@@ -50,6 +50,7 @@ function fillForm(s) {
     ? "Editing host allowlist affects future downloads."
     : "Advanced editing is disabled. Enable above to modify.";
   if ($("#set-hf-token")) $("#set-hf-token").value = s.hfToken || "";
+  if ($("#set-ms-token")) $("#set-ms-token").value = s.msToken || "";
 }
 
 function trapFocus(root) {
@@ -81,6 +82,10 @@ function readForm() {
     hardwareAccel:   $("#set-hwaccel").value,
     telemetry:       $("#set-telemetry").checked,
     allowlistAdvanced: allowAdvanced,
+    // v2.8.0 — tokens are persisted by Electron's saveSettings whitelist and
+    // synced to the Python sidecar (it makes the remote requests).
+    hfToken:         $("#set-hf-token") ? $("#set-hf-token").value.trim() : "",
+    msToken:         $("#set-ms-token") ? $("#set-ms-token").value.trim() : "",
     ...(allowlist ? { allowlist } : {}),
   };
 }

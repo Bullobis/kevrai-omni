@@ -38,6 +38,10 @@ class SourceProbe:
     status: int
     size_bytes: int           # size of probe body
     error: str = ""
+    # v2.8.1 additions (design §2.3.1) — only new keys, never removed.
+    source_id: str = ""
+    source_type: str = ""
+    from_cache: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -49,6 +53,10 @@ class SourceProbe:
             "status": self.status,
             "size_bytes": self.size_bytes,
             "error": self.error,
+            # v2.8.1 additions
+            "source_id": self.source_id,
+            "source_type": self.source_type,
+            "from_cache": self.from_cache,
         }
 
 
@@ -60,7 +68,14 @@ def _safe_host(url: str) -> str:
 
 
 def _score(p: SourceProbe) -> float:
-    """Higher is better. Combines latency + throughput into one score."""
+    """Higher is better. Combines latency + throughput into one score.
+
+    NOTE (v2.8.1): the scheduler (:mod:`app.source_scheduler`) now performs the
+    graded, size-aware, EWMA-smoothed scoring. This linear formula is kept as
+    the *stateless* fallback used when no scheduler/registry is in play, so
+    `measure_sources()` keeps producing a sensible ordering on its own and the
+    existing ``test_sources.py`` assertions stay valid.
+    """
     if not p.ok or p.status >= 400:
         return -1e9
     # Lower latency + higher speed is better. Composite:
@@ -112,11 +127,30 @@ async def measure_sources(
     *,
     timeout: float = PROBE_TIMEOUT,
     concurrency: int = PROBE_CONCURRENCY,
+    registry: Any | None = None,
+    profile: str = "",
+    purpose: str = "model",
 ) -> list[dict[str, Any]]:
     """Probe every URL in `urls` and return a sorted ranking (best first).
 
     Each entry is a dict matching `SourceProbe.to_dict()`. The very first
     item is the recommended source.
+
+    v2.8.1 (design T02): the three new keyword arguments are **optional** and
+    default to the legacy behaviour:
+
+    * ``registry`` — a :class:`app.sources_registry.SourceRegistry`. When given,
+      probes consult the shared TTL cache (300 s) and the per-source circuit
+      breaker: cooling sources are skipped without a network call, and results
+      are written back to health + cache.
+    * ``profile`` — ``""`` (auto by file size, but ``measure_sources`` has no
+      size so it defaults to the throughput profile), ``"latency"`` or
+      ``"speed"``. Only affects the final ordering when a registry is present.
+    * ``purpose`` — ``"model"`` (default) or ``"engine"``; carried through to
+      the scheduler when ranking via a registry.
+
+    When ``registry`` is ``None`` the function behaves exactly as before: it
+    probes every URL and sorts by :func:`_score`.
     """
     if not urls:
         return []
@@ -127,6 +161,20 @@ async def measure_sources(
         if u and u not in seen:
             seen.add(u)
             uniq.append(u)
+
+    if registry is not None:
+        # Delegate to the scheduler so caching + breaker + graded scoring apply.
+        from .source_scheduler import SourceScheduler
+        scheduler = SourceScheduler(registry)
+        # ``measure_sources`` has no size context, so honoured values are
+        # explicit profiles only; "" leaves the scheduler on its auto default.
+        # Passing profile through (rather than dropping it) is what makes
+        # PROFILE_SMALL / PROFILE_LARGE actually change the winner.
+        result = await scheduler.select(
+            uniq, file_size=0, profile=profile, purpose=purpose, force=False,
+        )
+        return result.ranking
+
     sem = asyncio.Semaphore(concurrency)
     timeout_obj = httpx.Timeout(timeout)
 
@@ -167,7 +215,9 @@ def _host_of(url: str) -> str:
         h = urlparse(url).hostname or ""
     except Exception:
         return ""
-    return h.lower().lstrip("www.")
+    # H7: `lstrip("www.")` strips a *character set*, so `wandb.ai` → `andb.ai`.
+    # `removeprefix` strips the exact prefix only.
+    return h.lower().removeprefix("www.")
 
 
 def _swap_host(url: str, new_host: str) -> str:

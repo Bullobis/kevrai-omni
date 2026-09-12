@@ -199,6 +199,14 @@ const api = {
     return invoke("kevrai:measure-sources", { urls: clean });
   },
 
+  // ----- v2.8.1: source registry / health / lock ------------------------
+  getSourceRegistry: () => invoke("kevrai:source-registry"),
+  getSourceHealth:   () => invoke("kevrai:source-health"),
+  lockSource: (sourceId) => {
+    if (typeof sourceId !== "string") throw new Error("sourceId must be a string");
+    return invoke("kevrai:lock-source", { source_id: sourceId.slice(0, 128) });
+  },
+
   // ----- v2.3.0: hardware detection / recommendations / MNN runtime -----
   hardware: (opts) => {
     const o = (opts == null || typeof opts === "object") ? (opts || {}) : {};
@@ -338,6 +346,63 @@ const api = {
   },
   searchRecent: () => invoke("api:search:recent"),
   searchClearRecent: () => invoke("api:search:recent:clear"),
+
+  // ----- v2.8.0: dual-source hub (HuggingFace + ModelScope + curated) -----
+  hubSources: () => invoke("kevrai:hub-sources"),
+  hubSearch: (params) => {
+    const p = (params == null || typeof params !== "object") ? {} : params;
+    const clean = {};
+    if (typeof p.q === "string") clean.q = p.q.slice(0, 200);
+    if (typeof p.sources === "string") clean.sources = p.sources.slice(0, 120);
+    if (p.sources != null && !Array.isArray(p.sources) && typeof p.sources !== "string") {
+      throw new Error("sources: must be a string or array");
+    }
+    if (Array.isArray(p.sources)) {
+      clean.sources = p.sources
+        .filter((s) => typeof s === "string")
+        .map((s) => s.slice(0, 32))
+        .join(",");
+    }
+    if (typeof p.category === "string") clean.category = p.category.slice(0, 64);
+    if (typeof p.engine === "string") clean.engine = p.engine.slice(0, 64);
+    if (typeof p.license === "string") clean.license = p.license.slice(0, 128);
+    if (p.sort != null) {
+      assertEnum(p.sort, ["relevance", "downloads", "likes", "recent", "name_asc"], "sort");
+      clean.sort = p.sort;
+    }
+    if (p.page_size != null) clean.page_size = Math.max(1, Math.min(100, parseInt(p.page_size, 10) || 30));
+    if (typeof p.cursor === "string") clean.cursor = p.cursor.slice(0, 4096);
+    return invoke("kevrai:hub-search", clean);
+  },
+  hubModel: (params) => {
+    assertObject(params, "params");
+    const clean = { hub: params.hub, repo: params.repo };
+    if (typeof params.revision === "string") clean.revision = params.revision.slice(0, 128);
+    return invoke("kevrai:hub-model", clean);
+  },
+  hubFiles: (params) => {
+    assertObject(params, "params");
+    const clean = { hub: params.hub, repo: params.repo };
+    if (typeof params.revision === "string") clean.revision = params.revision.slice(0, 128);
+    return invoke("kevrai:hub-files", clean);
+  },
+  hubDownload: (params) => {
+    assertObject(params, "params");
+    const files = Array.isArray(params.files)
+      ? params.files.filter((f) => typeof f === "string").map((f) => f.slice(0, 1024)).slice(0, 200)
+      : [];
+    if (!files.length) throw new Error("files: at least one path required");
+    const clean = {
+      hub: params.hub, repo: params.repo, files,
+      revision: typeof params.revision === "string" ? params.revision.slice(0, 128) : "",
+      auto_pick: params.auto_pick !== false,
+    };
+    return invoke("kevrai:hub-download", clean);
+  },
+  hubJob: (jobId) => {
+    assertString(jobId, "jobId", 128);
+    return invoke("kevrai:hub-job", jobId);
+  },
 
   // ----- v2.4.0: LTX-2.5 video generation -----
   ltxCapabilities: () => invoke("api:ltx:capabilities"),

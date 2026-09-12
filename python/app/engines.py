@@ -24,6 +24,8 @@ from typing import Any
 
 import httpx
 
+from .hub.paths import safe_extract as _hub_safe_extract
+
 from .catalog import (
     ALLOWED_ENGINE_HOSTS,
     Catalog,
@@ -292,7 +294,9 @@ class EngineManager:
                             f"sha256 mismatch: expected {sha256}, got {actual_zip}"
                         )
                 with zipfile.ZipFile(tmp, "r") as zf:
-                    zf.extractall(target_dir)
+                    # P0-2 (H2): validated extraction — Zip Slip is rejected
+                    # per member instead of trusting member names.
+                    _hub_safe_extract(zf, target_dir)
                 tmp.unlink(missing_ok=True)
                 # The "binary" we verify is any file matching an engine binary name,
                 # but we leave that as a no-op for zip layouts; the dir itself is the
@@ -521,7 +525,8 @@ def download_zip_engine(url: str, root: Path, engine_id: str) -> InstallResult:
                 for chunk in r.iter_bytes():
                     fh.write(chunk)
         with zipfile.ZipFile(tmp, "r") as zf:
-            zf.extractall(target_dir)
+            # P0-2 (H2): same Zip-Slip guard as the EngineManager path above.
+            _hub_safe_extract(zf, target_dir)
         tmp.unlink(missing_ok=True)
         return InstallResult(engine_id=engine_id, path=str(target_dir), ok=True, message="installed")
     except Exception as e:

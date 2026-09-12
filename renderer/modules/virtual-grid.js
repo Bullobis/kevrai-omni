@@ -16,6 +16,12 @@ export class VirtualGrid {
     this.itemClass      = opts.itemClass      || "vgrid-item";
     this.renderItem     = opts.renderItem     || (() => document.createElement("div"));
     this.onItemClick    = opts.onItemClick    || (() => {});
+    // v2.8.0 — incremental loading. Both have defaults; existing callers that
+    // omit them keep the exact previous behaviour (setItems only).
+    this.onNearEnd      = opts.onNearEnd      || (() => {});
+    this.nearEndRows    = opts.nearEndRows    || 2;
+    this._nearEndFired  = false;
+    this.loading        = false;   // set true by the owner while prefetching
 
     this.host.classList.add("vgrid");
     this.viewport = document.createElement("div");
@@ -50,9 +56,30 @@ export class VirtualGrid {
 
   setItems(items) {
     this.items = Array.isArray(items) ? items : [];
+    this._nearEndFired = false;
     this._layout();
     this.viewport.scrollTop = 0;
     this._render();
+  }
+
+  // v2.8.0 — append a page without resurfacing to the top. The ONLY
+  // difference from setItems() is that scrollTop is preserved (setItems()
+  // resets it to 0, which is correct for a new query but wrong when we are
+  // merely growing the current result set).
+  appendItems(items) {
+    if (!Array.isArray(items) || !items.length) return;
+    const keep = this.viewport.scrollTop;
+    this.items = this.items.concat(items);
+    this._layout();                  // recompute spacer height
+    this.viewport.scrollTop = keep;  // _layout()/_render() must not eat scroll
+    this._render();
+  }
+
+  // v2.8.0 — allow the owner to flip the "a request is in flight" flag so the
+  // near-end callback cannot fire repeatedly while a page is loading.
+  setLoading(flag) {
+    this.loading = !!flag;
+    if (!this.loading) this._nearEndFired = false;
   }
 
   _layout() {
@@ -94,6 +121,31 @@ export class VirtualGrid {
     }
     // Hard-clear children before re-mounting. Cheap at 62 items.
     this.viewport.replaceChildren(this.spacer, frag);
+    this._maybeFireNearEnd();
+  }
+
+  // v2.8.0 — trigger onNearEnd once when the viewport nears the bottom, with a
+  // re-arm latch so it fires again only after the user scrolls back up (or a
+  // page-load completes and resets it). Uses the same scroll listener _render()
+  // is already bound to — no IntersectionObserver, no sentinel DOM node.
+  _maybeFireNearEnd() {
+    if (typeof this.onNearEnd !== "function") return;
+    const cols = this.colsNow || 1;
+    const rowH = this.itemHeight + this.gap;
+    const rows = Math.ceil(this.items.length / cols);
+    const spacerH = this.items.length
+      ? Math.max(1, rows * rowH + this.padding)
+      : 0;
+    const top = this.viewport.scrollTop;
+    const h = this.viewport.clientHeight;
+    const threshold = spacerH - this.nearEndRows * rowH;
+    const nearEnd = spacerH > 0 && (top + h) >= threshold;
+    if (nearEnd && !this._nearEndFired && !this.loading) {
+      this._nearEndFired = true;
+      try { this.onNearEnd(); } catch (_) { /* never break rendering */ }
+    } else if (!nearEnd) {
+      this._nearEndFired = false;
+    }
   }
 
   destroy() {
