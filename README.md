@@ -16,10 +16,21 @@
 > 点击播放 [docs/kevrai-omni-promo.mp4](docs/kevrai-omni-promo.mp4)。视频涵盖：模型市场、硬件检测、MiniMax-Music3 音乐生成、LTX-2.5 视频生成、Kevrai Agent 智能助手、本地隐私。
 
 ![License: Kevrai Omni Community License v2.1](https://img.shields.io/badge/License-Kevrai%20Community%20v2.1-orange)
-![Version](https://img.shields.io/badge/version-2.6.0-orange)
-![Tests](https://img.shields.io/badge/tests-372%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-2.8.0-orange)
+![Tests](https://img.shields.io/badge/tests-475%20passed-brightgreen)
 
 ---
+
+## ✨ v2.8.0 更新亮点（可插拔技能库 + 短剧编剧方法论）
+
+| 功能 | 说明 |
+|---|---|
+| 🧩 **可插拔技能系统** | 11 个扁平工具升级为 6 个技能包（核心/模型检索/本机环境/短剧工坊/写作工坊/提示词工坊），Agent 面板新增「🧩 技能库」可按需勾选添加或关闭，状态持久化到 `agent/skills.json`；核心技能不可关闭，跨技能工具名唯一性在构造期强校验；旧的扁平注册表 API 完全保留 |
+| 🎬 **短剧编剧方法论移植** | 双基调（微电影三幕式 / 短视频钩子驱动）、9 种情绪节拍库、6 大真人导演流派 + 5 种动画风格锚点、四段产物（梗概/人物小传/场景登记/分场剧本）；场景「先登记后使用」，本地小模型漏登记时自动补登不中断；短剧页新增基调选择与风格锚点下拉 |
+| ✍️ **写作工坊（可选技能）** | 大纲骨架、润色清单+文本统计、抽取式摘要、翻译规范；离线确定性可用，加载对话 AI 后 `use_llm` 一键扩写 |
+| 🎨 **多模态提示词工坊（可选技能）** | 图像/视频/音乐提示词包，每个结果都含 positive 正向、negative 负面词库、theme_constraints 主题一致性约束，画幅白名单与时长/BPM 钳制，为后续 AI 视频生产提供防变脸/防闪烁/防乱码保障 |
+| 🤖 **Agent 规则回退增强** | 系统提示词按已启用技能注入方法论；无 LLM 时新增短剧/提示词/写作三条确定性路由，并给硬件、搜索路由加工具启用守卫，技能关闭后绝不调用缺失工具；工具总数 11→23（默认启用 16） |
+| 🧪 **测试加固** | 新增 `test_v280_skills.py`（54 项）覆盖技能管理/持久化/三个工具包/短剧方法论/Agent 集成/HTTP API；全量 **475 passed**，smoke.sh 全绿，含空/超长/非法输入等极端测试 |
 
 ## ✨ v2.7.0 更新亮点（Kevrai Agent 通用 AI 助手）
 

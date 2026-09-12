@@ -25,6 +25,163 @@ _MAX_SCENES = 12
 _MAX_SHOTS_PER_SCENE = 12
 _MAX_CHARACTERS = 12
 
+# ---------------------------------------------------------------------------
+# v2.8.0 剧作方法论库（移植自专业短剧创作技能 scriptwriter，并按本地"结构化
+# JSON + 规则钳制"流水线做了小改：把对话式四段交付改造成可注入 LLM 提示词、
+# 可被 _normalize_script 校验的确定性知识；不依赖宿主的逐阶段人工确认门禁）。
+# ---------------------------------------------------------------------------
+
+# 两种剧作基调：微电影三幕式（情感沉淀）/ 短视频钩子驱动（爽感释放）
+STORY_MODES: dict[str, dict[str, Any]] = {
+    "micro_film": {
+        "label": "微电影三幕式",
+        "chapter_range": [3, 5],
+        "acts": [
+            {"name": "铺陈", "ratio": "20-25%", "goal": "建立主角处境与情感缺口，给出开场钩子"},
+            {"name": "事件与冲突", "ratio": "45-50%", "goal": "核心事件登场，把主角推到临界点，中段设一次翻转"},
+            {"name": "高潮与落点", "ratio": "25-30%", "goal": "主角做出内在选择，完成情感闭环（和解/释怀/觉悟）"},
+        ],
+        "principles": [
+            "一部只承载一个核心事件 / 一次情绪转变 / 一个价值追问",
+            "允许 2-3 秒静态凝视与无对白空镜，留白是情绪沉淀的成本",
+            "对立面可象征化（沉默/距离/时间/过去的自己），不必人格化反派",
+            "情绪靠物件+光影+留白承载，避免总结陈词式台词，VO 只出现在开场与结尾",
+            "落点优先情感闭环而非打脸释放，可用开放式追问留下余韵",
+        ],
+    },
+    "hook_drama": {
+        "label": "短视频钩子驱动",
+        "chapter_range": [3, 5],
+        "acts": [
+            {"name": "黄金钩子", "ratio": "前3秒/15-20%", "goal": "立刻抛出核心矛盾或强悬念，主角陷入危机或极端处境"},
+            {"name": "压迫蓄力", "ratio": "约30%", "goal": "冲突高频堆叠，对手阻挠要具体恶劣，主角隐忍蓄力"},
+            {"name": "反转打脸", "ratio": "约30%", "goal": "身份/能力暴露，每章节至少一次反转，首波释放"},
+            {"name": "终局清算", "ratio": "20-30%", "goal": "降维打击，爽点集中释放，反派本集内得到实质惩罚"},
+        ],
+        "principles": [
+            "前 15-30 秒必须抛出核心矛盾，不允许超过 15 秒没有信息增量",
+            "压迫要具体、释放要痛快；用动作外化情绪（直接演，不靠台词解释）",
+            "善用反差：人设反差、预期反差、台词反差",
+            "台词千人千面，匹配角色身份与社会地位",
+            "短篇结尾必须给明确落点（惩罚/反转/行动号召/情感闭环），不用悬而未决",
+        ],
+    },
+}
+
+DEFAULT_STORY_MODE = "micro_film"
+
+# 情绪节拍库（移植【节拍：XX】标记体系，改为镜头/场景级 beat 字段）
+BEAT_LIBRARY: dict[str, str] = {
+    "hook": "开场钩子",
+    "conflict": "冲突展开",
+    "escalate": "危机加剧",
+    "break_ice": "破冰",
+    "turn": "反转",
+    "payoff": "爽点释放",
+    "climax": "高潮",
+    "closure": "情感闭环",
+    "transition": "转场",
+}
+
+# 真人电影六大流派风格锚点（避免"电影感/高级质感"这类模糊风格导致下游漂移）
+DIRECTOR_STYLES: dict[str, list[dict[str, str]]] = {
+    "oriental_life": [
+        {"anchor": "是枝裕和风格的电影", "trait": "家庭日常、柔和自然光、餐桌戏、克制的情感高潮", "fit": "家庭治愈/亲情和解"},
+        {"anchor": "李安早期华语风格的电影", "trait": "东方伦理细腻笔触、温润暖色、克制张力", "fit": "家庭/情感"},
+        {"anchor": "侯孝贤风格的电影", "trait": "长镜头+自然光+生活流、少切镜多定机", "fit": "怀旧/生活流"},
+        {"anchor": "岩井俊二风格的电影", "trait": "青春过曝、逆光空气感、蓝白清冷色、手持轻晃", "fit": "青春/初恋"},
+    ],
+    "neon_retro": [
+        {"anchor": "王家卫风格的电影", "trait": "手持慢速快门拖影、高饱和红绿蓝、暗调霓虹、变速、偷窥式构图", "fit": "怀旧年代/港风"},
+        {"anchor": "贾樟柯风格的电影", "trait": "乡镇现实主义、纪实手持、宽银幕生活流、灰蓝色调", "fit": "年代/纪实"},
+    ],
+    "symmetric_author": [
+        {"anchor": "韦斯·安德森风格的电影", "trait": "绝对对称构图、马卡龙高饱和色板、平面感、章节标题卡、正前方推镜", "fit": "广告剧情/作者喜剧"},
+        {"anchor": "昆汀·塔伦蒂诺风格的电影", "trait": "章节化叙事、复古胶片、高饱和、脚部特写/trunk shot", "fit": "黑色幽默/犯罪"},
+    ],
+    "cold_precise": [
+        {"anchor": "大卫·芬奇风格的电影", "trait": "低调冷灰、精密对称、数字质感、长焦压缩空间", "fit": "悬疑/犯罪/惊悚"},
+        {"anchor": "库布里克风格的电影", "trait": "一点透视对称、缓慢推轨、冷冽疏离、广角低机位", "fit": "悬疑/心理"},
+        {"anchor": "诺兰风格的电影", "trait": "IMAX 大远景+手持贴脸特写、冷冽金属感、宏大调度", "fit": "科幻/悬疑"},
+    ],
+    "poetic_natural": [
+        {"anchor": "泰伦斯·马利克风格的电影", "trait": "广角低机位、麦浪金黄、诗性 VO、自然光、斯坦尼康移动", "fit": "影展诗意/自然"},
+        {"anchor": "河濑直美风格的电影", "trait": "山林光影、日式生态叙事、克制诗意", "fit": "自然/治愈"},
+    ],
+    "social_realist": [
+        {"anchor": "达内兄弟风格的电影", "trait": "手持贴身跟拍、社会边缘人物、原生光、几乎无配乐", "fit": "社会议题"},
+        {"anchor": "肯·洛奇风格的电影", "trait": "工人阶级现实主义、素人演员、纪实自然对白", "fit": "社会议题"},
+    ],
+}
+
+# 非真人（动画/非写实）风格锚点：仅当用户指定制作形式或内容无法真人拍摄时使用
+ANIMATION_STYLES: list[dict[str, str]] = [
+    {"anchor": "吉卜力风格", "trait": "手绘自然、温暖治愈、奇幻生活流", "fit": "童话/奇幻动画"},
+    {"anchor": "京都动画风格", "trait": "细腻赛璐璐、清透光影、青春校园", "fit": "日系动画"},
+    {"anchor": "上美影水墨风格", "trait": "中国水墨写意、留白、东方意境", "fit": "国风/水墨动画"},
+    {"anchor": "皮克斯3D动画风格", "trait": "三维卡通渲染、夸张表演、材质细腻", "fit": "合家欢3D动画"},
+    {"anchor": "粘土定格动画风格", "trait": "手工质感、逐帧定格、稚拙可爱", "fit": "独立/绘本动画"},
+]
+
+# 题材→受众心理速查（双轨：钩子短剧 / 微电影）
+GENRE_LIBRARY: dict[str, dict[str, list[str]]] = {
+    "hook_drama": {
+        "个人主义爽感": ["重生/预知", "穿越异世界", "末世囤货基建", "系统升级流", "禁忌之恋/觉醒"],
+        "集体主义爽感": ["掉马甲/隐世大佬", "真假千金/豪门", "年代手撕极品", "婆媳伦理", "萌宝天才", "衣锦还乡"],
+    },
+    "micro_film": {
+        "情感共鸣": ["亲情和解", "异地离别", "老友重逢", "临终告别", "分手后独处"],
+        "治愈自愈": ["深夜食堂", "辞职返乡", "一日限定关系", "独居美学", "宠物告别"],
+        "社会议题": ["打工人", "教育焦虑", "老龄化空巢", "性别议题", "原生家庭", "AI与人性"],
+    },
+}
+
+
+def storycraft_reference() -> dict[str, Any]:
+    """返回剧作方法论知识库（供前端展示、Agent 工具调用与提示词注入）。"""
+    return {
+        "modes": {k: {"label": v["label"], "acts": v["acts"], "principles": v["principles"],
+                      "chapter_range": v["chapter_range"]} for k, v in STORY_MODES.items()},
+        "beats": BEAT_LIBRARY,
+        "director_styles": DIRECTOR_STYLES,
+        "animation_styles": ANIMATION_STYLES,
+        "genre_library": GENRE_LIBRARY,
+        "four_stage_deliverables": [
+            "剧情梗概：覆盖起承转合的连贯叙事（主角动机/对立面阻挠/关键抉择/结局形态）",
+            "人物小传：主角/配角/反派，含定位、性格、动机、成长弧线、视觉方向、关键道具",
+            "主要故事场景登记清单：短篇 2-4 个核心场景，先登记后使用，锁定名称/类型/空间/情绪/关键陈设",
+            "完整剧本：分场格式，动作△客观可拍、对白、VO 旁白、【节拍】标记，场景取自登记清单",
+        ],
+    }
+
+
+def _normalize_mode(mode: Any) -> str:
+    m = str(mode or "").strip().lower()
+    return m if m in STORY_MODES else DEFAULT_STORY_MODE
+
+
+def _craft_guidance(mode: str, style_anchor: str = "") -> str:
+    """把方法论库编译为注入剧本生成提示词的中文指导块。"""
+    md = STORY_MODES[mode]
+    acts = "\n".join(f"  - {a['name']}（{a['ratio']}）：{a['goal']}" for a in md["acts"])
+    principles = "\n".join(f"  - {p}" for p in md["principles"])
+    beat_names = "、".join(f"{v}({k})" for k, v in BEAT_LIBRARY.items())
+    anchor_line = (
+        f"- 风格锚点必须具体到一位导演流派或一种动画流派，全程沿用：{style_anchor}\n"
+        if style_anchor else
+        "- 风格字段不要写'电影感/高级质感'这类模糊词，须锚定一位导演流派（如 是枝裕和/王家卫/大卫·芬奇）"
+        "或一种动画流派（如 吉卜力/上美影水墨）\n"
+    )
+    return (
+        f"本次采用【{md['label']}】，结构如下：\n{acts}\n"
+        f"创作原则：\n{principles}\n"
+        f"{anchor_line}"
+        f"- 每个场景与关键镜头用 beat 标注情绪节拍，可选值：{beat_names}\n"
+        "- 先在 scene_registry 登记 2-4 个核心场景（名称/类型/空间概念/情绪基调/关键陈设），"
+        "剧本各场 location 必须取自登记清单，不要凭空新增未登记场景\n"
+        "- 反派需写'合理性动机'与'惩罚落点'，避免脸谱化（微电影可用象征化对立面）"
+    )
+
 
 class DramaAgentError(RuntimeError):
     """短剧编排器可预期错误（映射为 4xx 或 409）。"""
@@ -244,21 +401,25 @@ _BRAINSTORM_SYSTEM = (
 _BRAINSTORM_PROMPT = """请围绕用户的创意进行头脑风暴引导。
 
 用户创意：{topic}
+本次剧作基调：{mode_label}（{mode_hint}）
 
 要求：
 1. 输出一个 JSON 对象：{{"angle": "对创意的一句话解读/锚定方向", "questions": ["问题1", "问题2", "问题3", "问题4", "问题5"]}}
 2. questions 是 5 个开放式问题，覆盖：题材/世界观、主角人设与动机、核心冲突/钩子、
-   目标观众与平台调性、视觉风格与时长。问题要具体、可回答，帮助下一步生成剧本。
-3. 用中文回答，问题之间要有递进关系。"""
+   目标观众与平台调性、视觉风格（请锚定具体导演/动画流派）与时长。问题要具体、可回答，帮助下一步生成剧本。
+3. 问题要贴合"{mode_label}"的结构与节奏。用中文回答，问题之间要有递进关系。"""
 
 
-def brainstorm(topic: str) -> dict[str, Any]:
+def brainstorm(topic: str, mode: str = DEFAULT_STORY_MODE) -> dict[str, Any]:
     """创意头脑风暴：返回引导方向与 5 个开放式问题。"""
+    mode = _normalize_mode(mode)
     topic = _clean_str(topic, 1000)
     if not topic:
         topic = "（用户尚未给出具体创意，请给出一个足够有吸引力的通用短剧方向，并引导用户细化）"
+    md = STORY_MODES[mode]
+    mode_hint = "；".join(a["name"] for a in md["acts"])
     text = _call_llm(
-        _BRAINSTORM_PROMPT.format(topic=topic),
+        _BRAINSTORM_PROMPT.format(topic=topic, mode_label=md["label"], mode_hint=mode_hint),
         _BRAINSTORM_SYSTEM,
         max_new_tokens=1024,
     )
@@ -270,7 +431,7 @@ def brainstorm(topic: str) -> dict[str, Any]:
     questions = [_clean_str(q, 300) for q in questions if _clean_str(q, 300)]
     if not questions:
         raise LlmOutputError("对话 AI 未返回引导问题")
-    return {"angle": angle, "questions": questions[:6], "topic": topic}
+    return {"angle": angle, "questions": questions[:6], "topic": topic, "mode": mode}
 
 
 # ---------------------------------------------------------------------------
@@ -282,40 +443,50 @@ _SCRIPT_SYSTEM = (
     "高密度剧情。你输出严格的结构化 JSON 剧本，供下游多模态 AI 流水线执行。"
 )
 
-_SCRIPT_PROMPT = """请基于以下创意与头脑风暴结论，创作一集完整的 AI 短剧剧本。
+_SCRIPT_PROMPT = """请基于以下创意与头脑风暴结论，按专业剧作方法创作一集完整的 AI 短剧剧本。
 
 创意/用户要求：{topic}
 头脑风暴方向：{angle}
 用户对引导问题的回答：
 {answers}
 
+{craft_guidance}
+
 输出 JSON 对象，严格遵循以下 schema（不要输出任何多余文字）：
 {{
   "title": "剧名（吸睛、可传播）",
   "logline": "一句话梗概（含钩子）",
+  "synopsis": "剧情梗概（300-600字，覆盖起承转合：主角动机、对立面阻挠、关键抉择、结局形态）",
   "genre": "题材类型",
-  "style": "视觉风格关键词（中文，如 赛博朋克/古风水墨/都市写实）",
+  "mode": "{mode}",
+  "style": "视觉风格关键词（须与风格锚点一致，中文，如 赛博朋克/古风水墨/都市写实）",
+  "style_anchor": "导演/动画流派锚点（如 是枝裕和风格的电影 / 吉卜力风格）",
   "music_mood": "全剧 BGM 氛围（如 悬疑紧张/甜蜜轻快）",
   "characters": [
-    {{"name": "角色名", "age": "年龄段", "appearance": "外貌/服装特征（供文生图定妆）", "voice": "音色描述（供 TTS）", "personality": "性格标签"}}
+    {{"name": "角色名", "role": "主角/配角/反派", "age": "年龄段", "appearance": "外貌/服装特征（供文生图定妆）", "voice": "音色描述（供 TTS）", "personality": "性格标签", "motivation": "核心动机与底层驱动力", "arc": "成长弧线（开场→中段→结局）", "key_prop": "关键道具/记忆点"}}
+  ],
+  "scene_registry": [
+    {{"name": "场景名（2-6字，剧本 location 必须与此一致）", "kind": "主场景/次场景/回忆梦境", "space": "空间概念（材质/体量/光源/时代感）", "mood": "情绪基调", "props": "叙事性关键陈设"}}
   ],
   "scenes": [
     {{
       "scene_id": 1,
-      "location": "场景地点",
+      "location": "场景地点（必须取自 scene_registry 的 name）",
       "time": "白天/夜晚/黄昏",
+      "beat": "本场情绪节拍（取自给定节拍值）",
       "summary": "本场剧情摘要",
       "shots": [
-        {{"shot_id": 1, "shot_type": "景别(特写/近景/中景/全景/远景)", "camera": "运镜(固定/推近/拉远/横移/环绕/手持/低角度)", "characters": ["角色名"], "action": "画面动作描述", "dialogue": "本镜台词（无则空字符串）", "visual_prompt": "画面视觉提示词（含场景/人物/光影/构图，供文生图）", "duration_s": 4}}
+        {{"shot_id": 1, "shot_type": "景别(特写/近景/中景/全景/远景)", "camera": "运镜(固定/推近/拉远/横移/环绕/手持/低角度)", "characters": ["角色名"], "action": "画面动作描述（△客观、可拍摄，不写心理活动）", "dialogue": "本镜台词（无则空字符串）", "beat": "本镜情绪节拍", "visual_prompt": "画面视觉提示词（含场景/人物/光影/构图，供文生图）", "duration_s": 4}}
       ]
     }}
   ]
 }}
 
 硬性要求：
-- 角色 1~{max_chars} 个，场景 1~{max_scenes} 个，每场 2~{max_shots} 个镜头
+- 角色 1~{max_chars} 个（主角/配角/反派齐备，反派需有合理性动机与惩罚落点），场景 1~{max_scenes} 个，每场 2~{max_shots} 个镜头
+- 先在 scene_registry 登记 2-4 个核心场景，scenes 的 location 必须从中取用，保持一字不差
 - 每镜 duration_s 在 2~{max_shot}s 之间，单集总时长 60~180 秒
-- 第 1 镜必须是强钩子（冲突/悬念/反转）
+- {first_shot_rule}
 - visual_prompt 必须具体到光影、构图、情绪；3D 场景可渲染
 - dialogue 使用口语化、高冲突台词，中文"""
 
@@ -331,33 +502,109 @@ def _format_answers(answers: Any) -> str:
     return str(answers)
 
 
-def generate_script(topic: str, angle: str, answers: Any) -> dict[str, Any]:
-    """生成结构化短剧剧本 JSON。"""
+def generate_script(
+    topic: str,
+    angle: str,
+    answers: Any,
+    mode: str = DEFAULT_STORY_MODE,
+    style_anchor: str = "",
+) -> dict[str, Any]:
+    """生成结构化短剧剧本 JSON。
+
+    mode: micro_film（微电影三幕式）/ hook_drama（短视频钩子驱动）。
+    style_anchor: 可选的导演/动画流派锚点，为空时由提示词要求 LLM 自选。
+    """
+    mode = _normalize_mode(mode)
     topic = _clean_str(topic, 1000)
     if not topic:
         raise DramaAgentError("剧本主题不能为空")
+    style_anchor = _clean_str(style_anchor, 200)
+    first_shot_rule = (
+        "第 1 镜必须是 3 秒强钩子（冲突/悬念/极端处境），节奏快、反转密"
+        if mode == "hook_drama"
+        else "第 1 镜给出开场钩子并建立主角处境，允许克制留白，光影承担情绪"
+    )
     prompt = _SCRIPT_PROMPT.format(
         topic=topic,
         angle=_clean_str(angle, 500) or "（无）",
         answers=_format_answers(answers),
+        craft_guidance=_craft_guidance(mode, style_anchor),
+        mode=mode,
         max_chars=_MAX_CHARACTERS,
         max_scenes=_MAX_SCENES,
         max_shots=_MAX_SHOTS_PER_SCENE,
         max_shot=_MAX_SHOT_SECONDS,
+        first_shot_rule=first_shot_rule,
     )
     text = _call_llm(prompt, _SCRIPT_SYSTEM, max_new_tokens=4096)
     obj = _extract_json(text)
-    script = _normalize_script(obj)
+    script = _normalize_script(obj, default_mode=mode)
     script["topic"] = topic
     return script
 
 
-def _normalize_script(obj: dict[str, Any]) -> dict[str, Any]:
+def _normalize_beat(v: Any) -> str:
+    """把 LLM 的自由文本节拍归一到节拍库；无法匹配时保留原文（截断）。"""
+    b = _clean_str(v, 40)
+    if not b:
+        return ""
+    for key, label in BEAT_LIBRARY.items():
+        if b == key or b == label or key in b.lower() or label in b:
+            return key
+    return b
+
+
+def _normalize_scene_registry(obj: dict[str, Any], scenes: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
+    """归一化场景登记清单，并保证每个剧本场景都已登记。
+
+    移植方法论中"先登记后使用、场景必须取自清单"的硬约束；考虑到本地小模型
+    可能不严格遵守，未登记的场景会被自动补登记，并在 auto_added 中记录，
+    而不是直接报错中断流水线。
+    """
+    registry: list[dict[str, Any]] = []
+    known: set[str] = set()
+    raw = obj.get("scene_registry") or obj.get("scenes_registry") or []
+    if isinstance(raw, list):
+        for r in raw[:_MAX_SCENES]:
+            if not isinstance(r, dict):
+                continue
+            name = _clean_str(r.get("name"), 50)
+            if not name:
+                continue
+            registry.append({
+                "name": name,
+                "kind": _clean_str(r.get("kind"), 50),
+                "space": _clean_str(r.get("space"), 400),
+                "mood": _clean_str(r.get("mood"), 200),
+                "props": _clean_str(r.get("props"), 400),
+            })
+            known.add(name)
+
+    auto_added: list[str] = []
+    for sc in scenes:
+        loc = _clean_str(sc.get("location"), 50)
+        if loc and loc not in known:
+            registry.append({
+                "name": loc, "kind": "次场景", "space": "",
+                "mood": _clean_str(sc.get("beat"), 100), "props": "",
+            })
+            known.add(loc)
+            auto_added.append(loc)
+    # 编号
+    for i, r in enumerate(registry, 1):
+        r["scene_code"] = f"S{i:02d}"
+    return registry[:_MAX_SCENES], auto_added
+
+
+def _normalize_script(obj: dict[str, Any], default_mode: str = DEFAULT_STORY_MODE) -> dict[str, Any]:
     """清洗 LLM 剧本输出：字段兜底 + 数量/时长钳制。"""
     title = _clean_str(obj.get("title"), 200) or "未命名短剧"
     logline = _clean_str(obj.get("logline"), 500)
+    synopsis = _clean_str(obj.get("synopsis"), 2000)
     genre = _clean_str(obj.get("genre"), 100)
+    mode = _normalize_mode(obj.get("mode") or default_mode)
     style = _clean_str(obj.get("style"), 200)
+    style_anchor = _clean_str(obj.get("style_anchor"), 200)
     music_mood = _clean_str(obj.get("music_mood"), 200)
 
     characters: list[dict[str, str]] = []
@@ -369,10 +616,14 @@ def _normalize_script(obj: dict[str, Any]) -> dict[str, Any]:
             continue
         characters.append({
             "name": name,
+            "role": _clean_str(c.get("role"), 50),
             "age": _clean_str(c.get("age"), 100),
             "appearance": _clean_str(c.get("appearance"), 500),
             "voice": _clean_str(c.get("voice"), 300),
             "personality": _clean_str(c.get("personality"), 300),
+            "motivation": _clean_str(c.get("motivation"), 500),
+            "arc": _clean_str(c.get("arc"), 600),
+            "key_prop": _clean_str(c.get("key_prop"), 300),
         })
 
     scenes = []
@@ -399,6 +650,7 @@ def _normalize_script(obj: dict[str, Any]) -> dict[str, Any]:
                 "characters": [_clean_str(c, 100) for c in chars if _clean_str(c, 100)],
                 "action": _clean_str(sh.get("action"), 500),
                 "dialogue": _clean_str(sh.get("dialogue"), 500),
+                "beat": _normalize_beat(sh.get("beat")),
                 "visual_prompt": _clean_str(sh.get("visual_prompt"), 1500),
                 "duration_s": dur,
             })
@@ -408,6 +660,7 @@ def _normalize_script(obj: dict[str, Any]) -> dict[str, Any]:
             "scene_id": scene_id,
             "location": _clean_str(sc.get("location"), 200),
             "time": _clean_str(sc.get("time"), 100),
+            "beat": _normalize_beat(sc.get("beat")),
             "summary": _clean_str(sc.get("summary"), 500),
             "shots": shots,
         })
@@ -415,13 +668,21 @@ def _normalize_script(obj: dict[str, Any]) -> dict[str, Any]:
     if not scenes:
         raise LlmOutputError("对话 AI 未返回有效场景/镜头")
 
+    scene_registry, auto_added = _normalize_scene_registry(obj, scenes)
+
     return {
         "title": title,
         "logline": logline,
+        "synopsis": synopsis,
         "genre": genre,
+        "mode": mode,
+        "mode_label": STORY_MODES[mode]["label"],
         "style": style,
+        "style_anchor": style_anchor,
         "music_mood": music_mood,
         "characters": characters,
+        "scene_registry": scene_registry,
+        "registry_auto_added": auto_added,
         "scenes": scenes,
         "shot_count": sum(len(s["shots"]) for s in scenes),
         "est_duration_s": sum(sum(sh["duration_s"] for sh in s["shots"]) for s in scenes),
