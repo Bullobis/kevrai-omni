@@ -16,10 +16,22 @@
 > 点击播放 [assets/media/promo.mp4](assets/media/promo.mp4)。视频涵盖：模型市场、硬件检测、MiniMax-Music3 音乐生成、LTX-2.5 视频生成、Kevrai Agent 智能助手、本地隐私。
 
 ![License: Kevrai Omni Community License v2.1](https://img.shields.io/badge/License-Kevrai%20Community%20v2.1-orange)
-![Version](https://img.shields.io/badge/version-2.8.0-orange)
-![Tests](https://img.shields.io/badge/tests-475%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-2.8.1-orange)
+![Tests](https://img.shields.io/badge/tests-582%20passed-brightgreen)
 
 ---
+
+## ✨ v2.8.1 更新亮点（全面细化检查 + 引擎/模型对接加固）
+
+| 项目 | 说明 |
+|---|---|
+| 🔗 **DIY 导入链路打通** | 本地导入的模型此前只能导入、无法运行。现每个导入条目自动标注可用引擎（`.gguf`→llama.cpp、`config.json+*.mnn`→mnn、`model_index.json`→diffusers+transformers、HF 目录→transformers）；新增 `llm-start/stop/status` 运行通道，GGUF 一键启动 llama-server（健康轮询、单实例互斥、退出自动回收）；MNN 页合并展示 DIY 导入的 MNN 目录模型 |
+| 🧩 **引擎目录补全** | 新增 `transformers`（pip）与 `gpt-sovits`（源码安装）两个引擎条目，修复 `kokoro-engine` 的 GitHub 死链；模型目录 121 项引擎引用 100% 可解析 |
+| 🌐 **镜像源实测清洗** | 注入 98 个经 ModelScope 实测验证的下载源，移除 240 条实测不可达的镜像条目；默认镜像列表只保留存活的 `hf-mirror.com` |
+| ⚡ **下载器加固** | 引擎安装支持多候选回退（GitHub 加速前缀）、HTTP Range 断点续传（200-对-Range 自动重置）、实时进度遥测 |
+| 🏷️ **版本与 UA 单一来源** | HTTP User-Agent 统一由 `app.USER_AGENT` 派生，清除 6 处历史硬编码漂移（含 `kevrai-studio/2.3.0`、`KevraiStudio/2.3` 等陈旧品牌名与遗留版本号）；新增回归测试锁定「无陈旧 UA 字面量」 |
+| 🔒 **并发单例加锁** | 修复 `hub.get_registry` 与 `taxonomy.known_engine_ids` 的 check-then-act 竞态（并发首调用可能重复构建、破坏单例契约），并加并发回归测试 |
+| 🧪 **测试加固** | 新增 `test_engines_extreme.py`(7)、`test_local_diy.py`(10)、`test_v281_version_and_locks.py`(9)；全量 **582 passed**，`node --check` 14/14，`smoke.sh` 全绿 |
 
 ## ✨ v2.8.0 更新亮点（可插拔技能库 + 短剧编剧方法论）
 

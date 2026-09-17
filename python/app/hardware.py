@@ -19,6 +19,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from . import USER_AGENT
 from .gpu import detect as detect_gpus
 
 
@@ -166,7 +167,7 @@ async def _measure_bandwidth_mbps(timeout_s: float = 4.0) -> float:
     for url in _BW_PROBE_URLS:
         try:
             t0 = time.monotonic()
-            req = urllib.request.Request(url, headers={"User-Agent": "KevraiStudio/2.3"})
+            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
             received = 0
 
             def _run() -> int:

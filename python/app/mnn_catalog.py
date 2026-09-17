@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from . import USER_AGENT
+
 # Mirror prefixes tried in order for both API listing and file downloads.
 # More sources = better reachability from CN networks (user preference).
 _MIRRORS = (
@@ -261,7 +263,7 @@ def list_mnn_files(repo: str) -> list[dict[str, Any]]:
     """
     import httpx
 
-    headers = {"User-Agent": "KevraiStudio/2.3.0"}
+    headers = {"User-Agent": USER_AGENT}
     last_err: Exception | None = None
 
     # ---- 1) ModelScope ----
