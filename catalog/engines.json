@@ -1,6 +1,6 @@
 {
   "version": "2.8.0",
-  "updated": "2026-09-04",
+  "updated": "2026-09-06",
   "engines": [
     {
       "id": "llama.cpp",
@@ -190,9 +190,9 @@
         "https://mirrors.huaweicloud.com/repository/pypi/simple/kokoro/",
         "https://mirrors.cloud.tencent.com/pypi/simple/kokoro/",
         "https://pypi.tuna.tsinghua.edu.cn/simple/kokoro/",
-        "https://github.com/hexgrad/Kokoro-82M/releases/latest",
-        "https://github.com/hexgrad/Kokoro-82M",
-        "https://objects.githubusercontent.com/hexgrad/Kokoro-82M"
+        "https://github.com/hexgrad/Kokoro/releases/latest",
+        "https://github.com/hexgrad/Kokoro",
+        "https://objects.githubusercontent.com/hexgrad/Kokoro"
       ]
     },
     {
@@ -548,6 +548,45 @@
       "sources": [
         "https://github.com/ant-research/4DAnyone",
         "https://objects.githubusercontent.com/ant-research/4DAnyone"
+      ]
+    },
+    {
+      "id": "transformers",
+      "name": "Transformers",
+      "category": "lightweight",
+      "description": "huggingface/transformers — HuggingFace 官方推理运行时，LLM/TTS/音频/视觉全类模型的 pipeline 加载器，模型目录中 transformers-only 条目的通用后端。",
+      "github": "huggingface/transformers",
+      "install": "pip",
+      "pypi": "transformers",
+      "license": "Apache-2.0",
+      "size_mb": 60,
+      "trending": true,
+      "sources": [
+        "https://pypi.org/simple/transformers/",
+        "https://mirrors.aliyun.com/pypi/simple/transformers/",
+        "https://mirrors.tuna.tsinghua.edu.cn/pypi/simple/transformers/",
+        "https://mirrors.huaweicloud.com/repository/pypi/simple/transformers/",
+        "https://mirrors.cloud.tencent.com/pypi/simple/transformers/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/transformers/",
+        "https://github.com/huggingface/transformers/releases/latest",
+        "https://github.com/huggingface/transformers",
+        "https://objects.githubusercontent.com/huggingface/transformers"
+      ]
+    },
+    {
+      "id": "gpt-sovits",
+      "name": "GPT-SoVITS",
+      "category": "tts",
+      "description": "RVC-Boss/GPT-SoVITS — 少样本语音克隆与中英日韩 TTS（v2/v3/v4 底模），5 分钟语音微调，WebUI 一键推理；官方源码安装路线。",
+      "github": "RVC-Boss/GPT-SoVITS",
+      "install": "source",
+      "license": "MIT",
+      "size_mb": 1500,
+      "trending": true,
+      "sources": [
+        "https://github.com/RVC-Boss/GPT-SoVITS/releases/latest",
+        "https://github.com/RVC-Boss/GPT-SoVITS",
+        "https://objects.githubusercontent.com/RVC-Boss/GPT-SoVITS"
       ]
     }
   ]

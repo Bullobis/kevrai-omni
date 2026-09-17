@@ -92,10 +92,6 @@ class Settings(BaseModel):
     # the fastest reachable mirror at download time.
     extra_model_mirrors: list[str] = Field(default_factory=lambda: [
         "https://hf-mirror.com",
-        "https://hf-mirror.us",
-        "https://hf-cdn.sufy.com",
-        "https://huggingface.dl.in.tel",
-        "https://hf-cn-mirror.com",
     ])
     # auto_pick enabled by default; user can disable to always use primary_url
     auto_pick_best_source: bool = True

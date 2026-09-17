@@ -67,6 +67,11 @@ DEFAULT_MODEL_HOSTS: set[str] = {
     # GitHub mirror (GitCode, CSDN) — fast inside CN for repo/release/zip
     "gitcode.com",
     "www.gitcode.com",
+    # GitHub release accelerators (byte-identical proxies for
+    # github.com / objects.githubusercontent.com assets; used by the engine
+    # installer's candidate fallback and the model download auto-picker)
+    "ghfast.top",
+    "gh-proxy.com",
 }
 
 DEFAULT_ENGINE_HOSTS: set[str] = DEFAULT_MODEL_HOSTS | {
