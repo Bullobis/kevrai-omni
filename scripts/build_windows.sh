@@ -27,7 +27,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 INDEX="${KEVRAI_PIP_INDEX:-https://mirrors.tencent.com/pypi/simple/}"
-VERSION="$(node -p "require('./package.json').version" 2>/dev/null || echo 2.8.0)"
+VERSION="$(node -p "require('./package.json').version" 2>/dev/null || echo 2.8.1)"
 PRODUCT="$(node -p "require('./package.json').productName" 2>/dev/null || echo 'Kevrai Omni')"
 EXPECTED_EXE="build/output/Kevrai-Omni-${VERSION}-x64.exe"
 EXPECTED_ZIP="build/output/Kevrai-Omni-${VERSION}-x64.zip"

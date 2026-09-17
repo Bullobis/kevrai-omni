@@ -38,7 +38,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import __version__
+from . import USER_AGENT, __version__
 from .catalog import (
     Catalog,
     load_catalog,
@@ -1739,7 +1739,7 @@ def _mnn_download_one_file(f: dict[str, Any], dest: Path) -> None:
                 return
             try:
                 resume = tmp.stat().st_size if tmp.exists() else 0
-                headers = {"User-Agent": "KevraiStudio/2.3.0"}
+                headers = {"User-Agent": USER_AGENT}
                 if resume:
                     headers["Range"] = f"bytes={resume}-"
                 with httpx.Client(timeout=(15.0, 120.0), follow_redirects=True) as client:

@@ -64,6 +64,8 @@ from .taxonomy import (
     trending_from,
 )
 
+from .. import USER_AGENT
+
 # ---------------------------------------------------------------------------
 # 【单一收口点】HuggingFace /api/models field names — change here only.
 # ---------------------------------------------------------------------------
@@ -166,7 +168,7 @@ class HuggingFaceAdapter(SourceAdapter):
             self._client = httpx.AsyncClient(
                 timeout=timeout_for("search"),
                 follow_redirects=True,
-                headers={"User-Agent": "kevrai-omni/2.8.0"},
+                headers={"User-Agent": USER_AGENT},
             )
             self._client_owned = True
         return self._client

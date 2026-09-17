@@ -69,6 +69,8 @@ from .taxonomy import (
     trending_from,
 )
 
+from .. import USER_AGENT
+
 # Reused verbatim from the existing, proven ModelScope client.
 try:  # pragma: no cover - mnn_catalog is always importable in-tree
     from ..mnn_catalog import _MS_API as MS_API_BASE
@@ -123,7 +125,7 @@ class ModelScopeAdapter(SourceAdapter):
             self._client = httpx.AsyncClient(
                 timeout=timeout_for("search"),
                 follow_redirects=True,
-                headers={"User-Agent": "kevrai-omni/2.8.0"},
+                headers={"User-Agent": USER_AGENT},
             )
             self._client_owned = True
         return self._client

@@ -72,7 +72,7 @@ def main() -> int:
     t0 = time.time()
     verified: set[str] = set()
     with httpx.Client(timeout=15.0, follow_redirects=True,
-                      headers={"User-Agent": "kevrai-omni/2.8.0"}) as client:
+                      headers={"User-Agent": "kevrai-omni/2.8.1"}) as client:
         with cf.ThreadPoolExecutor(max_workers=8) as ex:
             futs = {ex.submit(ms_exists, client, r): r for r in sorted(repos)}
             for i, fut in enumerate(cf.as_completed(futs), 1):

@@ -80,6 +80,10 @@ export const api = {
   mnnDownloadCancel:    wrap("mnnDownloadCancel",    () => k().mnnDownloadCancel()),
   mnnDownloadStatus:    wrap("mnnDownloadStatus",    () => k().mnnDownloadStatus()),
   mnnLocal:       wrap("mnnLocal",       () => k().mnnLocal()),
+  // llama.cpp local runtime (DIY GGUF)
+  llmStart:       wrap("llmStart",       (opts) => k().llmStart(opts)),
+  llmStop:        wrap("llmStop",        () => k().llmStop()),
+  llmStatus:      wrap("llmStatus",      () => k().llmStatus()),
   // Model converter
   convertCapabilities: wrap("convertCapabilities", () => k().convertCapabilities()),
   convertStart:   wrap("convertStart",   (opts) => k().convertStart(opts)),

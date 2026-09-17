@@ -15,6 +15,8 @@ app is imported lazily inside functions.
 """
 from __future__ import annotations
 
+import threading
+
 from .base import (
     ALL_HUBS,
     CATEGORIES,
@@ -102,6 +104,11 @@ __all__ = [
 
 _REGISTRY: "HubRegistry | None" = None
 _REGISTRY_SETTINGS_ID: int | None = None
+# Guards the read-then-write of _REGISTRY/_REGISTRY_SETTINGS_ID: without it,
+# two concurrent first-callers each build a registry and one assignment is
+# lost (the registry is cheap to build, but the race breaks the singleton
+# contract that callers rely on for cache coherence).
+_REGISTRY_LOCK = threading.Lock()
 
 
 def build_registry(
@@ -146,14 +153,16 @@ def get_registry(settings: object | None = None) -> HubRegistry:
     """
     global _REGISTRY, _REGISTRY_SETTINGS_ID
     sid = id(settings) if settings is not None else None
-    if _REGISTRY is None or (sid is not None and sid != _REGISTRY_SETTINGS_ID):
-        _REGISTRY = build_registry(settings)
-        _REGISTRY_SETTINGS_ID = sid
-    return _REGISTRY
+    with _REGISTRY_LOCK:
+        if _REGISTRY is None or (sid is not None and sid != _REGISTRY_SETTINGS_ID):
+            _REGISTRY = build_registry(settings)
+            _REGISTRY_SETTINGS_ID = sid
+        return _REGISTRY
 
 
 def reset_registry() -> None:
     """Drop the singleton (used by tests and after a settings mutation)."""
     global _REGISTRY, _REGISTRY_SETTINGS_ID
-    _REGISTRY = None
-    _REGISTRY_SETTINGS_ID = None
+    with _REGISTRY_LOCK:
+        _REGISTRY = None
+        _REGISTRY_SETTINGS_ID = None

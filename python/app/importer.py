@@ -22,6 +22,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
+from . import USER_AGENT  # noqa: E402  (single-source UA)
+
 CHUNK_SIZE = 1 << 20  # 1 MiB
 
 ImportMode = Literal["copy", "symlink"]
@@ -481,7 +483,7 @@ def list_gguf_files(repo: str, pattern: str = "*.gguf") -> list[dict[str, Any]]:
         try:
             next_cursor: str | None = None
             with httpx.Client(timeout=12.0, follow_redirects=True,
-                              headers={"User-Agent": "kevrai-studio/2.3.0"}) as client:
+                              headers={"User-Agent": USER_AGENT}) as client:
                 for _ in range(50):
                     q = {"cursor": next_cursor} if next_cursor else None
                     r = client.get(url, params=q)
@@ -503,7 +505,7 @@ def list_gguf_files(repo: str, pattern: str = "*.gguf") -> list[dict[str, Any]]:
 
 
 def _huggingface_headers(token: str | None = None) -> dict[str, str]:
-    h = {"User-Agent": "kevrai-studio/2.3.0"}
+    h = {"User-Agent": USER_AGENT}
     if token:
         h["Authorization"] = f"Bearer {token}"
     return h

@@ -132,10 +132,10 @@ class DownloadCancelled(RuntimeError):
 def _UA() -> str:
     """Consistent User-Agent across every outbound call in this module."""
     try:
-        from . import __version__ as _v
+        from . import USER_AGENT as _ua
+        return _ua
     except Exception:  # noqa: BLE001 — defensive; package import should work
-        _v = "2.8.0"
-    return f"kevrai-omni/{_v}"
+        return "kevrai-omni/2.8.1"
 
 
 # ---------------------------------------------------------------------------

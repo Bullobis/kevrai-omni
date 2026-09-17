@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import re
+import threading
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -38,14 +39,26 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 ENGINES_JSON = _REPO_ROOT / "catalog" / "engines.json"
 
 _ENGINE_IDS_CACHE: set[str] | None = None
+# Serialises the memoisation so concurrent first-callers cannot both
+# run the file read + fallback build (idempotent, but avoids duplicated
+# I/O and a torn read of the module global).
+_ENGINE_IDS_LOCK = threading.Lock()
 
 
 def known_engine_ids() -> set[str]:
     """Ids declared in ``catalog/engines.json`` (cached; degrades to a
     hard-coded fallback if the file is missing so tests never break)."""
     global _ENGINE_IDS_CACHE
-    if _ENGINE_IDS_CACHE is not None:
-        return _ENGINE_IDS_CACHE
+    with _ENGINE_IDS_LOCK:
+        if _ENGINE_IDS_CACHE is not None:
+            return _ENGINE_IDS_CACHE
+        ids = _build_engine_ids()
+        _ENGINE_IDS_CACHE = ids
+        return ids
+
+
+def _build_engine_ids() -> set[str]:
+    """Read + parse ``engines.json``, degrading to the built-in fallback."""
     ids: set[str] = set()
     try:
         data = json.loads(ENGINES_JSON.read_text(encoding="utf-8"))
@@ -64,14 +77,14 @@ def known_engine_ids() -> set[str]:
             "sglang", "ollama", "sglang-omni", "comfyui-fl-minimaxmusic3",
             "mlx", "hunyuanworld", "sam3d", "pixal3d", "4danyone",
         }
-    _ENGINE_IDS_CACHE = ids
     return ids
 
 
 def reset_engine_ids_cache() -> None:
     """Drop the memoized engine-id set (used by tests)."""
     global _ENGINE_IDS_CACHE
-    _ENGINE_IDS_CACHE = None
+    with _ENGINE_IDS_LOCK:
+        _ENGINE_IDS_CACHE = None
 
 
 # ---------------------------------------------------------------------------

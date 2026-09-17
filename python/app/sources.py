@@ -21,6 +21,8 @@ from urllib.parse import urlparse
 
 import httpx
 
+from . import USER_AGENT
+
 
 PROBE_RANGE = 65535          # 64 KiB probe chunk
 PROBE_TIMEOUT = 8.0          # seconds per probe
@@ -95,7 +97,7 @@ async def _probe_one(client: httpx.AsyncClient, url: str) -> SourceProbe:
         req = client.build_request(
             "GET", url,
             headers={"Range": f"bytes=0-{PROBE_RANGE - 1}",
-                     "User-Agent": "kevrai-omni/2.4.1"},
+                     "User-Agent": USER_AGENT},
         )
         resp = await client.send(req, follow_redirects=True)
         # Stream a fixed-size body
