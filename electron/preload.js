@@ -257,6 +257,15 @@ const api = {
   mnnDownloadStatus: () => invoke("kevrai:mnn-download-status"),
   mnnLocal: () => invoke("kevrai:mnn-local"),
 
+  // ----- llama.cpp local runtime (DIY GGUF) -----
+  llmStart: (opts) => {
+    assertObject(opts, "opts");
+    assertString(opts.model_path, "opts.model_path", 4096);
+    return invoke("kevrai:llm-start", opts);
+  },
+  llmStop: () => invoke("kevrai:llm-stop"),
+  llmStatus: () => invoke("kevrai:llm-status"),
+
   // ----- Model converter -----
   convertCapabilities: () => invoke("kevrai:convert-capabilities"),
   convertStart: (opts) => {

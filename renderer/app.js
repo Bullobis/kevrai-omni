@@ -129,18 +129,33 @@ function renderLocal() {
   if (!el) return;
   const list = state.local || [];
   if (!list.length) { el.innerHTML = `<div class="hint">还没有本地模型，拖拽文件到窗口或使用下方按钮导入。</div>`; return; }
-  el.innerHTML = list.map((m) => `
+  el.innerHTML = list.map((m) => {
+    // v2.8.0 DIY: compatible_engines comes from /api/models/local (read-time
+    // detection) — .gguf → llama.cpp, config.json+*.mnn → mnn, HF dir →
+    // transformers/diffusers. GGUF models get a one-click llama-server start.
+    const es = m.compatible_engines || [];
+    const canLlm = es.includes("llama.cpp");
+    const canMnn = es.includes("mnn");
+    const running = state.llm && state.llm.running && state.llm.model_path === m.path;
+    const engLine = es.length ? `<div class="sub">可用引擎：${escapeHtml(es.join("、"))}</div>` : "";
+    return `
     <div class="row">
       <div class="grow">
         <div class="name">${escapeHtml(m.name)}</div>
         <div class="sub" title="${escapeHtml(m.path || "")}">${escapeHtml(m.path || "")}</div>
         <div class="sub">${((m.size_bytes || 0) / 1e9).toFixed(2)} GB</div>
+        ${engLine}
       </div>
+      ${running ? `<span class="pill ok">运行中 :${state.llm.port}</span>
+        <button class="secondary small" data-action="llm-stop">停止</button>` :
+        canLlm ? `<button class="secondary small" data-action="llm-start"
+              data-path="${escapeHtml(m.path || "")}" aria-label="用 llama.cpp 启动">▶ 启动</button>` : ""}
+      ${canMnn ? `<span class="pill">MNN 页可加载</span>` : ""}
       <span class="pill ok">本地</span>
       ${m.path ? `<button class="secondary small" data-action="reveal-local"
               data-path="${escapeHtml(m.path)}" aria-label="在文件管理器中定位">定位</button>` : ""}
-    </div>
-  `).join("");
+    </div>`;
+  }).join("");
 }
 
 function escapeHtml(s) {
@@ -220,6 +235,32 @@ function wireGlobalUI() {
       e.preventDefault();
       const p = reveal.dataset.path;
       if (p) api.openPath(p).then(() => toast("已在文件管理器中定位", { kind: "ok" })).catch(() => {});
+    }
+    // DIY: start llama.cpp for a local .gguf model (v2.8.0)
+    const llmStartBtn = e.target.closest("[data-action=llm-start]");
+    if (llmStartBtn) {
+      e.preventDefault();
+      const p = llmStartBtn.dataset.path;
+      if (!p) return;
+      llmStartBtn.disabled = true;
+      toast("正在启动 llama-server…");
+      api.llmStart({ model_path: p })
+        .then((r) => {
+          state.llm = { running: true, port: r.port, model_path: p };
+          toast(`已启动，服务端口 :${r.port}`, { kind: "ok" });
+          renderLocal();
+        })
+        .catch((err) => {
+          toast("启动失败：" + err.message, { kind: "err" });
+          llmStartBtn.disabled = false;
+        });
+    }
+    const llmStopBtn = e.target.closest("[data-action=llm-stop]");
+    if (llmStopBtn) {
+      e.preventDefault();
+      api.llmStop()
+        .then(() => { state.llm = null; renderLocal(); toast("已停止", { kind: "ok" }); })
+        .catch((err) => toast("停止失败：" + err.message, { kind: "err" }));
     }
   });
 

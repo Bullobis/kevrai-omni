@@ -53,6 +53,7 @@ from .engines import (
 )
 from . import engines as engines_module  # re-export
 from .importer import (
+    annotate_registry_engines,
     import_local,
     list_gguf_files,
     load_local_registry,
@@ -573,7 +574,9 @@ def list_models(category: str | None = None, q: str | None = None,
 # `/api/models/{model_id}` route, otherwise the latter will swallow them.
 @app.get("/api/models/local")
 def list_local() -> dict[str, Any]:
-    return {"local": load_local_registry(MODELS_DIR)}
+    # v2.8.0 DIY: entries carry a read-time compatible_engines annotation so
+    # the UI can offer a matching runtime (llama.cpp / mnn / diffusers / …).
+    return {"local": annotate_registry_engines(load_local_registry(MODELS_DIR))}
 
 
 @app.get("/api/models/{model_id}")
@@ -589,7 +592,7 @@ def model_detail(
             return m.model_dump()
     for e in load_local_registry(MODELS_DIR):
         if e.get("id") == model_id:
-            return e
+            return annotate_registry_engines([e])[0]
     raise HTTPException(status_code=404, detail=f"model {model_id} not found")
 
 
@@ -1827,20 +1830,45 @@ def mnn_download_status() -> dict[str, Any]:
 
 @app.get("/api/mnn/local")
 def mnn_local(request: Request) -> dict[str, Any]:
-    """列出已下载的 MNN 模型目录（含是否可加载）。"""
+    """列出已下载的 MNN 模型目录（含是否可加载）。
+
+    v2.8.0 DIY: 用户通过「本地导入」进来的 MNN 目录模型（config.json +
+    *.mnn，登记在 _local.json 注册表中）也会出现在这里，与 mnn/ 子目录下
+    官方预转换模型合并展示；按绝对路径去重，导入模型带 "diy": true 标记。
+    """
     settings = _get_settings(request)
     root = Path(settings.resolved_model_dir()) / "mnn"
-    out = []
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    def _add(d: Path, *, diy: bool) -> None:
+        real = str(d.resolve())
+        if real in seen:
+            return
+        seen.add(real)
+        out.append({
+            "id": d.name,
+            "dir": str(d),
+            "size_gb": round(
+                sum(f.stat().st_size for f in d.rglob("*") if f.is_file()) / 1e9, 2
+            ),
+            **({"diy": True} if diy else {}),
+        })
+
     if root.is_dir():
         for d in sorted(root.iterdir()):
             if d.is_dir() and (d / "config.json").is_file():
-                out.append({
-                    "id": d.name,
-                    "dir": str(d),
-                    "size_gb": round(
-                        sum(f.stat().st_size for f in d.rglob("*") if f.is_file()) / 1e9, 2
-                    ),
-                })
+                _add(d, diy=False)
+
+    # DIY-imported MNN models — the registry lives in MODELS_DIR, the same
+    # directory /api/models/import writes to (settings.model_dir overrides
+    # only the *download* root, not the import registry).
+    for e in annotate_registry_engines(load_local_registry(MODELS_DIR)):
+        if "mnn" in (e.get("compatible_engines") or []):
+            try:
+                _add(Path(e["path"]), diy=True)
+            except (OSError, KeyError):
+                continue
     return {"models": out, "count": len(out)}
 
 

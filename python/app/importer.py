@@ -358,6 +358,62 @@ def save_local_registry(models_dir: Path, entries: list[dict[str, Any]]) -> None
 
 
 # ---------------------------------------------------------------------------
+# DIY engine compatibility detection
+# ---------------------------------------------------------------------------
+
+
+def detect_compatible_engines(path: str | Path) -> list[str]:
+    """Infer which installed-engine types can run a DIY-imported model.
+
+    Purely filesystem-driven — never trusts the entry's file extension alone:
+
+    * ``*.gguf`` file                         → llama.cpp
+    * dir with ``model_index.json``           → diffusers + transformers
+    * dir with ``config.json`` + ``*.mnn``    → mnn
+    * dir with ``config.json`` (HF layout)    → transformers
+    * anything else                           → []  (registered but not runnable)
+
+    The result is informational metadata for the UI / download planner; the
+    engine runtimes still do their own validation at load time.
+    """
+    p = Path(path)
+    try:
+        if p.is_file():
+            return ["llama.cpp"] if p.suffix.lower() == ".gguf" else []
+        if not p.is_dir():
+            return []
+        names = set()
+        # Only scan the top level — importing is user-driven and models can be
+        # large; a recursive walk on a 100 GB tree would stall the API.
+        with os.scandir(p) as it:
+            for e in it:
+                names.add(e.name)
+        if "model_index.json" in names:
+            return ["diffusers", "transformers"]
+        if "config.json" in names:
+            if any(n.lower().endswith(".mnn") for n in names):
+                return ["mnn"]
+            return ["transformers"]
+        return []
+    except OSError:
+        return []
+
+
+def annotate_registry_engines(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return registry entries with a live ``compatible_engines`` field added.
+
+    The field is computed at read time (never persisted) so entries stay valid
+    even after the user moves or deletes the underlying files.
+    """
+    out: list[dict[str, Any]] = []
+    for e in entries:
+        d = dict(e)
+        d["compatible_engines"] = detect_compatible_engines(e.get("path", ""))
+        out.append(d)
+    return out
+
+
+# ---------------------------------------------------------------------------
 # In-memory progress registry (kept for backward-compat with the original API)
 # ---------------------------------------------------------------------------
 

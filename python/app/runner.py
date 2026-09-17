@@ -28,6 +28,7 @@ def find_engine_binary(engine_id: str, engines_status: dict[str, Any]) -> str | 
 def spawn_llama_server(model_path: Path, port: int = 8080) -> subprocess.Popen:
     """Spawn llama-server for a given GGUF model. Caller manages the Popen handle."""
     raise NotImplementedError(
-        "llama.cpp binary is launched by the Electron main process; the Python sidecar "
-        "only serves an HTTP control plane. See electron/main.js → startLLMServer()."
+        "llama.cpp is launched by the Electron main process; the Python sidecar "
+        "only serves an HTTP control plane. See electron/main.js → "
+        "kevrai:llm-start / llm-stop / llm-status (v2.8.0 DIY GGUF runtime)."
     )

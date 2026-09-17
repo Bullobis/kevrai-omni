@@ -877,6 +877,161 @@ function registerIpc() {
   ipcMain.handle("kevrai:mnn-download-status", async () => sidecarFetch("/api/mnn/download"));
   ipcMain.handle("kevrai:mnn-local", async () => sidecarFetch("/api/mnn/local"));
 
+  // --- v2.8.0 DIY: llama.cpp local GGUF runtime -----------------------------
+  // Lets DIY-imported *.gguf models actually run: spawn the installed
+  // llama-server, health-poll it, and hand the port to the renderer.
+  // Single instance at a time; the exit hook below reaps it on quit.
+  let llmProc = null;      // active llama-server child process
+  let llmPort = 0;         // port it is serving on
+  let llmModelPath = "";   // model currently loaded
+
+  const LLM_BOOT_TIMEOUT_MS = 30000;
+  const LLM_HEALTH_INTERVAL_MS = 400;
+
+  function llmAssertGguf(modelPath) {
+    const p = String(modelPath || "").trim();
+    if (!p || p.includes("\0") || /[\r\n]/.test(p)) throw new Error("model_path 非法");
+    if (path.extname(p).toLowerCase() !== ".gguf") throw new Error("仅支持 .gguf 模型文件");
+    if (!fs.existsSync(p)) throw new Error("模型文件不存在: " + p);
+    return p;
+  }
+
+  function llmReset(proc) {
+    if (llmProc === proc) { llmProc = null; llmPort = 0; llmModelPath = ""; }
+  }
+
+  function llmKillProc(proc) {
+    if (process.platform === "win32") {
+      try { spawn("taskkill", ["/PID", String(proc.pid), "/T", "/F"], { windowsHide: true }); } catch (_) {}
+    } else {
+      try { proc.kill("SIGTERM"); } catch (_) {}
+    }
+  }
+
+  function httpGetOk(port, urlPath, timeoutMs) {
+    return new Promise((resolve) => {
+      const req = http.get({ host: "127.0.0.1", port, path: urlPath, timeout: timeoutMs }, (res) => {
+        res.resume();
+        resolve(res.statusCode === 200);
+      });
+      req.on("timeout", () => { req.destroy(); resolve(false); });
+      req.on("error", () => resolve(false));
+    });
+  }
+
+  function llmFreePort() {
+    return new Promise((resolve, reject) => {
+      const srv = require("node:net").createServer();
+      srv.unref();
+      srv.on("error", reject);
+      srv.listen(0, "127.0.0.1", () => {
+        const port = srv.address().port;
+        srv.close(() => resolve(port));
+      });
+    });
+  }
+
+  async function findLlamaServerBinary() {
+    const st = await sidecarFetch("/api/engines");
+    const items = Array.isArray(st) ? st : (st.engines || []);
+    const rec = items.find((x) => x && x.id === "llama.cpp");
+    if (!rec || !rec.installed) throw new Error("llama.cpp 引擎未安装——请先在「引擎」页安装");
+    const base = String(rec.install_path || "");
+    if (!base) throw new Error("llama.cpp 安装路径未知");
+    const exe = process.platform === "win32" ? "llama-server.exe" : "llama-server";
+    const direct = path.join(base, exe);
+    if (fs.existsSync(direct)) return direct;
+    // zip layout: llama.cpp-<ver>-bin-…/llama-server (bounded-depth search).
+    const stack = [{ dir: base, depth: 0 }];
+    while (stack.length) {
+      const { dir, depth } = stack.pop();
+      if (depth > 4) continue;
+      let entries;
+      try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (_) { continue; }
+      for (const ent of entries) {
+        const full = path.join(dir, ent.name);
+        if (ent.isDirectory()) stack.push({ dir: full, depth: depth + 1 });
+        else if (ent.name === exe) return full;
+      }
+    }
+    throw new Error("llama.cpp 已安装但未找到 llama-server 可执行文件");
+  }
+
+  async function llmStart(opts) {
+    if (llmProc && llmProc.exitCode === null) {
+      throw new Error("已有模型在运行——请先停止当前模型");
+    }
+    const modelPath = llmAssertGguf(opts.model_path);
+    const bin = await findLlamaServerBinary();
+    const port = await llmFreePort();
+    const proc = spawn(bin, ["-m", modelPath, "--host", "127.0.0.1", "--port", String(port)], {
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    llmProc = proc; llmPort = port; llmModelPath = modelPath;
+    let stderrTail = "";
+    proc.stderr.on("data", (d) => {
+      stderrTail = (stderrTail + d.toString()).split("\n").slice(-5).join("\n").slice(-800);
+    });
+    proc.on("exit", (code) => {
+      logInfo(`llama-server exit ${code}`, stderrTail ? stderrTail.slice(-200) : "");
+      llmReset(proc);
+    });
+    const start = Date.now();
+    while (Date.now() - start < LLM_BOOT_TIMEOUT_MS) {
+      if (llmProc !== proc || proc.exitCode !== null) {
+        throw new Error("llama-server 启动失败: " + (stderrTail.slice(-300) || `exit ${proc.exitCode}`));
+      }
+      if (await httpGetOk(port, "/health", 1500)) {
+        logInfo("llama-server ready", `port=${port} model=${path.basename(modelPath)}`);
+        return { ok: true, port, pid: proc.pid, model_path: modelPath };
+      }
+      await new Promise((r) => setTimeout(r, LLM_HEALTH_INTERVAL_MS));
+    }
+    llmKillProc(proc);
+    llmReset(proc);
+    throw new Error("llama-server 健康检查超时（30s）");
+  }
+
+  async function llmStop() {
+    if (!llmProc || llmProc.exitCode !== null) {
+      llmProc = null; llmPort = 0; llmModelPath = "";
+      return { ok: true, stopped: false };
+    }
+    const proc = llmProc;
+    const port = llmPort;
+    llmKillProc(proc);
+    const start = Date.now();
+    while (Date.now() - start < 5000 && llmProc === proc && proc.exitCode === null) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    if (llmProc === proc && proc.exitCode === null) {
+      try { proc.kill("SIGKILL"); } catch (_) {}
+    }
+    llmReset(proc);
+    return { ok: true, stopped: true, port };
+  }
+
+  ipcMain.handle("kevrai:llm-start", async (_e, opts) => {
+    assertString(opts && opts.model_path, "opts.model_path", 4096);
+    return llmStart(opts);
+  });
+  ipcMain.handle("kevrai:llm-stop", async () => llmStop());
+  ipcMain.handle("kevrai:llm-status", async () => {
+    const running = !!(llmProc && llmProc.exitCode === null && llmPort > 0);
+    const healthy = running ? await httpGetOk(llmPort, "/health", 1500) : false;
+    return {
+      running, healthy,
+      port: running ? llmPort : 0,
+      model_path: running ? llmModelPath : "",
+    };
+  });
+
+  // Reap llama-server on quit (registerIpc runs exactly once).
+  app.on("before-quit", () => {
+    if (llmProc && llmProc.exitCode === null) llmKillProc(llmProc);
+  });
+
   // Model converter — python/app/converter.py
   ipcMain.handle("kevrai:convert-capabilities", async () => sidecarFetch("/api/convert/capabilities"));
   ipcMain.handle("kevrai:convert-start", async (_e, opts) => {
