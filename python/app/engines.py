@@ -34,6 +34,109 @@ from .catalog import (
 
 CHUNK_SIZE = 1 << 20  # 1 MiB
 
+# GitHub direct downloads are unreliable from mainland China; these proxies
+# mirror release assets byte-for-byte and are tried in order after the
+# original URL.  All three hosts are in DEFAULT_MODEL_HOSTS (catalog.py).
+GITHUB_ACCEL_PREFIXES: tuple[str, ...] = (
+    "https://ghfast.top/",
+    "https://gh-proxy.com/",
+)
+
+_HTTP_TIMEOUT = httpx.Timeout(connect=15.0, read=60.0, write=60.0, pool=15.0)
+
+
+def _is_github_url(url: str) -> bool:
+    try:
+        host = httpx.URL(url).host or ""
+    except Exception:  # noqa: BLE001 — malformed URL just isn't GitHub
+        return False
+    return host in {"github.com", "objects.githubusercontent.com",
+                    "raw.githubusercontent.com"}
+
+
+def expand_engine_candidates(url: str) -> list[str]:
+    """Expand a GitHub release URL into an ordered candidate list.
+
+    The original URL always comes first (it is the canonical source); the
+    accelerator mirrors follow.  Non-GitHub URLs are returned unchanged so
+    callers can treat the output uniformly.
+    """
+    u = (url or "").strip()
+    if not u or not _is_github_url(u):
+        return [u] if u else []
+    out = [u]
+    for prefix in GITHUB_ACCEL_PREFIXES:
+        cand = prefix + u
+        if cand not in out:
+            out.append(cand)
+    return out
+
+
+def _stream_download(
+    url: str,
+    tmp: Path,
+    *,
+    progress_cb: Any = None,
+    cancel_cb: Any = None,
+    resume: bool = True,
+) -> None:
+    """Stream ``url`` into ``tmp`` with Range resume and progress callbacks.
+
+    Raises on any network/protocol error so the caller can fall back to the
+    next candidate.  When ``tmp`` already exists and the server supports
+    ranges, the download continues from where it stopped; a server that
+    ignores Range (answers 200 to a Range request) resets the file.
+    """
+    headers: dict[str, str] = {"User-Agent": _UA()}
+    resume_from = 0
+    if resume and tmp.exists():
+        try:
+            resume_from = tmp.stat().st_size
+        except OSError:
+            resume_from = 0
+        if resume_from > 0:
+            headers["Range"] = f"bytes={resume_from}-"
+
+    with httpx.Client(follow_redirects=True, timeout=_HTTP_TIMEOUT) as client, \
+            client.stream("GET", url, headers=headers) as r:
+        # A 200 answer to a Range request means the server ignored it —
+        # restart from zero instead of appending to a truncated prefix.
+        if resume_from > 0 and r.status_code == 200:
+            resume_from = 0
+            r.headers.__setitem__("content-length", r.headers.get("content-length", "0"))
+        r.raise_for_status()
+
+        total = 0
+        cl = r.headers.get("content-length")
+        if cl and cl.isdigit():
+            total = int(cl) + resume_from
+        if progress_cb is not None:
+            progress_cb(0, resume_from, total)
+
+        mode = "ab" if resume_from > 0 else "wb"
+        done = resume_from
+        with tmp.open(mode) as fh:
+            for chunk in r.iter_bytes(CHUNK_SIZE):
+                if cancel_cb is not None and cancel_cb():
+                    raise DownloadCancelled(f"cancelled at {done} bytes")
+                fh.write(chunk)
+                done += len(chunk)
+                if progress_cb is not None:
+                    progress_cb(done, done, total)
+
+
+class DownloadCancelled(RuntimeError):
+    """Raised when a progress callback asks the download to stop."""
+
+
+def _UA() -> str:
+    """Consistent User-Agent across every outbound call in this module."""
+    try:
+        from . import __version__ as _v
+    except Exception:  # noqa: BLE001 — defensive; package import should work
+        _v = "2.8.0"
+    return f"kevrai-omni/{_v}"
+
 
 # ---------------------------------------------------------------------------
 # Public state machine
@@ -60,6 +163,12 @@ class EngineRecord:
     last_error: str = ""
     source_url: str = ""
     install_mode: str = "binary"  # "binary" | "pip"
+    # Live download telemetry (transient — meaningful only while
+    # state == DOWNLOADING, cleared on completion/failure).
+    progress: float = 0.0        # 0.0 .. 1.0; -1.0 when total size unknown
+    downloaded_bytes: int = 0
+    total_bytes: int = 0
+    active_url: str = ""         # candidate currently being downloaded from
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -219,6 +328,10 @@ class EngineManager:
                     last_error=kw.get("last_error", r.last_error),
                     source_url=kw.get("source_url", r.source_url),
                     install_mode=kw.get("install_mode", r.install_mode),
+                    progress=kw.get("progress", r.progress),
+                    downloaded_bytes=kw.get("downloaded_bytes", r.downloaded_bytes),
+                    total_bytes=kw.get("total_bytes", r.total_bytes),
+                    active_url=kw.get("active_url", r.active_url),
                 )
                 recs[i] = rr
                 self._write(recs)
@@ -235,6 +348,10 @@ class EngineManager:
             last_error=kw.get("last_error", ""),
             source_url=kw.get("source_url", ""),
             install_mode=kw.get("install_mode", "binary"),
+            progress=kw.get("progress", 0.0),
+            downloaded_bytes=kw.get("downloaded_bytes", 0),
+            total_bytes=kw.get("total_bytes", 0),
+            active_url=kw.get("active_url", ""),
         )
         recs.append(rr)
         self._write(recs)
@@ -251,7 +368,18 @@ class EngineManager:
         expected_size: int | None = None,
         unzip: bool = True,
     ) -> EngineRecord:
-        """Install an engine binary from `url`. Idempotent on sha match."""
+        """Install an engine binary from `url`. Idempotent on sha match.
+
+        Download hardening (v2.8.1):
+          * GitHub URLs are transparently expanded into a candidate list with
+            accelerator mirrors (ghfast.top / gh-proxy.com); the first
+            candidate that yields a complete file wins.
+          * Interrupted transfers resume from ``<target>.partial`` via HTTP
+            Range instead of restarting from zero.
+          * Progress is written into the live EngineRecord (progress /
+            downloaded_bytes / total_bytes / active_url) so the UI can poll
+            ``/api/engines/status`` while a big engine downloads.
+        """
         if not is_host_allowed(url, ALLOWED_ENGINE_HOSTS):
             self._set_state(
                 engine_id, EngineState.FAILED,
@@ -265,18 +393,42 @@ class EngineManager:
         target_file = target_dir / "engine.bin"
         tmp = target_file.with_suffix(".partial")
 
+        candidates = expand_engine_candidates(url)
+        last_err: Exception | None = None
+        completed = False
+
         self._set_state(
             engine_id, EngineState.DOWNLOADING,
             source_url=url, install_path=str(target_dir),
         )
+
         try:
-            with httpx.Client(follow_redirects=True, timeout=60.0) as client, \
-                    client.stream("GET", url) as r:
-                r.raise_for_status()
-                with tmp.open("wb") as fh:
-                    for chunk in r.iter_bytes(CHUNK_SIZE):
-                        fh.write(chunk)
-            if unzip and url.endswith(".zip"):
+            for cand in candidates:
+                try:
+                    self._set_state(
+                        engine_id, EngineState.DOWNLOADING,
+                        active_url=cand,
+                    )
+                    _stream_download(
+                        cand, tmp,
+                        progress_cb=lambda done, _d, total, eid=engine_id: (
+                            self._progress(eid, done, total)
+                        ),
+                    )
+                    completed = True
+                    break
+                except DownloadCancelled:
+                    raise
+                except Exception as e:  # noqa: BLE001 — try the next mirror
+                    last_err = e
+                    continue
+
+            if not completed:
+                raise last_err or RuntimeError(
+                    f"all {len(candidates)} download candidates failed"
+                )
+
+            if unzip and str(url).endswith(".zip"):
                 # Verify the downloaded archive itself BEFORE extraction: the
                 # installed artifact is a directory, which cannot be hashed as
                 # a whole — hashing the zip is the only meaningful integrity
@@ -335,6 +487,8 @@ class EngineManager:
                 sha256=sha256 or actual,
                 size_bytes=size,
                 installed_at=_now_iso(),
+                # Clear transient download telemetry on success.
+                progress=1.0, downloaded_bytes=0, total_bytes=0, active_url="",
             ) or EngineRecord(id=engine_id, state=EngineState.INSTALLED)
 
         except Exception as e:
@@ -347,6 +501,21 @@ class EngineManager:
                     last_error=f"{type(e).__name__}: {e}",
                 )
             raise
+
+    def _progress(self, engine_id: str, done: int, total: int) -> None:
+        """Update live download telemetry without flipping the state.
+
+        Called from the streaming loop in ``_stream_download`` — deliberately
+        cheap: it rewrites only the in-memory record and the manifest file,
+        which is also what makes progress visible to concurrent status polls.
+        """
+        frac = (done / total) if total > 0 else -1.0
+        self._set_state(
+            engine_id, EngineState.DOWNLOADING,
+            progress=round(frac, 4),
+            downloaded_bytes=done,
+            total_bytes=total,
+        )
 
     def verify_installed(self, engine_id: str) -> bool:
         rec = self.get(engine_id)
@@ -509,6 +678,13 @@ def install_pip_engine(name: str, root: Path) -> InstallResult:
 
 
 def download_zip_engine(url: str, root: Path, engine_id: str) -> InstallResult:
+    """Legacy zip download — now backed by the hardened download path.
+
+    Behaviour parity with ``EngineManager.install``: mirror fallback for
+    GitHub URLs, Range resume, validated (Zip-Slip-safe) extraction. The
+    signature and return type are unchanged so existing callers/tests keep
+    working.
+    """
     if not is_host_allowed(url, ALLOWED_ENGINE_HOSTS):
         return InstallResult(
             engine_id=engine_id, path="", ok=False,
@@ -517,13 +693,22 @@ def download_zip_engine(url: str, root: Path, engine_id: str) -> InstallResult:
     target_dir = engine_install_dir(root) / engine_id
     target_dir.mkdir(parents=True, exist_ok=True)
     tmp = target_dir / "download.tmp"
+    candidates = expand_engine_candidates(url)
+    last_err: Exception | None = None
+    for cand in candidates:
+        try:
+            _stream_download(cand, tmp)
+            break
+        except Exception as e:  # noqa: BLE001 — try the next mirror
+            last_err = e
+            continue
+    else:
+        tmp.unlink(missing_ok=True)
+        return InstallResult(
+            engine_id=engine_id, path="", ok=False,
+            message=f"download failed: {last_err}",
+        )
     try:
-        with httpx.Client(follow_redirects=True, timeout=60.0) as client, \
-                client.stream("GET", url) as r:
-            r.raise_for_status()
-            with tmp.open("wb") as fh:
-                for chunk in r.iter_bytes():
-                    fh.write(chunk)
         with zipfile.ZipFile(tmp, "r") as zf:
             # P0-2 (H2): same Zip-Slip guard as the EngineManager path above.
             _hub_safe_extract(zf, target_dir)
@@ -681,7 +866,7 @@ async def check_engine_updates(
 
     own_client = client is None
     cli = client or httpx.AsyncClient(
-        timeout=15.0, headers={"User-Agent": "kevrai-omni/2.4.1",
+        timeout=15.0, headers={"User-Agent": _UA(),
                                "Accept": "application/vnd.github+json"},
     )
     try:
@@ -705,14 +890,28 @@ async def check_engine_updates(
                 })
                 continue
             try:
-                r = await cli.get(f"https://api.github.com/repos/{gh}/releases/latest")
-                if r.status_code != 200:
+                # api.github.com is unreachable from some networks (notably
+                # mainland China); the ghfast.top API proxy mirrors it.
+                # Try both, remember which one worked for the rest of the loop.
+                data: dict[str, Any] = {}
+                status: int = 0
+                for api_base in ("https://api.github.com",
+                                 "https://ghfast.top/https://api.github.com"):
+                    try:
+                        r = await cli.get(f"{api_base}/repos/{gh}/releases/latest")
+                        status = r.status_code
+                        if status == 200:
+                            ct = r.headers.get("content-type", "")
+                            data = r.json() if ct.startswith("application/json") else {}
+                            break
+                    except Exception:  # noqa: BLE001 — next API mirror
+                        continue
+                if status != 200 or not data:
                     results.append({
                         "engine_id": eid,
-                        "error": f"github api http {r.status_code}",
+                        "error": f"github api http {status}",
                     })
                     continue
-                data = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
                 tag = str(data.get("tag_name", "") or "")
                 asset_url = _pick_release_asset(data.get("assets", []), plat)
                 cache[eid] = {

@@ -20,6 +20,8 @@ class _FakeResponse:
     """Minimal stand-in for ``httpx.Response`` that the engine manager uses."""
     def __init__(self, body: bytes) -> None:
         self._body = body
+        self.status_code = 200
+        self.headers = {"content-length": str(len(body))}
 
     def __enter__(self):
         return self
@@ -121,7 +123,7 @@ def test_engine_manager_install_unzip_full_cycle(root: Path):
         def __init__(self, *a, **kw): pass
         def __enter__(self): return self
         def __exit__(self, *a): return False
-        def stream(self, method, url):
+        def stream(self, method, url, headers=None):
             return _FakeResponse(target_zip.read_bytes())
 
     with patch("httpx.Client", FakeClient):
@@ -160,7 +162,7 @@ def test_engine_manager_install_creates_engine_record(root: Path):
         def __init__(self, *a, **kw): pass
         def __enter__(self): return self
         def __exit__(self, *a): return False
-        def stream(self, method, url):
+        def stream(self, method, url, headers=None):
             return _FakeResponse(target_zip.read_bytes())
 
     with patch("httpx.Client", FakeClient):
@@ -193,7 +195,7 @@ def test_engine_manager_install_rejects_binary_with_bad_sha(root: Path):
         def __init__(self, *a, **kw): pass
         def __enter__(self): return self
         def __exit__(self, *a): return False
-        def stream(self, method, url):
+        def stream(self, method, url, headers=None):
             return _FakeResponse(bin_path.read_bytes())
 
     with patch("httpx.Client", FakeClient):

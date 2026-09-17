@@ -1,6 +1,6 @@
 {
   "version": "2.8.0",
-  "updated": "2026-09-04",
+  "updated": "2026-09-06",
   "notice": "v2.6.0: 接入 MiniMax-Music3 全精度/ComfyUI/GGUF/量化/MLX 全家桶并逐条联网核验仓库；新增 13 个 2026 年 5 月后开放权重的高质量模型（Granite 4.2、MiniMax M3、Muse Glimmer、DeepSeek V4 Flash Vision、GLM-5.3、LFM2.5-VL、MOSS-TTS、dots.tts、Stable Audio 3、Magenta Realtime 2、Krea 2 等）；修正 14 处错误/失效仓库 slug，移除不存在的 Llama-4-Multilingual。",
   "categories": [
     {
@@ -57,8 +57,8 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3-32B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3-32B-GGUF/",
-        "https://hf-mirror.us/unsloth/Qwen3-32B-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/Qwen3-32B-GGUF/"
+        "https://modelscope.cn/models/Qwen/Qwen3-32B/resolve/master/",
+        "https://modelscope.cn/models/unsloth/Qwen3-32B-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3-32B-GGUF/",
       "hardware": {
@@ -105,8 +105,8 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3-235B-A22B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3-235B-A22B-GGUF/",
-        "https://hf-mirror.us/unsloth/Qwen3-235B-A22B-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/Qwen3-235B-A22B-GGUF/"
+        "https://modelscope.cn/models/Qwen/Qwen3-235B-A22B/resolve/master/",
+        "https://modelscope.cn/models/unsloth/Qwen3-235B-A22B-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3-235B-A22B-GGUF/",
       "hardware": {
@@ -153,8 +153,8 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3-VL-32B-Instruct-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3-VL-32B-Instruct-GGUF/",
-        "https://hf-mirror.us/unsloth/Qwen3-VL-32B-Instruct-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/Qwen3-VL-32B-Instruct-GGUF/"
+        "https://modelscope.cn/models/Qwen/Qwen3-VL-32B-Instruct/resolve/master/",
+        "https://modelscope.cn/models/unsloth/Qwen3-VL-32B-Instruct-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3-VL-32B-Instruct-GGUF/",
       "hardware": {
@@ -204,8 +204,7 @@
       "sources": [
         "https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Instruct/",
         "https://hf-mirror.com/Qwen/Qwen3-Omni-30B-A3B-Instruct/",
-        "https://hf-mirror.us/Qwen/Qwen3-Omni-30B-A3B-Instruct/",
-        "https://hf-cn-mirror.com/Qwen/Qwen3-Omni-30B-A3B-Instruct/"
+        "https://modelscope.cn/models/Qwen/Qwen3-Omni-30B-A3B-Instruct/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Instruct/",
       "hardware": {
@@ -257,8 +256,8 @@
       "sources": [
         "https://huggingface.co/unsloth/DeepSeek-R1-GGUF/",
         "https://hf-mirror.com/unsloth/DeepSeek-R1-GGUF/",
-        "https://hf-mirror.us/unsloth/DeepSeek-R1-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/DeepSeek-R1-GGUF/"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-R1/resolve/master/",
+        "https://modelscope.cn/models/unsloth/DeepSeek-R1-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/DeepSeek-R1-GGUF/",
       "hardware": {
@@ -304,9 +303,7 @@
       "description": "智谱 GLM-4 系列，9B 起步、中英文双语强。",
       "sources": [
         "https://huggingface.co/THUDM/glm-4-9b-chat/",
-        "https://hf-mirror.com/THUDM/glm-4-9b-chat/",
-        "https://hf-mirror.us/THUDM/glm-4-9b-chat/",
-        "https://hf-cn-mirror.com/THUDM/glm-4-9b-chat/"
+        "https://hf-mirror.com/THUDM/glm-4-9b-chat/"
       ],
       "primary_url": "https://huggingface.co/THUDM/glm-4-9b-chat/",
       "hardware": {
@@ -353,8 +350,8 @@
       "sources": [
         "https://huggingface.co/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/",
         "https://hf-mirror.com/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/",
-        "https://hf-mirror.us/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/",
-        "https://hf-cn-mirror.com/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/"
+        "https://modelscope.cn/models/mistralai/Mistral-Small-24B-Base-2501/resolve/master/",
+        "https://modelscope.cn/models/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/",
       "hardware": {
@@ -400,8 +397,8 @@
       "sources": [
         "https://huggingface.co/unsloth/gemma-3-27b-it-GGUF/",
         "https://hf-mirror.com/unsloth/gemma-3-27b-it-GGUF/",
-        "https://hf-mirror.us/unsloth/gemma-3-27b-it-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/gemma-3-27b-it-GGUF/"
+        "https://modelscope.cn/models/google/gemma-3-27b-it/resolve/master/",
+        "https://modelscope.cn/models/unsloth/gemma-3-27b-it-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/gemma-3-27b-it-GGUF/",
       "hardware": {
@@ -449,8 +446,8 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3-30B-A3B-GGUF/",
-        "https://hf-mirror.us/unsloth/Qwen3-30B-A3B-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/Qwen3-30B-A3B-GGUF/"
+        "https://modelscope.cn/models/Qwen/Qwen3-30B-A3B/resolve/master/",
+        "https://modelscope.cn/models/unsloth/Qwen3-30B-A3B-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF/",
       "hardware": {
@@ -496,8 +493,7 @@
       "sources": [
         "https://huggingface.co/Qwen/Qwen-Image/",
         "https://hf-mirror.com/Qwen/Qwen-Image/",
-        "https://hf-mirror.us/Qwen/Qwen-Image/",
-        "https://hf-cn-mirror.com/Qwen/Qwen-Image/"
+        "https://modelscope.cn/models/Qwen/Qwen-Image/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen-Image/",
       "hardware": {
@@ -534,9 +530,7 @@
       "description": "阿里通义实验室，多语言/情感/克隆，开源 TTS 标杆。",
       "sources": [
         "https://huggingface.co/FunAudioLLM/CosyVoice2-0.5B/",
-        "https://hf-mirror.com/FunAudioLLM/CosyVoice2-0.5B/",
-        "https://hf-mirror.us/FunAudioLLM/CosyVoice2-0.5B/",
-        "https://hf-cn-mirror.com/FunAudioLLM/CosyVoice2-0.5B/"
+        "https://hf-mirror.com/FunAudioLLM/CosyVoice2-0.5B/"
       ],
       "primary_url": "https://huggingface.co/FunAudioLLM/CosyVoice2-0.5B/",
       "hardware": {
@@ -572,9 +566,7 @@
       "description": "CosyVoice 3，跨语言零样本克隆。",
       "sources": [
         "https://huggingface.co/FunAudioLLM/CosyVoice-300M/",
-        "https://hf-mirror.com/FunAudioLLM/CosyVoice-300M/",
-        "https://hf-mirror.us/FunAudioLLM/CosyVoice-300M/",
-        "https://hf-cn-mirror.com/FunAudioLLM/CosyVoice-300M/"
+        "https://hf-mirror.com/FunAudioLLM/CosyVoice-300M/"
       ],
       "primary_url": "https://huggingface.co/FunAudioLLM/CosyVoice-300M/",
       "hardware": {
@@ -611,8 +603,7 @@
       "sources": [
         "https://huggingface.co/fishaudio/fish-speech-1.5/",
         "https://hf-mirror.com/fishaudio/fish-speech-1.5/",
-        "https://hf-mirror.us/fishaudio/fish-speech-1.5/",
-        "https://hf-cn-mirror.com/fishaudio/fish-speech-1.5/"
+        "https://modelscope.cn/models/fishaudio/fish-speech-1.5/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/fishaudio/fish-speech-1.5/",
       "hardware": {
@@ -648,9 +639,7 @@
       "description": "上海交大流式 TTS，零样本克隆。",
       "sources": [
         "https://huggingface.co/SWivid/F5-TTS/",
-        "https://hf-mirror.com/SWivid/F5-TTS/",
-        "https://hf-mirror.us/SWivid/F5-TTS/",
-        "https://hf-cn-mirror.com/SWivid/F5-TTS/"
+        "https://hf-mirror.com/SWivid/F5-TTS/"
       ],
       "primary_url": "https://huggingface.co/SWivid/F5-TTS/",
       "hardware": {
@@ -687,8 +676,7 @@
       "sources": [
         "https://huggingface.co/SparkAudio/Spark-TTS-0.5B/",
         "https://hf-mirror.com/SparkAudio/Spark-TTS-0.5B/",
-        "https://hf-mirror.us/SparkAudio/Spark-TTS-0.5B/",
-        "https://hf-cn-mirror.com/SparkAudio/Spark-TTS-0.5B/"
+        "https://modelscope.cn/models/SparkAudio/Spark-TTS-0.5B/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/SparkAudio/Spark-TTS-0.5B/",
       "hardware": {
@@ -717,7 +705,7 @@
       "gguf_repo": "",
       "size_gb": 0.3,
       "engine": [
-        "kokoro"
+        "kokoro-engine"
       ],
       "license": "Apache-2.0",
       "trending": true,
@@ -725,8 +713,7 @@
       "sources": [
         "https://huggingface.co/hexgrad/Kokoro-82M/",
         "https://hf-mirror.com/hexgrad/Kokoro-82M/",
-        "https://hf-mirror.us/hexgrad/Kokoro-82M/",
-        "https://hf-cn-mirror.com/hexgrad/Kokoro-82M/"
+        "https://modelscope.cn/models/hexgrad/Kokoro-82M/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/hexgrad/Kokoro-82M/",
       "hardware": {
@@ -763,8 +750,7 @@
       "sources": [
         "https://huggingface.co/ResembleAI/chatterbox/",
         "https://hf-mirror.com/ResembleAI/chatterbox/",
-        "https://hf-mirror.us/ResembleAI/chatterbox/",
-        "https://hf-cn-mirror.com/ResembleAI/chatterbox/"
+        "https://modelscope.cn/models/ResembleAI/chatterbox/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/ResembleAI/chatterbox/",
       "hardware": {
@@ -801,8 +787,7 @@
       "sources": [
         "https://huggingface.co/IndexTeam/IndexTTS-2/",
         "https://hf-mirror.com/IndexTeam/IndexTTS-2/",
-        "https://hf-mirror.us/IndexTeam/IndexTTS-2/",
-        "https://hf-cn-mirror.com/IndexTeam/IndexTTS-2/"
+        "https://modelscope.cn/models/IndexTeam/IndexTTS-2/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/IndexTeam/IndexTTS-2/",
       "hardware": {
@@ -838,9 +823,7 @@
       "description": "经典少样本中文声音克隆。",
       "sources": [
         "https://huggingface.co/RVC-Boss/GPT-SoVITS/",
-        "https://hf-mirror.com/RVC-Boss/GPT-SoVITS/",
-        "https://hf-mirror.us/RVC-Boss/GPT-SoVITS/",
-        "https://hf-cn-mirror.com/RVC-Boss/GPT-SoVITS/"
+        "https://hf-mirror.com/RVC-Boss/GPT-SoVITS/"
       ],
       "primary_url": "https://huggingface.co/RVC-Boss/GPT-SoVITS/",
       "hardware": {
@@ -874,9 +857,7 @@
       "description": "OpenMOSS/MOSI.AI 语音生成家族 v1.5（2026-05-25）：高保真、高表现力，覆盖稳定长文本、多说话人对话、声音/角色设计与实时流式 TTS，中英双语，Apache-2.0。",
       "sources": [
         "https://huggingface.co/OpenMOSS-Team/MOSS-TTS-v1.5/",
-        "https://hf-mirror.com/OpenMOSS-Team/MOSS-TTS-v1.5/",
-        "https://hf-mirror.us/OpenMOSS-Team/MOSS-TTS-v1.5/",
-        "https://hf-cn-mirror.com/OpenMOSS-Team/MOSS-TTS-v1.5/"
+        "https://hf-mirror.com/OpenMOSS-Team/MOSS-TTS-v1.5/"
       ],
       "primary_url": "https://huggingface.co/OpenMOSS-Team/MOSS-TTS-v1.5/",
       "hardware": {
@@ -926,8 +907,7 @@
       "sources": [
         "https://huggingface.co/dots-studio/dots.tts-soar/",
         "https://hf-mirror.com/dots-studio/dots.tts-soar/",
-        "https://hf-mirror.us/dots-studio/dots.tts-soar/",
-        "https://hf-cn-mirror.com/dots-studio/dots.tts-soar/"
+        "https://modelscope.cn/models/dots-studio/dots.tts-soar/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/dots-studio/dots.tts-soar/",
       "hardware": {
@@ -976,8 +956,7 @@
       "sources": [
         "https://huggingface.co/Wan-AI/Wan2.2-T2V-A14B-Diffusers/",
         "https://hf-mirror.com/Wan-AI/Wan2.2-T2V-A14B-Diffusers/",
-        "https://hf-mirror.us/Wan-AI/Wan2.2-T2V-A14B-Diffusers/",
-        "https://hf-cn-mirror.com/Wan-AI/Wan2.2-T2V-A14B-Diffusers/"
+        "https://modelscope.cn/models/Wan-AI/Wan2.2-T2V-A14B-Diffusers/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Wan-AI/Wan2.2-T2V-A14B-Diffusers/",
       "hardware": {
@@ -1023,8 +1002,7 @@
       "sources": [
         "https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B-Diffusers/",
         "https://hf-mirror.com/Wan-AI/Wan2.2-I2V-A14B-Diffusers/",
-        "https://hf-mirror.us/Wan-AI/Wan2.2-I2V-A14B-Diffusers/",
-        "https://hf-cn-mirror.com/Wan-AI/Wan2.2-I2V-A14B-Diffusers/"
+        "https://modelscope.cn/models/Wan-AI/Wan2.2-I2V-A14B-Diffusers/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B-Diffusers/",
       "hardware": {
@@ -1070,8 +1048,7 @@
       "sources": [
         "https://huggingface.co/Tencent-Hunyuan/HunyuanVideo/",
         "https://hf-mirror.com/Tencent-Hunyuan/HunyuanVideo/",
-        "https://hf-mirror.us/Tencent-Hunyuan/HunyuanVideo/",
-        "https://hf-cn-mirror.com/Tencent-Hunyuan/HunyuanVideo/"
+        "https://modelscope.cn/models/Tencent-Hunyuan/HunyuanVideo/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Tencent-Hunyuan/HunyuanVideo/",
       "hardware": {
@@ -1117,8 +1094,7 @@
       "sources": [
         "https://huggingface.co/Lightricks/LTX-Video/",
         "https://hf-mirror.com/Lightricks/LTX-Video/",
-        "https://hf-mirror.us/Lightricks/LTX-Video/",
-        "https://hf-cn-mirror.com/Lightricks/LTX-Video/"
+        "https://modelscope.cn/models/Lightricks/LTX-Video/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Lightricks/LTX-Video/",
       "hardware": {
@@ -1163,9 +1139,7 @@
       "description": "潞晨 Open-Sora 2.0，开源文/图/视频生视频。",
       "sources": [
         "https://huggingface.co/hpcaitech/Open-Sora/",
-        "https://hf-mirror.com/hpcaitech/Open-Sora/",
-        "https://hf-mirror.us/hpcaitech/Open-Sora/",
-        "https://hf-cn-mirror.com/hpcaitech/Open-Sora/"
+        "https://hf-mirror.com/hpcaitech/Open-Sora/"
       ],
       "primary_url": "https://huggingface.co/hpcaitech/Open-Sora/",
       "hardware": {
@@ -1212,8 +1186,8 @@
       "sources": [
         "https://huggingface.co/city96/FLUX.1-dev-gguf/",
         "https://hf-mirror.com/city96/FLUX.1-dev-gguf/",
-        "https://hf-mirror.us/city96/FLUX.1-dev-gguf/",
-        "https://hf-cn-mirror.com/city96/FLUX.1-dev-gguf/"
+        "https://modelscope.cn/models/black-forest-labs/FLUX.1-dev/resolve/master/",
+        "https://modelscope.cn/models/city96/FLUX.1-dev-gguf/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/city96/FLUX.1-dev-gguf/",
       "hardware": {
@@ -1253,8 +1227,8 @@
       "sources": [
         "https://huggingface.co/city96/FLUX.1-schnell-gguf/",
         "https://hf-mirror.com/city96/FLUX.1-schnell-gguf/",
-        "https://hf-mirror.us/city96/FLUX.1-schnell-gguf/",
-        "https://hf-cn-mirror.com/city96/FLUX.1-schnell-gguf/"
+        "https://modelscope.cn/models/black-forest-labs/FLUX.1-schnell/resolve/master/",
+        "https://modelscope.cn/models/city96/FLUX.1-schnell-gguf/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/city96/FLUX.1-schnell-gguf/",
       "hardware": {
@@ -1293,8 +1267,7 @@
       "sources": [
         "https://huggingface.co/stabilityai/stable-diffusion-3.5-large/",
         "https://hf-mirror.com/stabilityai/stable-diffusion-3.5-large/",
-        "https://hf-mirror.us/stabilityai/stable-diffusion-3.5-large/",
-        "https://hf-cn-mirror.com/stabilityai/stable-diffusion-3.5-large/"
+        "https://modelscope.cn/models/stabilityai/stable-diffusion-3.5-large/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-diffusion-3.5-large/",
       "hardware": {
@@ -1332,8 +1305,7 @@
       "sources": [
         "https://huggingface.co/Kwai-Kolors/Kolors/",
         "https://hf-mirror.com/Kwai-Kolors/Kolors/",
-        "https://hf-mirror.us/Kwai-Kolors/Kolors/",
-        "https://hf-cn-mirror.com/Kwai-Kolors/Kolors/"
+        "https://modelscope.cn/models/Kwai-Kolors/Kolors/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Kwai-Kolors/Kolors/",
       "hardware": {
@@ -1370,9 +1342,7 @@
       "description": "腾讯混元图像 3.0（2025-09-28 开源）：80B 总参/13B 激活的工业级原生多模态生图 MoE，中文与文字排版 SOTA、LMArena 文生图第一梯队。HF 权重在小写 tencent 组织（代码在 Tencent-Hunyuan）。",
       "sources": [
         "https://huggingface.co/tencent/HunyuanImage-3.0/",
-        "https://hf-mirror.com/tencent/HunyuanImage-3.0/",
-        "https://hf-mirror.us/tencent/HunyuanImage-3.0/",
-        "https://hf-cn-mirror.com/tencent/HunyuanImage-3.0/"
+        "https://hf-mirror.com/tencent/HunyuanImage-3.0/"
       ],
       "primary_url": "https://huggingface.co/tencent/HunyuanImage-3.0/",
       "hardware": {
@@ -1410,8 +1380,7 @@
       "sources": [
         "https://huggingface.co/lllyasviel/control_v11p_sd15_canny/",
         "https://hf-mirror.com/lllyasviel/control_v11p_sd15_canny/",
-        "https://hf-mirror.us/lllyasviel/control_v11p_sd15_canny/",
-        "https://hf-cn-mirror.com/lllyasviel/control_v11p_sd15_canny/"
+        "https://modelscope.cn/models/lllyasviel/control_v11p_sd15_canny/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/lllyasviel/control_v11p_sd15_canny/",
       "hardware": {
@@ -1447,9 +1416,7 @@
       "description": "腾讯 ARC 经典超分，老照片/通用图。",
       "sources": [
         "https://huggingface.co/xinntao/Real-ESRGAN/",
-        "https://hf-mirror.com/xinntao/Real-ESRGAN/",
-        "https://hf-mirror.us/xinntao/Real-ESRGAN/",
-        "https://hf-cn-mirror.com/xinntao/Real-ESRGAN/"
+        "https://hf-mirror.com/xinntao/Real-ESRGAN/"
       ],
       "primary_url": "https://huggingface.co/xinntao/Real-ESRGAN/",
       "hardware": {
@@ -1487,9 +1454,7 @@
       "description": "动漫/真人双模态超分。",
       "sources": [
         "https://huggingface.co/Kiteretsu77/APISR/",
-        "https://hf-mirror.com/Kiteretsu77/APISR/",
-        "https://hf-mirror.us/Kiteretsu77/APISR/",
-        "https://hf-cn-mirror.com/Kiteretsu77/APISR/"
+        "https://hf-mirror.com/Kiteretsu77/APISR/"
       ],
       "primary_url": "https://huggingface.co/Kiteretsu77/APISR/",
       "hardware": {
@@ -1526,9 +1491,7 @@
       "description": "基于 SDXL 的高保真超分。",
       "sources": [
         "https://huggingface.co/Fanghua-Yu/SUPIR/",
-        "https://hf-mirror.com/Fanghua-Yu/SUPIR/",
-        "https://hf-mirror.us/Fanghua-Yu/SUPIR/",
-        "https://hf-cn-mirror.com/Fanghua-Yu/SUPIR/"
+        "https://hf-mirror.com/Fanghua-Yu/SUPIR/"
       ],
       "primary_url": "https://huggingface.co/Fanghua-Yu/SUPIR/",
       "hardware": {
@@ -1565,9 +1528,7 @@
       "description": "社区最强 4x 写实超分。",
       "sources": [
         "https://huggingface.co/Kim2091/4x-UltraSharp/",
-        "https://hf-mirror.com/Kim2091/4x-UltraSharp/",
-        "https://hf-mirror.us/Kim2091/4x-UltraSharp/",
-        "https://hf-cn-mirror.com/Kim2091/4x-UltraSharp/"
+        "https://hf-mirror.com/Kim2091/4x-UltraSharp/"
       ],
       "primary_url": "https://huggingface.co/Kim2091/4x-UltraSharp/",
       "hardware": {
@@ -1604,9 +1565,7 @@
       "description": "字节 SeedVR2（ICLR2026）视频/图像超分与修复：默认 3B，另有 7B；支持 FP16/FP8/GGUF 多精度，ComfyUI 生态成熟。",
       "sources": [
         "https://huggingface.co/ByteDance-Seed/SeedVR2-3B/",
-        "https://hf-mirror.com/ByteDance-Seed/SeedVR2-3B/",
-        "https://hf-mirror.us/ByteDance-Seed/SeedVR2-3B/",
-        "https://hf-cn-mirror.com/ByteDance-Seed/SeedVR2-3B/"
+        "https://hf-mirror.com/ByteDance-Seed/SeedVR2-3B/"
       ],
       "primary_url": "https://huggingface.co/ByteDance-Seed/SeedVR2-3B/",
       "hardware": {
@@ -1644,8 +1603,7 @@
       "sources": [
         "https://huggingface.co/stabilityai/stable-audio-open-1.0/",
         "https://hf-mirror.com/stabilityai/stable-audio-open-1.0/",
-        "https://hf-mirror.us/stabilityai/stable-audio-open-1.0/",
-        "https://hf-cn-mirror.com/stabilityai/stable-audio-open-1.0/"
+        "https://modelscope.cn/models/stabilityai/stable-audio-open-1.0/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-audio-open-1.0/",
       "hardware": {
@@ -1683,8 +1641,7 @@
       "sources": [
         "https://huggingface.co/facebook/musicgen-large/",
         "https://hf-mirror.com/facebook/musicgen-large/",
-        "https://hf-mirror.us/facebook/musicgen-large/",
-        "https://hf-cn-mirror.com/facebook/musicgen-large/"
+        "https://modelscope.cn/models/facebook/musicgen-large/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/facebook/musicgen-large/",
       "hardware": {
@@ -1722,8 +1679,7 @@
       "sources": [
         "https://huggingface.co/facebook/musicgen-stereo-large/",
         "https://hf-mirror.com/facebook/musicgen-stereo-large/",
-        "https://hf-mirror.us/facebook/musicgen-stereo-large/",
-        "https://hf-cn-mirror.com/facebook/musicgen-stereo-large/"
+        "https://modelscope.cn/models/facebook/musicgen-stereo-large/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/facebook/musicgen-stereo-large/",
       "hardware": {
@@ -1758,9 +1714,7 @@
       "description": "AudioLDM 2，音效/语音/音乐统一生成。",
       "sources": [
         "https://huggingface.co/haoheliu/audioldm2/",
-        "https://hf-mirror.com/haoheliu/audioldm2/",
-        "https://hf-mirror.us/haoheliu/audioldm2/",
-        "https://hf-cn-mirror.com/haoheliu/audioldm2/"
+        "https://hf-mirror.com/haoheliu/audioldm2/"
       ],
       "primary_url": "https://huggingface.co/haoheliu/audioldm2/",
       "hardware": {
@@ -1795,9 +1749,7 @@
       "description": "西北工业大学 DiffRhythm，全曲生成。",
       "sources": [
         "https://huggingface.co/ASLP-lab/DiffRhythm/",
-        "https://hf-mirror.com/ASLP-lab/DiffRhythm/",
-        "https://hf-mirror.us/ASLP-lab/DiffRhythm/",
-        "https://hf-cn-mirror.com/ASLP-lab/DiffRhythm/"
+        "https://hf-mirror.com/ASLP-lab/DiffRhythm/"
       ],
       "primary_url": "https://huggingface.co/ASLP-lab/DiffRhythm/",
       "hardware": {
@@ -1834,9 +1786,7 @@
       "description": "腾讯 Hunyuan3D 2.5：高保真 3D 资产生成（含 2.1 全量权重与训练代码、2.5 更新），支持文/图/草图转 3D，PBR 材质（Albedo/Normal/Roughness/Metallic），HF 下载 11.7 万+、likes 1803，3D 生成领域最活跃项目。",
       "sources": [
         "https://huggingface.co/tencent/Hunyuan3D-2",
-        "https://hf-mirror.com/tencent/Hunyuan3D-2",
-        "https://hf-mirror.us/tencent/Hunyuan3D-2",
-        "https://hf-cn-mirror.com/tencent/Hunyuan3D-2"
+        "https://hf-mirror.com/tencent/Hunyuan3D-2"
       ],
       "primary_url": "https://huggingface.co/tencent/Hunyuan3D-2",
       "hardware": {
@@ -1873,8 +1823,7 @@
       "sources": [
         "https://huggingface.co/microsoft/TRELLIS-image-large/",
         "https://hf-mirror.com/microsoft/TRELLIS-image-large/",
-        "https://hf-mirror.us/microsoft/TRELLIS-image-large/",
-        "https://hf-cn-mirror.com/microsoft/TRELLIS-image-large/"
+        "https://modelscope.cn/models/microsoft/TRELLIS-image-large/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/microsoft/TRELLIS-image-large/",
       "hardware": {
@@ -1911,8 +1860,7 @@
       "sources": [
         "https://huggingface.co/VAST-AI-Research/TripoSR/",
         "https://hf-mirror.com/VAST-AI-Research/TripoSR/",
-        "https://hf-mirror.us/VAST-AI-Research/TripoSR/",
-        "https://hf-cn-mirror.com/VAST-AI-Research/TripoSR/"
+        "https://modelscope.cn/models/VAST-AI-Research/TripoSR/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/VAST-AI-Research/TripoSR/",
       "hardware": {
@@ -1948,9 +1896,7 @@
       "description": "Direct3D-S2（NeurIPS 2025，DreamTech/南大）：基于空间稀疏注意力(SSA)的高分辨率直生 3D 框架，SDF 体积生成、训练成本大幅下降，MIT。HF 权重 wushuang98/Direct3D-S2，代码 DreamTechAI/Direct3D-S2。",
       "sources": [
         "https://huggingface.co/wushuang98/Direct3D-S2/",
-        "https://hf-mirror.com/wushuang98/Direct3D-S2/",
-        "https://hf-mirror.us/wushuang98/Direct3D-S2/",
-        "https://hf-cn-mirror.com/wushuang98/Direct3D-S2/"
+        "https://hf-mirror.com/wushuang98/Direct3D-S2/"
       ],
       "primary_url": "https://huggingface.co/wushuang98/Direct3D-S2/",
       "hardware": {
@@ -1986,9 +1932,7 @@
       "description": "组合式潜空间扩散 Transformer，部件级 3D。",
       "sources": [
         "https://huggingface.co/wgsxm/PartCrafter/",
-        "https://hf-mirror.com/wgsxm/PartCrafter/",
-        "https://hf-mirror.us/wgsxm/PartCrafter/",
-        "https://hf-cn-mirror.com/wgsxm/PartCrafter/"
+        "https://hf-mirror.com/wgsxm/PartCrafter/"
       ],
       "primary_url": "https://huggingface.co/wgsxm/PartCrafter/",
       "hardware": {
@@ -2025,8 +1969,7 @@
       "sources": [
         "https://huggingface.co/microsoft/TRELLIS.2-4B/",
         "https://hf-mirror.com/microsoft/TRELLIS.2-4B/",
-        "https://hf-mirror.us/microsoft/TRELLIS.2-4B/",
-        "https://hf-cn-mirror.com/microsoft/TRELLIS.2-4B/"
+        "https://modelscope.cn/models/microsoft/TRELLIS.2-4B/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/microsoft/TRELLIS.2-4B/",
       "hardware": {
@@ -2062,9 +2005,7 @@
       "description": "VAST 高质量图像到 3D。",
       "sources": [
         "https://huggingface.co/VAST-AI/TripoSG/",
-        "https://hf-mirror.com/VAST-AI/TripoSG/",
-        "https://hf-mirror.us/VAST-AI/TripoSG/",
-        "https://hf-cn-mirror.com/VAST-AI/TripoSG/"
+        "https://hf-mirror.com/VAST-AI/TripoSG/"
       ],
       "primary_url": "https://huggingface.co/VAST-AI/TripoSG/",
       "hardware": {
@@ -2101,9 +2042,7 @@
       "description": "OpenAI CLIP，图文表征基座。",
       "sources": [
         "https://huggingface.co/openai/clip-vit-large-patch14/",
-        "https://hf-mirror.com/openai/clip-vit-large-patch14/",
-        "https://hf-mirror.us/openai/clip-vit-large-patch14/",
-        "https://hf-cn-mirror.com/openai/clip-vit-large-patch14/"
+        "https://hf-mirror.com/openai/clip-vit-large-patch14/"
       ],
       "primary_url": "https://huggingface.co/openai/clip-vit-large-patch14/",
       "hardware": {
@@ -2139,9 +2078,7 @@
       "description": "人脸检测/识别/对齐，行业标准。",
       "sources": [
         "https://huggingface.co/buffalo_l/",
-        "https://hf-mirror.com/buffalo_l/",
-        "https://hf-mirror.us/buffalo_l/",
-        "https://hf-cn-mirror.com/buffalo_l/"
+        "https://hf-mirror.com/buffalo_l/"
       ],
       "primary_url": "https://huggingface.co/buffalo_l/",
       "hardware": {
@@ -2177,8 +2114,7 @@
       "sources": [
         "https://huggingface.co/THU-MIG/yolov10/",
         "https://hf-mirror.com/THU-MIG/yolov10/",
-        "https://hf-mirror.us/THU-MIG/yolov10/",
-        "https://hf-cn-mirror.com/THU-MIG/yolov10/"
+        "https://modelscope.cn/models/THU-MIG/yolov10/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/THU-MIG/yolov10/",
       "hardware": {
@@ -2257,8 +2193,7 @@
       "sources": [
         "https://huggingface.co/Qwen/Qwen3.8-27B/",
         "https://hf-mirror.com/Qwen/Qwen3.8-27B/",
-        "https://hf-mirror.us/Qwen/Qwen3.8-27B/",
-        "https://hf-cn-mirror.com/Qwen/Qwen3.8-27B/"
+        "https://modelscope.cn/models/Qwen/Qwen3.8-27B/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen3.8-27B/",
       "gguf_repo": "JonathanColetti/Qwen3.8-27B-Uncensored-GGUF",
@@ -2313,9 +2248,9 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.5-27B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.5-27B-GGUF/",
-        "https://hf-mirror.us/unsloth/Qwen3.5-27B-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/Qwen3.5-27B-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/Qwen3.5-27B-GGUF/"
+        "https://hf-cdn.sufy.com/unsloth/Qwen3.5-27B-GGUF/",
+        "https://modelscope.cn/models/Qwen/Qwen3.5-27B/resolve/master/",
+        "https://modelscope.cn/models/unsloth/Qwen3.5-27B-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3.5-27B-GGUF/",
       "gguf_repo": "unsloth/Qwen3.5-27B-GGUF",
@@ -2364,9 +2299,9 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.5-9B-GGUF/",
-        "https://hf-mirror.us/unsloth/Qwen3.5-9B-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/Qwen3.5-9B-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/Qwen3.5-9B-GGUF/"
+        "https://hf-cdn.sufy.com/unsloth/Qwen3.5-9B-GGUF/",
+        "https://modelscope.cn/models/Qwen/Qwen3.5-9B/resolve/master/",
+        "https://modelscope.cn/models/unsloth/Qwen3.5-9B-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/",
       "gguf_repo": "unsloth/Qwen3.5-9B-GGUF",
@@ -2413,9 +2348,9 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.5-397B-A17B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.5-397B-A17B-GGUF/",
-        "https://hf-mirror.us/unsloth/Qwen3.5-397B-A17B-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/Qwen3.5-397B-A17B-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/Qwen3.5-397B-A17B-GGUF/"
+        "https://hf-cdn.sufy.com/unsloth/Qwen3.5-397B-A17B-GGUF/",
+        "https://modelscope.cn/models/Qwen/Qwen3.5-397B-A17B/resolve/master/",
+        "https://modelscope.cn/models/unsloth/Qwen3.5-397B-A17B-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3.5-397B-A17B-GGUF/",
       "gguf_repo": "unsloth/Qwen3.5-397B-A17B-GGUF",
@@ -2463,9 +2398,9 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.6-27B-GGUF/",
-        "https://hf-mirror.us/unsloth/Qwen3.6-27B-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/Qwen3.6-27B-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/Qwen3.6-27B-GGUF/"
+        "https://hf-cdn.sufy.com/unsloth/Qwen3.6-27B-GGUF/",
+        "https://modelscope.cn/models/Qwen/Qwen3.6-27B/resolve/master/",
+        "https://modelscope.cn/models/unsloth/Qwen3.6-27B-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/",
       "gguf_repo": "unsloth/Qwen3.6-27B-GGUF",
@@ -2512,9 +2447,9 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.6-35B-A3B-GGUF/",
-        "https://hf-mirror.us/unsloth/Qwen3.6-35B-A3B-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/Qwen3.6-35B-A3B-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/Qwen3.6-35B-A3B-GGUF/"
+        "https://hf-cdn.sufy.com/unsloth/Qwen3.6-35B-A3B-GGUF/",
+        "https://modelscope.cn/models/Qwen/Qwen3.6-35B-A3B/resolve/master/",
+        "https://modelscope.cn/models/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/",
       "gguf_repo": "unsloth/Qwen3.6-35B-A3B-GGUF",
@@ -2561,9 +2496,9 @@
       "sources": [
         "https://huggingface.co/unsloth/DeepSeek-V4-Flash-GGUF/",
         "https://hf-mirror.com/unsloth/DeepSeek-V4-Flash-GGUF/",
-        "https://hf-mirror.us/unsloth/DeepSeek-V4-Flash-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/DeepSeek-V4-Flash-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/DeepSeek-V4-Flash-GGUF/"
+        "https://hf-cdn.sufy.com/unsloth/DeepSeek-V4-Flash-GGUF/",
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Flash/resolve/master/",
+        "https://modelscope.cn/models/unsloth/DeepSeek-V4-Flash-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-GGUF/",
       "gguf_repo": "unsloth/DeepSeek-V4-Flash-GGUF",
@@ -2611,8 +2546,7 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/",
         "https://hf-mirror.com/deepseek-ai/DeepSeek-V4-Pro/",
-        "https://hf-mirror.us/deepseek-ai/DeepSeek-V4-Pro/",
-        "https://hf-cn-mirror.com/deepseek-ai/DeepSeek-V4-Pro/"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Pro/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/",
       "modality": {
@@ -2659,9 +2593,8 @@
       "sources": [
         "https://huggingface.co/unsloth/GLM-5-GGUF/",
         "https://hf-mirror.com/unsloth/GLM-5-GGUF/",
-        "https://hf-mirror.us/unsloth/GLM-5-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/GLM-5-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/GLM-5-GGUF/"
+        "https://hf-cdn.sufy.com/unsloth/GLM-5-GGUF/",
+        "https://modelscope.cn/models/unsloth/GLM-5-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/GLM-5-GGUF/",
       "gguf_repo": "unsloth/GLM-5-GGUF",
@@ -2709,9 +2642,9 @@
       "sources": [
         "https://huggingface.co/unsloth/Kimi-K2.6-GGUF/",
         "https://hf-mirror.com/unsloth/Kimi-K2.6-GGUF/",
-        "https://hf-mirror.us/unsloth/Kimi-K2.6-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/Kimi-K2.6-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/Kimi-K2.6-GGUF/"
+        "https://hf-cdn.sufy.com/unsloth/Kimi-K2.6-GGUF/",
+        "https://modelscope.cn/models/moonshotai/Kimi-K2.6/resolve/master/",
+        "https://modelscope.cn/models/unsloth/Kimi-K2.6-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Kimi-K2.6-GGUF/",
       "gguf_repo": "unsloth/Kimi-K2.6-GGUF",
@@ -2762,9 +2695,8 @@
       "sources": [
         "https://huggingface.co/unsloth/MiniMax-M2.7-GGUF/",
         "https://hf-mirror.com/unsloth/MiniMax-M2.7-GGUF/",
-        "https://hf-mirror.us/unsloth/MiniMax-M2.7-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/MiniMax-M2.7-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/MiniMax-M2.7-GGUF/"
+        "https://hf-cdn.sufy.com/unsloth/MiniMax-M2.7-GGUF/",
+        "https://modelscope.cn/models/unsloth/MiniMax-M2.7-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/MiniMax-M2.7-GGUF/",
       "gguf_repo": "unsloth/MiniMax-M2.7-GGUF",
@@ -2810,9 +2742,8 @@
       "sources": [
         "https://huggingface.co/ggml-org/gpt-oss-120b-GGUF/",
         "https://hf-mirror.com/ggml-org/gpt-oss-120b-GGUF/",
-        "https://hf-mirror.us/ggml-org/gpt-oss-120b-GGUF/",
-        "https://hf-cn-mirror.com/ggml-org/gpt-oss-120b-GGUF/",
-        "https://hf-cdn.sufy.com/ggml-org/gpt-oss-120b-GGUF/"
+        "https://hf-cdn.sufy.com/ggml-org/gpt-oss-120b-GGUF/",
+        "https://modelscope.cn/models/ggml-org/gpt-oss-120b-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/ggml-org/gpt-oss-120b-GGUF/",
       "gguf_repo": "ggml-org/gpt-oss-120b-GGUF",
@@ -2860,9 +2791,8 @@
       "sources": [
         "https://huggingface.co/ggml-org/gpt-oss-20b-GGUF/",
         "https://hf-mirror.com/ggml-org/gpt-oss-20b-GGUF/",
-        "https://hf-mirror.us/ggml-org/gpt-oss-20b-GGUF/",
-        "https://hf-cn-mirror.com/ggml-org/gpt-oss-20b-GGUF/",
-        "https://hf-cdn.sufy.com/ggml-org/gpt-oss-20b-GGUF/"
+        "https://hf-cdn.sufy.com/ggml-org/gpt-oss-20b-GGUF/",
+        "https://modelscope.cn/models/ggml-org/gpt-oss-20b-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/ggml-org/gpt-oss-20b-GGUF/",
       "gguf_repo": "ggml-org/gpt-oss-20b-GGUF",
@@ -2910,9 +2840,9 @@
       "sources": [
         "https://huggingface.co/unsloth/LFM2.5-8B-A1B-GGUF/",
         "https://hf-mirror.com/unsloth/LFM2.5-8B-A1B-GGUF/",
-        "https://hf-mirror.us/unsloth/LFM2.5-8B-A1B-GGUF/",
-        "https://hf-cn-mirror.com/unsloth/LFM2.5-8B-A1B-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/LFM2.5-8B-A1B-GGUF/"
+        "https://hf-cdn.sufy.com/unsloth/LFM2.5-8B-A1B-GGUF/",
+        "https://modelscope.cn/models/LiquidAI/LFM2.5-8B-A1B/resolve/master/",
+        "https://modelscope.cn/models/unsloth/LFM2.5-8B-A1B-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/LFM2.5-8B-A1B-GGUF/",
       "gguf_repo": "unsloth/LFM2.5-8B-A1B-GGUF",
@@ -2959,8 +2889,7 @@
       "sources": [
         "https://huggingface.co/Lightricks/LTX-2.3/",
         "https://hf-mirror.com/Lightricks/LTX-2.3/",
-        "https://hf-mirror.us/Lightricks/LTX-2.3/",
-        "https://hf-cn-mirror.com/Lightricks/LTX-2.3/"
+        "https://modelscope.cn/models/Lightricks/LTX-2.3/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Lightricks/LTX-2.3/",
       "modality": {
@@ -3011,8 +2940,7 @@
       "sources": [
         "https://huggingface.co/Lightricks/LTX-2.5/",
         "https://hf-mirror.com/Lightricks/LTX-2.5/",
-        "https://hf-mirror.us/Lightricks/LTX-2.5/",
-        "https://hf-cn-mirror.com/Lightricks/LTX-2.5/"
+        "https://modelscope.cn/models/Lightricks/LTX-2.5/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Lightricks/LTX-2.5/",
       "modality": {
@@ -3077,9 +3005,8 @@
       "sources": [
         "https://huggingface.co/black-forest-labs/FLUX.2-dev/",
         "https://hf-mirror.com/black-forest-labs/FLUX.2-dev/",
-        "https://hf-mirror.us/black-forest-labs/FLUX.2-dev/",
-        "https://hf-cn-mirror.com/black-forest-labs/FLUX.2-dev/",
-        "https://hf-cdn.sufy.com/black-forest-labs/FLUX.2-dev/"
+        "https://hf-cdn.sufy.com/black-forest-labs/FLUX.2-dev/",
+        "https://modelscope.cn/models/black-forest-labs/FLUX.2-dev/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/black-forest-labs/FLUX.2-dev/",
       "tags": [
@@ -3112,8 +3039,7 @@
       "sources": [
         "https://huggingface.co/krea/Krea-2-Turbo/",
         "https://hf-mirror.com/krea/Krea-2-Turbo/",
-        "https://hf-mirror.us/krea/Krea-2-Turbo/",
-        "https://hf-cn-mirror.com/krea/Krea-2-Turbo/"
+        "https://modelscope.cn/models/krea/Krea-2-Turbo/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/krea/Krea-2-Turbo/",
       "hardware": {
@@ -3168,8 +3094,7 @@
       "sources": [
         "https://huggingface.co/moonshotai/Kimi-K3/",
         "https://hf-mirror.com/moonshotai/Kimi-K3/",
-        "https://hf-mirror.us/moonshotai/Kimi-K3/",
-        "https://hf-cn-mirror.com/moonshotai/Kimi-K3/"
+        "https://modelscope.cn/models/moonshotai/Kimi-K3/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/moonshotai/Kimi-K3/",
       "hardware": {
@@ -3219,8 +3144,7 @@
       "sources": [
         "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/",
         "https://hf-mirror.com/Qwen/Qwen3.8-2.4T-A95B/",
-        "https://hf-mirror.us/Qwen/Qwen3.8-2.4T-A95B/",
-        "https://hf-cn-mirror.com/Qwen/Qwen3.8-2.4T-A95B/"
+        "https://modelscope.cn/models/Qwen/Qwen3.8-2.4T-A95B/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/",
       "hardware": {
@@ -3267,8 +3191,7 @@
       "sources": [
         "https://huggingface.co/dots-studio/dots3-note-prev/",
         "https://hf-mirror.com/dots-studio/dots3-note-prev/",
-        "https://hf-mirror.us/dots-studio/dots3-note-prev/",
-        "https://hf-cn-mirror.com/dots-studio/dots3-note-prev/"
+        "https://modelscope.cn/models/dots-studio/dots3-note-prev/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/dots-studio/dots3-note-prev/",
       "hardware": {
@@ -3312,9 +3235,7 @@
       "description": "智谱 GLM-5-Code 代码专用模型，开源较新，社区适配跟进中。",
       "sources": [
         "https://huggingface.co/models?search=GLM-5-Code",
-        "https://hf-mirror.com/models?search=GLM-5-Code",
-        "https://hf-mirror.us/models?search=GLM-5-Code",
-        "https://hf-cn-mirror.com/models?search=GLM-5-Code"
+        "https://hf-mirror.com/models?search=GLM-5-Code"
       ],
       "primary_url": "https://huggingface.co/models?search=GLM-5-Code",
       "tags": [
@@ -3342,8 +3263,7 @@
       "sources": [
         "https://huggingface.co/Comfy-Org/MiniMax-H3/",
         "https://hf-mirror.com/Comfy-Org/MiniMax-H3/",
-        "https://hf-mirror.us/Comfy-Org/MiniMax-H3/",
-        "https://hf-cn-mirror.com/Comfy-Org/MiniMax-H3/"
+        "https://modelscope.cn/models/Comfy-Org/MiniMax-H3/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Comfy-Org/MiniMax-H3/",
       "hardware": {
@@ -3392,8 +3312,7 @@
       "sources": [
         "https://huggingface.co/sand-ai/MAGI-2-preview/",
         "https://hf-mirror.com/sand-ai/MAGI-2-preview/",
-        "https://hf-mirror.us/sand-ai/MAGI-2-preview/",
-        "https://hf-cn-mirror.com/sand-ai/MAGI-2-preview/"
+        "https://modelscope.cn/models/sand-ai/MAGI-2-preview/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/sand-ai/MAGI-2-preview/",
       "hardware": {
@@ -3438,8 +3357,7 @@
       "sources": [
         "https://huggingface.co/robbyant/lingbot-video-dense-1.3b/",
         "https://hf-mirror.com/robbyant/lingbot-video-dense-1.3b/",
-        "https://hf-mirror.us/robbyant/lingbot-video-dense-1.3b/",
-        "https://hf-cn-mirror.com/robbyant/lingbot-video-dense-1.3b/"
+        "https://modelscope.cn/models/robbyant/lingbot-video-dense-1.3b/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/robbyant/lingbot-video-dense-1.3b/",
       "hardware": {
@@ -3481,9 +3399,7 @@
       "description": "阿里 Wan 3.0，8/24 已上线公测，开源状态待确认。",
       "sources": [
         "https://huggingface.co/models?search=Wan3",
-        "https://hf-mirror.com/models?search=Wan3",
-        "https://hf-mirror.us/models?search=Wan3",
-        "https://hf-cn-mirror.com/models?search=Wan3"
+        "https://hf-mirror.com/models?search=Wan3"
       ],
       "primary_url": "https://huggingface.co/models?search=Wan3",
       "tags": [
@@ -3511,9 +3427,7 @@
       "description": "MiniMax 官方开源音乐生成模型（8B Global LLM + 0.6B Local LLM + 2.4B Flow Matching + 123M Flow-VAE），输出 32kHz 立体声 WAV，可生成带人声完整歌曲。官方推荐 sglang-omni 服务端推理，也支持 diffusers 与 ComfyUI 0.33.0+。",
       "sources": [
         "https://huggingface.co/MiniMaxAI/MiniMax-Music3",
-        "https://hf-mirror.com/MiniMaxAI/MiniMax-Music3",
-        "https://hf-mirror.us/MiniMaxAI/MiniMax-Music3",
-        "https://hf-cn-mirror.com/MiniMaxAI/MiniMax-Music3"
+        "https://hf-mirror.com/MiniMaxAI/MiniMax-Music3"
       ],
       "primary_url": "https://huggingface.co/MiniMaxAI/MiniMax-Music3",
       "hardware": {
@@ -3563,8 +3477,7 @@
       "sources": [
         "https://huggingface.co/ACE-Step/Ace-Step1.5/",
         "https://hf-mirror.com/ACE-Step/Ace-Step1.5/",
-        "https://hf-mirror.us/ACE-Step/Ace-Step1.5/",
-        "https://hf-cn-mirror.com/ACE-Step/Ace-Step1.5/"
+        "https://modelscope.cn/models/ACE-Step/Ace-Step1.5/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/ACE-Step/Ace-Step1.5/",
       "hardware": {
@@ -3609,9 +3522,7 @@
       "description": "阿里 HappyShrimp 1.0 音乐生成，已上线 API 公测，本地部署信息待确认。",
       "sources": [
         "https://huggingface.co/models?search=HappyShrimp",
-        "https://hf-mirror.com/models?search=HappyShrimp",
-        "https://hf-mirror.us/models?search=HappyShrimp",
-        "https://hf-cn-mirror.com/models?search=HappyShrimp"
+        "https://hf-mirror.com/models?search=HappyShrimp"
       ],
       "primary_url": "https://huggingface.co/models?search=HappyShrimp",
       "tags": [
@@ -3636,8 +3547,7 @@
       "sources": [
         "https://huggingface.co/Comfy-Org/MiniMax-Music-3",
         "https://hf-mirror.com/Comfy-Org/MiniMax-Music-3",
-        "https://hf-mirror.us/Comfy-Org/MiniMax-Music-3",
-        "https://hf-cn-mirror.com/Comfy-Org/MiniMax-Music-3"
+        "https://modelscope.cn/models/Comfy-Org/MiniMax-Music-3/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Comfy-Org/MiniMax-Music-3",
       "hardware": {
@@ -3684,9 +3594,7 @@
       "description": "社区 GGUF 量化版（HF 下载量 38 万+），含多档位量化文件按需下载；配合 ComfyUI GGUF 加载节点使用，显著降低显存需求。",
       "sources": [
         "https://huggingface.co/Serveurperso/MiniMax-Music3-GGUF",
-        "https://hf-mirror.com/Serveurperso/MiniMax-Music3-GGUF",
-        "https://hf-mirror.us/Serveurperso/MiniMax-Music3-GGUF",
-        "https://hf-cn-mirror.com/Serveurperso/MiniMax-Music3-GGUF"
+        "https://hf-mirror.com/Serveurperso/MiniMax-Music3-GGUF"
       ],
       "primary_url": "https://huggingface.co/Serveurperso/MiniMax-Music3-GGUF",
       "hardware": {
@@ -3733,9 +3641,7 @@
       "description": "社区 Turbo FP8 量化版（11.8GB），生成速度更快、显存占用更低，需配合对应 ComfyUI 工作流。",
       "sources": [
         "https://huggingface.co/guillaume127/MiniMax-Music-3-Turbo-FP8",
-        "https://hf-mirror.com/guillaume127/MiniMax-Music-3-Turbo-FP8",
-        "https://hf-mirror.us/guillaume127/MiniMax-Music-3-Turbo-FP8",
-        "https://hf-cn-mirror.com/guillaume127/MiniMax-Music-3-Turbo-FP8"
+        "https://hf-mirror.com/guillaume127/MiniMax-Music-3-Turbo-FP8"
       ],
       "primary_url": "https://huggingface.co/guillaume127/MiniMax-Music-3-Turbo-FP8",
       "hardware": {
@@ -3782,9 +3688,7 @@
       "description": "社区 W4A8 混合量化 ComfyUI 版（12.8GB），低显存友好，适合 8-12GB 显卡。",
       "sources": [
         "https://huggingface.co/dummy9996/MiniMax-Music3-w4a8-bf16-comfyui",
-        "https://hf-mirror.com/dummy9996/MiniMax-Music3-w4a8-bf16-comfyui",
-        "https://hf-mirror.us/dummy9996/MiniMax-Music3-w4a8-bf16-comfyui",
-        "https://hf-cn-mirror.com/dummy9996/MiniMax-Music3-w4a8-bf16-comfyui"
+        "https://hf-mirror.com/dummy9996/MiniMax-Music3-w4a8-bf16-comfyui"
       ],
       "primary_url": "https://huggingface.co/dummy9996/MiniMax-Music3-w4a8-bf16-comfyui",
       "hardware": {
@@ -3831,9 +3735,7 @@
       "description": "社区风格 LoRA 微调（terminusresearch，基于 Music3 LM 训练），需配合官方/ComfyUI 基础模型加载，可叠加风格强度与触发词。",
       "sources": [
         "https://huggingface.co/terminusresearch/minimax-music3-lm-lora-fiona-crapple",
-        "https://hf-mirror.com/terminusresearch/minimax-music3-lm-lora-fiona-crapple",
-        "https://hf-mirror.us/terminusresearch/minimax-music3-lm-lora-fiona-crapple",
-        "https://hf-cn-mirror.com/terminusresearch/minimax-music3-lm-lora-fiona-crapple"
+        "https://hf-mirror.com/terminusresearch/minimax-music3-lm-lora-fiona-crapple"
       ],
       "primary_url": "https://huggingface.co/terminusresearch/minimax-music3-lm-lora-fiona-crapple",
       "hardware": {
@@ -3880,9 +3782,7 @@
       "description": "社区 latent 修复器（v0.10），修复 Music3 latent 空间损伤、提升生成质量，含 ComfyUI 节点与工作流。",
       "sources": [
         "https://huggingface.co/terminusresearch/minimax-music3-latent-refiner-v0.10",
-        "https://hf-mirror.com/terminusresearch/minimax-music3-latent-refiner-v0.10",
-        "https://hf-mirror.us/terminusresearch/minimax-music3-latent-refiner-v0.10",
-        "https://hf-cn-mirror.com/terminusresearch/minimax-music3-latent-refiner-v0.10"
+        "https://hf-mirror.com/terminusresearch/minimax-music3-latent-refiner-v0.10"
       ],
       "primary_url": "https://huggingface.co/terminusresearch/minimax-music3-latent-refiner-v0.10",
       "hardware": {
@@ -3930,8 +3830,7 @@
       "sources": [
         "https://huggingface.co/mlx-community/MiniMax-Music3-mxfp8",
         "https://hf-mirror.com/mlx-community/MiniMax-Music3-mxfp8",
-        "https://hf-mirror.us/mlx-community/MiniMax-Music3-mxfp8",
-        "https://hf-cn-mirror.com/mlx-community/MiniMax-Music3-mxfp8"
+        "https://modelscope.cn/models/mlx-community/MiniMax-Music3-mxfp8/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/mlx-community/MiniMax-Music3-mxfp8",
       "hardware": {
@@ -3980,8 +3879,7 @@
       "sources": [
         "https://huggingface.co/stabilityai/stable-audio-3-medium/",
         "https://hf-mirror.com/stabilityai/stable-audio-3-medium/",
-        "https://hf-mirror.us/stabilityai/stable-audio-3-medium/",
-        "https://hf-cn-mirror.com/stabilityai/stable-audio-3-medium/"
+        "https://modelscope.cn/models/stabilityai/stable-audio-3-medium/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-audio-3-medium/",
       "hardware": {
@@ -4032,8 +3930,7 @@
       "sources": [
         "https://huggingface.co/google/magenta-realtime-2/",
         "https://hf-mirror.com/google/magenta-realtime-2/",
-        "https://hf-mirror.us/google/magenta-realtime-2/",
-        "https://hf-cn-mirror.com/google/magenta-realtime-2/"
+        "https://modelscope.cn/models/google/magenta-realtime-2/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/google/magenta-realtime-2/",
       "hardware": {
@@ -4085,9 +3982,7 @@
       "description": "OpenMOSS 环境音效生成 v2.0（2026-05-25）：文本生成环境/拟声音效，轻量（权重约 1.4GB），Apache-2.0，适合视频与游戏配音效。",
       "sources": [
         "https://huggingface.co/OpenMOSS-Team/MOSS-SoundEffect-v2.0/",
-        "https://hf-mirror.com/OpenMOSS-Team/MOSS-SoundEffect-v2.0/",
-        "https://hf-mirror.us/OpenMOSS-Team/MOSS-SoundEffect-v2.0/",
-        "https://hf-cn-mirror.com/OpenMOSS-Team/MOSS-SoundEffect-v2.0/"
+        "https://hf-mirror.com/OpenMOSS-Team/MOSS-SoundEffect-v2.0/"
       ],
       "primary_url": "https://huggingface.co/OpenMOSS-Team/MOSS-SoundEffect-v2.0/",
       "hardware": {
@@ -4138,9 +4033,7 @@
       "description": "腾讯首个开源 3D 世界生成模型：文本/图像→可漫游 360° 3D 场景（全景代理+语义分层+分层 3D 重建），兼容 CG 管线；另有 lite 量化版面向消费级 GPU。",
       "sources": [
         "https://huggingface.co/tencent/HunyuanWorld-1",
-        "https://hf-mirror.com/tencent/HunyuanWorld-1",
-        "https://hf-mirror.us/tencent/HunyuanWorld-1",
-        "https://hf-cn-mirror.com/tencent/HunyuanWorld-1"
+        "https://hf-mirror.com/tencent/HunyuanWorld-1"
       ],
       "primary_url": "https://huggingface.co/tencent/HunyuanWorld-1",
       "hardware": {
@@ -4176,9 +4069,7 @@
       "description": "腾讯 RGB-D 视频扩散 3D 世界生成模型：3D 一致的世界探索+快速重建，WorldScore 开源方法综合第一。",
       "sources": [
         "https://huggingface.co/tencent/HunyuanWorld-Voyager",
-        "https://hf-mirror.com/tencent/HunyuanWorld-Voyager",
-        "https://hf-mirror.us/tencent/HunyuanWorld-Voyager",
-        "https://hf-cn-mirror.com/tencent/HunyuanWorld-Voyager"
+        "https://hf-mirror.com/tencent/HunyuanWorld-Voyager"
       ],
       "primary_url": "https://huggingface.co/tencent/HunyuanWorld-Voyager",
       "hardware": {
@@ -4214,9 +4105,7 @@
       "description": "腾讯 WorldMirror 1.1：统一前馈式 3D 重建大模型，多视图/视频输入单卡秒级生成 3D 表示。",
       "sources": [
         "https://huggingface.co/tencent/HunyuanWorld-Mirror",
-        "https://hf-mirror.com/tencent/HunyuanWorld-Mirror",
-        "https://hf-mirror.us/tencent/HunyuanWorld-Mirror",
-        "https://hf-cn-mirror.com/tencent/HunyuanWorld-Mirror"
+        "https://hf-mirror.com/tencent/HunyuanWorld-Mirror"
       ],
       "primary_url": "https://huggingface.co/tencent/HunyuanWorld-Mirror",
       "hardware": {
@@ -4252,9 +4141,7 @@
       "description": "腾讯 HY-World 2.0（2026-04）：多模态世界生成+重建框架，接受文本/单视图/多视图/视频输入，输出 mesh 或 Gaussian Splats；四阶段流水线（HY-Pano 2.0 全景、WorldNav 轨迹、WorldStereo 2.0 扩展、WorldMirror 2.0 合成）。",
       "sources": [
         "https://huggingface.co/tencent/HY-World-2.0",
-        "https://hf-mirror.com/tencent/HY-World-2.0",
-        "https://hf-mirror.us/tencent/HY-World-2.0",
-        "https://hf-cn-mirror.com/tencent/HY-World-2.0"
+        "https://hf-mirror.com/tencent/HY-World-2.0"
       ],
       "primary_url": "https://huggingface.co/tencent/HY-World-2.0",
       "hardware": {
@@ -4290,9 +4177,7 @@
       "description": "腾讯 WorldPlay 1.5（2025-12）：实时交互式 3D 世界创建模型，聚焦实时创作体验。",
       "sources": [
         "https://huggingface.co/tencent/HY-WorldPlay",
-        "https://hf-mirror.com/tencent/HY-WorldPlay",
-        "https://hf-mirror.us/tencent/HY-WorldPlay",
-        "https://hf-cn-mirror.com/tencent/HY-WorldPlay"
+        "https://hf-mirror.com/tencent/HY-WorldPlay"
       ],
       "primary_url": "https://huggingface.co/tencent/HY-WorldPlay",
       "hardware": {
@@ -4329,8 +4214,7 @@
       "sources": [
         "https://huggingface.co/microsoft/TRELLIS-text-xlarge",
         "https://hf-mirror.com/microsoft/TRELLIS-text-xlarge",
-        "https://hf-mirror.us/microsoft/TRELLIS-text-xlarge",
-        "https://hf-cn-mirror.com/microsoft/TRELLIS-text-xlarge"
+        "https://modelscope.cn/models/microsoft/TRELLIS-text-xlarge/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/microsoft/TRELLIS-text-xlarge",
       "hardware": {
@@ -4367,8 +4251,7 @@
       "sources": [
         "https://huggingface.co/facebook/sam-3d-objects",
         "https://hf-mirror.com/facebook/sam-3d-objects",
-        "https://hf-mirror.us/facebook/sam-3d-objects",
-        "https://hf-cn-mirror.com/facebook/sam-3d-objects"
+        "https://modelscope.cn/models/facebook/sam-3d-objects/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/facebook/sam-3d-objects",
       "hardware": {
@@ -4405,8 +4288,7 @@
       "sources": [
         "https://huggingface.co/facebook/sam-3d-body-dinov3",
         "https://hf-mirror.com/facebook/sam-3d-body-dinov3",
-        "https://hf-mirror.us/facebook/sam-3d-body-dinov3",
-        "https://hf-cn-mirror.com/facebook/sam-3d-body-dinov3"
+        "https://modelscope.cn/models/facebook/sam-3d-body-dinov3/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/facebook/sam-3d-body-dinov3",
       "hardware": {
@@ -4443,8 +4325,7 @@
       "sources": [
         "https://huggingface.co/TencentARC/Pixal3D",
         "https://hf-mirror.com/TencentARC/Pixal3D",
-        "https://hf-mirror.us/TencentARC/Pixal3D",
-        "https://hf-cn-mirror.com/TencentARC/Pixal3D"
+        "https://modelscope.cn/models/TencentARC/Pixal3D/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/TencentARC/Pixal3D",
       "hardware": {
@@ -4481,8 +4362,7 @@
       "sources": [
         "https://huggingface.co/AntResearch/4DAnyone",
         "https://hf-mirror.com/AntResearch/4DAnyone",
-        "https://hf-mirror.us/AntResearch/4DAnyone",
-        "https://hf-cn-mirror.com/AntResearch/4DAnyone"
+        "https://modelscope.cn/models/AntResearch/4DAnyone/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/AntResearch/4DAnyone",
       "hardware": {
@@ -4520,9 +4400,7 @@
       "description": "腾讯混元 Hy3 正式版（2026-07 开源）：295B 总参 / 21B 激活 MoE + 3.8B MTP，256K 上下文，Agent/推理/长上下文对标 2-5 倍参数量旗舰。",
       "sources": [
         "https://huggingface.co/tencent/Hy3/",
-        "https://hf-mirror.com/tencent/Hy3/",
-        "https://hf-mirror.us/tencent/Hy3/",
-        "https://hf-cn-mirror.com/tencent/Hy3/"
+        "https://hf-mirror.com/tencent/Hy3/"
       ],
       "primary_url": "https://huggingface.co/tencent/Hy3/",
       "hardware": {
@@ -4572,8 +4450,7 @@
       "sources": [
         "https://huggingface.co/zai-org/GLM-5.2/",
         "https://hf-mirror.com/zai-org/GLM-5.2/",
-        "https://hf-mirror.us/zai-org/GLM-5.2/",
-        "https://hf-cn-mirror.com/zai-org/GLM-5.2/"
+        "https://modelscope.cn/models/unsloth/GLM-5.2-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/zai-org/GLM-5.2/",
       "hardware": {
@@ -4622,8 +4499,7 @@
       "sources": [
         "https://huggingface.co/thinkingmachines/Inkling/",
         "https://hf-mirror.com/thinkingmachines/Inkling/",
-        "https://hf-mirror.us/thinkingmachines/Inkling/",
-        "https://hf-cn-mirror.com/thinkingmachines/Inkling/"
+        "https://modelscope.cn/models/thinkingmachines/Inkling/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/thinkingmachines/Inkling/",
       "hardware": {
@@ -4673,8 +4549,7 @@
       "sources": [
         "https://huggingface.co/prism-ml/Bonsai-27B-gguf/",
         "https://hf-mirror.com/prism-ml/Bonsai-27B-gguf/",
-        "https://hf-mirror.us/prism-ml/Bonsai-27B-gguf/",
-        "https://hf-cn-mirror.com/prism-ml/Bonsai-27B-gguf/"
+        "https://modelscope.cn/models/prism-ml/Bonsai-27B-gguf/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/prism-ml/Bonsai-27B-gguf/",
       "hardware": {
@@ -4722,8 +4597,8 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/",
         "https://hf-mirror.com/deepseek-ai/DeepSeek-V4-Flash-0731/",
-        "https://hf-mirror.us/deepseek-ai/DeepSeek-V4-Flash-0731/",
-        "https://hf-cn-mirror.com/deepseek-ai/DeepSeek-V4-Flash-0731/"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Flash-0731/resolve/master/",
+        "https://modelscope.cn/models/unsloth/DeepSeek-V4-Flash-0731-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/",
       "hardware": {
@@ -4772,8 +4647,7 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813/",
         "https://hf-mirror.com/deepseek-ai/DeepSeek-V4-Pro-0813/",
-        "https://hf-mirror.us/deepseek-ai/DeepSeek-V4-Pro-0813/",
-        "https://hf-cn-mirror.com/deepseek-ai/DeepSeek-V4-Pro-0813/"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Pro-0813/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813/",
       "hardware": {
@@ -4822,8 +4696,8 @@
       "sources": [
         "https://huggingface.co/Kwai-Keye/Keye-VL-2.0-30B-A3B/",
         "https://hf-mirror.com/Kwai-Keye/Keye-VL-2.0-30B-A3B/",
-        "https://hf-mirror.us/Kwai-Keye/Keye-VL-2.0-30B-A3B/",
-        "https://hf-cn-mirror.com/Kwai-Keye/Keye-VL-2.0-30B-A3B/"
+        "https://modelscope.cn/models/Kwai-Keye/Keye-VL-2.0-30B-A3B/resolve/master/",
+        "https://modelscope.cn/models/Kwai-Keye/Keye-VL-2.0-30B-A3B-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Kwai-Keye/Keye-VL-2.0-30B-A3B/",
       "hardware": {
@@ -4873,9 +4747,7 @@
       "description": "Tether/QVAC VisionPsy-Nano（2026-07）：460M 端侧 VLM（SigLIP2+SmolLM2），0.5B 以下 SOTA，手机 36x 加速。",
       "sources": [
         "https://huggingface.co/qvac/VisionPsy-Nano-460M/",
-        "https://hf-mirror.com/qvac/VisionPsy-Nano-460M/",
-        "https://hf-mirror.us/qvac/VisionPsy-Nano-460M/",
-        "https://hf-cn-mirror.com/qvac/VisionPsy-Nano-460M/"
+        "https://hf-mirror.com/qvac/VisionPsy-Nano-460M/"
       ],
       "primary_url": "https://huggingface.co/qvac/VisionPsy-Nano-460M/",
       "hardware": {
@@ -4923,8 +4795,7 @@
       "sources": [
         "https://huggingface.co/Zyphra/Zamba2-VL-7B/",
         "https://hf-mirror.com/Zyphra/Zamba2-VL-7B/",
-        "https://hf-mirror.us/Zyphra/Zamba2-VL-7B/",
-        "https://hf-cn-mirror.com/Zyphra/Zamba2-VL-7B/"
+        "https://modelscope.cn/models/Zyphra/Zamba2-VL-7B/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Zyphra/Zamba2-VL-7B/",
       "hardware": {
@@ -4970,8 +4841,7 @@
       "sources": [
         "https://huggingface.co/Zyphra/Zamba2-VL-2.7B/",
         "https://hf-mirror.com/Zyphra/Zamba2-VL-2.7B/",
-        "https://hf-mirror.us/Zyphra/Zamba2-VL-2.7B/",
-        "https://hf-cn-mirror.com/Zyphra/Zamba2-VL-2.7B/"
+        "https://modelscope.cn/models/Zyphra/Zamba2-VL-2.7B/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Zyphra/Zamba2-VL-2.7B/",
       "hardware": {
@@ -5017,8 +4887,7 @@
       "sources": [
         "https://huggingface.co/Zyphra/Zamba2-VL-1.2B/",
         "https://hf-mirror.com/Zyphra/Zamba2-VL-1.2B/",
-        "https://hf-mirror.us/Zyphra/Zamba2-VL-1.2B/",
-        "https://hf-cn-mirror.com/Zyphra/Zamba2-VL-1.2B/"
+        "https://modelscope.cn/models/Zyphra/Zamba2-VL-1.2B/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/Zyphra/Zamba2-VL-1.2B/",
       "hardware": {
@@ -5066,8 +4935,7 @@
       "sources": [
         "https://huggingface.co/ibm-granite/granite-4.2-8b/",
         "https://hf-mirror.com/ibm-granite/granite-4.2-8b/",
-        "https://hf-mirror.us/ibm-granite/granite-4.2-8b/",
-        "https://hf-cn-mirror.com/ibm-granite/granite-4.2-8b/"
+        "https://modelscope.cn/models/ibm-granite/granite-4.2-8b/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/",
       "hardware": {
@@ -5118,8 +4986,7 @@
       "sources": [
         "https://huggingface.co/ibm-granite/granite-4.2-30b/",
         "https://hf-mirror.com/ibm-granite/granite-4.2-30b/",
-        "https://hf-mirror.us/ibm-granite/granite-4.2-30b/",
-        "https://hf-cn-mirror.com/ibm-granite/granite-4.2-30b/"
+        "https://modelscope.cn/models/ibm-granite/granite-4.2-30b/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/ibm-granite/granite-4.2-30b/",
       "hardware": {
@@ -5169,9 +5036,7 @@
       "description": "MiniMax M3（2026-06-01 发布）：428B 总参/23B 激活的稀疏注意力 MoE，1M 上下文，全上下文解码比 M2 快约 15×，原生多模态（图像理解），效率向旗舰。",
       "sources": [
         "https://huggingface.co/MiniMaxAI/MiniMax-M3/",
-        "https://hf-mirror.com/MiniMaxAI/MiniMax-M3/",
-        "https://hf-mirror.us/MiniMaxAI/MiniMax-M3/",
-        "https://hf-cn-mirror.com/MiniMaxAI/MiniMax-M3/"
+        "https://hf-mirror.com/MiniMaxAI/MiniMax-M3/"
       ],
       "primary_url": "https://huggingface.co/MiniMaxAI/MiniMax-M3/",
       "hardware": {
@@ -5225,8 +5090,7 @@
       "sources": [
         "https://huggingface.co/meta-models/Muse-Glimmer-30B/",
         "https://hf-mirror.com/meta-models/Muse-Glimmer-30B/",
-        "https://hf-mirror.us/meta-models/Muse-Glimmer-30B/",
-        "https://hf-cn-mirror.com/meta-models/Muse-Glimmer-30B/"
+        "https://modelscope.cn/models/meta-models/Muse-Glimmer-30B/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/meta-models/Muse-Glimmer-30B/",
       "hardware": {
@@ -5281,8 +5145,7 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/",
         "https://hf-mirror.com/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/",
-        "https://hf-mirror.us/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/",
-        "https://hf-cn-mirror.com/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/",
       "hardware": {
@@ -5336,9 +5199,7 @@
       "description": "智谱 GLM-5.3（2026-08-19 发 API、08-25 开放权重）：GlmMoeDsa 稀疏 MoE、1M 上下文，AAI 综合 60 分并列开源第一，复杂编码/防御性网络安全/长程任务强化。",
       "sources": [
         "https://huggingface.co/zai-org/GLM-5.3/",
-        "https://hf-mirror.com/zai-org/GLM-5.3/",
-        "https://hf-mirror.us/zai-org/GLM-5.3/",
-        "https://hf-cn-mirror.com/zai-org/GLM-5.3/"
+        "https://hf-mirror.com/zai-org/GLM-5.3/"
       ],
       "primary_url": "https://huggingface.co/zai-org/GLM-5.3/",
       "hardware": {
@@ -5392,8 +5253,7 @@
       "sources": [
         "https://huggingface.co/LiquidAI/LFM2.5-VL-3B/",
         "https://hf-mirror.com/LiquidAI/LFM2.5-VL-3B/",
-        "https://hf-mirror.us/LiquidAI/LFM2.5-VL-3B/",
-        "https://hf-cn-mirror.com/LiquidAI/LFM2.5-VL-3B/"
+        "https://modelscope.cn/models/LiquidAI/LFM2.5-VL-3B/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/LiquidAI/LFM2.5-VL-3B/",
       "hardware": {
@@ -5449,8 +5309,6 @@
       "sources": [
         "https://huggingface.co/MiniMaxAI/MiniMax-H3/",
         "https://hf-mirror.com/MiniMaxAI/MiniMax-H3/",
-        "https://hf-mirror.us/MiniMaxAI/MiniMax-H3/",
-        "https://hf-cn-mirror.com/MiniMaxAI/MiniMax-H3/",
         "https://github.com/MiniMax-AI/MiniMax-H3"
       ],
       "primary_url": "https://huggingface.co/MiniMaxAI/MiniMax-H3/",
