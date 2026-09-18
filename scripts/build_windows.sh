@@ -210,7 +210,12 @@ step "6. Build the portable zip"
 # repackaging from scratch.  Without it electron-builder would extract a fresh
 # electron.exe — overwriting the icon/version resource embedded in step 5 — and
 # the shipped binary would identify itself as "Electron" again.
-npx --yes electron-builder --win --x64 zip --publish never \
+# Argument order matters: `--win` is declared as type "array" by electron-builder
+# and `--x64` as a boolean.  Placing the boolean *between* the array flag and its
+# value terminates the array's value collection, so the target name (`zip`) is
+# parsed as a stray positional argument and yargs' .strict() aborts with
+# "Unknown argument: zip".  Always pass the target immediately after --win.
+npx --yes electron-builder --win zip --x64 --publish never \
   --prepackaged "${APP_DIR}" \
   --config.npmRebuild=false \
   --config.extraMetadata.main="electron/main.js" \
@@ -233,7 +238,7 @@ step "7. Build the NSIS installer"
 # report it clearly and still deliver everything else, rather than failing the
 # whole build.
 NSIS_OK=0
-if npx --yes electron-builder --win --x64 nsis --publish never \
+if npx --yes electron-builder --win nsis --x64 --publish never \
       --prepackaged "${APP_DIR}" \
       --config.npmRebuild=false \
       --config.extraMetadata.main="electron/main.js" \

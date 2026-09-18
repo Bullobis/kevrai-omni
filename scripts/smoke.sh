@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Kevrai Studio — local smoke test.
+# Kevrai Omni — local smoke test.
 #
 # What it tests (each step MUST exit non-zero on failure):
 #   1. JSON catalog validity (models.json + engines.json)
