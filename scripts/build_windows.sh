@@ -51,6 +51,7 @@ echo "  py:   $(${PY} --version 2>&1 || true)"
 # go-winres is only needed when cross-building (i.e. not on Windows).
 HOST_OS="$(uname -s)"
 WINRES=""
+WINE_CMD=""
 if [ "${HOST_OS}" != "MINGW"* ] && [ "${HOST_OS}" != "MSYS"* ] && [ "${HOST_OS}" != "CYGWIN"* ]; then
   WINRES="$(command -v go-winres || true)"
   if [ -z "${WINRES}" ]; then
@@ -63,6 +64,27 @@ if [ "${HOST_OS}" != "MINGW"* ] && [ "${HOST_OS}" != "MSYS"* ] && [ "${HOST_OS}"
        install with:  go install github.com/tc-hib/go-winres@latest"
   fi
   echo "  winres: ${WINRES}"
+
+  # Wine may be needed for the NSIS target.  Probe it for real: `--version`
+  # alone succeeds even when the loader/DLL pairing is broken, so also run a
+  # trivial PE command and check for the expected output.
+  for candidate in "$(command -v wine64 || true)" "$(command -v wine || true)"; do
+    [ -n "${candidate}" ] || continue
+    if [ "$("${candidate}" --version 2>/dev/null | head -c 5)" = "wine-" ]; then
+      probe_prefix="$(mktemp -d)"
+      if WINEARCH=win32 WINEPREFIX="${probe_prefix}" WINEDEBUG=-all \
+           timeout 120 "${candidate}" cmd /c "echo PROBE_OK" 2>/dev/null | grep -q PROBE_OK; then
+        WINE_CMD="${candidate}"
+      fi
+      rm -rf "${probe_prefix}"
+      [ -n "${WINE_CMD}" ] && break
+    fi
+  done
+  if [ -n "${WINE_CMD}" ]; then
+    echo "  wine:   ${WINE_CMD} (usable — NSIS installer will be built)"
+  else
+    echo "  wine:   not usable — NSIS installer will be skipped"
+  fi
 fi
 
 # ----------------------------------------------------------------------
@@ -204,6 +226,64 @@ else
 fi
 
 # ----------------------------------------------------------------------
+step "5b. Authenticode-sign the staged executable"
+# ----------------------------------------------------------------------
+# Signing has to happen *here*, on the staged app directory, not on the finished
+# artifacts.  electron-builder's `zip` and `nsis` targets both re-derive the
+# executable from the payload; signing a zip afterwards would be undone the next
+# time the archive is rebuilt, and the NSIS uninstaller is extracted from the
+# app dir too.  Signing the staged binary means every downstream artifact
+# inherits the signature.
+#
+# A self-signed certificate is used by default.  Timestamping is
+# network-dependent: if the TSA is unreachable we fall back to an untimestamped
+# signature (still valid, just tied to the certificate's lifetime) rather than
+# failing the build.
+SIGN_CERT="${KEVRAI_SIGN_CERT:-.signing/kevrai.crt}"
+SIGN_KEY="${KEVRAI_SIGN_KEY:-.signing/kevrai.key}"
+TS_URL="${KEVRAI_TS_URL:-http://timestamp.digicert.com}"
+STAGED_EXE_SIGNED=0
+
+if [ -f "${SIGN_CERT}" ] && [ -f "${SIGN_KEY}" ] && command -v osslsigncode >/dev/null 2>&1; then
+  _sign_staged_exe() {
+    local tmp="${EXE}.unsigned"
+    mv "${EXE}" "${tmp}"
+    if osslsigncode sign -certs "${SIGN_CERT}" -key "${SIGN_KEY}" \
+         -n "Kevrai Omni" \
+         -i "https://github.com/Bullobis/kevrai-omni" \
+         -ts "${TS_URL}" -h sha256 \
+         -in "${tmp}" -out "${EXE}" >/dev/null 2>&1; then
+      rm -f "${tmp}"
+      echo "  ✓ signed (timestamped)"
+      return 0
+    fi
+    if osslsigncode sign -certs "${SIGN_CERT}" -key "${SIGN_KEY}" \
+         -n "Kevrai Omni" \
+         -i "https://github.com/Bullobis/kevrai-omni" \
+         -h sha256 \
+         -in "${tmp}" -out "${EXE}" >/dev/null 2>&1; then
+      rm -f "${tmp}"
+      echo "  ✓ signed (no timestamp — TSA unreachable)"
+      return 0
+    fi
+    mv "${tmp}" "${EXE}"
+    echo "  ⚠ could not sign — shipping unsigned"
+    return 1
+  }
+  if _sign_staged_exe; then
+    STAGED_EXE_SIGNED=1
+    # Confirm the signature actually landed and is self-consistent.
+    if osslsigncode verify -in "${EXE}" -CAfile "${SIGN_CERT}" 2>&1 | grep -q "Succeeded"; then
+      echo "  ✓ signature verified"
+    else
+      fail "signature was written but does not verify — refusing to ship"
+    fi
+  fi
+else
+  echo "  (no signing material at ${SIGN_CERT} / ${SIGN_KEY} — skipping)"
+fi
+
+# ----------------------------------------------------------------------
 step "6. Build the portable zip"
 # ----------------------------------------------------------------------
 # ``--prepackaged`` reuses the staging directory we just re-branded, instead of
@@ -232,34 +312,189 @@ echo "  ✓ portable zip: ${EXPECTED_ZIP}"
 # ----------------------------------------------------------------------
 step "7. Build the NSIS installer"
 # ----------------------------------------------------------------------
-# Caveat: building NSIS from Linux requires Wine, because electron-builder
-# generates the uninstaller by *executing* the freshly built installer, and
-# that step cannot be replaced by a native tool.  Where Wine is unavailable we
-# report it clearly and still deliver everything else, rather than failing the
-# whole build.
+# Building NSIS from Linux requires Wine, because electron-builder generates the
+# uninstaller by *executing* the freshly built installer — that step cannot be
+# replaced by a native tool.
+#
+# Two environment details matter and are easy to get wrong:
+#
+#   1. WINEARCH must be win32.  Ubuntu's `wine` launcher is a 32-bit ELF
+#      binary; forcing WINEARCH=win64 makes it look for a 64-bit loader and
+#      fail with "could not load kernel32.dll, status c0000135".
+#   2. WINEPREFIX must point at a prefix whose architecture matches WINEARCH,
+#      otherwise Wine refuses to reuse it.
+#
+# macOS and native Windows builds skip this block entirely.
 NSIS_OK=0
-if npx --yes electron-builder --win nsis --x64 --publish never \
-      --prepackaged "${APP_DIR}" \
-      --config.npmRebuild=false \
-      --config.extraMetadata.main="electron/main.js" \
-      --config.win.signAndEditExecutable=false; then
-  NSIS_OK=1
-  echo "  ✓ NSIS installer built"
-else
+if [ "${HOST_OS}" = "Darwin" ]; then
+  echo "  (macOS host — electron-builder cannot target Windows NSIS from here)"
+elif [ -z "${WINRES}" ] && [ -z "${WINE_CMD}" ]; then
+  echo "  (native Windows build — electron-builder handles NSIS itself)"
+  if npx --yes electron-builder --win nsis --x64 --publish never \
+        --prepackaged "${APP_DIR}" \
+        --config.npmRebuild=false \
+        --config.extraMetadata.main="electron/main.js"; then
+    NSIS_OK=1
+    echo "  ✓ NSIS installer built"
+  fi
+fi
+
+if [ "${NSIS_OK}" -eq 0 ] && [ "${HOST_OS}" != "Darwin" ] && [ -n "${WINE_CMD}" ]; then
+  export WINEARCH=win32
+  export WINEPREFIX="${WINEPREFIX:-${HOME}/.wine-kevrai32}"
+  export WINEDEBUG="${WINEDEBUG:--all}"
+  # Make sure the prefix exists and is initialised for this architecture.
+  if [ ! -d "${WINEPREFIX}/drive_c" ]; then
+    echo "  initialising Wine prefix (${WINEPREFIX}, WINEARCH=${WINEARCH})..."
+    "${WINE_CMD}" wineboot --init >/dev/null 2>&1 || true
+  fi
+  if npx --yes electron-builder --win nsis --x64 --publish never \
+        --prepackaged "${APP_DIR}" \
+        --config.npmRebuild=false \
+        --config.extraMetadata.main="electron/main.js" \
+        --config.win.signAndEditExecutable=false; then
+    NSIS_OK=1
+    echo "  ✓ NSIS installer built"
+  fi
+fi
+
+if [ "${NSIS_OK}" -eq 0 ]; then
   echo ""
   echo "  ⚠ NSIS installer could not be produced on this machine."
-  echo "    Reason: electron-builder needs Wine to run the generated installer"
-  echo "            when extracting the uninstaller, and Wine cannot execute"
-  echo "            PE binaries in this environment."
-  echo "    Options:"
-  echo "      • run  npm run build:win  on a Windows machine, or"
-  echo "      • install a working Wine (wine32:i386) and re-run this script."
   echo "    The portable zip above is fully functional and needs no installer."
+  echo "    To produce the installer:"
+  echo "      • run  npm run build:win  on a Windows machine, or"
+  echo "      • install Wine (apt-get install -y wine64 wine32:i386) and re-run"
+  echo "        this script — it will pick Wine up automatically."
   echo ""
 fi
 
 # ----------------------------------------------------------------------
-step "8. Verify the resulting artifacts"
+step "8. Authenticode-sign the NSIS installer"
+# ----------------------------------------------------------------------
+# The installer is a distinct PE image built by NSIS — it embeds the signed
+# payload as *data* but carries its own PE header, so it does NOT inherit the
+# executable's signature.  It has to be signed separately, after the build.
+if [ "${STAGED_EXE_SIGNED}" -eq 1 ] && [ "${NSIS_OK}" -eq 1 ] && [ -f "${EXPECTED_EXE}" ]; then
+  _sign_installer() {
+    local tmp="${EXPECTED_EXE}.unsigned"
+    mv "${EXPECTED_EXE}" "${tmp}"
+    if osslsigncode sign -certs "${SIGN_CERT}" -key "${SIGN_KEY}" \
+         -n "Kevrai Omni" \
+         -i "https://github.com/Bullobis/kevrai-omni" \
+         -ts "${TS_URL}" -h sha256 \
+         -in "${tmp}" -out "${EXPECTED_EXE}" >/dev/null 2>&1; then
+      rm -f "${tmp}"
+      echo "  ✓ installer signed (timestamped)"
+      return 0
+    fi
+    if osslsigncode sign -certs "${SIGN_CERT}" -key "${SIGN_KEY}" \
+         -n "Kevrai Omni" \
+         -i "https://github.com/Bullobis/kevrai-omni" \
+         -h sha256 \
+         -in "${tmp}" -out "${EXPECTED_EXE}" >/dev/null 2>&1; then
+      rm -f "${tmp}"
+      echo "  ✓ installer signed (no timestamp — TSA unreachable)"
+      return 0
+    fi
+    mv "${tmp}" "${EXPECTED_EXE}"
+    echo "  ⚠ installer could not be signed — shipping unsigned"
+    return 1
+  }
+  _sign_installer || true
+
+  # Signing rewrites the installer's bytes, which invalidates two things
+  # electron-builder generated from the pre-signature image:
+  #
+  #   * the .blockmap (differential-update index) — its offsets no longer match
+  #   * latest.yml — it pins the installer's sha512 and size, so electron-updater
+  #     would reject the download with a checksum mismatch
+  #
+  # The blockmap is simply dropped: without it electron-updater falls back to a
+  # full download, which is correct if less bandwidth-efficient.  latest.yml is
+  # rewritten below so the advertised hash matches what we actually ship.
+  rm -f "${EXPECTED_EXE}.blockmap"
+
+  if [ -f build/output/latest.yml ]; then
+    ${PY} - build/output/latest.yml "${EXPECTED_EXE}" "${PRODUCT}" <<'PY' \
+      || fail "could not refresh latest.yml after signing"
+import base64, hashlib, os, re, sys
+
+yml_path, exe_path, product = sys.argv[1], sys.argv[2], sys.argv[3]
+name = os.path.basename(exe_path)
+
+data = open(exe_path, "rb").read()
+sha512 = base64.b64encode(hashlib.sha512(data).digest()).decode()
+size = len(data)
+
+text = open(yml_path, encoding="utf-8").read()
+text = re.sub(r"sha512: [^\n]+", f"sha512: {sha512}", text)
+text = re.sub(r"size: \d+", f"size: {size}", text)
+open(yml_path, "w", encoding="utf-8").write(text)
+
+print(f"    latest.yml refreshed for signed image ({size} bytes)")
+PY
+  fi
+elif [ "${NSIS_OK}" -eq 1 ]; then
+  echo "  (no signing material — installer ships unsigned)"
+fi
+
+# ----------------------------------------------------------------------
+step "9. Verify signatures on the finished artifacts"
+# ----------------------------------------------------------------------
+# Both channels are checked, so a silent regression cannot ship an unsigned
+# binary in either one.
+if [ "${STAGED_EXE_SIGNED}" -eq 1 ]; then
+  _verify_signed() {
+    local f="$1" label="$2"
+    if osslsigncode verify -in "${f}" -CAfile "${SIGN_CERT}" 2>&1 | grep -q "Succeeded"; then
+      echo "  ✓ ${label}: signature valid"
+    else
+      echo "  ✗ ${label}: SIGNATURE MISSING OR INVALID" >&2
+      return 1
+    fi
+  }
+
+  if [ "${NSIS_OK}" -eq 1 ] && [ -f "${EXPECTED_EXE}" ]; then
+    _verify_signed "${EXPECTED_EXE}" "installer (.exe)" \
+      || fail "installer is not signed — refusing to ship"
+  fi
+
+  _ZIPCHECK="$(mktemp -d)"
+  if unzip -q -o "${EXPECTED_ZIP}" "${PRODUCT}.exe" -d "${_ZIPCHECK}" 2>/dev/null; then
+    _verify_signed "${_ZIPCHECK}/${PRODUCT}.exe" "portable zip payload" \
+      || fail "portable zip lost the executable signature — refusing to ship"
+  else
+    echo "  ⚠ could not extract ${PRODUCT}.exe from the zip for verification"
+  fi
+  rm -rf "${_ZIPCHECK}"
+
+  # latest.yml drives the in-app updater.  If its recorded size/hash drift from
+  # the shipped installer, every client fails the update with a checksum error —
+  # a silent, hard-to-diagnose failure, so assert it here.
+  if [ "${NSIS_OK}" -eq 1 ] && [ -f build/output/latest.yml ]; then
+    # Note: the keys are indented under `files:` as well as repeated at the top
+    # level, so match with leading whitespace allowed and take the first hit.
+    _YML_SIZE="$(grep -m1 -E '^[[:space:]]*size:' build/output/latest.yml | awk '{print $2}')"
+    _YML_SHA512="$(grep -m1 -E '^[[:space:]]*sha512:' build/output/latest.yml | awk '{print $2}')"
+    _EXE_SIZE="$(stat -c %s "${EXPECTED_EXE}" 2>/dev/null || stat -f %z "${EXPECTED_EXE}")"
+    _EXE_SHA512="$(openssl dgst -sha512 -binary "${EXPECTED_EXE}" | base64 -w0)"
+    [ -n "${_YML_SIZE}" ] || fail "latest.yml has no size field"
+    [ -n "${_YML_SHA512}" ] || fail "latest.yml has no sha512 field"
+    if [ "${_YML_SIZE}" != "${_EXE_SIZE}" ]; then
+      fail "latest.yml size (${_YML_SIZE}) != installer size (${_EXE_SIZE})"
+    fi
+    if [ "${_YML_SHA512}" != "${_EXE_SHA512}" ]; then
+      fail "latest.yml sha512 does not match the installer — updater would reject it"
+    fi
+    echo "  ✓ latest.yml matches the signed installer (size + sha512)"
+  fi
+else
+  echo "  (artifacts are unsigned — nothing to verify)"
+fi
+
+# ----------------------------------------------------------------------
+step "10. Report the resulting artifacts"
 # ----------------------------------------------------------------------
 if [ "${NSIS_OK}" -eq 1 ] && [ ! -f "${EXPECTED_EXE}" ]; then
   CANDIDATE="$(ls -1 build/output/*.exe 2>/dev/null | head -1 || true)"
