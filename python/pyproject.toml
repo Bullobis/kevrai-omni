@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "kevrai-studio-sidecar"
 version = "1.0.0"
-description = "Kevrai Studio — Python inference orchestration sidecar"
+description = "Kevrai Omni — Python inference orchestration sidecar"
 requires-python = ">=3.10"
 dependencies = [
   "fastapi>=0.115",

@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Kevrai Studio — Linux installers (AppImage + .deb). Run on Linux.
+# Kevrai Omni — Linux installers (AppImage + .deb). Run on Linux.
 #
 # Output:
-#   build/output/Kevrai Studio-2.2.0-x86_64.AppImage
-#   build/output/Kevrai Studio-2.2.0-amd64.deb
+#   build/output/Kevrai-Omni-<version>-x86_64.AppImage
+#   build/output/Kevrai-Omni-<version>-amd64.deb
+#
+# The artifact base name must stay in sync with `artifactName` in
+# electron-builder.yml (Kevrai-Omni-${version}-${arch}.${ext}); it is
+# deliberately spaceless so GitHub release URLs match latest*.yml.
 #
 # Requires: node, npm, dpkg-deb (for verifying .deb), squashfs (for AppImage).
 
@@ -11,9 +15,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 INDEX="${KEVRAI_PIP_INDEX:-https://mirrors.tencent.com/pypi/simple/}"
-VERSION="$(node -p "require('./package.json').version" 2>/dev/null || echo 2.2.0)"
-APPIMAGE="build/output/Kevrai Studio-${VERSION}-x86_64.AppImage"
-DEB="build/output/Kevrai Studio-${VERSION}-amd64.deb"
+VERSION="$(node -p "require('./package.json').version" 2>/dev/null || echo 2.8.1)"
+APPIMAGE="build/output/Kevrai-Omni-${VERSION}-x86_64.AppImage"
+DEB="build/output/Kevrai-Omni-${VERSION}-amd64.deb"
 
 step() { printf "\n\033[36m==>\033[0m %s\n" "$1"; }
 fail() { printf "\n\033[31m==>\033[0m %s\n" "$1" >&2; exit 1; }
