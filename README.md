@@ -17,7 +17,7 @@
 
 ![License: Kevrai Omni Community License v2.1](https://img.shields.io/badge/License-Kevrai%20Community%20v2.1-orange)
 ![Version](https://img.shields.io/badge/version-2.8.1-orange)
-![Tests](https://img.shields.io/badge/tests-582%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-577%20passed-brightgreen)
 
 ---
 
