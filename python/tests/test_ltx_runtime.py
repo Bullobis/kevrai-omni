@@ -189,12 +189,62 @@ def test_manager_starts_task_and_reports_failure_without_engine(tmp_path):
         assert snap.error  # error message populated
 
 
-def test_manager_single_flight(tmp_path):
+def test_manager_single_flight(tmp_path, monkeypatch):
+    """A second start while one task is still active must raise LtxBusyError.
+
+    The first revision of this test called start() twice back-to-back and
+    expected the busy error, which made it timing-dependent: the worker runs on
+    a daemon thread, and on a fast machine it could reach a terminal state
+    before the second start() was evaluated.  _run_safe clears _active in its
+    finally block, so once the worker finished the second start was legitimately
+    allowed — the assertion then failed with "DID NOT RAISE" on CI while passing
+    locally.  That is a flaw in the test, not in the manager: the manager's
+    contract is "at most one *active* task", not "at most one task ever".
+
+    Pin the worker inside _run with an event so the busy state is guaranteed to
+    still hold when the second start() runs, then release it.
+    """
+    import threading
+
+    entered = threading.Event()
+    release = threading.Event()
+
+    real_run = LtxManager._run
+
+    def blocked_run(self, task):
+        entered.set()
+        # Hold the task in RUNNING until the test allows it to finish.
+        release.wait(timeout=10)
+        return real_run(self, task)
+
+    monkeypatch.setattr(LtxManager, "_run", blocked_run)
+
     mgr = LtxManager(tmp_path / "out")
-    mgr.start(_make_params())
-    # Second start while first is active must raise LtxBusyError
-    with pytest.raises(LtxBusyError):
-        mgr.start(_make_params(prompt="second"))
+    try:
+        first = mgr.start(_make_params())
+        # Wait until the worker has actually entered _run, so _active is set
+        # and the task is in a non-terminal state.
+        assert entered.wait(timeout=10), "worker never started"
+
+        with pytest.raises(LtxBusyError):
+            mgr.start(_make_params(prompt="second"))
+
+        # The first task is still the active one — the rejected start must not
+        # have displaced it.
+        assert mgr.get(first.id) is not None
+        assert mgr.active() is not None
+        assert mgr.active()["id"] == first.id
+    finally:
+        release.set()
+
+    # Once the worker is allowed to finish, _active is cleared and a new start
+    # is accepted again — the busy guard must not latch permanently.
+    deadline = time.time() + 10
+    while time.time() < deadline and mgr.active() is not None:
+        time.sleep(0.05)
+    assert mgr.active() is None
+    second = mgr.start(_make_params(prompt="third"))
+    assert second.id != first.id
 
 
 def test_manager_cancel(tmp_path):
