@@ -76,8 +76,28 @@ jobs:
               echo
               echo "</details>"
             } >> "$GITHUB_STEP_SUMMARY"
+
+            # Also surface the first hard failure as an annotation — annotations
+            # are readable over the REST API even when log storage is not
+            # reachable, which is the case for some restricted networks.
+            first_fail="$(grep -m1 -E '^(FAILED|ERROR)' /tmp/pytest-out.txt || true)"
+            if [ -n "$first_fail" ]; then
+              echo "::error title=pytest failure::${first_fail}"
+            else
+              echo "::error title=pytest failure::pytest exited ${rc} — see the artifact 'pytest-output'"
+            fi
           fi
           exit "$rc"
+
+      - name: Upload pytest output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-output
+          path: |
+            /tmp/pytest-out.txt
+            /tmp/pip-freeze.txt
+          if-no-files-found: ignore
 
       - name: Coverage gate (floor 65%, goal 80%)
         working-directory: python
