@@ -44,7 +44,23 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: Kevrai Omni
   deleteAppDataOnUninstall: false
-  installerLanguages: ["en_US"]
+  # Follow the system language instead of forcing English.
+  #
+  # NSIS resolves the language at runtime: the installer carries every language
+  # listed here plus an auto-detect stub, and picks the one matching the host's
+  # locale, falling back to the first entry when there is no match.  That is why
+  # the list is multi-entry rather than a single value — a one-element list would
+  # leave non-English systems with no choice but that one language.
+  #
+  # zh_CN is listed first so Chinese (Simplified) systems land on it directly;
+  # en_US is the fallback for everything unmatched.  macOS/Linux installer
+  # languages are unaffected — this key only drives the Windows NSIS wizard.
+  installerLanguages:
+    - zh_CN
+    - en_US
+  # Multi-language installers require Unicode, otherwise NSIS cannot encode the
+  # non-Latin strings and the wizard renders mojibake.
+  unicode: true
   # explicit: we do NOT bundle any engine
   include: null
 
