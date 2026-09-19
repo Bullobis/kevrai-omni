@@ -15,8 +15,9 @@ from __future__ import annotations
 
 import asyncio
 import time
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any
 
 import httpx
 
@@ -191,11 +192,10 @@ class CircuitBreaker:
         # NOTE: `_opened_at` may legitimately be 0.0 (frozen test clock), so we
         # test for a sentinel `-1.0` rather than truthiness — otherwise a breaker
         # opened at t=0.0 could never transition to half-open.
-        if self._state == self.OPEN and self._opened_at >= 0.0:
-            if self._clock() - self._opened_at >= self.open_seconds:
-                return self.HALF_OPEN
+        if (self._state == self.OPEN and self._opened_at >= 0.0
+                and self._clock() - self._opened_at >= self.open_seconds):
+            return self.HALF_OPEN
         return self._state
-
     @property
     def reopen_in(self) -> float:
         """Seconds until the breaker moves to half-open (0 when not open)."""
@@ -410,7 +410,7 @@ async def request_with_retry(
 def _default_rand() -> float:
     import random
 
-    return random.random()
+    return random.random()  # noqa: S311 — backoff jitter, not cryptographic
 
 
 async def _do_sleep(

@@ -5,14 +5,11 @@ We avoid real network where possible. For tests that need a download we mock
 """
 from __future__ import annotations
 
-import io
-import json
 import zipfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-
 
 # ---------- helpers ----------
 
@@ -65,8 +62,9 @@ def test_legacy_status_roundtrip(root: Path):
 
 def test_pip_install_dryrun(root: Path, monkeypatch):
     """Mock subprocess.run to simulate a successful pip install."""
-    from app.engines import install_pip_engine
     import subprocess
+
+    from app.engines import install_pip_engine
 
     class FakeProc:
         returncode = 0
@@ -166,7 +164,7 @@ def test_engine_manager_install_creates_engine_record(root: Path):
             return _FakeResponse(target_zip.read_bytes())
 
     with patch("httpx.Client", FakeClient):
-        rec = mgr.install("eng-2", "https://github.com/x/y/releases/v1.zip")
+        mgr.install("eng-2", "https://github.com/x/y/releases/v1.zip")
 
     recs = mgr.list_installed()
     assert any(r.id == "eng-2" and r.state == EngineState.INSTALLED for r in recs)
@@ -198,13 +196,12 @@ def test_engine_manager_install_rejects_binary_with_bad_sha(root: Path):
         def stream(self, method, url, headers=None):
             return _FakeResponse(bin_path.read_bytes())
 
-    with patch("httpx.Client", FakeClient):
-        with pytest.raises(ValueError) as exc:
-            mgr.install(
-                "eng-bad",
-                "https://github.com/x/y/releases/engine.bin",   # no .zip suffix → unzip=False path
-                sha256="0" * 64,                                  # wrong hash
-            )
+    with patch("httpx.Client", FakeClient), pytest.raises(ValueError):
+        mgr.install(
+            "eng-bad",
+            "https://github.com/x/y/releases/engine.bin",   # no .zip suffix → unzip=False path
+            sha256="0" * 64,                                  # wrong hash
+        )
     rec = mgr.get("eng-bad")
     assert rec is not None
     assert rec.state == EngineState.FAILED

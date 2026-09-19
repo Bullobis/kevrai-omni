@@ -5,6 +5,7 @@ Corrupt or missing files fall back to defaults without raising.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import sys
@@ -229,16 +230,12 @@ def save_settings(
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             fh.write(blob)
             fh.flush()
-            try:
+            with contextlib.suppress(OSError):
                 os.fsync(fh.fileno())
-            except OSError:
-                pass
         os.replace(tmp_path, fp)
     except Exception:
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(tmp_path)
-        except OSError:
-            pass
         raise
     return fp
 
@@ -252,8 +249,6 @@ def ensure_dirs(settings: Settings) -> list[Path]:
         default_data_root(),
     ]
     for p in paths:
-        try:
+        with contextlib.suppress(OSError):
             p.mkdir(parents=True, exist_ok=True)
-        except OSError:
-            pass
     return paths

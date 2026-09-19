@@ -454,8 +454,9 @@ class TestAgentSkillIntegration:
 class TestSkillsAPI:
     @pytest.fixture()
     def client(self, tmp_path, monkeypatch):
-        from app import main as M
         from fastapi.testclient import TestClient
+
+        from app import main as M
         monkeypatch.setattr(M, "APP_ROOT", tmp_path)
         M._AGENT_SINGLETON.clear()
         with TestClient(M.app) as c:

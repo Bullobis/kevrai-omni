@@ -29,20 +29,36 @@ from typing import Any
 from fastapi import (
     FastAPI,
     HTTPException,
-    Path as PathParam,
     Request,
     WebSocket,
     WebSocketDisconnect,
+)
+from fastapi import (
+    Path as PathParam,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import USER_AGENT, __version__
+from . import USER_AGENT, __version__, ltx_runtime, mnn_runtime
+from . import converter as converter_service
+from . import drama as drama_agent
+from . import engines as engines_module  # re-export
+from . import mnn_catalog as mnn_market
+from . import search as search_mod
 from .catalog import (
     Catalog,
     load_catalog,
 )
+from .converter import (
+    KIND_HF_TO_GGUF,
+    KIND_HF_TO_MLX,
+    KIND_HF_TO_MNN,
+    KIND_HF_TO_ONNX,
+    KIND_ONNX_TO_MNN,
+    KIND_TORCH_TO_MNN,
+)
+from .downloader import Downloader, DownloadRefused
 from .engines import (
     EngineManager,
     apply_engine_update,
@@ -51,7 +67,18 @@ from .engines import (
     list_engines_status,
     load_update_cache,
 )
-from . import engines as engines_module  # re-export
+from .gpu import detect as detect_gpus
+from .hardware import detect_hardware
+from .hub import (
+    HUB_CURATED,
+    BadCursor,
+    build_registry,
+    cross_source_candidates,
+    get_registry,
+    reset_registry,
+)
+from .hub.base import ALL_HUBS, SearchSpec, is_valid_repo
+from .hub.paths import UnsafePathError, hub_dest_root, safe_join
 from .importer import (
     annotate_registry_engines,
     import_local,
@@ -59,26 +86,11 @@ from .importer import (
     load_local_registry,
     snapshot_progress,
 )
-from .downloader import Downloader, DownloadRefused
-from .gpu import detect as detect_gpus
-from . import mnn_catalog as mnn_market
-from . import mnn_runtime
-from . import converter as converter_service
-from .converter import (
-    KIND_HF_TO_MNN,
-    KIND_HF_TO_GGUF,
-    KIND_HF_TO_ONNX,
-    KIND_HF_TO_MLX,
-    KIND_ONNX_TO_MNN,
-    KIND_TORCH_TO_MNN,
-)
-from .hardware import detect_hardware
+from .ltx_runtime import LtxBusyError, LtxManager, LtxParamError, LtxParams
 from .recommend import recommend as recommend_models
-from . import drama as drama_agent
-from . import search as search_mod
-from .search import SearchQuery, search as run_search, push_recent as search_push_recent
-from . import ltx_runtime
-from .ltx_runtime import LtxManager, LtxParams, LtxParamError, LtxBusyError
+from .search import SearchQuery
+from .search import push_recent as search_push_recent
+from .search import search as run_search
 from .settings import (
     Settings,
     default_data_root,
@@ -87,24 +99,12 @@ from .settings import (
     load_settings,
     save_settings,
 )
-from .hub import (
-    BadCursor,
-    HUB_CURATED,
-    HUB_HF,
-    HUB_MODELSCOPE,
-    build_registry,
-    cross_source_candidates,
-    get_registry,
-    reset_registry,
-)
-from .hub.base import ALL_HUBS, SearchSpec, is_valid_repo
-from .hub.paths import UnsafePathError, hub_dest_root, is_within, safe_join
+from .source_scheduler import SourceScheduler
 from .sources_registry import (
     SourceMeta,
     SourceRegistry,
     normalize_user_mirrors,
 )
-from .source_scheduler import SourceScheduler
 
 # ---------------------------------------------------------------------------
 # GZip compression (super optimization: shrink JSON responses on the wire)
@@ -336,12 +336,10 @@ _orig_format = _JsonFormatter.format
 
 
 def _format_with_rid(self: _JsonFormatter, record: logging.LogRecord) -> str:  # type: ignore[override]
-    try:
+    with contextlib.suppress(Exception):  # best-effort request-id injection
         rid = _RidToken.get() if hasattr(_RidToken, "get") else ""
         if rid and not getattr(record, "request_id", None):
             record.request_id = rid
-    except Exception:
-        pass
     return _orig_format(self, record)
 
 
@@ -659,9 +657,8 @@ async def import_model(req: ImportReq, request: Request) -> dict[str, Any]:
             )
         # A directory import must not swallow a user data dir; refuse obviously
         # dangerous roots (filesystem root / home) — they are never model dirs.
-        if src.is_dir():
-            if src == Path(src.anchor) or src == Path.home():
-                raise HTTPException(status_code=400, detail="refusing to import this directory")
+        if src.is_dir() and (src == Path(src.anchor) or src == Path.home()):
+            raise HTTPException(status_code=400, detail="refusing to import this directory")
     except HTTPException:
         raise
     except (OSError, ValueError) as e:
@@ -1322,7 +1319,7 @@ async def download_start(request: Request, body: DownloadStartReq) -> dict[str, 
     except DownloadRefused as e:
         raise HTTPException(status_code=400, detail=f"refused url: {e}") from e
     except Exception:
-        raise HTTPException(status_code=400, detail="bad url")
+        raise HTTPException(status_code=400, detail="bad url") from None
 
     dest_dir = Path(settings.resolved_download_dir())
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -1742,22 +1739,24 @@ def _mnn_download_one_file(f: dict[str, Any], dest: Path) -> None:
                 headers = {"User-Agent": USER_AGENT}
                 if resume:
                     headers["Range"] = f"bytes={resume}-"
-                with httpx.Client(timeout=(15.0, 120.0), follow_redirects=True) as client:
-                    with client.stream("GET", u, headers=headers) as resp:
-                        if resp.status_code in (301, 302, 303, 307, 308):
-                            resp.raise_for_status()
-                        if resume and resp.status_code == 200:
-                            # server ignored Range → restart
-                            resume = 0
+                with (
+                    httpx.Client(timeout=(15.0, 120.0), follow_redirects=True) as client,
+                    client.stream("GET", u, headers=headers) as resp,
+                ):
+                    if resp.status_code in (301, 302, 303, 307, 308):
                         resp.raise_for_status()
-                        mode = "ab" if resume else "wb"
-                        with open(tmp, mode) as fh:
-                            for chunk in resp.iter_bytes(65536):
-                                if _MNN_DL["cancel"]:
-                                    _MNN_DL["status"] = "cancelled"
-                                    return
-                                fh.write(chunk)
-                                _MNN_DL["bytes_done"] += len(chunk)
+                    if resume and resp.status_code == 200:
+                        # server ignored Range → restart
+                        resume = 0
+                    resp.raise_for_status()
+                    mode = "ab" if resume else "wb"
+                    with open(tmp, mode) as fh:
+                        for chunk in resp.iter_bytes(65536):
+                            if _MNN_DL["cancel"]:
+                                _MNN_DL["status"] = "cancelled"
+                                return
+                            fh.write(chunk)
+                            _MNN_DL["bytes_done"] += len(chunk)
                 if not want_size or tmp.stat().st_size >= want_size:
                     tmp.replace(target)
                     return
@@ -1971,7 +1970,7 @@ async def convert_start(req: ConvertStartReq, request: Request) -> dict[str, Any
     try:
         dst_resolved = dst.resolve()
     except Exception:  # noqa: BLE001
-        raise HTTPException(status_code=400, detail=f"输出路径非法：{req.dst}")
+        raise HTTPException(status_code=400, detail=f"输出路径非法：{req.dst}") from None
     if not str(dst_resolved).startswith(str(data_root)):
         raise HTTPException(
             status_code=400,
@@ -2002,9 +2001,9 @@ async def convert_start(req: ConvertStartReq, request: Request) -> dict[str, Any
             loop=asyncio.get_running_loop(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except RuntimeError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e)) from e
     return {"ok": True, "task_id": task.id}
 
 
@@ -2213,10 +2212,7 @@ async def v1_chat_completions(req: V1ChatReq):
                         images.append(img)
                 elif ptype == "audio":
                     src = part.get("audio") or part.get("input_audio") or {}
-                    if isinstance(src, dict):
-                        url = src.get("url") or src.get("data")
-                    else:
-                        url = src
+                    url = src.get("url") or src.get("data") if isinstance(src, dict) else src
                     aud_path = _media_to_local(str(url or ""), "audio")
                     if aud_path:
                         audios.append(aud_path)
@@ -2343,7 +2339,7 @@ def _v1_stream(prompt: str, hist: list[dict[str, str]], images: list[str],
     def gen():
         try:
             it = mnn_runtime.chat_stream(prompt, hist, req.max_tokens or 512, images, audios)
-            for delta, finished in it:
+            for delta, _finished in it:
                 if not delta:
                     continue
                 chunk = {
@@ -2661,9 +2657,9 @@ def agent_toggle_skill(skill_id: str, req: SkillToggleReq, request: Request) -> 
     try:
         spec = agent.skills.set_enabled(skill_id, bool(req.enabled))
     except KeyError:
-        raise HTTPException(status_code=404, detail=f"unknown skill: {skill_id}")
+        raise HTTPException(status_code=404, detail=f"unknown skill: {skill_id}") from None
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     # Rebuild the registry the agent dispatches to.
     agent.reload_skills()
     return {
@@ -2683,12 +2679,10 @@ async def agent_chat(req: AgentChatReq, request: Request) -> dict[str, Any]:
     """
     agent = _get_agent(request)
     if not agent.ctx.hardware_info:
-        try:
+        with contextlib.suppress(Exception):  # hardware probe is best-effort
             from .settings import load_settings as _ls
             s = _ls()
             agent.ctx.hardware_info = detect_hardware(Path(s.resolved_model_dir()))
-        except Exception:
-            pass
     result = await agent.run(req.message, session_id=req.session_id)
     return {
         "ok": result.success,
@@ -2814,7 +2808,7 @@ async def ws_agent(websocket: WebSocket, session_id: str) -> None:
                             "is_final": step.is_final,
                         })
                     )
-                except Exception:
+                except Exception:  # noqa: BLE001, S110 — streaming callback is best-effort
                     pass
 
             agent.set_step_callback(_on_step)

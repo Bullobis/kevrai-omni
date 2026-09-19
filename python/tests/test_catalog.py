@@ -1,14 +1,10 @@
 """Tests for catalog loading and v2.2.0 permissive multi-source policy."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
-
-import pytest
 
 from app.catalog import (
     ALLOWED_ENGINE_HOSTS,
-    ALLOWED_MODEL_HOSTS,
     DEFAULT_BLOCKED_MIRRORS,
     DEFAULT_MODEL_HOSTS,
     Catalog,
@@ -73,7 +69,7 @@ def test_engine_host_whitelist():
 def test_default_blocked_mirrors_empty():
     """v2.2.0: the global blocklist is empty by design. The user opts in
     to any mirror via the in-app UI."""
-    assert DEFAULT_BLOCKED_MIRRORS == set()
+    assert set() == DEFAULT_BLOCKED_MIRRORS
 
 
 def test_every_model_has_multi_source_mirrors():

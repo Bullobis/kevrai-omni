@@ -8,8 +8,6 @@ layer via ``TestClient``, and the P0 hardening guards.
 """
 from __future__ import annotations
 
-import asyncio
-import json
 import sys
 import zipfile
 from pathlib import Path
@@ -42,9 +40,7 @@ from app.hub.modelscope import ModelScopeAdapter  # noqa: E402
 from app.hub.net import (  # noqa: E402
     CircuitBreaker,
     TokenBucket,
-    TTLCache,
     request_with_retry,
-    timeout_for,
 )
 from app.hub.paths import UnsafePathError, safe_extract, safe_join  # noqa: E402
 from app.hub.registry import (  # noqa: E402
@@ -53,7 +49,6 @@ from app.hub.registry import (  # noqa: E402
     decode_cursor,
     dedupe,
     encode_cursor,
-    merge_rank,
 )
 from app.hub.taxonomy import (  # noqa: E402
     canonical_license,
@@ -345,8 +340,9 @@ async def test_E25_429_no_retry_after_backs_off(no_sleep):
 
 
 def test_E26_legacy_route_rejects_slash():
-    from app.main import _validate_model_id
     from fastapi import HTTPException
+
+    from app.main import _validate_model_id
 
     with pytest.raises(HTTPException):
         _validate_model_id("deepseek-ai/DeepSeek-V3")
@@ -470,7 +466,8 @@ def test_circuit_breaker_state_machine():
     clock = {"t": 0.0}
     cb = CircuitBreaker(fail_threshold=2, open_seconds=10, clock=lambda: clock["t"])
     assert cb.state == "closed"
-    cb.record_fail(); cb.record_fail()
+    cb.record_fail()
+    cb.record_fail()
     assert cb.state == "open"
     assert cb.allow() is False
     clock["t"] = 11.0

@@ -25,19 +25,21 @@ Design:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import os
-import sys
 import shlex
 import shutil
 import subprocess
+import sys
 import threading
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 log = logging.getLogger("kevrai.converter")
 
@@ -167,10 +169,8 @@ def cancel_task(task_id: str) -> bool:
             return False
         t.cancel_flag = True
         if t.proc is not None and t.proc.poll() is None:
-            try:
+            with contextlib.suppress(Exception):  # best-effort terminate; ignore failures
                 t.proc.terminate()
-            except Exception:  # noqa: BLE001
-                pass
         _append_log(t, "取消请求已发送")
         return True
 
@@ -189,7 +189,7 @@ def _run_subprocess(
 ) -> tuple[int, str]:
     """Run a subprocess, streaming its output into the task log."""
     _append_log(t, "$ " + " ".join(cmd))
-    proc = subprocess.Popen(
+    proc = subprocess.Popen(  # noqa: S603 — cmd is an internal argv list, never shell-interpolated
         cmd,
         cwd=cwd,
         env=env,
@@ -224,16 +224,15 @@ def _find_mnnconvert() -> str | None:
     if which:
         return which
     # 2) pymnn wheel ships a python converter (MNN.tools.converter)
-    try:
+    with contextlib.suppress(Exception):  # MNN not installed → fall through
         import MNN  # noqa: F401
         for mod in ("MNN.tools.converter", "MNN.converter"):
             try:
                 __import__(mod, fromlist=["main"])
                 return f"{sys_executable()} -m {mod}"
-            except Exception:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001 — try next candidate module
+                log.debug("converter: module %s unavailable: %s", mod, e)
                 continue
-    except Exception:  # noqa: BLE001
-        pass
     return None
 
 
@@ -247,12 +246,10 @@ def _llm_export_cmd(t: ConvertTask) -> list[str]:
       python llmexport.py --path <dir> --export mnn [--quant_bit 4 --quant_block 128]"""
     if shutil.which("llmexport"):
         return ["llmexport"]
-    try:
+    with contextlib.suppress(Exception):  # importlib spec lookup may fail on broken installs
         import importlib.util
         if importlib.util.find_spec("llmexport") is not None:
             return [sys_executable(), "-m", "llmexport"]
-    except Exception:  # noqa: BLE001
-        pass
     script = _ensure_llm_export(t)
     return [sys_executable(), str(script)]
 
@@ -568,10 +565,7 @@ def _worker_mnnconvert(t: ConvertTask) -> dict[str, Any]:
         raise RuntimeError(f"源模型文件不存在：{src}")
 
     converter = t.options.get("converter")
-    if converter:
-        mnnc = converter
-    else:
-        mnnc = _find_mnnconvert()
+    mnnc = converter or _find_mnnconvert()
     if not mnnc:
         raise RuntimeError(
             "MNNConvert 不可用。请安装 pymnn（pip install MNN）或编译 MNN 后将其加入 PATH；"

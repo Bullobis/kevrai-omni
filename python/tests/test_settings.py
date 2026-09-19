@@ -11,7 +11,6 @@ from app.settings import (
     Settings,
     default_cache_root,
     default_data_root,
-    default_settings_path,
     ensure_dirs,
     load_settings,
     save_settings,

@@ -24,11 +24,13 @@ from __future__ import annotations
 
 import asyncio
 import re
-from typing import Any, Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
 
 import httpx
 
+from .. import USER_AGENT
 from .base import (
     HUB_HF,
     PageResult,
@@ -37,7 +39,6 @@ from .base import (
     SearchSpec,
     SourceAdapter,
     SourceCursor,
-    as_bool,
     as_int,
     as_str_list,
     clamp_str,
@@ -49,8 +50,8 @@ from .base import (
 from .net import (
     CircuitBreaker,
     FetchOutcome,
-    TTLCache,
     TokenBucket,
+    TTLCache,
     request_with_retry,
     timeout_for,
 )
@@ -59,12 +60,8 @@ from .taxonomy import (
     canonical_license,
     infer_engines,
     map_category,
-    size_gb_from_bytes,
-    total_size_bytes,
     trending_from,
 )
-
-from .. import USER_AGENT
 
 # ---------------------------------------------------------------------------
 # 【单一收口点】HuggingFace /api/models field names — change here only.

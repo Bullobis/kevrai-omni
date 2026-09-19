@@ -1,8 +1,6 @@
 """Tests for v2.2.0 multi-source speed-test (app.sources)."""
 from __future__ import annotations
 
-import asyncio
-import socket
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -11,13 +9,11 @@ from pathlib import Path
 import pytest
 
 from app.sources import (
-    PROBE_RANGE,
     SourceProbe,
     _score,
     measure_sources,
     pick_best,
 )
-
 
 # ---------------------------------------------------------------------------
 # In-process HTTP servers that simulate two mirrors with different speeds

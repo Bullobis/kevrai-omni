@@ -29,8 +29,8 @@ def test_version_is_2_8_1_everywhere():
 
 def test_engine_ua_delegates_to_package_version():
     """engines._UA() must not hardcode a version that can drift."""
-    from app.engines import _UA
     import app
+    from app.engines import _UA
 
     assert _UA() == f"kevrai-omni/{app.__version__}"
 
@@ -83,6 +83,7 @@ def test_catalog_version_matches_package_version():
 def test_health_reports_package_version():
     """The sidecar /api/health version must equal package.json's version."""
     from fastapi.testclient import TestClient
+
     from app import main as app_main
 
     pkg = json.loads((REPO_ROOT / "package.json").read_text(encoding="utf-8"))

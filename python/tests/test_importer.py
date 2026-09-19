@@ -5,7 +5,6 @@ Use attribute access (``res.path``, ``res.size_bytes``) — see ``app.importer``
 """
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest

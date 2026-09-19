@@ -14,8 +14,9 @@ No network, so this source is *never* degraded (§2.6).
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from .base import (
     HUB_CURATED,
@@ -97,7 +98,8 @@ class CuratedAdapter(SourceAdapter):
         """Page through the local catalog using ``search.py``'s ranking."""
         try:
             from ..catalog import load_catalog
-            from ..search import SearchQuery, search as local_search
+            from ..search import SearchQuery
+            from ..search import search as local_search
         except Exception as e:  # pragma: no cover — in-tree modules
             return PageResult(items=[], next=None, total=0, degraded=True,
                               code="network", warning=f"本地检索不可用：{e}")
@@ -149,7 +151,7 @@ class CuratedAdapter(SourceAdapter):
         next_cursor = SourceCursor(offset=consumed) if has_more else None
         # Preserve the raw dicts so the registry can carry `_score` for ranking.
         result = PageResult(items=items, next=next_cursor, total=total)
-        for model, entry in zip(items, page_raw):
+        for model, entry in zip(items, page_raw, strict=False):
             if isinstance(entry, Mapping) and entry.get("_score") is not None:
                 model.hardware = dict(model.hardware)
                 model.hardware["_score"] = entry.get("_score")

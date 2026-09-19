@@ -48,9 +48,7 @@ def _is_local_target(target: str) -> bool:
     """Skip absolute URLs and pure anchors."""
     if target.startswith(("http://", "https://", "mailto:", "tel:", "data:")):
         return False
-    if target.startswith("#"):
-        return False
-    return True
+    return not target.startswith("#")
 
 
 def test_every_md_link_resolves(md_files):

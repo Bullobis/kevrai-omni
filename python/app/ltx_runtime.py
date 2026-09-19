@@ -20,6 +20,7 @@ loader tries a list of known class names and reports a clear
 """
 from __future__ import annotations
 
+import contextlib
 import threading
 import time
 import uuid
@@ -121,7 +122,7 @@ def _as_strict_int(v: Any, name: str) -> int:
     try:
         return int(v)
     except (TypeError, ValueError):
-        raise LtxParamError(f"{name} must be an integer, got {v!r}")
+        raise LtxParamError(f"{name} must be an integer, got {v!r}") from None
 
 
 @dataclass
@@ -317,7 +318,7 @@ class LtxManager:
         # Seed resolution
         import random
         if p.seed < 0:
-            task.seed_used = random.randint(0, 2**31 - 1)
+            task.seed_used = random.randint(0, 2**31 - 1)  # noqa: S311 — non-crypto seed
         else:
             task.seed_used = int(p.seed)
 
@@ -406,15 +407,13 @@ def _autocast_dtype() -> Any:
 
 def _optimize_pipe(pipe: Any, p: LtxParams) -> None:
     """Apply memory optimizations based on settings."""
-    try:
+    with contextlib.suppress(Exception):  # BLE001 — pipeline memory tweaks are best-effort
         if p.enable_model_cpu_offload:
             pipe.enable_model_cpu_offload()
         elif p.enable_vae_slicing and hasattr(pipe, "enable_vae_slicing"):
             pipe.enable_vae_slicing()
         if hasattr(pipe, "enable_attention_slicing"):
             pipe.enable_attention_slicing()
-    except Exception:  # noqa: BLE001
-        pass
 
 
 def _generate(pipe: Any, p: LtxParams, task: LtxTask) -> Any:
@@ -468,8 +467,8 @@ class _Cancelled(Exception):
 def _write_video(frames: Any, out: Path, *, fps: int, fmt: str) -> None:
     """Write frames to MP4 (imageio-ffmpeg) or GIF."""
     try:
-        import numpy as np
         import imageio
+        import numpy as np
     except ImportError as e:
         raise LtxEngineMissing("写出视频需要 imageio/imageio-ffmpeg") from e
 
@@ -513,8 +512,8 @@ def capabilities() -> dict[str, Any]:
     engine_error = ""
     cuda = False
     try:
-        import torch  # noqa: F401
         import diffusers  # noqa: F401
+        import torch  # noqa: F401
         engine_ready = True
         cuda = bool(torch.cuda.is_available())
     except ImportError as e:

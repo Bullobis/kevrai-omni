@@ -17,15 +17,17 @@ so it is safe to call from the request path.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
 import threading
 import time
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Tokenization
@@ -269,13 +271,14 @@ def _score_field(field: str, text: str, qnorm: str, qtokens: list[str]) -> tuple
             score += weight * 0.4
             hit = True
         # CJK bigram match
-        if not hit and len(qt) >= 2 and all("\u4e00" <= c <= "\u9fff" for c in qt):
-            if qt in _cjk_bigrams(tn) or qt in tn:
-                score += weight * _CJK_BIGRAM_BONUS
-                hit = True
-                idx = tn.find(qt)
-                if idx >= 0:
-                    _add_match(idx, idx + len(qt))
+        if (not hit and len(qt) >= 2
+                and all("\u4e00" <= c <= "\u9fff" for c in qt)
+                and (qt in _cjk_bigrams(tn) or qt in tn)):
+            score += weight * _CJK_BIGRAM_BONUS
+            hit = True
+            idx = tn.find(qt)
+            if idx >= 0:
+                _add_match(idx, idx + len(qt))
         if hit:
             matched_tokens.add(qt)
 
@@ -417,10 +420,8 @@ def push_recent(q: str, limit: int = 12) -> None:
 
 def clear_recent() -> None:
     p = _history_path()
-    try:
+    with contextlib.suppress(OSError):
         p.unlink(missing_ok=True)
-    except OSError:
-        pass
 
 
 # ---------------------------------------------------------------------------
@@ -453,9 +454,7 @@ def _passes_filters(m: dict[str, Any], sq: SearchQuery) -> bool:
         return False
     if sq.size_bucket and _size_bucket(float(m.get("size_gb") or 0)) != sq.size_bucket:
         return False
-    if sq.trending_only and not m.get("trending"):
-        return False
-    return True
+    return not (sq.trending_only and not m.get("trending"))
 
 
 def search(models: list[dict[str, Any]], sq: SearchQuery) -> dict[str, Any]:

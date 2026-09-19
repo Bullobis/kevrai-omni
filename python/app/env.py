@@ -18,6 +18,7 @@ engine and reports whether a newer version is known.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 import shutil
 import subprocess
@@ -28,7 +29,6 @@ from typing import Any
 
 from .engines import EngineManager
 from .gpu import detect as detect_gpu
-
 
 # Known pip packages we want to keep present (vague version floors).
 REQUIRED_PIP_PACKAGES: dict[str, str] = {
@@ -109,7 +109,7 @@ class EnvStatus:
 
 def _run(cmd: list[str], timeout: float = 10.0) -> tuple[int, str, str]:
     try:
-        p = subprocess.run(
+        p = subprocess.run(  # noqa: S603 — argv list supplied by internal callers, never shell
             cmd, capture_output=True, text=True, timeout=timeout
         )
         return p.returncode, p.stdout, p.stderr
@@ -234,10 +234,8 @@ def disk_info(models_dir: Path, engines_dir: Path) -> DiskInfo:
             return 0
         for root, _, files in os.walk(p):
             for f in files:
-                try:
+                with contextlib.suppress(OSError):
                     total_bytes += os.path.getsize(os.path.join(root, f))
-                except OSError:
-                    pass
         return total_bytes
     return DiskInfo(
         free_bytes=free, total_bytes=total,

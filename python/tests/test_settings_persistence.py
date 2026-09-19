@@ -2,12 +2,7 @@
 from __future__ import annotations
 
 import json
-import os
-import sys
-import tempfile
 from pathlib import Path
-
-import pytest
 
 from app.settings import Settings, load_settings, save_settings
 
@@ -69,6 +64,7 @@ def test_atomic_write_uses_tmp_file_pattern(tmp_path: Path):
     """Even though the temp file is cleaned up on success, the success-path
     code MUST use the temp-file + rename pattern (not in-place rewrite)."""
     import inspect
+
     from app import settings as settings_mod
 
     src = inspect.getsource(settings_mod.save_settings)
@@ -126,6 +122,7 @@ def test_save_writes_with_atomic_rename_under_parent(tmp_path: Path):
     """Temp file is created in the SAME directory as the target (so the
     final rename is atomic and on the same filesystem)."""
     import inspect
+
     from app import settings as settings_mod
     src = inspect.getsource(settings_mod.save_settings)
     assert "dir=" in src and "fp.parent" in src, (

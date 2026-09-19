@@ -10,13 +10,6 @@ from __future__ import annotations
 import pytest
 
 import app.sources as sources_mod
-from app.sources_registry import (
-    PRESET_SOURCES,
-    SourceMeta,
-    SourceRegistry,
-    build_gitcode_candidates,
-    normalize_user_mirrors,
-)
 from app.source_scheduler import (
     NEG_INF,
     PROFILE_LARGE,
@@ -25,7 +18,12 @@ from app.source_scheduler import (
     choose_profile_weights,
     ewma_blend,
 )
-
+from app.sources_registry import (
+    SourceMeta,
+    SourceRegistry,
+    build_gitcode_candidates,
+    normalize_user_mirrors,
+)
 
 # ---------------------------------------------------------------------------
 # Fake clock + probe factory
@@ -145,7 +143,7 @@ async def test_large_file_throughput_dominant(registry, monkeypatch):
 
 
 def test_ewma_history_damps_repeated_probe(registry):
-    sch = SourceScheduler(registry)
+    SourceScheduler(registry)
     sid = "hf-mirror-com"
     # First observation: slow (lat 400). Probe it via health.observe.
     p1 = sources_mod.SourceProbe(
@@ -221,7 +219,7 @@ async def test_probe_cache_hit_second_time(registry, monkeypatch):
         return [dict(r) for r in results if r["url"] in set(urls)]
     monkeypatch.setattr(sources_mod, "measure_sources", _counting)
     sch = SourceScheduler(registry, cache_ttl_s=300.0)
-    r1 = await sch.select(["https://hf-mirror.com/f"], file_size=0)
+    await sch.select(["https://hf-mirror.com/f"], file_size=0)
     assert calls["n"] == 1
     r2 = await sch.select(["https://hf-mirror.com/f"], file_size=0)
     assert calls["n"] == 1, "second select must hit the cache"

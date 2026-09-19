@@ -23,7 +23,6 @@ import httpx
 
 from . import USER_AGENT
 
-
 PROBE_RANGE = 65535          # 64 KiB probe chunk
 PROBE_TIMEOUT = 8.0          # seconds per probe
 PROBE_CONCURRENCY = 8        # parallel probes

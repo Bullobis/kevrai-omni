@@ -12,6 +12,8 @@ All probes are wrapped — a failure degrades to defaults, never raises.
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import logging
 import os
 import platform
 import shutil
@@ -22,6 +24,7 @@ from typing import Any
 from . import USER_AGENT
 from .gpu import detect as detect_gpus
 
+log = logging.getLogger("kevrai.hardware")
 
 # ---------------------------------------------------------------------------
 # CPU
@@ -36,7 +39,7 @@ def _cpu_info() -> dict[str, Any]:
         "avx2": False,
         "avx512": False,
     }
-    try:
+    with contextlib.suppress(Exception):  # CPU probe is best-effort
         if sys_platform_is_linux():
             model = ""
             with open("/proc/cpuinfo", encoding="utf-8", errors="replace") as f:
@@ -53,20 +56,19 @@ def _cpu_info() -> dict[str, Any]:
             if flags:
                 info["avx2"] = " avx2 " in f" {flags} "
                 info["avx512"] = " avx512f " in f" {flags} "
-            try:
-                with open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq", encoding="utf-8") as f:
-                    info["mhz_max"] = int(f.read().strip()) // 1000
-            except OSError:
-                pass
+            with contextlib.suppress(OSError), open(
+                "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq", encoding="utf-8"
+            ) as f:
+                # cpufreq node may be absent
+                info["mhz_max"] = int(f.read().strip()) // 1000
         elif sys_platform_is_mac():
             import subprocess
             out = subprocess.check_output(
-                ["sysctl", "-n", "machdep.cpu.brand_string"], stderr=subprocess.DEVNULL
+                ["sysctl", "-n", "machdep.cpu.brand_string"],  # noqa: S607 — standard macOS binary
+                stderr=subprocess.DEVNULL,
             ).decode().strip()
             if out:
                 info["name"] = out
-    except Exception:
-        pass
     return info
 
 
@@ -95,20 +97,16 @@ def _physical_cores() -> int:
 # ---------------------------------------------------------------------------
 
 def _total_ram_gb() -> float:
-    try:
+    with contextlib.suppress(Exception):  # psutil may be absent
         import psutil
         return round(psutil.virtual_memory().total / (1024 ** 3), 1)
-    except Exception:
-        pass
     # /proc/meminfo fallback (linux)
-    try:
-        with open("/proc/meminfo", encoding="utf-8") as f:
-            for line in f:
-                if line.startswith("MemTotal"):
-                    kb = int(line.split()[1])
-                    return round(kb / (1024 ** 2), 1)
-    except Exception:
-        pass
+    with contextlib.suppress(Exception), open("/proc/meminfo", encoding="utf-8") as f:
+        # no /proc/meminfo on some platforms
+        for line in f:
+            if line.startswith("MemTotal"):
+                kb = int(line.split()[1])
+                return round(kb / (1024 ** 2), 1)
     # Windows: ctypes GlobalMemoryStatusEx
     try:
         import ctypes
@@ -167,12 +165,17 @@ async def _measure_bandwidth_mbps(timeout_s: float = 4.0) -> float:
     for url in _BW_PROBE_URLS:
         try:
             t0 = time.monotonic()
-            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+            req = urllib.request.Request(  # noqa: S310 — https-only, fixed trusted URLs
+                url, headers={"User-Agent": USER_AGENT}
+            )
             received = 0
 
-            def _run() -> int:
+            def _run(req: urllib.request.Request = req, t0: float = t0) -> int:
+                # Bind loop variables as defaults to avoid late-binding (B023).
                 nonlocal received
-                with urllib.request.urlopen(req, timeout=timeout_s) as resp:
+                with urllib.request.urlopen(  # noqa: S310 — https-only, fixed trusted URLs
+                    req, timeout=timeout_s
+                ) as resp:
                     while True:
                         chunk = resp.read(65536)
                         if not chunk:
@@ -186,7 +189,8 @@ async def _measure_bandwidth_mbps(timeout_s: float = 4.0) -> float:
             elapsed = time.monotonic() - t0
             if received > 100_000 and elapsed > 0.05:
                 return round(received * 8 / elapsed / 1_000_000, 1)
-        except Exception:
+        except Exception as exc:  # noqa: BLE001 — try next probe URL
+            log.debug("bandwidth probe failed for %s: %s", url, exc)
             continue
     return 0.0
 

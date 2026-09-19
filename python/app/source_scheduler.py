@@ -25,8 +25,9 @@ Core algorithm (design §2.4.2):
 from __future__ import annotations
 
 import time
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Callable, Sequence
+from typing import Any
 
 from .sources_registry import (
     SourceHealth,
