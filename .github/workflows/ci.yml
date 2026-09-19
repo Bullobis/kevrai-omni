@@ -44,13 +44,51 @@ jobs:
       - name: Run pytest with coverage
         working-directory: python
         run: |
+          # Record the exact dependency set.  A green local run against a red CI
+          # run is almost always a version skew, and without this snapshot that
+          # difference is invisible.
+          python -m pip freeze > /tmp/pip-freeze.txt
+
+          set +e
           python -m pytest -ra \
             --cov=app --cov-report=term-missing --cov-report=xml \
-            tests/
+            tests/ 2>&1 | tee /tmp/pytest-out.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$rc" -ne 0 ]; then
+            {
+              echo "## pytest failed (exit ${rc})"
+              echo
+              echo "<details><summary>tail of pytest output</summary>"
+              echo
+              echo '```'
+              tail -n 120 /tmp/pytest-out.txt
+              echo '```'
+              echo
+              echo "</details>"
+              echo
+              echo "<details><summary>pip freeze</summary>"
+              echo
+              echo '```'
+              cat /tmp/pip-freeze.txt
+              echo '```'
+              echo
+              echo "</details>"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$rc"
 
       - name: Coverage gate (floor 65%, goal 80%)
         working-directory: python
         run: |
+          # If the pytest step died before writing coverage data there is nothing
+          # to gate on — say so plainly instead of reporting 0.0% and blaming the
+          # floor, which sends you chasing the wrong problem.
+          if [ ! -f .coverage ]; then
+            echo "::error::no .coverage data — the pytest step did not complete; see its summary above"
+            exit 1
+          fi
           python -c "
           import sys, coverage
           cov = coverage.Coverage()
