@@ -10,14 +10,12 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import os
 import socket
-import sys
 import threading
 import time
+from collections.abc import Callable, Iterator
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from typing import Callable, Iterator, Optional
 
 import httpx
 import pytest
@@ -29,7 +27,6 @@ from app.downloader import (
     DownloadTask,
     _check_url,
 )
-
 
 # ---------------------------------------------------------------------------
 # Local HTTP server fixture
@@ -197,7 +194,7 @@ async def test_downloader_resume_from_partial(tmp_path: Path, local_server):
 
     # We pass `dst` (final path), the downloader creates a .partial sibling.
     # To exercise resume, replace its .partial before the call:
-    tid = await dl.start(f"{base}/file.bin", dst)
+    await dl.start(f"{base}/file.bin", dst)
     # Now we manually truncate the .partial after start to simulate resumed
     # state — but Downloader already wrote some bytes. So we instead start
     # the download normally, cancel it, and resume manually.

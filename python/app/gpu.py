@@ -6,6 +6,7 @@ detector must never cause the whole `detect()` call to raise.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import os
 import platform
@@ -193,10 +194,8 @@ async def _detect_ascend() -> list[GPUInfo]:
         if "Name" in s and ":" in s:
             name = s.split(":", 1)[1].strip() or name
         if re.search(r"Memory\s*\(MiB\)|HBM", s):
-            try:
+            with contextlib.suppress(ValueError, IndexError):
                 vram_mb = int(re.findall(r"\d+", s)[0])
-            except (ValueError, IndexError):
-                pass
         if npu_id is not None and "Health" in s:
             out.append(
                 GPUInfo(
@@ -302,7 +301,7 @@ def _cpu_name() -> str:
     try:
         if sys.platform == "darwin":
             out = subprocess.check_output(
-                ["sysctl", "-n", "machdep.cpu.brand_string"],
+                ["sysctl", "-n", "machdep.cpu.brand_string"],  # noqa: S607 — standard macOS binary
                 stderr=subprocess.DEVNULL,
             ).decode().strip()
             return out or platform.processor() or "CPU"

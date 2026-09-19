@@ -22,8 +22,9 @@ def client():
     os.environ["LOCALAPPDATA"] = str(tmp)
     os.environ["XDG_DATA_HOME"] = str(tmp)
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from app.main import app
     from fastapi.testclient import TestClient
+
+    from app.main import app
     with TestClient(app) as c:
         yield c
 

@@ -19,14 +19,12 @@ import hashlib
 import socket
 import threading
 import zipfile
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from unittest.mock import patch
 
-import httpx
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Local HTTP server fixtures

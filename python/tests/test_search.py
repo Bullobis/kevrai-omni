@@ -4,20 +4,16 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from app import search as search_mod  # noqa: E402
 from app.search import (  # noqa: E402
     Corpus,
     SearchQuery,
     _edit_distance,
-    compute_facets,
     get_corpus,
     search,
 )
-from app import search as search_mod  # noqa: E402
-
 
 SAMPLE = [
     {"id": "ltx-2.5", "category": "video", "name": "LTX-2.5 (最新一代)",

@@ -1,8 +1,6 @@
 """Tests for mirror candidate expansion (auto-pick source generation)."""
 from __future__ import annotations
 
-import pytest
-
 from app.sources import expand_mirror_candidates
 
 MIRRORS = [

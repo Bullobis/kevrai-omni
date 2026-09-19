@@ -92,10 +92,10 @@ def rate_model(m: dict[str, Any], hw_sys: dict[str, Any]) -> dict[str, Any]:
 
     fit = vfit
     # CPU-only 机器跑大 LLM：至少 tight 起步
-    if not hw_sys.get("has_discrete_gpu") and m.get("category") == "llm":
-        if fit == "perfect" and min_vram > 16:
-            fit = "good"
-            reasons.append("无独显：大模型将走 CPU 推理，速度受限")
+    if (not hw_sys.get("has_discrete_gpu") and m.get("category") == "llm"
+            and fit == "perfect" and min_vram > 16):
+        fit = "good"
+        reasons.append("无独显：大模型将走 CPU 推理，速度受限")
 
     return {
         "fit": fit,

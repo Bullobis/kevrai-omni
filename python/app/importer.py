@@ -13,6 +13,7 @@ Hardening additions:
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -179,7 +180,7 @@ def import_local(
     *,
     mode: ImportMode = "copy",
     max_size_bytes: int | None = None,
-) -> "ImportResult":
+) -> ImportResult:
     """Copy or symlink a local model into the user's models directory.
 
     Args:
@@ -471,8 +472,9 @@ def list_gguf_files(repo: str, pattern: str = "*.gguf") -> list[dict[str, Any]]:
     Mirrors are tried in order (12s each) — the first reachable one wins.
     Raises the last error only when every mirror fails.
     """
-    import httpx
     import fnmatch
+
+    import httpx
 
     if not repo:
         return []
@@ -537,18 +539,20 @@ def download_file(
     if pos > 0:
         headers["Range"] = f"bytes={pos}-"
     mode = "ab" if pos > 0 else "wb"
-    with httpx.Client(timeout=None, follow_redirects=True) as client:
-        with client.stream("GET", url, headers=headers) as r:
-            r.raise_for_status()
-            total = int(r.headers.get("Content-Length", "0")) + pos
-            with target.open(mode) as fh:
-                downloaded = pos
-                for chunk in r.iter_bytes(CHUNK_SIZE):
-                    fh.write(chunk)
-                    downloaded += len(chunk)
-                    if progress_cb:
-                        try:
-                            progress_cb(downloaded, total)
-                        except Exception:
-                            pass
+    # Long-running download: use a generous read timeout rather than None (S113),
+    # and open both contexts in one `with` (SIM117).
+    with (
+        httpx.Client(timeout=httpx.Timeout(600.0, connect=30.0), follow_redirects=True) as client,
+        client.stream("GET", url, headers=headers) as r,
+    ):
+        r.raise_for_status()
+        total = int(r.headers.get("Content-Length", "0")) + pos
+        with target.open(mode) as fh:
+            downloaded = pos
+            for chunk in r.iter_bytes(CHUNK_SIZE):
+                fh.write(chunk)
+                downloaded += len(chunk)
+                if progress_cb:
+                    with contextlib.suppress(Exception):
+                        progress_cb(downloaded, total)
     return True

@@ -17,12 +17,14 @@ Thread-safety: one Llm instance at a time; all calls serialize on a lock
 """
 from __future__ import annotations
 
+import contextlib
 import logging
 import os
 import threading
 import time
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 log = logging.getLogger("kevrai.mnn")
 
@@ -108,10 +110,8 @@ def load_model(model_dir: str | Path, model_name: str = "") -> dict[str, Any]:
 def unload_model_locked() -> None:
     global _LLM
     if _LLM is not None:
-        try:
+        with contextlib.suppress(Exception):  # best-effort reset; ignore failures
             _LLM.reset()
-        except Exception:  # noqa: BLE001
-            pass
     _LLM = None
     _STATE["loaded"] = False
     _STATE["model_dir"] = ""
@@ -170,10 +170,8 @@ def chat(prompt: str, history: list[dict[str, str]] | None = None,
                 templated = _LLM.apply_chat_template({"role": "user", "content": prompt})
             except Exception:  # noqa: BLE001 — some models lack template support
                 templated = prompt
-            try:
+            with contextlib.suppress(Exception):  # best-effort config; ignore failures
                 _LLM.set_config({"max_new_tokens": int(max(16, min(int(max_new_tokens), 4096)))})
-            except Exception:  # noqa: BLE001
-                pass
             out = _LLM.response(templated, False)
         except Exception as e:  # noqa: BLE001
             _STATE["error"] = str(e)
@@ -268,18 +266,14 @@ def chat_multimodal(prompt: str, history: list[dict[str, str]] | None = None,
         t0 = time.monotonic()
         try:
             templated = m_prompt
-            try:
+            with contextlib.suppress(Exception):  # best-effort template; ignore failures
                 if isinstance(m_prompt, str):
                     templated = _LLM.apply_chat_template({"role": "user", "content": m_prompt})
                 else:
                     # 多模态 dict 走模板可能失败，先试，失败用原 dict
                     templated = _LLM.apply_chat_template({"role": "user", "content": m_prompt})
-            except Exception:  # noqa: BLE001
-                pass
-            try:
+            with contextlib.suppress(Exception):  # best-effort config; ignore failures
                 _LLM.set_config({"max_new_tokens": int(max(16, min(int(max_new_tokens), 4096)))})
-            except Exception:  # noqa: BLE001
-                pass
             try:
                 out = _LLM.response(templated, False)
             except TypeError:
@@ -331,14 +325,10 @@ def chat_stream(prompt: str, history: list[dict[str, str]] | None = None,
             raise RuntimeError("MNN 模型已卸载")
         try:
             templated = m_prompt
-            try:
+            with contextlib.suppress(Exception):  # best-effort template; ignore failures
                 templated = _LLM.apply_chat_template({"role": "user", "content": m_prompt})
-            except Exception:  # noqa: BLE001
-                pass
-            try:
+            with contextlib.suppress(Exception):  # best-effort config; ignore failures
                 _LLM.set_config({"max_new_tokens": int(max(16, min(int(max_new_tokens), 4096)))})
-            except Exception:  # noqa: BLE001
-                pass
         except Exception as e:  # noqa: BLE001
             _STATE["error"] = str(e)
             raise

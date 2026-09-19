@@ -16,16 +16,14 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.ltx_runtime import (  # noqa: E402
+    PRESETS,
     LtxBusyError,
-    LtxEngineMissing,
     LtxManager,
     LtxParamError,
     LtxParams,
-    PRESETS,
     TaskState,
     capabilities,
 )
-
 
 # ---------- parameter validation ----------
 

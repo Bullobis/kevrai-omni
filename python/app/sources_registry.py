@@ -19,13 +19,15 @@ Iron rules honoured here (design §3.3):
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import tempfile
 import time
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any
 
 from .hub.net import CircuitBreaker, TTLCache
 
@@ -223,7 +225,7 @@ class SourceMeta:
         return False
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "SourceMeta":
+    def from_dict(cls, data: dict[str, Any]) -> SourceMeta:
         """Build from a (user-supplied / persisted) dict, tolerating gaps."""
         patterns = data.get("host_patterns")
         if not isinstance(patterns, list):
@@ -325,7 +327,7 @@ class SourceHealth:
         }
 
     @classmethod
-    def from_persist(cls, source_id: str, data: dict[str, Any]) -> "SourceHealth":
+    def from_persist(cls, source_id: str, data: dict[str, Any]) -> SourceHealth:
         h = cls(source_id=source_id)
         h.ewma_latency_ms = _safe_float(data.get("ewma_latency_ms"), 0.0)
         h.ewma_speed_mbps = _safe_float(data.get("ewma_speed_mbps"), 0.0)
@@ -521,16 +523,12 @@ class SourceRegistry:
                 with os.fdopen(fd, "w", encoding="utf-8") as fh:
                     fh.write(blob)
                     fh.flush()
-                    try:
+                    with contextlib.suppress(OSError):
                         os.fsync(fh.fileno())
-                    except OSError:
-                        pass
                 os.replace(tmp_path, self.persist_path)
             except Exception:
-                try:
+                with contextlib.suppress(OSError):
                     os.unlink(tmp_path)
-                except OSError:
-                    pass
                 raise
         except OSError:
             # Health is non-critical — a failed write must never break a run.

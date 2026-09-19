@@ -8,8 +8,10 @@ tests and routes still work.
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -24,13 +26,14 @@ from typing import Any
 
 import httpx
 
-from .hub.paths import safe_extract as _hub_safe_extract
-
 from .catalog import (
     ALLOWED_ENGINE_HOSTS,
     Catalog,
     is_host_allowed,
 )
+from .hub.paths import safe_extract as _hub_safe_extract
+
+log = logging.getLogger("kevrai.engines")
 
 CHUNK_SIZE = 1 << 20  # 1 MiB
 
@@ -234,16 +237,12 @@ def _write_manifest(root: Path, records: list[EngineRecord]) -> None:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             fh.write(payload)
             fh.flush()
-            try:
+            with contextlib.suppress(OSError):
                 os.fsync(fh.fileno())
-            except OSError:
-                pass
         os.replace(tmp, p)
     except Exception:
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(tmp)
-        except OSError:
-            pass
         raise
 
 
@@ -553,10 +552,8 @@ class EngineManager:
                     if p.is_dir():
                         shutil.rmtree(p, ignore_errors=True)
                     else:
-                        try:
+                        with contextlib.suppress(OSError):
                             p.unlink()
-                        except OSError:
-                            pass
             self._set_state(engine_id, EngineState.NOT_INSTALLED)
             # Remove the manifest entry entirely
             recs = self._read()
@@ -578,7 +575,7 @@ class EngineManager:
         self._set_state(eid, EngineState.DOWNLOADING, install_path=str(target),
                         install_mode="pip")
         try:
-            proc = subprocess.run(
+            proc = subprocess.run(  # noqa: S603 — argv list built from internal constants
                 cmd, capture_output=True, text=True, timeout=900
             )
         except Exception as e:
@@ -666,7 +663,9 @@ def install_pip_engine(name: str, root: Path) -> InstallResult:
     if idx:
         cmd += ["-i", idx, "--extra-index-url", "https://pypi.org/simple"]
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+        proc = subprocess.run(  # noqa: S603 — argv list built from internal constants
+            cmd, capture_output=True, text=True, timeout=900
+        )
         ok = proc.returncode == 0
         msg = (proc.stdout[-500:] if ok else proc.stderr[-500:]) or ""
         return InstallResult(
@@ -850,7 +849,7 @@ async def check_engine_updates(
     engines_catalog: dict[str, Any],
     *,
     force: bool = False,
-    client: "httpx.AsyncClient | None" = None,
+    client: httpx.AsyncClient | None = None,
 ) -> list[dict[str, Any]]:
     """Check GitHub for newer releases of installed binary engines.
 
@@ -904,7 +903,8 @@ async def check_engine_updates(
                             ct = r.headers.get("content-type", "")
                             data = r.json() if ct.startswith("application/json") else {}
                             break
-                    except Exception:  # noqa: BLE001 — next API mirror
+                    except Exception as exc:  # noqa: BLE001 — try next API mirror
+                        log.debug("engine update check: mirror failed: %s", exc)
                         continue
                 if status != 200 or not data:
                     results.append({

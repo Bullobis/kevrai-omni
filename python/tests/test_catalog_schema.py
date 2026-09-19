@@ -22,14 +22,16 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from catalog.schema import (  # noqa: E402 — sys.path magic above
-    ALLOWED_ENGINE_HOSTS,
-    ALLOWED_MODEL_HOSTS,
     BLOCKED_MIRRORS,
+)
+from catalog.schema import (  # noqa: E402 — sys.path magic above
     validate_engines as validate_engines_schema,
+)
+from catalog.schema import (  # noqa: E402 — sys.path magic above
     validate_models as validate_models_schema,
 )
+
 from app.catalog import (  # noqa: E402
-    is_host_allowed,
     load_catalog,
 )
 

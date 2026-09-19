@@ -18,6 +18,7 @@ Design goals:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import hashlib
 import os
 import time
@@ -217,10 +218,8 @@ class Downloader:
 
     async def aclose(self) -> None:
         if self._client_owned and self._client is not None:
-            try:
+            with contextlib.suppress(Exception):
                 await self._client.aclose()
-            except Exception:
-                pass
 
     # --- internals ---
 
@@ -362,10 +361,8 @@ class Downloader:
                         continue
                     fh.write(chunk)
                     fh.flush()
-                    try:
+                    with contextlib.suppress(OSError):
                         os.fsync(fh.fileno())
-                    except OSError:
-                        pass
                     task.downloaded_bytes += len(chunk)
 
                     now = loop.time()
@@ -398,10 +395,8 @@ class Downloader:
         payload["event"] = event
         if extra:
             payload.update(extra)
-        try:
+        with contextlib.suppress(asyncio.QueueFull):  # pragma: no cover — bounded queue not used
             task.queue.put_nowait(payload)
-        except asyncio.QueueFull:  # pragma: no cover — bounded queue not used
-            pass
         # Best-effort: drop old entries so slow consumers don't OOM.
         while task.queue.qsize() > 256:
             try:

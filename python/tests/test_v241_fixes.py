@@ -27,7 +27,6 @@ from app.engines import (  # noqa: E402
 )
 from app.settings import Settings, load_settings, save_settings  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Catalog fact fixes
 # ---------------------------------------------------------------------------

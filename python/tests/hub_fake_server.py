@@ -27,6 +27,7 @@ caching collapsed N client calls into 1 upstream request.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import threading
 import time
@@ -116,7 +117,7 @@ class FakeHubServer:
         host, port = self._httpd.server_address[:2]
         return f"http://{host}:{port}"
 
-    def start(self) -> "FakeHubServer":
+    def start(self) -> FakeHubServer:
         handler = _make_handler(self)
         self._httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
         self._httpd.daemon_threads = True
@@ -174,10 +175,8 @@ def _make_handler(server: FakeHubServer):
             qs = {**{k: [v] for k, v in server.force.items()}, **qs}
             delay = qs.get("delay", [""])[0]
             if delay:
-                try:
+                with contextlib.suppress(ValueError):
                     time.sleep(float(delay))
-                except ValueError:
-                    pass
 
             if qs.get("cut", [""])[0]:
                 body = b'{"partial": '  # deliberately truncated JSON
@@ -228,10 +227,8 @@ def _make_handler(server: FakeHubServer):
         # -- routes --------------------------------------------------------
 
         def do_GET(self) -> None:
-            try:
+            with contextlib.suppress(BrokenPipeError, ConnectionResetError):
                 self._route("GET")
-            except (BrokenPipeError, ConnectionResetError):
-                pass
 
         def do_PUT(self) -> None:
             try:
@@ -298,7 +295,7 @@ def _make_handler(server: FakeHubServer):
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
             if items:
-                self.send_header("Link", f'<http://x/api/models?cursor=abc>; rel="next"')
+                self.send_header("Link", '<http://x/api/models?cursor=abc>; rel="next"')
             self.end_headers()
             self.wfile.write(body)
 

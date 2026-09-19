@@ -41,8 +41,8 @@ from .modelscope import ModelScopeAdapter
 from .net import (
     CircuitBreaker,
     FetchOutcome,
-    TTLCache,
     TokenBucket,
+    TTLCache,
     request_with_retry,
     timeout_for,
 )
@@ -102,7 +102,7 @@ __all__ = [
     "timeout_for",
 ]
 
-_REGISTRY: "HubRegistry | None" = None
+_REGISTRY: HubRegistry | None = None
 _REGISTRY_SETTINGS_ID: int | None = None
 # Guards the read-then-write of _REGISTRY/_REGISTRY_SETTINGS_ID: without it,
 # two concurrent first-callers each build a registry and one assignment is

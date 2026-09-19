@@ -29,11 +29,13 @@ Verified by live probe at implementation time (2026-09):
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 from urllib.parse import quote
 
 import httpx
 
+from .. import USER_AGENT
 from .base import (
     HUB_MODELSCOPE,
     PageResult,
@@ -54,8 +56,8 @@ from .base import (
 from .net import (
     CircuitBreaker,
     FetchOutcome,
-    TTLCache,
     TokenBucket,
+    TTLCache,
     request_with_retry,
     timeout_for,
 )
@@ -65,11 +67,8 @@ from .taxonomy import (
     infer_engines,
     map_category,
     size_gb_from_bytes,
-    total_size_bytes,
     trending_from,
 )
-
-from .. import USER_AGENT
 
 # Reused verbatim from the existing, proven ModelScope client.
 try:  # pragma: no cover - mnn_catalog is always importable in-tree

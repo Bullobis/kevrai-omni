@@ -8,11 +8,9 @@ Covers the strengthened local-import pipeline:
 """
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Unit: detect_compatible_engines
@@ -73,6 +71,7 @@ def test_detect_missing_or_unknown_path(tmp_path: Path):
 def diy_client(tmp_xdg, monkeypatch):
     """TestClient with MODELS_DIR pointed at an isolated tmp dir."""
     from fastapi.testclient import TestClient
+
     from app import main as app_main
     from app.settings import default_data_root
 

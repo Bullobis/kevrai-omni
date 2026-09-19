@@ -17,22 +17,22 @@ from typing import Any
 from ..skill import Skill, SkillManager
 from ..tool_registry import ToolRegistry
 from .catalog_tools import (
-    search_models,
+    list_categories,
+    list_installed,
     model_info,
     recommend_models,
-    list_installed,
-    list_categories,
-)
-from .system_tools import (
-    check_hardware,
-    list_engines,
-    download_model,
-    generate_text,
-    get_preferences,
-    set_preference,
+    search_models,
 )
 from .drama_tools import DRAMA_TOOLS
 from .media_prompt_tools import MEDIA_PROMPT_TOOLS
+from .system_tools import (
+    check_hardware,
+    download_model,
+    generate_text,
+    get_preferences,
+    list_engines,
+    set_preference,
+)
 from .writing_tools import WRITING_TOOLS
 
 # ---------------------------------------------------------------------------

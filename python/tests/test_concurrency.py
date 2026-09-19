@@ -6,11 +6,8 @@ threads and assert thread-safety invariants.
 """
 from __future__ import annotations
 
-import os
 import sys
-import tempfile
 import threading
-import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 

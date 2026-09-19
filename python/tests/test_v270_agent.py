@@ -12,8 +12,6 @@ Covers:
 """
 from __future__ import annotations
 
-import json
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -25,7 +23,7 @@ from app.agent.tool_registry import (
     extract_final_answer,
     parse_tool_call,
 )
-from app.agent.tools import build_default_registry, ALL_TOOLS
+from app.agent.tools import ALL_TOOLS, build_default_registry
 
 
 # ===========================================================================
@@ -502,7 +500,7 @@ class TestAgentReAct:
         ])
         steps_received = []
         agent.set_step_callback(lambda s: steps_received.append(s))
-        result = await agent.run("回调", session_id="react5")
+        await agent.run("回调", session_id="react5")
         assert len(steps_received) >= 1
         agent.set_step_callback(None)
 
@@ -512,7 +510,7 @@ class TestAgentReAct:
         agent.router = MockModelRouter([
             "Final Answer: 已读取偏好。",
         ])
-        result = await agent.run("偏好测试", session_id="react6")
+        await agent.run("偏好测试", session_id="react6")
         # The system prompt should include the preference
         assert len(agent.router.calls) == 1
         assert "qwen3" in agent.router.calls[0]

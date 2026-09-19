@@ -11,14 +11,14 @@ from app.env import (
     InstallError,
     NodeStatus,
     PythonStatus,
+    _is_newer,
+    _parse_pip_freeze,
+    _parse_version_tuple,
     detect_node,
     detect_python,
     disk_info,
     install_pip_package,
     list_pip_packages,
-    _parse_pip_freeze,
-    _parse_version_tuple,
-    _is_newer,
 )
 
 

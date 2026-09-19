@@ -24,6 +24,7 @@ def _check_hardware(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
             import asyncio as _aio
             import concurrent.futures
             from pathlib import Path as _Path
+
             from ...hardware import detect_hardware
             path = ctx.models_dir or ctx.app_root or _Path(".")
             def _detect_sync():

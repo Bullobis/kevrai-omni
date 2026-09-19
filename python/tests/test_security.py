@@ -21,15 +21,14 @@ from pathlib import Path
 import pytest
 
 from app.catalog import (
-    ALLOWED_ENGINE_HOSTS,
     ALLOWED_MODEL_HOSTS,
     DEFAULT_BLOCKED_MIRRORS,
     is_host_allowed,
 )
+from app.downloader import DownloadRefused
+from app.downloader import _check_url as downloader_check_url
 from app.engines import download_zip_engine
-from app.settings import Settings, default_settings_path, load_settings, save_settings
-from app.downloader import DownloadRefused, _check_url as downloader_check_url
-
+from app.settings import Settings, load_settings, save_settings
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 CATALOG_DIR = REPO_ROOT / "catalog"
@@ -46,8 +45,9 @@ def client():
     os.environ["LOCALAPPDATA"] = str(tmp)
     os.environ["XDG_DATA_HOME"] = str(tmp)
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from app.main import app  # imported here so env is set first
     from fastapi.testclient import TestClient
+
+    from app.main import app  # imported here so env is set first
     with TestClient(app) as c:
         yield c
 
@@ -136,7 +136,7 @@ def test_is_host_allowed_full_table():
     for ok in ALLOWED_MODEL_HOSTS:
         assert is_host_allowed(f"https://{ok}/file", set(ALLOWED_MODEL_HOSTS))
     # Blocked mirrors are no longer in the catalog; ensure the set is empty.
-    assert DEFAULT_BLOCKED_MIRRORS == set(), "v2.2.0 removed the global blocklist"
+    assert set() == DEFAULT_BLOCKED_MIRRORS, "v2.2.0 removed the global blocklist"
 
 
 def test_engines_json_every_url_is_well_formed():

@@ -14,8 +14,9 @@ from __future__ import annotations
 import os
 import re
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 # Windows device names — writing to these on Windows hits the device driver
 # instead of the filesystem (E21). Also blocked with an extension ("CON.txt").
@@ -50,9 +51,7 @@ def is_safe_part(part: str) -> bool:
     if _WIN_RESERVED_RE.match(part):
         return False
     # Trailing dot/space is silently stripped by Windows → ambiguity.
-    if part.endswith(".") or part.endswith(" "):
-        return False
-    return True
+    return not (part.endswith(".") or part.endswith(" "))
 
 
 def safe_join(root: str | os.PathLike[str], rel: str) -> Path:

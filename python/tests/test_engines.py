@@ -1,17 +1,13 @@
 """Tests for engine manager — dispatch logic, host whitelist, status I/O."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
 
-from app.catalog import load_catalog
 from app.engines import (
     _platform_key,
     download_zip_engine,
-    engine_install_dir,
-    engine_status_path,
     install_pip_engine,
     load_status,
     save_status,

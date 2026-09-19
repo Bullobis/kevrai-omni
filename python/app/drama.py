@@ -543,7 +543,7 @@ def _normalize_beat(v: Any) -> str:
     if not b:
         return ""
     for key, label in BEAT_LIBRARY.items():
-        if b == key or b == label or key in b.lower() or label in b:
+        if b in (key, label) or key in b.lower() or label in b:
             return key
     return b
 

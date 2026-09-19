@@ -20,12 +20,14 @@ Why a separate ``RemoteModel`` instead of reusing ``catalog.ModelEntry``:
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import math
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Hub identifiers
@@ -79,7 +81,7 @@ def synth_id(hub: str, repo: str) -> str:
     and for the renderer's selected-state keying.
     """
     prefix = _HUB_PREFIX.get(hub, re.sub(r"[^A-Za-z0-9]", "", hub)[:4] or "x")
-    digest = hashlib.sha1(f"{hub}/{repo}".encode("utf-8")).hexdigest()[:16]
+    digest = hashlib.sha1(f"{hub}/{repo}".encode()).hexdigest()[:16]  # noqa: S324 — non-crypto id
     return f"{prefix}-{digest}"
 
 
@@ -347,7 +349,7 @@ class SearchSpec:
     page_size: int = 30
     sources: list[str] = field(default_factory=lambda: list(ALL_HUBS))
 
-    def normalized(self) -> "SearchSpec":
+    def normalized(self) -> SearchSpec:
         """Return a copy with values clamped/whitelisted (E07/E08)."""
         sort = self.sort if self.sort in SORTS else "relevance"
         srcs = [s for s in (self.sources or []) if s in ALL_HUBS]
@@ -376,7 +378,7 @@ class SearchSpec:
             str(self.page_size),
             ",".join(self.sources),
         ])
-        return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]
+        return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]  # noqa: S324 — non-crypto cache key
 
 
 @dataclass
@@ -396,7 +398,7 @@ class SourceCursor:
                 "token": self.token, "done": self.done}
 
     @classmethod
-    def from_dict(cls, d: Any) -> "SourceCursor":
+    def from_dict(cls, d: Any) -> SourceCursor:
         if not isinstance(d, Mapping):
             return cls()
         return cls(
@@ -424,7 +426,7 @@ class PageResult:
     def ok(self) -> bool:
         return not self.degraded
 
-    def degraded_with(self, code: str, message: str = "") -> "PageResult":
+    def degraded_with(self, code: str, message: str = "") -> PageResult:
         """Return an empty, degraded result (used when a source fails)."""
         return PageResult(items=[], next=None, total=None,
                           degraded=True, code=code, warning=message)
@@ -482,8 +484,6 @@ class SourceAdapter(ABC):
     async def aclose(self) -> None:
         """Release the adapter's HTTP client (no-op for local adapters)."""
         if self._client is not None and self._client_owned:
-            try:
+            with contextlib.suppress(Exception):  # best-effort client close
                 await self._client.aclose()  # type: ignore[attr-defined]
-            except Exception:
-                pass
         self._closed = True

@@ -57,7 +57,7 @@ DEFAULT_MODEL_HOSTS: set[str] = {
     "pypi.org",
     "files.pythonhosted.org",
     "pypi.tuna.tsinghua.edu.cn",
-    "mirrors.aliyun.com",  # (also a pypi mirror)
+    # (also a pypi mirror)
     # npm / Node ecosystem
     "registry.npmjs.org",
     "registry.npmmirror.com",

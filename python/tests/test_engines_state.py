@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import shutil
 import zipfile
 from pathlib import Path
 
@@ -160,7 +159,7 @@ def test_engine_manager_state_enum_values():
 
 def test_engine_manager_manifest_is_atomic(tmp_path: Path):
     """While a write is happening, the manifest must always be valid JSON."""
-    import json, os
+    import json
     em = EngineManager(tmp_path)
     em._set_state("a", EngineState.INSTALLED, install_path="/a",
                   installed_at="2026-01-01")
@@ -179,7 +178,7 @@ def test_engine_manager_record_serde_roundtrip(tmp_path: Path):
                   source_url="https://example.com/x",
                   install_path="/a")
     rec = em.get("a")
-    d = rec.to_dict()
+    rec.to_dict()
     # Restore via fresh manager
     p = em.engine_dir() / "installed.json"
     recs = json.loads(p.read_text())

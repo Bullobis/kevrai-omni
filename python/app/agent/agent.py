@@ -12,9 +12,10 @@ from __future__ import annotations
 import json
 import logging
 import time
-from pathlib import Path
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from pathlib import Path
+from typing import Any
 
 from .memory import AgentMemory
 from .model_router import ModelRouter
@@ -161,10 +162,7 @@ class Agent:
         else:
             skills_block = "（暂无额外技能）"
         prefs = self.memory.get_all_preferences() if self.memory else {}
-        if prefs:
-            preferences_block = "\n".join(f"- {k}: {v}" for k, v in prefs.items())
-        else:
-            preferences_block = "（暂无）"
+        preferences_block = "\n".join(f"- {k}: {v}" for k, v in prefs.items()) if prefs else "（暂无）"
 
         hw = self.ctx.hardware_info or {}
         if hw:
@@ -396,6 +394,7 @@ class Agent:
             try:
                 import asyncio as _aio
                 import concurrent.futures
+
                 from ..hardware import detect_hardware
                 path = self.ctx.models_dir or self.ctx.app_root or Path(".")
                 def _detect_sync():

@@ -17,11 +17,12 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import hashlib
 import json
+import logging
 import math
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any
 from urllib.parse import quote
 
 from .base import (
@@ -41,6 +42,8 @@ from .base import (
 )
 from .net import TTLCache
 from .taxonomy import infer_engines, size_gb_from_bytes, total_size_bytes
+
+log = logging.getLogger("kevrai.hub.registry")
 
 #: Order used to hand out the integer remainder and to break rank ties.
 _HUB_PRIORITY: dict[str, int] = {HUB_CURATED: 0, HUB_MODELSCOPE: 1, HUB_HF: 2}
@@ -258,8 +261,8 @@ def cross_source_candidates(
             for c in expand_mirror_candidates(primary, list(extra_mirrors or [])):
                 if c not in out:
                     out.append(c)
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001 — mirror expansion is best-effort
+            log.debug("expand mirrors failed for %s: %s", repo, exc)
     if hub != HUB_MODELSCOPE and HUB_MODELSCOPE in also:
         ms = f"https://modelscope.cn/models/{repo}/resolve/{rev_ms}/{quote(path, safe='/')}"
         if ms not in out:
@@ -382,7 +385,7 @@ class HubRegistry:
         counts: dict[str, int | None] = {}
         next_cursors: dict[str, SourceCursor] = {}
 
-        for hub, res in zip(sources, results):
+        for hub, res in zip(sources, results, strict=False):
             if isinstance(res, BaseException) or res is None:
                 warnings.append({"hub": hub, "code": "exception",
                                  "message": f"{hub} 检索异常"})
@@ -401,9 +404,7 @@ class HubRegistry:
             # Keep the source cursor for the next page even on an empty page.
             cap = quota.get(hub, per_source_limit)
             has_more_here = res.next is not None and len(res.items) <= cap
-            if res.next is not None and (len(res.items) > 0 or hub != HUB_CURATED):
-                next_cursors[hub] = res.next
-            elif has_more_here:
+            if res.next is not None and (len(res.items) > 0 or hub != HUB_CURATED) or has_more_here:
                 next_cursors[hub] = res.next
 
         merged = merge_rank(buckets, limit=spec.page_size * 2)
@@ -520,7 +521,8 @@ class HubRegistry:
                 m = await ad.detail(repo)
                 if m is not None:
                     found.append(hub)
-            except Exception:
+            except Exception as exc:  # noqa: BLE001 — this hub is unreachable; try next
+                log.debug("also_on: hub %s detail failed: %s", hub, exc)
                 continue
         self._cache.set(key, found, ttl=300.0)
         return found
@@ -545,7 +547,8 @@ class HubRegistry:
                 continue
             try:
                 await closed()
-            except Exception:
+            except Exception as exc:  # noqa: BLE001 — keep closing remaining adapters
+                log.debug("aclose: adapter %s failed: %s", hub, exc)
                 continue
 
 
