@@ -26,6 +26,22 @@ docs/promo_assets/
 core.*
 core
 
+# Python 测试 / 覆盖率 / 类型检查 / lint 缓存
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+
+# Python 打包/构建产物
+*.pyo
+*.pyd
+*.whl
+
 # 签名材料（私钥/证书/密钥环）—— 严禁提交
 .signing/
 *.key
