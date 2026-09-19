@@ -410,11 +410,38 @@ if [ "${STAGED_EXE_SIGNED}" -eq 1 ] && [ "${NSIS_OK}" -eq 1 ] && [ -f "${EXPECTE
   #   * latest.yml — it pins the installer's sha512 and size, so electron-updater
   #     would reject the download with a checksum mismatch
   #
-  # The blockmap is simply dropped: without it electron-updater falls back to a
-  # full download, which is correct if less bandwidth-efficient.  latest.yml is
-  # rewritten below so the advertised hash matches what we actually ship.
-  rm -f "${EXPECTED_EXE}.blockmap"
+  # Both are regenerated from the *signed* bytes below, which is the only
+  # ordering that yields a self-consistent update descriptor:
+  #
+  #   * latest.yml is rewritten so the advertised sha512/size match what ships.
+  #   * the blockmap is rebuilt with `app-builder blockmap`, which uses
+  #     content-defined chunking — the docs explicitly state it is "robust to
+  #     insertions, deletions, and changes to input file".  So signing first and
+  #     generating the blockmap second produces a valid differential index,
+  #     and electron-updater resumes incremental downloads instead of pulling
+  #     the whole ~95 MB installer on every update.
+  #
+  # (An earlier revision simply deleted the blockmap, which was overly
+  #  conservative and cost users a full download per update.)
 
+  # --- 1. rebuild the blockmap against the signed installer -------------
+  _AB="node_modules/app-builder-bin/linux/x64/app-builder"
+  if [ -x "${_AB}" ]; then
+    if "${_AB}" blockmap --input "${EXPECTED_EXE}" \
+         --output "${EXPECTED_EXE}.blockmap" >/dev/null 2>&1 \
+       && [ -s "${EXPECTED_EXE}.blockmap" ]; then
+      _BM_BYTES="$(stat -c %s "${EXPECTED_EXE}.blockmap")"
+      echo "  ✓ blockmap regenerated from signed image (${_BM_BYTES} bytes)"
+    else
+      rm -f "${EXPECTED_EXE}.blockmap"
+      echo "  ⚠ blockmap regeneration failed — updates will be full downloads"
+    fi
+  else
+    rm -f "${EXPECTED_EXE}.blockmap"
+    echo "  ⚠ app-builder not found — blockmap unavailable, updates will be full downloads"
+  fi
+
+  # --- 2. refresh latest.yml against the signed installer ---------------
   if [ -f build/output/latest.yml ]; then
     ${PY} - build/output/latest.yml "${EXPECTED_EXE}" "${PRODUCT}" <<'PY' \
       || fail "could not refresh latest.yml after signing"
@@ -488,6 +515,63 @@ if [ "${STAGED_EXE_SIGNED}" -eq 1 ]; then
       fail "latest.yml sha512 does not match the installer — updater would reject it"
     fi
     echo "  ✓ latest.yml matches the signed installer (size + sha512)"
+  fi
+
+  # The blockmap must describe the *signed* installer, otherwise the client
+  # computes bogus ranges, fails the diff, and silently re-downloads in full.
+  #
+  # Note on what is verifiable: `app-builder blockmap` emits a gzipped payload
+  # whose files[0] carries only {name, offset, checksums, sizes} — there is no
+  # size/sha512 field to compare against.  The reliable invariant is that the
+  # chunk sizes must tile the shipped image exactly:
+  #     sum(files[0].sizes) == stat -c %s <installer>
+  # If the blockmap were generated from a pre-signature image, this sum would
+  # be the *old* length and the check fails.
+  if [ "${NSIS_OK}" -eq 1 ] && [ -s "${EXPECTED_EXE}.blockmap" ]; then
+    _BM_EXE_SIZE="$(stat -c %s "${EXPECTED_EXE}" 2>/dev/null || stat -f %z "${EXPECTED_EXE}")"
+    if ${PY} - "${EXPECTED_EXE}.blockmap" "${_BM_EXE_SIZE}" <<'PY'
+import gzip, json, sys
+
+path, want_size = sys.argv[1], int(sys.argv[2])
+
+try:
+    doc = json.loads(gzip.decompress(open(path, "rb").read()).decode())
+except Exception as exc:
+    print(f"    - blockmap is not readable: {type(exc).__name__}: {exc}")
+    sys.exit(1)
+
+files = doc.get("files") or []
+if not files:
+    print("    - blockmap contains no file entries")
+    sys.exit(1)
+
+entry = files[0]
+checksums = entry.get("checksums") or []
+sizes = entry.get("sizes") or []
+
+if not checksums or not sizes:
+    print("    - blockmap has no chunk index")
+    sys.exit(1)
+if len(checksums) != len(sizes):
+    print(f"    - checksums/sizes length mismatch ({len(checksums)} vs {len(sizes)})")
+    sys.exit(1)
+
+covered = sum(sizes)
+if covered != want_size:
+    print(f"    - blockmap tiles {covered} bytes but the installer is {want_size} bytes")
+    print("      (a blockmap built from the pre-signature image looks exactly like this)")
+    sys.exit(1)
+
+print(f"    blockmap tiles the installer exactly ({len(checksums)} chunks, {covered} bytes)")
+sys.exit(0)
+PY
+    then
+      echo "  ✓ blockmap matches the signed installer"
+    else
+      fail "blockmap does not describe the shipped installer — differential updates would fail"
+    fi
+  elif [ "${NSIS_OK}" -eq 1 ]; then
+    echo "  ⚠ no blockmap — clients will fall back to full downloads"
   fi
 else
   echo "  (artifacts are unsigned — nothing to verify)"
