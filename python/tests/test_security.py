@@ -19,6 +19,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from app.catalog import (
     ALLOWED_MODEL_HOSTS,
@@ -161,14 +162,16 @@ def test_engines_json_every_url_is_well_formed():
 
 def test_settings_invalid_theme_rejected_by_pydantic():
     """`theme` is a Literal — any value outside the enum fails validation."""
-    with pytest.raises(Exception) as exc:
+    # 用 pydantic 的具体异常类型而不是裸 Exception：后者会把
+    # AttributeError/TypeError 之类的实现错误也算作「校验通过」。
+    with pytest.raises(ValidationError) as exc:
         Settings(theme="rainbow")
     msg = str(exc.value).lower()
     assert "theme" in msg or "literal" in msg or "enum" in msg
 
 
 def test_settings_invalid_hardware_accel_rejected():
-    with pytest.raises(Exception) as exc:
+    with pytest.raises(ValidationError) as exc:
         Settings(hardware_acceleration="quantum")
     msg = str(exc.value).lower()
     assert "hardware" in msg or "literal" in msg

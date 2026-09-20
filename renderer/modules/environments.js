@@ -4,6 +4,7 @@
 "use strict";
 import { api } from "./api.js";
 import { toast } from "./toast.js";
+import { unwrap } from "./net.js";
 
 const KNOWN_PIP_MIRRORS = [
   { id: "pypi-official",   label: "PyPI 官方",          url: "https://pypi.org/simple/" },
@@ -129,7 +130,7 @@ async function testAllSources() {
   ];
   if (!all.length) { toast("请先勾选至少一个镜像", { kind: "warn" }); return; }
   toast(`测速 ${all.length} 个镜像…`);
-  const res = await api.measureSources(all);
+  const res = unwrap(await api.measureSources(all));
   state.speedResults = res.ranking || [];
   renderSpeedResults();
 }
@@ -162,7 +163,7 @@ async function loadStatus(card) {
   card.appendChild(el("p", { class: "muted" }, "正在检测…"));
   let s;
   try {
-    s = await api.envStatus();
+    s = unwrap(await api.envStatus());
   } catch (e) {
     card.innerHTML = "";
     card.appendChild(el("h2", {}, "系统状态 / System Status"));
@@ -248,12 +249,12 @@ async function loadEngines(card) {
   card.appendChild(el("h2", {}, "推理引擎 / Engines"));
   let engines;
   try {
-    engines = await api.engines();
+    engines = unwrap(await api.engines());
   } catch (e) {
     card.appendChild(el("p", { class: "err" }, "加载失败：" + e.message));
     return;
   }
-  const list = (engines.engines || engines || []);
+  const list = (engines.engines || []);
   const grid = el("div", { class: "engine-grid" });
   for (const e of list) {
     const isInstalled = e.installed || e.state === "installed";
@@ -277,7 +278,7 @@ async function loadEngines(card) {
 async function installEngine(engine) {
   toast(`安装 ${engine.name || engine.id}（自动挑选最快源）…`);
   try {
-    const res = await api.envInstallEngine({ id: engine.id });
+    const res = unwrap(await api.envInstallEngine({ id: engine.id }));
     toast(`${engine.name} 安装完成（源: ${res.source_used}）`);
     const card = document.querySelector(".page-env .card:nth-of-type(3)");
     if (card) loadEngines(card);

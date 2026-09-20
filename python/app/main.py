@@ -30,6 +30,7 @@ from fastapi import (
     FastAPI,
     HTTPException,
     Request,
+    Response,
     WebSocket,
     WebSocketDisconnect,
 )
@@ -295,6 +296,9 @@ async def _request_id_middleware(request: Request, call_next):
     rid = request.headers.get("x-request-id") or uuid.uuid4().hex
     token = _RidToken.set(rid)
     t0 = time.monotonic()
+    # 显式初始化：异常路径下 `response` 不会被赋值，此前依赖
+    # `locals().get("response")` 会让 status 恒为 0，异常日志失去诊断价值。
+    response: Response | None = None
     try:
         response = await call_next(request)
     except Exception:  # pragma: no cover — propagate
@@ -307,7 +311,7 @@ async def _request_id_middleware(request: Request, call_next):
             extra={
                 "path": request.url.path,
                 "method": request.method,
-                "status": getattr(locals().get("response"), "status_code", 0),
+                "status": response.status_code if response is not None else 500,
                 "elapsed_ms": elapsed_ms,
             },
         )
@@ -742,8 +746,21 @@ async def gpu() -> dict[str, Any]:
 
 @app.get("/api/env/status")
 async def env_status(request: Request) -> dict[str, Any]:
-    """Detect Python / Node / pip packages / installed engines / disk / GPU."""
+    """Detect Python / Node / pip packages / installed engines / disk / GPU.
+
+    ``check_status`` forks ``pip freeze`` plus several version probes, which
+    measured **650 ms on every call**. The UI polls this endpoint, so results
+    are cached briefly; ``?refresh=1`` forces a fresh probe.
+    """
     from .env import check_status
+
+    force = str(request.query_params.get("refresh", "")).lower() in {"1", "true", "yes"}
+    cached = _ENV_STATUS_CACHE.get("data")
+    if cached is not None and not force:
+        age = time.monotonic() - float(_ENV_STATUS_CACHE.get("ts") or 0.0)
+        if age < _ENV_STATUS_TTL_S:
+            return cached
+
     settings = _get_settings(request)
     em: EngineManager = request.app.state.engine_manager
     status = await check_status(
@@ -752,7 +769,10 @@ async def env_status(request: Request) -> dict[str, Any]:
         engines_dir=Path(settings.resolved_engine_dir()),
         catalog_engines=ENGINES,
     )
-    return status.to_dict()
+    payload = status.to_dict()
+    _ENV_STATUS_CACHE["data"] = payload
+    _ENV_STATUS_CACHE["ts"] = time.monotonic()
+    return payload
 
 
 @app.post("/api/env/install")
@@ -1541,6 +1561,11 @@ async def ws_download(websocket: WebSocket, task_id: str) -> None:
 _HW_CACHE: dict[str, Any] = {"ts": 0.0, "data": None}
 _HW_CACHE_TTL = 300.0
 
+# /api/env/status 每次都 fork pip freeze 等 4 个子进程（实测恒 650ms）。
+# 加一层短 TTL 缓存；?refresh=1 可强制刷新。
+_ENV_STATUS_CACHE: dict[str, Any] = {"ts": 0.0, "data": None}
+_ENV_STATUS_TTL_S = 30.0
+
 
 @app.get("/api/hardware")
 async def hardware(request: Request, refresh: int = 0) -> dict[str, Any]:
@@ -1633,11 +1658,18 @@ async def mnn_load(req: MnnLoadReq, request: Request) -> dict[str, Any]:
     d = Path(req.model_dir).expanduser()
     if not d.is_dir():
         raise HTTPException(status_code=404, detail=f"model dir not found: {req.model_dir}")
-    # 防目录穿越：必须在模型目录内或数据根内
+    # 防目录穿越：必须在模型目录内或数据根内。
+    # 不能用 startswith 比对字符串：`/data/models-evil` 对 `/data/models`
+    # 的 startswith 为 True，兄弟目录即可绕过。改为按路径分量判断，
+    # 并在 resolve() 之后比较（symlink 也一并挡住）。
     settings = _get_settings(request)
-    allowed_roots = [Path(settings.resolved_model_dir()), APP_ROOT]
     try:
-        ok = any(str(d).startswith(str(r)) for r in allowed_roots)
+        d_resolved = d.resolve()
+        roots = [
+            Path(settings.resolved_model_dir()).resolve(),
+            Path(APP_ROOT).resolve(),
+        ]
+        ok = any(d_resolved.is_relative_to(r) for r in roots)
     except Exception:
         ok = False
     if not ok:
@@ -2009,7 +2041,9 @@ async def convert_start(req: ConvertStartReq, request: Request) -> dict[str, Any
         dst_resolved = dst.resolve()
     except Exception:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"输出路径非法：{req.dst}") from None
-    if not str(dst_resolved).startswith(str(data_root)):
+    # 同上：startswith 会被兄弟目录绕过（models-evil vs models），
+    # 改用路径分量判断。
+    if not dst_resolved.is_relative_to(data_root):
         raise HTTPException(
             status_code=400,
             detail=f"输出路径必须位于模型目录内：{data_root}",
@@ -2245,13 +2279,13 @@ async def v1_chat_completions(req: V1ChatReq):
                     url = part.get("image_url")
                     if isinstance(url, dict):
                         url = url.get("url", "")
-                    img = _media_to_local(str(url or ""), "image")
+                    img = await _media_to_local(str(url or ""), "image")
                     if img:
                         images.append(img)
                 elif ptype == "audio":
                     src = part.get("audio") or part.get("input_audio") or {}
                     url = src.get("url") or src.get("data") if isinstance(src, dict) else src
-                    aud_path = _media_to_local(str(url or ""), "audio")
+                    aud_path = await _media_to_local(str(url or ""), "audio")
                     if aud_path:
                         audios.append(aud_path)
             content = "\n".join(text_parts) if text_parts else ""
@@ -2272,8 +2306,13 @@ async def v1_chat_completions(req: V1ChatReq):
     return await _v1_once(prompt, hist, images, audios, req, model_id)
 
 
-def _media_to_local(url: str, kind: str) -> str:
-    """把多段 content 里的媒体引用落成本地文件路径（http(s)/data:base64/file:///绝对路径）。"""
+async def _media_to_local(url: str, kind: str) -> str:
+    """把多段 content 里的媒体引用落成本地文件路径（http(s)/data:base64/file:///绝对路径）。
+
+    注意：本函数是 async —— 它由 ``v1_chat_completions`` 这条纯 async 链路调用，
+    此前用同步 ``httpx.Client`` 会在网络慢时**冻结整个 sidecar 最长 60 秒**
+    （下载进度、WebSocket、Agent 全部停摆）。改为 AsyncClient。
+    """
     url = (url or "").strip()
     if not url:
         return ""
@@ -2304,8 +2343,8 @@ def _media_to_local(url: str, kind: str) -> str:
     if url.startswith(("http://", "https://")):
         try:
             import httpx
-            with httpx.Client(timeout=60.0, follow_redirects=True) as client:
-                r = client.get(url)
+            async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
+                r = await client.get(url)
                 r.raise_for_status()
             ext = ".png" if kind == "image" else ".wav"
             ctype = r.headers.get("content-type", "")
@@ -2720,7 +2759,10 @@ async def agent_chat(req: AgentChatReq, request: Request) -> dict[str, Any]:
         with contextlib.suppress(Exception):  # hardware probe is best-effort
             from .settings import load_settings as _ls
             s = _ls()
-            agent.ctx.hardware_info = detect_hardware(Path(s.resolved_model_dir()))
+            # detect_hardware 是 async def，必须 await；否则这里存进去的是
+            # coroutine 对象，后续 agent 内部 hw.get(...) 会抛
+            # AttributeError 并直接 500（且 try 之外，无法被兜住）。
+            agent.ctx.hardware_info = await detect_hardware(Path(s.resolved_model_dir()))
     result = await agent.run(req.message, session_id=req.session_id)
     return {
         "ok": result.success,
@@ -2832,22 +2874,34 @@ async def ws_agent(websocket: WebSocket, session_id: str) -> None:
                 await websocket.send_json({"event": "error", "message": "message too long (max 5000 chars)"})
                 continue
 
-            def _on_step(step):
-                try:
-                    loop = asyncio.get_event_loop()
-                    loop.call_soon_threadsafe(
-                        lambda: websocket.send_json({
+            # 在 async 作用域里取一次运行中的 loop，供回调跨线程调度。
+            # 此前在回调内用 asyncio.get_event_loop()：该 API 在 3.12+ 已废弃，
+            # 且当回调不在 loop 线程时会抛错，被下面的 except 静默吞掉 →
+            # **所有步骤流式事件都会丢失**，用户看不到思考过程。
+            _ws_loop = asyncio.get_running_loop()
+
+            _ws_loop_ref = _ws_loop
+
+            def _on_step(step, _loop=_ws_loop_ref):
+                # 默认参数把 loop 绑定到定义处，避免闭包晚绑定（B023）：
+                # 否则循环下一轮重绑 _ws_loop 时，先前排队的事件可能被
+                # 投递到错误的 loop。
+                loop_ = _loop
+
+                def _emit(s=step):
+                    with contextlib.suppress(Exception):
+                        asyncio.ensure_future(websocket.send_json({
                             "event": "step",
-                            "iteration": step.iteration,
-                            "thought": step.thought,
-                            "action_tool": step.action_tool,
-                            "action_params": step.action_params,
-                            "observation_ok": (step.observation or {}).get("ok") if step.observation else None,
-                            "is_final": step.is_final,
-                        })
-                    )
-                except Exception:  # noqa: BLE001, S110 — streaming callback is best-effort
-                    pass
+                            "iteration": s.iteration,
+                            "thought": s.thought,
+                            "action_tool": s.action_tool,
+                            "action_params": s.action_params,
+                            "observation_ok": (s.observation or {}).get("ok") if s.observation else None,
+                            "is_final": s.is_final,
+                        }))
+
+                with contextlib.suppress(Exception):
+                    loop_.call_soon_threadsafe(_emit)
 
             agent.set_step_callback(_on_step)
             try:

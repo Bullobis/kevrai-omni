@@ -2,6 +2,7 @@
 "use strict";
 import { api } from "./api.js";
 import { toast } from "./toast.js";
+import { unwrap } from "./net.js";
 import { state, setState } from "./state.js";
 
 function fmtBytes(n) {
@@ -137,7 +138,7 @@ async function remeasureSources() {
   const box = overlayEl.querySelector("#source-list");
   if (box) box.innerHTML = `<div class="hint">测速中…</div>`;
   try {
-    const reg = await api.getSourceRegistry();
+    const reg = unwrap(await api.getSourceRegistry());
     const urls = [];
     for (const s of (reg && reg.sources) || []) {
       if (s.enabled && s.origin && /^https?:\/\//.test(s.origin)) {
@@ -148,7 +149,7 @@ async function remeasureSources() {
       if (box) box.innerHTML = `<div class="hint">没有已启用的源可测速。</div>`;
       return;
     }
-    const r = await api.measureSources({ urls, force: true });
+    const r = unwrap(await api.measureSources({ urls, force: true }));
     lastRanking = (r && r.ranking) || [];
     lastSkipped = (r && r.skipped) || [];
     renderSources();
@@ -233,11 +234,14 @@ export async function startDownloadFromUrl(url, opts) {
     // token and returns a friendly 422 when it's missing.
     const body = { url, dest_filename: dest };
     if (opts && opts.gated) body.gated = true;
-    const r = await api.startDownload(body);
-    if (r && r.taskId) {
-      state.downloads[r.taskId] = { taskId: r.taskId, filename: dest, downloaded: 0, total: 0, status: "queued" };
+    const r = unwrap(await api.startDownload(body));
+    // 后端字段名是 task_id（python/app/main.py:1396），此处原先读 r.taskId
+    // 恒为 undefined → 下载开始后进度条不出现。两者都兼容。
+    const taskId = r && (r.task_id || r.taskId);
+    if (taskId) {
+      state.downloads[taskId] = { taskId, filename: dest, downloaded: 0, total: 0, status: "queued" };
       setState({ downloads: { ...state.downloads } });
-      toast("下载已开始：${dest}".replace("${dest}", dest), { kind: "ok" });
+      toast(`下载已开始：${dest}`, { kind: "ok" });
       showDownloads();
     }
   } catch (_) { throw new Error("startDownload failed"); }

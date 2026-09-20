@@ -221,6 +221,29 @@ def clamp_str(value: Any, limit: int) -> str:
     return str(value or "")[:limit]
 
 
+#: 降级原因 → 面向用户的中文解释。key 与 ``FetchOutcome.code`` 对齐。
+_DEGRADED_REASONS: dict[str, str] = {
+    "local_limited": "本机请求过于频繁，已暂时限流",
+    "circuit_open": "连续失败过多，已暂时熔断",
+    "timeout": "请求超时",
+    "network": "网络不可达",
+    "http_error": "上游返回错误",
+    "bad_json": "上游返回内容无法解析",
+    "not_found": "未找到",
+}
+
+
+def degraded_message(hub_label: str, code: str) -> str:
+    """Build a user-facing degradation notice for a failed upstream call.
+
+    The distinction matters: ``local_limited`` is **our own** token bucket
+    refusing to send the request, not an upstream outage. Reporting it as
+    「检索失败」 is misleading — the user would reasonably retry forever.
+    """
+    reason = _DEGRADED_REASONS.get(str(code or ""), "未知原因")
+    return f"{hub_label} 暂时不可用：{reason}（{code or 'unknown'}）"
+
+
 def as_iso(value: Any) -> str:
     """Normalize an upstream timestamp to ISO-8601 UTC (never raises).
 

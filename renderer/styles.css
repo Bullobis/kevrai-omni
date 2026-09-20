@@ -35,6 +35,25 @@
   /* ── Type scale (clear hierarchy, ≥16px body) ── */
   --fs-xs: 12px; --fs-sm: 13px; --fs-base: 14px;
   --fs-md: 16px; --fs-lg: 20px; --fs-xl: 24px;
+
+  /* ── 旧调色板兼容别名 ──
+     搜索下拉 / Agent 面板 / LaTeX 卡片等区块（styles.css:660 之后）用的是
+     早期的一套变量名，且每个都写了深色字面量兜底（var(--card, #1b1c1f)）。
+     深色主题下看不出问题，但 html[data-theme="light"] 只覆盖了新的
+     --bg-* / --fg / --bord 一族，这些兜底不会跟着换肤 —— 于是浅色主题下
+     这些区块仍是深色底配深色字，对比度直接不达标。
+     这里把旧名指向同一套真实令牌，两套主题自动保持一致；同时把缺失的
+     --radius-md / --mono / --font-mono / --sel 补齐。占位兜底保留不动，
+     以免影响任何未定义变量的降级路径。 */
+  --accent: var(--acc);
+  --border: var(--bord);
+  /* --bg 在旧代码里用作「比卡片更暗的底」，且写了 #121316 兜底。
+     因此它应对应 --bg-0，而不是 --bg-1/--bg-2。 */
+  --bg: var(--bg-0);
+  --sel: rgba(255, 255, 255, 0.08);
+  --radius-md: var(--radius-sm);
+  --mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, monospace;
+  --font-mono: var(--mono);
 }
 
 /* Light theme override (theme="light") */
@@ -50,6 +69,10 @@ html[data-theme="light"] {
   --bord-strong: rgba(60, 100, 240, 0.5);
   --line: rgba(0, 0, 0, 0.09);
   --shadow: 0 6px 18px rgba(20, 30, 60, 0.10);
+  /* 旧调色板别名跟随换肤（深色下是白色叠加，浅色下必须是黑色叠加，
+     否则 var(--sel) 的高亮在浅色主题里完全看不见） */
+  --sel: rgba(0, 0, 0, 0.06);
+  --bg: var(--bg-0);
   color-scheme: light;
 }
 

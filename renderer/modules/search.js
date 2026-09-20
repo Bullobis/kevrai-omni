@@ -355,8 +355,12 @@ export async function loadMore() {
     if (mySeq !== searchState.reqSeq) return;
     searchState.lastError = String(e && e.message || e);
   } finally {
+    // 无论请求是否已被新查询作废，都必须复位 loadingMore —— 否则
+    // 搜索中途滚动会让 loadingMore 永久卡 true，此后的 loadMore 全部
+    // 在第 316 行早退，分页彻底失效直到重新搜索。
+    // UI 的清理只对当前仍然有效的请求做，避免旧请求覆盖新请求的状态。
+    searchState.loadingMore = false;
     if (mySeq === searchState.reqSeq) {
-      searchState.loadingMore = false;
       if (vgrid && typeof vgrid.setLoading === "function") vgrid.setLoading(false);
       updateLoadMoreBar();
     }

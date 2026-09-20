@@ -16,7 +16,7 @@ import { initAgent } from "./modules/agent.js";
 import { state, setState } from "./modules/state.js";
 import { applyTheme, wireThemeListener } from "./modules/theme.js";
 import { initModels, renderModelGrid, populateCategoryFilter,
-         wireModelGrid, getVgrid } from "./modules/models.js";
+         wireLogoFallbacks, getVgrid } from "./modules/models.js";
 import { initSearch, runSearch } from "./modules/search.js";
 import { initLtx } from "./modules/ltx.js";
 import { renderEngines, wireEngineUpdates } from "./modules/engines.js";
@@ -305,7 +305,6 @@ function wireGlobalUI() {
 
 async function bootstrap() {
   initModels();
-  wireModelGrid();
   initSearch(getVgrid());
   wireSettings();
   wireDownloads();
@@ -313,6 +312,13 @@ async function bootstrap() {
   wireGlobalUI();
   wireUpdate();
   wireThemeListener();
+  // 这两个此前只 import 未调用：
+  //   - wireOnboarding  → #onboarding-overlay 一直显隐错乱（首启引导永不关闭）
+  //   - wireEngineUpdates → #btn-engines-check-updates 点击无响应
+  wireOnboarding();
+  wireEngineUpdates();
+  // logo / 头像的加载失败降级（替代此前被 CSP 拦截的内联 onerror）
+  wireLogoFallbacks();
 
   // Initial settings fetch (for theme)
   try {

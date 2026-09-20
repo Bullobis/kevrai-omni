@@ -4,6 +4,7 @@
 "use strict";
 import { api } from "./api.js";
 import { toast } from "./toast.js";
+import { unwrap } from "./net.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -149,7 +150,7 @@ function _wireEvents(root) {
 // ---------------------------------------------------------------------------
 async function _refreshStatus() {
   try {
-    const res = await api.agentStatus();
+    const res = unwrap(await api.agentStatus());
     _status = res;
     const badge = document.getElementById("agent-mode-badge");
     if (badge) {
@@ -174,7 +175,7 @@ async function _loadSkills() {
   const summary = document.getElementById("agent-skills-summary");
   if (!list) return;
   try {
-    const res = await api.agentSkills();
+    const res = unwrap(await api.agentSkills());
     const skills = res.skills || [];
     const active = res.active_count ?? skills.filter((s) => s.enabled).length;
     if (summary) {
@@ -213,7 +214,7 @@ async function _loadSessionList() {
   const select = document.getElementById("agent-session-select");
   if (!select) return;
   try {
-    const res = await api.agentSessions(20);
+    const res = unwrap(await api.agentSessions(20));
     select.innerHTML = '<option value="">— 历史会话 —</option>';
     for (const s of res.sessions || []) {
       const opt = document.createElement("option");
@@ -232,7 +233,7 @@ async function _loadSessionMessages() {
   if (!container) return;
   container.innerHTML = "";
   try {
-    const res = await api.agentSessionMessages(_sessionId, 100);
+    const res = unwrap(await api.agentSessionMessages(_sessionId, 100));
     for (const msg of res.messages || []) {
       _appendMessage(msg.role, msg.content, false);
     }
@@ -264,10 +265,10 @@ async function _sendMessage() {
   input.value = "";
 
   try {
-    const res = await api.agentChat({
+    const res = unwrap(await api.agentChat({
       message,
       session_id: _sessionId,
-    });
+    }));
 
     // 显示工具调用步骤
     if (res.steps && res.steps.length > 0) {
