@@ -184,13 +184,24 @@ function keyOf(m) {
 //   2) sidecar without /api/hub/*      → fall back to api.search()
 // /api/hub/search itself never 5xx's, so (2) is a rare safety net.
 async function callHubSearch(params) {
+  // `callHubSearch` hands back a wrapper ({fallback, r}) so the caller can tell
+  // whether the hub path or the legacy /api/search path produced the result.
+  // The IPC bridge resolves `{status, body}`, so the payload the caller wants
+  // is `r.r.body`. Expose it as `body` too, because both call sites below
+  // unwrap with the shared `r?.body || r` idiom — without this the grid would
+  // read `{fallback, r}` and always end up with zero items.
+  const wrap = (fallback, r) => ({
+    fallback,
+    r,
+    body: (r && r.body) || r || {},
+  });
   if (!window.kevrai || typeof window.kevrai.hubSearch !== "function") {
-    return { fallback: true, r: await api.search(toLegacyParams(params)) };
+    return wrap(true, await api.search(toLegacyParams(params)));
   }
   try {
-    return { fallback: false, r: await api.hubSearch(params) };
+    return wrap(false, await api.hubSearch(params));
   } catch (_) {
-    return { fallback: true, r: await api.search(toLegacyParams(params)) };
+    return wrap(true, await api.search(toLegacyParams(params)));
   }
 }
 
