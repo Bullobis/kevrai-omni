@@ -9,11 +9,11 @@
 
 **一个安装包 · 桌面快捷方式 · 引擎按需下载 · 模型从 huggingface.co 一键拉取 · 支持本地导入 · 全部开源**
 
-## 🎬 宣传视频 (52秒)
+## 🎬 宣传视频 (30 秒 · 1080p)
 
 [![Kevrai Omni 宣传视频](assets/media/logo.png)](assets/media/promo.mp4)
 
-> 点击播放 [assets/media/promo.mp4](assets/media/promo.mp4)。视频涵盖：模型市场、硬件检测、MiniMax-Music3 音乐生成、LTX-2.5 视频生成、Kevrai Agent 智能助手、本地隐私。
+> 点击播放 [assets/media/promo.mp4](assets/media/promo.mp4)。全部画面取自 v2.8.1 真实运行界面（真实模型目录、真实硬件检测、真实 Agent 工具调用）：模型市场双源检索、硬件体检与模型推荐、Kevrai Agent 工具调用、短剧 Agent、LTX-2.5 视频生成、MNN 引擎。
 
 ![License: Kevrai Omni Community License v2.1](https://img.shields.io/badge/License-Kevrai%20Community%20v2.1-orange)
 ![Version](https://img.shields.io/badge/version-2.8.1-orange)
