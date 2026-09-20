@@ -47,13 +47,20 @@ const SIDECAR_PY = app.isPackaged
   ? path.join(process.resourcesPath, "python", "app", "main.py")
   : path.join(__dirname, "..", "python", "app", "main.py");
 
+//: 魔搭 (ModelScope) serves its official logo from this CDN. The model market
+//: renders it as the source badge, so the host must be allowed in `img-src` —
+//: a bare `'self' data:` silently blocked it (verified in a real browser).
+const MS_LOGO_ORIGIN = "https://img.alicdn.com";
+
 // Strict CSP for the renderer. Same policy is set as a meta tag in HTML for
 // defense-in-depth, but the real enforcement happens here on every response.
 const RENDERER_CSP = [
   "default-src 'self'",
   // Renderer talks ONLY to the sidecar (HTTP + WS upgrade). No third-party.
   "connect-src 'self' http://127.0.0.1:17890 ws://127.0.0.1:17890",
-  "img-src 'self' data:",
+  // `img-src` additionally allows the one external image the UI needs (the
+  // 魔搭 badge). Deliberately host-pinned rather than a wildcard.
+  `img-src 'self' data: ${MS_LOGO_ORIGIN}`,
   "style-src 'self' 'unsafe-inline'",
   "script-src 'self'",
   "object-src 'none'",
@@ -425,11 +432,18 @@ function sidecarFetch(p, opts = {}) {
     let u;
     try { u = new URL(url); }
     catch (e) { return reject(new Error(`bad sidecar url: ${e.message}`)); }
+    // `timeoutMs` lets a slow-but-legitimate route (e.g. the hub health probe,
+    // which walks the HF mirror rotation on a cold network) get a longer
+    // budget than the default. Clamped to a sane range.
+    const timeoutMs = Math.max(1_000, Math.min(
+      Number.isFinite(opts.timeoutMs) ? opts.timeoutMs : 30_000,
+      120_000,
+    ));
     const req = http.request({
       host: u.hostname, port: u.port, path: u.pathname + u.search,
       method: opts.method || "GET",
       headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
-      timeout: 30_000,
+      timeout: timeoutMs,
     }, (res) => {
       let buf = "";
       res.on("data", (c) => (buf += c));
@@ -1260,6 +1274,12 @@ function registerIpc() {
   // hub downloads is enforced server-side (Python allowlist); the renderer is
   // trusted only for the *shape* of the parameters.
   ipcMain.handle("kevrai:hub-sources", async () => sidecarFetch("/api/hub/sources"));
+
+  // v2.9.0 — source reachability probe. The sidecar may take up to ~12s on a
+  // cold, partially-blocked network (it walks the HF mirror rotation), so this
+  // gets a longer budget than the default fetch timeout.
+  ipcMain.handle("kevrai:hub-health", async () =>
+    sidecarFetch("/api/hub/health", { timeoutMs: 20000 }));
 
   ipcMain.handle("kevrai:hub-search", async (_e, opts) => {
     const o = (opts && typeof opts === "object") ? opts : {};

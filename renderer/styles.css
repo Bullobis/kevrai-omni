@@ -185,6 +185,40 @@ html[data-theme="light"] .sidebar { background: rgba(255, 255, 255, 0.55); }
 .card-foot { display: flex; justify-content: space-between; align-items: center; }
 .card-foot .mut { font-size: 11px; }
 
+/* ---------- v2.9.0 model-market cards ---------- */
+/* Source logo inside the hub pill (🤗 emoji for HF, official PNG for 魔搭). */
+.hub-logo {
+  display: inline-flex; align-items: center; justify-content: center;
+  vertical-align: -2px; margin-right: 4px;
+}
+.hub-logo img { display: block; border-radius: 3px; }
+.pill.hub-hf .hub-logo, .pill.hub-modelscope .hub-logo { font-size: 11px; }
+/* Upstream task id shown verbatim is long; keep the pill from stretching the row. */
+.pill { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Heat stats sit on their own line under the description. */
+.card-heat { margin: 4px 0 0; font-size: 11px; color: var(--mut); }
+.card-heat .pill { font-size: 10px; padding: 2px 7px; color: var(--warn); }
+.pill.heat { color: var(--warn); border-color: rgba(246, 193, 119, 0.28); }
+/* A remote card with no upstream prose shows its repo id instead. */
+.card-desc.mono-repo { font-family: var(--font-mono, ui-monospace, monospace); opacity: 0.7; }
+
+/* ---------- v2.9.0 detail panel: field grid ---------- */
+.detail-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 6px 14px; margin: 4px 0 2px;
+}
+.detail-row { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.detail-k {
+  flex: 0 0 72px; color: var(--mut); font-size: var(--fs-xs);
+  text-align: right; white-space: nowrap;
+}
+.detail-v {
+  flex: 1 1 auto; min-width: 0; font-size: var(--fs-xs);
+  word-break: break-word; overflow-wrap: anywhere;
+}
+.detail-prose { font-size: var(--fs-xs); line-height: 1.65; opacity: 0.9; margin: 4px 0; }
+.owner-avatar { border-radius: 4px; vertical-align: middle; margin-left: 6px; }
+
 /* ---------- Pills / lists / rows ---------- */
 .pill {
   padding: 3px 9px; border-radius: var(--radius-pill); font-size: var(--fs-xs);

@@ -358,6 +358,9 @@ const api = {
 
   // ----- v2.8.0: dual-source hub (HuggingFace + ModelScope + curated) -----
   hubSources: () => invoke("kevrai:hub-sources"),
+  // v2.9.0 — does this network actually reach each remote source? Used to hide
+  // an unreachable source instead of showing an empty market section.
+  hubHealth: () => invoke("kevrai:hub-health"),
   hubSearch: (params) => {
     const p = (params == null || typeof params !== "object") ? {} : params;
     const clean = {};

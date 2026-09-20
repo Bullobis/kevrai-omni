@@ -40,6 +40,39 @@ export function initSearch(grid) {
   api.searchRecent().then((r) => {
     searchState.recent = (r?.body?.recent || r?.recent || []);
   }).catch(() => {});
+  // v2.9.0 — drop any source this network cannot reach, so the market never
+  // shows an empty section for a down source. Runs async and never blocks the
+  // UI; a failure just leaves the default source list untouched.
+  probeSources().catch(() => {});
+}
+
+// v2.9.0 — source reachability. `/api/hub/health` probes each remote source
+// once (HF + 魔搭) and reports `online`. Unreachable sources are removed from
+// `searchState.sources`, which is what the next search sends upstream.
+async function probeSources() {
+  if (!window.kevrai || typeof window.kevrai.hubHealth !== "function") return null;
+  let body = null;
+  try {
+    const r = await window.kevrai.hubHealth();
+    body = (r && r.body) ? r.body : r;
+  } catch (_) {
+    return null;   // probe is advisory only
+  }
+  if (!body || !body.sources) return body;
+  const online = Array.isArray(body.online) ? body.online : [];
+  const before = searchState.sources.slice();
+  // `curated` is local and always available; only remote sources can be dropped.
+  searchState.sources = searchState.sources.filter(
+    (s) => s === "curated" || !(s in body.sources) || online.includes(s)
+  );
+  // Never end up with zero sources — fall back to curated rather than erroring.
+  if (!searchState.sources.length) searchState.sources = ["curated"];
+  const dropped = before.filter((s) => !searchState.sources.includes(s));
+  if (dropped.length) {
+    const names = dropped.map((s) => (s === "hf" ? "HuggingFace" : "魔搭 ModelScope"));
+    toast(`网络无法访问 ${names.join(" / ")}，已隐藏该来源`, { kind: "warn" });
+  }
+  return body;
 }
 
 function wireToolbar() {

@@ -20,6 +20,7 @@ import base64
 import json
 import logging
 import math
+import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -417,6 +418,73 @@ class HubRegistry:
                                       and any(h in self._adapters for h in REMOTE_HUBS))
         return MergedPage(items=trimmed, next_cursor=next_cursor, has_more=has_more,
                           counts=counts, warnings=warnings, degraded=degraded)
+
+    # -- availability probing ----------------------------------------------
+
+    async def probe_sources(self, *, timeout_s: float = 12.0) -> dict[str, Any]:
+        """One minimal request per remote source to see if it is reachable.
+
+        The renderer uses this to **hide** a source the user's network cannot
+        reach, instead of showing an empty market section. Design constraints:
+
+        * one tiny request per source (page size 1),
+        * a hard per-source timeout so a black-holing network cannot stall the
+          app start-up,
+        * never raises — an unreachable source is simply ``online: False``.
+
+        On the timeout budget: measured live from a CN network, a **cold** first
+        call takes 7.5–8.1 s end-to-end. The first HuggingFace mirror in the
+        rotation (``hf-cdn.sufy.com``) answers **403 after ~45 s**, and the
+        official site is unreachable from CN, so the adapter has to walk the
+        whole rotation before it succeeds. A 2.5 s budget therefore reported
+        *both* perfectly healthy sources as offline. 12 s covers the healthy
+        path with room to spare while still bounding a black-holed network.
+        """
+        results: dict[str, Any] = {}
+        remote = [h for h in REMOTE_HUBS if h in self._adapters]
+        if not remote:
+            return {"sources": results, "enabled": self.enabled_sources()}
+
+        async def probe(hub: str) -> tuple[str, dict[str, Any]]:
+            ad = self._adapters.get(hub)
+            if ad is None:
+                return hub, {"hub": hub, "online": False, "latency_ms": None,
+                             "code": "disabled"}
+            spec = SearchSpec(q="", page_size=1, sources=[hub])
+            t0 = time.monotonic()
+            try:
+                res = await asyncio.wait_for(
+                    self._safe_search(hub, spec, SourceCursor(), 1),
+                    timeout=timeout_s,
+                )
+            except asyncio.TimeoutError:
+                return hub, {"hub": hub, "online": False,
+                             "latency_ms": int(timeout_s * 1000), "code": "timeout"}
+            except Exception as exc:  # noqa: BLE001 — probe must never raise
+                log.debug("probe %s failed: %s", hub, exc)
+                return hub, {"hub": hub, "online": False, "latency_ms": None,
+                             "code": "network"}
+            elapsed = int((time.monotonic() - t0) * 1000)
+            # Only genuine reachability failures mark a source offline. An empty
+            # or not-found page from a *reachable* source is still "online".
+            online = res.code not in {"timeout", "network", "circuit_open",
+                                      "http_error", "bad_json"}
+            return hub, {
+                "hub": hub,
+                "online": online,
+                "latency_ms": elapsed,
+                "code": res.code or "ok",
+                "display_name": getattr(ad, "display_name", hub),
+            }
+
+        pairs = await asyncio.gather(*(probe(h) for h in remote),
+                                     return_exceptions=True)
+        for item in pairs:
+            if isinstance(item, BaseException):
+                continue
+            hub, info = item
+            results[hub] = info
+        return {"sources": results, "enabled": self.enabled_sources()}
 
     async def _safe_search(
         self,

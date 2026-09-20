@@ -29,6 +29,7 @@ Verified by live probe at implementation time (2026-09):
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Mapping, Sequence
 from typing import Any
 from urllib.parse import quote
@@ -44,13 +45,16 @@ from .base import (
     SearchSpec,
     SourceAdapter,
     SourceCursor,
+    as_bool,
     as_int,
+    as_iso,
     as_str_list,
     clamp_int,
     clamp_str,
     hub_display,
     is_valid_repo,
     pick,
+    strip_markdown,
     synth_id,
 )
 from .net import (
@@ -85,6 +89,8 @@ _MS_SORT_MAP: dict[str, str] = {}
 
 # Namespaces whose repos are pre-converted MNN bundles (mnn_catalog:26).
 _MNN_NAMESPACES = frozenset({"mnn", "taobao-mnn"})
+
+log = logging.getLogger("kevrai.hub.modelscope")
 
 
 class ModelScopeAdapter(SourceAdapter):
@@ -184,6 +190,34 @@ class ModelScopeAdapter(SourceAdapter):
 
     # --- normalization ----------------------------------------------------
 
+    @staticmethod
+    def _parse_org(obj: Any) -> tuple[str, str, str]:
+        """Return ``(owner, full_name, avatar)`` from an upstream ``Organization``.
+
+        **Must tolerate dict / str / None.** Verified live shapes:
+        ``{"Name": "Qwen", "FullName": "千问", "Avatar": "https://…"}`` on the
+        detail endpoint, but a bare string on some older payloads and ``None``
+        on user-uploaded repos that belong to no org. Getting this wrong is a
+        hard crash inside the normalizer, which would take the whole page down.
+        """
+        if isinstance(obj, Mapping):
+            owner = clamp_str(
+                pick(obj, "Name", "name", "FullName", "fullName", default="") or "", 128
+            ).strip()
+            full = clamp_str(
+                pick(obj, "FullName", "fullName", default="") or "", 128
+            ).strip()
+            avatar = clamp_str(
+                pick(obj, "Avatar", "avatar", "Logo", "logo", default="") or "", 512
+            ).strip()
+            # Never emit a non-http avatar into the renderer's <img src>.
+            if avatar and not avatar.startswith(("http://", "https://")):
+                avatar = ""
+            return owner, full, avatar
+        if isinstance(obj, str):
+            return obj.strip()[:128], "", ""
+        return "", "", ""
+
     def _normalize(self, obj: Any) -> RemoteModel | None:
         """One ModelScope (PascalCase) item → :class:`RemoteModel`."""
         if not isinstance(obj, Mapping):
@@ -218,6 +252,29 @@ class ModelScopeAdapter(SourceAdapter):
         storage = as_int(pick(obj, "StorageSize", "storageSize", default=0), 0)
         size_gb = size_gb_from_bytes(storage) if storage > 0 else 0.0
 
+        # v2.9.0 — organisation ("公司"), the single source the old code threw
+        # away entirely. `Organization` may be a dict, a bare string, or None.
+        owner, owner_full, owner_avatar = self._parse_org(
+            pick(obj, "Organization", "organization", default=None)
+        )
+        if not owner:
+            # User repos carry the namespace in `Path` (verified live: the
+            # namespace and the org name are the same value for org-owned repos).
+            owner = namespace
+
+        chinese_name = clamp_str(
+            pick(obj, "ChineseName", "chineseName", default="") or "", 200
+        ).strip()
+        frameworks = as_str_list(pick(obj, "Frameworks", "frameworks", default=[]), limit=16)
+        libraries = as_str_list(pick(obj, "Libraries", "libraries", default=[]), limit=16)
+        architectures = as_str_list(
+            pick(obj, "Architectures", "architectures", default=[]), limit=16
+        )
+        # `Library` is the *primary* framework; 魔搭 has no dedicated field for
+        # it, so the first non-empty entry is used (verified live: Qwen3-8B
+        # ships `Frameworks: ["pytorch"]`, `Libraries: ["pytorch", ...]`).
+        library = next(iter(frameworks or libraries), "")
+
         ns_lower = namespace.lower()
         is_mnn = ns_lower in _MNN_NAMESPACES or name.lower().endswith("-mnn")
         engines, import_only = infer_engines([], repo=repo, category=category)
@@ -236,7 +293,13 @@ class ModelScopeAdapter(SourceAdapter):
         return RemoteModel(
             id=synth_id(self.hub, repo),
             name=(name or repo.rsplit("/", 1)[-1])[:200],
-            description=clamp_str(pick(obj, "Description", "description", default="") or "", 2000),
+            # 魔搭 `Description` is empty on BOTH the list and detail endpoints
+            # (verified live); the real prose lives in `ReadMeContent` and is
+            # pulled by `detail()` below. The list page gets the Chinese name as
+            # a useful one-line stand-in rather than a blank row.
+            description=clamp_str(
+                pick(obj, "Description", "description", default="") or "", 2000
+            ) or chinese_name,
             category=category,
             license=canonical_license(pick(obj, "License", "license", default="") or ""),
             size_gb=size_gb,
@@ -254,6 +317,21 @@ class ModelScopeAdapter(SourceAdapter):
             revision=clamp_str(pick(obj, "Revision", "revision", default="") or "", 64) or "master",
             task=task_name or task_zh,
             import_only=import_only,
+            # --- v2.9.0 upstream provenance ---
+            owner=owner,
+            owner_url=owner_avatar,
+            owner_full_name=owner_full,
+            nickname=clamp_str(pick(obj, "NickName", "nickName", default="") or "", 128).strip(),
+            name_cn=chinese_name,
+            library=library,
+            frameworks=frameworks,
+            architectures=architectures,
+            created_at=as_iso(pick(obj, "CreatedTime", "createdTime", default=None)),
+            updated_at=as_iso(pick(obj, "LastUpdatedTime", "lastUpdatedTime", default=None)),
+            # `IsHot` arrives as int 0/1, `IsNewModel` as a real JSON bool —
+            # `as_bool` handles both (verified live).
+            is_hot=as_bool(pick(obj, "IsHot", "isHot", default=False)),
+            is_new=as_bool(pick(obj, "IsNewModel", "isNewModel", default=False)),
         )
 
     # --- SourceAdapter surface -------------------------------------------
@@ -334,9 +412,93 @@ class ModelScopeAdapter(SourceAdapter):
         model = self._normalize(data)
         if model is None:
             raise LookupError(f"model not found: {repo}")
+        # `Description` is empty on the detail endpoint too — verified live. The
+        # real prose is in `ReadMeContent` (16474 chars for Qwen/Qwen3-8B),
+        # which the pre-v2.9.0 code never read, leaving every detail page blank.
+        model.description = self._readme_text(data, model.description)
+        if not model.description:
+            # Some repos ship an empty `ReadMeContent` but do have a README.md
+            # in the repo tree — fetch it the same way the file list does.
+            model.description = await self._fetch_readme(repo, model.revision)
+        # 魔搭 publishes the deployed backends per task, e.g.
+        # `BackendSupport.backend_info = {"vllm": {"text": "0.9.2"}, ...}`
+        # (verified live). Those names are real engines, so they can upgrade the
+        # low-confidence list-stage guess. `infer_engines`-style filtering keeps
+        # only ids that actually exist in `catalog/engines.json`, so a name we
+        # cannot install (e.g. `lmdeploy`) is ignored rather than shown.
+        backend_engines = self._backend_engines(data)
+        if backend_engines:
+            merged = list(model.engine)
+            for e in backend_engines:
+                if e not in merged:
+                    merged.append(e)
+            model.engine = merged
+            model.import_only = False
         model.engine_confidence = "high"
         self._cache.set(key, model, ttl=600.0)
         return model
+
+    @staticmethod
+    def _backend_engines(data: Any) -> list[str]:
+        """Installable engine ids from ``BackendSupport.backend_info``."""
+        from .taxonomy import known_engine_ids
+
+        if not isinstance(data, Mapping):
+            return []
+        bs = pick(data, "BackendSupport", "backendSupport", default=None)
+        info = pick(bs, "backend_info", "backendInfo", default=None)
+        if not isinstance(info, Mapping):
+            return []
+        known = known_engine_ids()
+        out: list[str] = []
+        for key in info:
+            name = str(key or "").strip()
+            # `deploy_task` is metadata, not an engine.
+            if not name or name == "deploy_task":
+                continue
+            if name in known and name not in out:
+                out.append(name)
+        return out
+
+    async def _fetch_readme(self, repo: str, revision: str = "") -> str:
+        """Fetch + flatten a repo's ``README.md`` via the resolve URL.
+
+        Mirrors :meth:`files`' URL shape so ModelScope keeps working exactly the
+        way it already does for MNN downloads. Best-effort: any failure yields
+        ``""`` and the detail page renders without a description.
+        """
+        key = f"ms:readme:{repo}"
+        cached = self._cache.get(key)
+        if cached is not None:
+            return str(cached)
+        rev = (revision or "master").strip() or "master"
+        try:
+            async with self._sem:
+                self.requests_made += 1
+                resp = await self._client_or_new().get(
+                    self.resolve_url(repo, "README.md", rev),
+                    headers=self.auth_headers() or None,
+                    timeout=timeout_for("detail"),
+                    follow_redirects=True,
+                )
+        except Exception as exc:  # noqa: BLE001 — description is optional
+            log.debug("modelscope readme fetch failed for %s: %s", repo, exc)
+            return ""
+        prose = strip_markdown(resp.text, limit=4000) if resp.status_code == 200 else ""
+        self._cache.set(key, prose, ttl=1800.0 if prose else 300.0)
+        return prose
+
+    @staticmethod
+    def _readme_text(data: Any, fallback: str = "") -> str:
+        """Extract a usable description from a ModelScope detail payload."""
+        if not isinstance(data, Mapping):
+            return fallback
+        prose = clamp_str(
+            pick(data, "ReadMeContent", "readMeContent", default="") or "", 4000
+        ).strip()
+        if prose:
+            return strip_markdown(prose)
+        return fallback
 
     async def files(self, repo: str, revision: str = "") -> list[RemoteFile]:
         """Enumerate repo files (same URL shape as ``mnn_catalog``)."""

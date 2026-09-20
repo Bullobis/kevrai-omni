@@ -37,13 +37,20 @@ from urllib.parse import parse_qs, urlparse
 
 
 def hf_item(ns: str, name: str, *, downloads: int = 1000, likes: int = 10,
-            pipeline: str = "text-generation", tags: list[str] | None = None) -> dict[str, Any]:
-    """Build one HuggingFace ``/api/models`` item (verified key names)."""
+            pipeline: str = "text-generation", tags: list[str] | None = None,
+            author: str | None = None) -> dict[str, Any]:
+    """Build one HuggingFace ``/api/models`` item (verified key names).
+
+    ``author`` defaults to ``None`` to match the **list** endpoint's real
+    behaviour (verified live: plain ``/api/models`` returns ``null``, and only
+    ``full=true`` populates it). Tests that need the populated shape pass it
+    explicitly.
+    """
     return {
         "_id": f"{ns}/{name}",
         "id": f"{ns}/{name}",
         "modelId": name,
-        "author": ns,
+        "author": author,
         "downloads": downloads,
         "likes": likes,
         "trendingScore": downloads // 100,
@@ -58,12 +65,31 @@ def hf_item(ns: str, name: str, *, downloads: int = 1000, likes: int = 10,
 
 def ms_item(namespace: str, name: str, *, downloads: int = 5000, stars: int = 20,
             task: str = "text-generation", domain: str = "nlp",
-            license_: str = "apache-2.0") -> dict[str, Any]:
-    """Build one ModelScope PascalCase item (verified shape)."""
+            license_: str = "apache-2.0",
+            chinese_name: str = "文本生成模型",
+            organization: Any = "auto") -> dict[str, Any]:
+    """Build one ModelScope PascalCase item (verified live shape).
+
+    ``organization`` may be a dict (the real shape), a bare string, or ``None``
+    — the adapter is required to tolerate all three, so tests exercise each.
+    ``CreatedTime``/``LastUpdatedTime`` are **Unix seconds** (verified live) and
+    ``IsHot`` is an int while ``IsNewModel`` is a real JSON bool.
+    """
+    org: Any
+    if organization == "auto":
+        org = {
+            "Name": namespace,
+            "FullName": "千问",
+            "Avatar": "https://resources.modelscope.cn/avatar/test.jpg",
+        }
+    else:
+        org = organization
     return {
         "Path": namespace,
         "Name": name,
-        "ChineseName": name,
+        "ChineseName": chinese_name,
+        "NickName": "测试用户",
+        "Organization": org,
         "Description": f"{name} 描述",
         "License": license_,
         "Downloads": downloads,
@@ -73,7 +99,12 @@ def ms_item(namespace: str, name: str, *, downloads: int = 5000, stars: int = 20
         "Tasks": [{"Name": task, "DomainName": domain,
                    "ChineseName": "文本生成", "Id": 1}],
         "Frameworks": ["pytorch"],
+        "Libraries": ["pytorch", "safetensors"],
         "Architectures": ["LlamaForCausalLM"],
+        "CreatedTime": 1_745_834_265,
+        "LastUpdatedTime": 1_753_546_353,
+        "IsHot": 0,
+        "IsNewModel": False,
     }
 
 

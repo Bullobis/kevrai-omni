@@ -27,6 +27,7 @@ import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any
 
 # ---------------------------------------------------------------------------
@@ -220,6 +221,137 @@ def clamp_str(value: Any, limit: int) -> str:
     return str(value or "")[:limit]
 
 
+def as_iso(value: Any) -> str:
+    """Normalize an upstream timestamp to ISO-8601 UTC (never raises).
+
+    Upstreams disagree on the shape: HF sends ``"2026-08-05T08:22:59.000Z"``
+    (already ISO) while 魔搭 sends Unix **seconds** as an int
+    (``1789461232`` — verified live). Both are accepted; anything unusable
+    becomes ``""`` so the UI shows nothing rather than ``"None"``.
+    """
+    if value is None or isinstance(value, bool):
+        return ""
+    if isinstance(value, (int, float)):
+        if not math.isfinite(float(value)) or value <= 0:
+            return ""
+        try:
+            dt = datetime.fromtimestamp(float(value), tz=timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            return ""
+        return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    s = str(value).strip()
+    if not s:
+        return ""
+    # Already ISO-ish ("2026-08-05T08:22:59.000Z") — keep the date+time, drop
+    # the fractional seconds, and normalize the trailing zone marker.
+    m = _ISO_RE.match(s)
+    if m:
+        return f"{m.group(1)}Z"
+    # A numeric string from an upstream that serialized ints as text.
+    try:
+        f = float(s)
+    except (ValueError, TypeError):
+        # Anything else (including a stringified list/dict) is not a timestamp.
+        # Returning it verbatim would leak "[]" / "{}" into the UI.
+        return ""
+    return as_iso(f)
+
+
+def flatten_rich_text(value: Any, limit: int = 4000) -> str:
+    """Flatten a rich-text AST (or plain string) into readable text.
+
+    魔搭's ``Organization.Description`` is **not** plain text — it is a Slate
+    style node tree, verified live::
+
+        ["root", {}, ["p", {}, ["span", {}, ["span", {}, "欢迎来到 Qwen 👋"]]]]
+
+    Stringifying that directly would leak JSON punctuation into the UI, so the
+    leaves are walked in order and joined. Plain strings pass through unchanged.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value[:limit]
+    out: list[str] = []
+
+    def walk(node: Any, depth: int) -> None:
+        if len(out) >= 400 or depth > 12:
+            return
+        if isinstance(node, str):
+            # Skip the AST's own tag names / empty leaves.
+            s = node.strip()
+            if s:
+                out.append(s)
+            return
+        if isinstance(node, Sequence):
+            # Convention: [tag, attrs, ...children] — the first two entries are
+            # structural for a non-empty array, but a bare list of children is
+            # also tolerated (we only strip when the shape matches).
+            start = 0
+            if (len(node) >= 2 and isinstance(node[0], str)
+                    and isinstance(node[1], Mapping)):
+                start = 2
+            for child in list(node)[start:]:
+                walk(child, depth + 1)
+            return
+        if isinstance(node, Mapping):
+            for key in ("text", "value", "children", "content"):
+                if key in node:
+                    walk(node[key], depth + 1)
+                    return
+
+    walk(value, 0)
+    joined = " ".join(out)
+    return re.sub(r"\s+", " ", joined).strip()[:limit]
+
+
+#: ISO-8601 with optional fractional seconds and zone suffix.
+_ISO_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})(?:\.\d+)?Z?$")
+
+
+def split_owner(repo: str) -> str:
+    """``"Qwen/Qwen3-8B"`` → ``"Qwen"`` (HF's list ``author`` is often ``None``)."""
+    s = str(repo or "").strip()
+    return s.split("/", 1)[0][:128] if "/" in s else ""
+
+
+#: Fenced code block (```lang ... ```) — removed wholesale.
+_FENCE_RE = re.compile(r"```.*?```", re.S)
+#: Inline HTML tag (the HF cards are full of `<a href=…><img …/></a>` badges).
+_HTML_TAG_RE = re.compile(r"<[^>]{0,400}>")
+#: Leading ATX heading / blockquote / list markers.
+_MD_LINE_PREFIX_RE = re.compile(r"^\s{0,3}(?:#{1,6}\s*|>\s*|[-*+]\s+|\d+[.)]\s+)")
+#: `![alt](url)` and `[text](url)` → alt / text.
+_MD_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\([^)]*\)")
+_MD_LINK_RE = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+#: `**bold**`, `__bold__`, `*em*`, `` `code` `` → inner text.
+_MD_EMPHASIS_RE = re.compile(r"(\*{1,3}|_{1,3}|`+)(.+?)\1", re.S)
+#: YAML front-matter delimited by `---` at the very start of the document.
+_FRONT_MATTER_RE = re.compile(r"\A\s*---\s*\n.*?\n---\s*\n", re.S)
+
+
+def strip_markdown(text: Any, limit: int = 4000) -> str:
+    """Reduce Markdown (incl. HF YAML front-matter) to plain readable prose.
+
+    Both upstreams hand back a raw ``README.md`` — HF's even starts with a YAML
+    front-matter block (``---\\nlibrary_name: transformers\\n---``) that must not
+    be shown as body text. This is a deliberately lossy, display-only cleaner;
+    it never raises and always returns a bounded string.
+    """
+    s = str(text or "")
+    if not s.strip():
+        return ""
+    s = _FRONT_MATTER_RE.sub("", s)
+    s = _FENCE_RE.sub(" ", s)
+    s = _HTML_TAG_RE.sub(" ", s)
+    s = _MD_IMAGE_RE.sub(r"\1", s)
+    s = _MD_LINK_RE.sub(r"\1", s)
+    s = _MD_EMPHASIS_RE.sub(r"\2", s)
+    lines = [_MD_LINE_PREFIX_RE.sub("", ln).strip() for ln in s.splitlines()]
+    joined = " ".join(ln for ln in lines if ln)
+    return re.sub(r"\s+", " ", joined).strip()[:limit]
+
+
 # ---------------------------------------------------------------------------
 # Data structures
 # ---------------------------------------------------------------------------
@@ -287,6 +419,24 @@ class RemoteModel:
     also_on: list[str] = field(default_factory=list)
     import_only: bool = False
     engine_confidence: str = "low"
+    # --- upstream provenance / popularity (v2.9.0) ---
+    # Every field below is parsed from a key confirmed present by live probe of
+    # the real upstream API (see `modelscope.py` / `hf.py` module docstrings).
+    # Nothing here is invented; when an upstream omits the key the field stays
+    # at its neutral default and the UI simply shows nothing.
+    owner: str = ""            # 公司/组织：HF `author` / 魔搭 Organization
+    owner_url: str = ""        # 组织头像（仅魔搭提供）
+    owner_full_name: str = ""  # 组织中文名（魔搭 Organization.FullName）
+    nickname: str = ""         # 上传者昵称（魔搭 NickName）
+    name_cn: str = ""          # 模型中文名（魔搭 ChineseName）
+    trending_score: int = 0    # 真实热度分（仅 HF `trendingScore`）
+    library: str = ""          # 主框架（HF `library_name`）
+    frameworks: list[str] = field(default_factory=list)
+    architectures: list[str] = field(default_factory=list)
+    created_at: str = ""       # ISO-8601 UTC
+    updated_at: str = ""       # ISO-8601 UTC
+    is_hot: bool = False       # 上游标记（魔搭 IsHot / HF trending 阈值）
+    is_new: bool = False       # 上游标记（魔搭 IsNewModel）
 
     def __post_init__(self) -> None:
         # Synthesize a safe id when the caller only supplied a repo.
@@ -334,6 +484,24 @@ class RemoteModel:
             "also_on": list(self.also_on),
             "import_only": bool(self.import_only),
             "engine_confidence": self.engine_confidence,
+            # v2.9.0 — upstream provenance / popularity. `remote` is an explicit
+            # flag the renderer uses to decide whether to render upstream-only
+            # rows (the curated catalog has none of these and would otherwise
+            # show a wall of empty labels).
+            "owner": self.owner,
+            "owner_url": self.owner_url,
+            "owner_full_name": self.owner_full_name,
+            "nickname": self.nickname,
+            "name_cn": self.name_cn,
+            "trending_score": int(self.trending_score),
+            "library": self.library,
+            "frameworks": list(self.frameworks),
+            "architectures": list(self.architectures),
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "is_hot": bool(self.is_hot),
+            "is_new": bool(self.is_new),
+            "remote": self.hub in REMOTE_HUBS,
         }
 
 

@@ -23,6 +23,7 @@ Verified 2026-09 against ``https://hf-mirror.com/api/models?search=qwen&limit=2`
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 from collections.abc import Mapping, Sequence
 from typing import Any
@@ -40,11 +41,14 @@ from .base import (
     SourceAdapter,
     SourceCursor,
     as_int,
+    as_iso,
     as_str_list,
     clamp_str,
     hub_display,
     is_valid_repo,
     pick,
+    split_owner,
+    strip_markdown,
     synth_id,
 )
 from .net import (
@@ -60,8 +64,15 @@ from .taxonomy import (
     canonical_license,
     infer_engines,
     map_category,
+    size_gb_from_bytes,
     trending_from,
 )
+
+#: A real `trendingScore` at or above this marks a model as hot. The key is
+#: absent on some payloads, hence the `> 0` guard at the call site.
+_HF_TRENDING_SCORE = 100
+
+log = logging.getLogger("kevrai.hub.hf")
 
 # ---------------------------------------------------------------------------
 # 【单一收口点】HuggingFace /api/models field names — change here only.
@@ -85,9 +96,16 @@ _HF_FIELD_MAP: dict[str, str] = {
     "updated_at": "lastModified",
 }
 
-#: Sort values we are *certain* the upstream accepts. Left empty on purpose:
-#: sending a wrong `sort` would silently reorder results, so we sort locally.
-_HF_SORT_MAP: dict[str, str] = {}
+#: Sort values confirmed to return HTTP 200 against the live API. This was
+#: empty pre-v2.9.0 ("sending a wrong `sort` would silently reorder results"),
+#: but all five were then probed live and are honoured server-side, so the
+#: mapping is now real instead of a local-only fallback.
+_HF_SORT_MAP: dict[str, str] = {
+    "downloads": "downloads",
+    "likes": "likes",
+    "recent": "lastModified",
+    "name_asc": "createdAt",
+}
 
 _LINK_NEXT_RE = re.compile(r'<([^>]+)>\s*;\s*rel="?next"?', re.I)
 
@@ -154,6 +172,9 @@ class HuggingFaceAdapter(SourceAdapter):
         self._negative = TTLCache(max_entries=256)
         self._sem = asyncio.Semaphore(4)
         self._sleep = sleep
+        #: Last mirror that answered successfully; hoisted to the front of the
+        #: rotation so a known-dead mirror is not re-tried on every call.
+        self._preferred_mirror = ""
         # Observability counters (asserted by the offline test-suite).
         self.requests_made = 0
         self.last_warning = ""
@@ -175,10 +196,17 @@ class HuggingFaceAdapter(SourceAdapter):
         token = str(getattr(self._settings, "hf_token", "") or "").strip()
         return {"Authorization": f"Bearer {token}"} if token else {}
 
+    def _ordered_mirrors(self) -> tuple[str, ...]:
+        """Mirrors with the last known-good one first (see :meth:`_fetch`)."""
+        pref = getattr(self, "_preferred_mirror", "")
+        if pref and pref in self.mirrors:
+            return (pref,) + tuple(m for m in self.mirrors if m != pref)
+        return tuple(self.mirrors)
+
     def _mirror_origins(self) -> tuple[str, ...]:
         """Mirror bases with the trailing ``/api`` stripped (for resolve URLs)."""
         out = []
-        for m in self.mirrors:
+        for m in self._ordered_mirrors():
             s = str(m).rstrip("/")
             out.append(s[:-4] if s.endswith("/api") else s)
         return tuple(out)
@@ -192,10 +220,18 @@ class HuggingFaceAdapter(SourceAdapter):
         params: Mapping[str, Any] | None = None,
         json_body: Any = None,
     ) -> FetchOutcome:
-        """Try every mirror in order; return the first successful outcome."""
+        """Try every mirror in order; return the first successful outcome.
+
+        **Mirror stickiness (v2.9.0).** Measured live from a CN network, the
+        first entry of the rotation (``hf-cdn.sufy.com``) answers **HTTP 403
+        after ~45 s**, and the official site is unreachable — so an unprimed
+        adapter burns ~50 s before it reaches the mirror that actually works.
+        The mirror that last succeeded is therefore moved to the front, which
+        turns every subsequent call into a single fast request.
+        """
         client = self._client_or_new()
         last = FetchOutcome(ok=False, code="network", error="no mirror configured")
-        for mirror in self.mirrors:
+        for mirror in self._ordered_mirrors():
             url = f"{str(mirror).rstrip('/')}/{path.lstrip('/')}"
             async with self._sem:
                 self.requests_made += 1
@@ -212,6 +248,7 @@ class HuggingFaceAdapter(SourceAdapter):
                     sleep=self._sleep,
                 )
             if outcome.ok:
+                self._preferred_mirror = str(mirror)
                 return outcome
             last = outcome
             if outcome.code in {"circuit_open", "local_limited"}:
@@ -235,20 +272,35 @@ class HuggingFaceAdapter(SourceAdapter):
         # List stage: no file listing, so engines are a low-confidence guess
         # driven by the tag vocabulary (e.g. "gguf" / "safetensors").
         engines, import_only = infer_engines([], repo=repo, category=category)
+
+        # v2.9.0 — `author` is a real value only when the request carried
+        # `full=true` (verified live: plain `/api/models` returns `null`).
+        # `split_owner` is the fallback so the company row is never blank.
+        owner = clamp_str(_pick_hf(obj, "author", "") or "", 128).strip() or split_owner(repo)
+        library = clamp_str(_pick_hf(obj, "library", "") or "", 64).strip()
+        trending_score = as_int(_pick_hf(obj, "trending", 0), 0)
+        used_storage = as_int(pick(obj, "usedStorage", default=0), 0)
+
         return RemoteModel(
             id=synth_id(self.hub, repo),
             name=(repo.rsplit("/", 1)[-1] or repo)[:200],
             description="",
             category=category,
             license=canonical_license("", tags),
-            size_gb=0.0,
-            size_known=False,
+            size_gb=size_gb_from_bytes(used_storage) if used_storage > 0 else 0.0,
+            size_known=used_storage > 0,
             engine=engines,
             engine_confidence="low",
-            trending=trending_from(downloads, likes),
+            # Prefer the real upstream score; fall back to the local rule the
+            # list endpoint's older payloads require.
+            trending=(
+                trending_score >= _HF_TRENDING_SCORE
+                if trending_score > 0
+                else trending_from(downloads, likes)
+            ),
             repo=repo,
             hardware={},
-            tags=build_tags(tags),
+            tags=build_tags(tags, [library] if library else None),
             modality={},
             hub=self.hub,
             downloads=downloads,
@@ -256,6 +308,22 @@ class HuggingFaceAdapter(SourceAdapter):
             revision="main",
             task=pipeline,
             import_only=import_only,
+            # --- v2.9.0 upstream provenance ---
+            owner=owner,
+            owner_url="",                 # HF exposes no org avatar on this API
+            owner_full_name="",           # …nor a localized org name
+            nickname="",
+            library=library,
+            trending_score=trending_score,
+            frameworks=[library] if library else [],
+            architectures=as_str_list(
+                pick(pick(obj, "config", default=None), "architectures", default=[]),
+                limit=16,
+            ),
+            created_at=as_iso(_pick_hf(obj, "created_at", None)),
+            updated_at=as_iso(_pick_hf(obj, "updated_at", None)),
+            is_hot=trending_score >= _HF_TRENDING_SCORE,
+            is_new=False,                 # HF has no "new model" flag
         )
 
     # --- SourceAdapter surface -------------------------------------------
@@ -265,7 +333,10 @@ class HuggingFaceAdapter(SourceAdapter):
         if cursor.done:
             return PageResult(items=[], next=None, total=None)
         limit = max(1, min(int(spec.page_size or 30), 100))
-        params: dict[str, Any] = {"limit": str(limit)}
+        # `full=true` is what makes `author` and `lastModified` non-null on the
+        # list endpoint (verified live: without it both are `null`). It costs
+        # nothing extra — same request, a slightly larger body.
+        params: dict[str, Any] = {"limit": str(limit), "full": "true"}
         if spec.q:
             params["search"] = spec.q
             if spec.category and spec.category != "other":
@@ -346,16 +417,96 @@ class HuggingFaceAdapter(SourceAdapter):
         model = self._normalize(outcome.data)
         if model is None:
             raise LookupError(f"model not found: {repo}")
-        # The detail endpoint carries a description the list endpoint omits.
-        desc = ""
+        # The detail endpoint carries signals the list endpoint omits.
         if isinstance(outcome.data, Mapping):
-            desc = clamp_str(pick(outcome.data, "description", "cardData", default=""), 2000)
-            if isinstance(desc, (dict, list)):
-                desc = ""
-        model.description = str(desc or "")
+            # `cardData` holds the README's YAML front-matter as a *dict* — it is
+            # NOT prose. Pre-v2.9.0 this was passed straight through `clamp_str`,
+            # which stringified the dict and rendered a raw Python repr
+            # ("{'library_name': 'transformers', ...}") as the model description.
+            card = pick(outcome.data, "cardData", default=None)
+            if isinstance(card, Mapping):
+                if not model.license:
+                    model.license = canonical_license(
+                        pick(card, "license", default="") or ""
+                    )
+                if not model.task:
+                    model.task = clamp_str(
+                        pick(card, "pipeline_tag", default="") or "", 128
+                    ).strip()
+                # A human-written `description` may exist on some repos.
+                prose = pick(card, "description", "summary", "model-description", default=None)
+                if isinstance(prose, str) and prose.strip():
+                    model.description = strip_markdown(prose, limit=4000)
+            # `author` is populated here even when the list endpoint returns null.
+            author = clamp_str(pick(outcome.data, "author", default="") or "", 128).strip()
+            if author:
+                model.owner = author
+            # `siblings` is the full file list — gives us engines for free.
+            siblings = pick(outcome.data, "siblings", default=None)
+            if isinstance(siblings, list):
+                paths = [
+                    str(pick(s, "rfilename", "path", default="") or "")
+                    for s in siblings
+                ]
+                engines, import_only = infer_engines(
+                    paths, repo=repo, category=model.category
+                )
+                if engines:
+                    model.engine = engines
+                    model.import_only = import_only
+            architectures = as_str_list(
+                pick(pick(outcome.data, "config", default=None), "architectures", default=[]),
+                limit=16,
+            )
+            if architectures:
+                model.architectures = architectures
         model.engine_confidence = "high"
+        if not model.description:
+            # HF's API never returns prose (verified live: `description` is
+            # `null` and `cardData` has no description key, even with
+            # `?full=true`). The README is the only real source, so it is
+            # fetched separately — best-effort, so a failure leaves the detail
+            # page intact with an empty description rather than erroring out.
+            model.description = await self._fetch_readme(repo, model.revision)
         self._cache.set(key, model, ttl=600.0)
         return model
+
+    async def _fetch_readme(self, repo: str, revision: str = "") -> str:
+        """Fetch + flatten a repo's ``README.md`` (returns ``""`` on any issue).
+
+        Uses the mirror **origins** (``self._mirror_origins()``), not
+        ``self.mirrors`` — the latter carry an ``/api`` suffix, and raw files
+        live at the site root (``/{repo}/raw/{rev}/README.md``). Building this
+        URL off the API base yields ``/api/…/raw/…``, which 404s.
+        """
+        key = f"hf:readme:{repo}"
+        cached = self._cache.get(key)
+        if cached is not None:
+            return str(cached)
+        rev = (revision or "main").strip() or "main"
+        client = self._client_or_new()
+        text = ""
+        for origin in self._mirror_origins():
+            url = f"{str(origin).rstrip('/')}/{repo}/raw/{rev}/README.md"
+            try:
+                async with self._sem:
+                    self.requests_made += 1
+                    resp = await client.get(
+                        url,
+                        headers=self.auth_headers() or None,
+                        timeout=timeout_for("detail"),
+                    )
+            except Exception as exc:  # noqa: BLE001 — description is optional
+                log.debug("hf readme fetch failed for %s: %s", repo, exc)
+                continue
+            if resp.status_code == 200 and resp.text:
+                text = resp.text
+                break
+        prose = strip_markdown(text, limit=4000)
+        # Cache the miss too (short TTL) so a README-less repo is not re-probed
+        # on every single detail view.
+        self._cache.set(key, prose, ttl=1800.0 if prose else 300.0)
+        return prose
 
     async def files(self, repo: str, revision: str = "") -> list[RemoteFile]:
         """Enumerate a repo tree (recursive, cursor-paginated)."""
