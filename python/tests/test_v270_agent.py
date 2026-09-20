@@ -492,6 +492,9 @@ class TestAgentReAct:
         # The tool returns ok=True but with error field in payload
         obs = result.steps[0].observation
         assert obs is not None
+        # 断言具体内容，而不是仅「非 None」：只判非空等于没验证失败路径。
+        assert obs.get("ok") is True
+        assert obs.get("error"), f"未返回 error 字段: {obs}"
 
     @pytest.mark.asyncio
     async def test_step_callback_called(self, agent):

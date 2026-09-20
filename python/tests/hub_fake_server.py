@@ -304,7 +304,12 @@ def _make_handler(server: FakeHubServer):
             rest_after = path[len("/api/models"):].strip("/") if path.startswith("/api/models") else ""
             if rest_after:
                 # /api/models/{repo}  (detail; repo contains a slash)
-                self._hf_detail(qs)
+                # ``repo`` arrives as a **path** segment, not a query param —
+                # ``HuggingFaceAdapter.detail`` requests ``/models/{repo}``.
+                # Reading it from ``qs`` silently yielded "" and made every
+                # detail lookup fall back to ``hf_items[0]``, so the fake
+                # answered 200 for repos that do not exist.
+                self._hf_detail(qs, rest_after)
                 return
             if path.startswith("/api/models"):
                 self._hf_search(qs)
@@ -321,6 +326,14 @@ def _make_handler(server: FakeHubServer):
             if qs.get("bad", [""])[0] == "3":
                 items = [{k: v for k, v in it.items()
                           if k not in {"downloads", "likes", "tags"}} for it in items]
+            elif qs.get("bad", [""])[0] == "5":
+                # Real HF commonly returns null for optional fields
+                # (verified live: pipeline_tag / library_name / tags can all be
+                # null). Without this the fake is *kinder* than production and
+                # the adapter's null-tolerance never gets exercised.
+                items = [{**it, "pipeline_tag": None, "library_name": None,
+                          "tags": None, "downloads": None, "likes": None}
+                         for it in items]
             body = json.dumps(items).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -330,8 +343,19 @@ def _make_handler(server: FakeHubServer):
             self.end_headers()
             self.wfile.write(body)
 
-        def _hf_detail(self, qs: dict[str, list[str]]) -> None:
-            self._send_json(server.hf_items[0] if server.hf_items else {})
+        def _hf_detail(self, qs: dict[str, list[str]], repo: str = "") -> None:
+            # 必须按请求的 repo 返回，否则「详情」测试验的只是「能解析」
+            # 而非「解析到了正确的那一个」。repo 来自路径（见 `_route`），
+            # ``?repo=`` 仅作为显式覆盖保留。
+            wanted = (repo or qs.get("repo", [""])[0] or "").strip()
+            for it in server.hf_items:
+                if it.get("id") == wanted:
+                    self._send_json(it)
+                    return
+            if not wanted and server.hf_items:
+                self._send_json(server.hf_items[0])
+                return
+            self._send_json({"error": "not found"}, status=404)
 
         def _hf_tree(self, qs: dict[str, list[str]]) -> None:
             self._send_json(server.hf_files)

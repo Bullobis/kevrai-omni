@@ -163,8 +163,12 @@ section "Step 6/9 · pytest (full suite)"
 # ----------------------------------------------------------------------
 (
   cd python
+  # NOTE: 不能只看管道最后一段的退出码 —— `pytest ... | tail -20` 的退出码是
+  # tail 的（恒为 0），pytest 失败也会被判为通过（假绿）。用 PIPESTATUS[0]
+  # 取 pytest 自己的状态，再显式 exit，让外层 fail() 能捕获。
   python3 -m pytest -ra tests/ "$@" 2>&1 | tail -20
-)
+  exit "${PIPESTATUS[0]}"
+) || fail "pytest"
 pass "pytest"
 
 # ----------------------------------------------------------------------

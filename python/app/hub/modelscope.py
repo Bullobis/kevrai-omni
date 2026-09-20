@@ -51,6 +51,7 @@ from .base import (
     as_str_list,
     clamp_int,
     clamp_str,
+    degraded_message,
     hub_display,
     is_valid_repo,
     pick,
@@ -356,7 +357,8 @@ class ModelScopeAdapter(SourceAdapter):
 
         outcome = await self._fetch("PUT", "", kind="search", json_body=body)
         if not outcome.ok:
-            msg = f"魔搭检索失败（{outcome.code}）"
+            # 与 HF 一致：区分「本机限流/熔断」与「上游故障」，避免用户误判。
+            msg = degraded_message("魔搭 ModelScope", outcome.code)
             self.last_warning = msg
             if outcome.code == "not_found":
                 return PageResult(items=[], next=None, total=0)

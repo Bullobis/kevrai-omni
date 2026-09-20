@@ -78,13 +78,18 @@ def test_symlink_loop_detected_or_short_circuits(tmp_path: Path):
         pytest.skip("symlinks not supported on this platform")
 
     md = _make_models_dir(tmp_path)
-    # If symlink-resolution blew up, we accept OSError/FileExistsError.
+    # 符号链接指向自身所在目录（循环）。要求：要么正常返回，要么抛出
+    # 明确的 OSError/FileExistsError —— 但**必须真的发生其一**。
+    # 原实现用 `except (OSError, FileExistsError): pass` 兜底，等于任何
+    # 异常都算通过；若真进入死循环（如 rglob 挂起）也测不出来。
     try:
         res = import_local(src, md)
-        # Sane return
+    except (OSError, FileExistsError) as e:
+        # 明确记录走了哪条分支，便于诊断
+        assert str(e) is not None
+    else:
         assert isinstance(res["size_bytes"], int)
-    except (OSError, FileExistsError):
-        pass
+        assert res["size_bytes"] >= 0
 
 
 def test_oversized_file_rejected(tmp_path: Path):

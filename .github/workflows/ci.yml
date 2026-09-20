@@ -234,10 +234,24 @@ jobs:
       - name: mypy python/app/ --ignore-missing-imports
         working-directory: python
         run: |
+          # Ratchet, not a rubber stamp. The codebase carries a backlog of
+          # pre-existing type errors (29 at the time of writing), so a plain
+          # `mypy app/` gate would be permanently red and a plain `|| true`
+          # gate catches nothing. Measure the count and only fail if it grows.
+          #
+          # Lower MAX_ERRORS as the backlog is paid down — never raise it to
+          # make CI green.
+          MAX_ERRORS=29
           mypy app/ --ignore-missing-imports \
-            --no-error-summary --no-incremental || true
-          # Don't fail the build on mypy (best-effort), but emit a summary
-          echo "::notice::mypy best-effort finished (non-blocking)"
+            --no-error-summary --no-incremental > /tmp/mypy.out 2>&1 || true
+          COUNT=$(grep -c "error:" /tmp/mypy.out || true)
+          echo "mypy errors: ${COUNT} (allowed: ${MAX_ERRORS})"
+          tail -20 /tmp/mypy.out
+          if [ "${COUNT}" -gt "${MAX_ERRORS}" ]; then
+            echo "::error::mypy errors grew from ${MAX_ERRORS} to ${COUNT}"
+            exit 1
+          fi
+          echo "::notice::mypy error count did not regress (${COUNT} <= ${MAX_ERRORS})"
 
   # ------------------------------------------------------------------
   # 5. summary — always reports what was tested
@@ -259,6 +273,8 @@ jobs:
           echo "| lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
           if [ "${{ needs.python.result }}" != "success" ] || \
              [ "${{ needs.node.result }}" != "success" ] || \
-             [ "${{ needs.smoke.result }}" != "success" ]; then
+             [ "${{ needs.smoke.result }}" != "success" ] || \
+             [ "${{ needs.lint.result }}" != "success" ]; then
+            echo "::error::one or more required jobs failed"
             exit 1
           fi

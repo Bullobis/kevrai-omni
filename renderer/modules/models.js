@@ -37,15 +37,44 @@ const MS_LOGO_URL =
 function hubLogo(hub, displayName) {
   if (!hub || hub === "curated") return "";
   if (hub === "modelscope") {
+    // 降级不用内联 onerror：CSP 的 script-src 'self' 会拦截内联事件处理器，
+    // 导致图片加载失败时静默空白。改由 img 的 error 事件委托处理（见下方
+    // wireLogoFallbacks），data-fallback 携带降级文案。
     return `<span class="hub-logo" title="${escapeHtml(displayName || "魔搭 ModelScope")}">`
       + `<img src="${MS_LOGO_URL}" alt="魔搭" width="14" height="14" loading="lazy" `
-      + `referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('魔搭'))" />`
+      + `referrerpolicy="no-referrer" data-fallback="魔搭" />`
       + `</span>`;
   }
   if (hub === "hf") {
     return `<span class="hub-logo" title="${escapeHtml(displayName || "HuggingFace")}">🤗</span>`;
   }
   return `<span class="hub-logo">${escapeHtml(displayName || hub)}</span>`;
+}
+
+/**
+ * 把 logo 的加载失败降级为文字。
+ *
+ * 用捕获阶段的 error 事件委托，而不是内联 `onerror`：CSP 的
+ * `script-src 'self'` 会拦掉内联事件处理器，届时图片失败既不会降级也不会
+ * 报错（静默空白）。`error` 事件不冒泡，所以必须用 capture。
+ *
+ * 幂等：重复调用不会叠加监听器。
+ */
+export function wireLogoFallbacks(root = document) {
+  if (root.__logoFallbackWired) return;
+  root.__logoFallbackWired = true;
+  root.addEventListener("error", (e) => {
+    const el = e.target;
+    if (!el || el.tagName !== "IMG") return;
+    if (el.dataset && el.dataset.fallback) {
+      el.replaceWith(document.createTextNode(el.dataset.fallback));
+      return;
+    }
+    // 无降级文案的头像之类，直接隐藏，避免出现碎图标。
+    if (el.classList && el.classList.contains("owner-avatar")) {
+      el.style.display = "none";
+    }
+  }, true);
 }
 
 // v2.9.0 — compact heat readout: 12.3k / 1.2M rather than 12345678.
@@ -196,12 +225,6 @@ async function installItem(item) {
     await api.installEngine(engines[0]);
     toast(`正在安装引擎 ${engines[0]}${engines.length > 1 ? `（另可选 ${engines.slice(1).join("/")}）` : ""}`, { kind: "ok" });
   } catch (_) { /* toast shown */ }
-}
-
-export function wireModelGrid() {
-  // Search / filter / sort / keyboard wiring is owned by modules/search.js
-  // (v2.4.0 super search). This remains as a hook for any grid-specific
-  // global listeners that do not conflict with the search controller.
 }
 
 export function populateCategoryFilter() {
@@ -487,8 +510,7 @@ function renderDetail(m, gguf) {
         ${repoLabel}
       </button>
       ${m.owner_url ? `<img class="owner-avatar" src="${escapeHtml(m.owner_url)}" alt="${escapeHtml(m.owner || "")}" `
-        + `width="20" height="20" loading="lazy" referrerpolicy="no-referrer" `
-        + `onerror="this.style.display='none'" />` : ""}
+        + `width="20" height="20" loading="lazy" referrerpolicy="no-referrer" />` : ""}
     </p>` : ""}
 
     ${engines.includes("mnn") && m.mnn_repo ? `<p>

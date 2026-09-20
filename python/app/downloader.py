@@ -220,6 +220,14 @@ class Downloader:
         if self._client_owned and self._client is not None:
             with contextlib.suppress(Exception):
                 await self._client.aclose()
+        # ``_own_client`` 是未注入 client 时自建的连接池。此前这里只关了
+        # ``self._client``，导致每次 put_settings 重建 Downloader（并发数
+        # 变更）都会泄漏一个 httpx 连接池（含 keep-alive socket）。
+        own = getattr(self, "_own_client", None)
+        if own is not None:
+            with contextlib.suppress(Exception):
+                await own.aclose()
+            self._own_client = None
 
     # --- internals ---
 
@@ -360,25 +368,28 @@ class Downloader:
                     if not chunk:
                         continue
                     fh.write(chunk)
-                    fh.flush()
-                    with contextlib.suppress(OSError):
-                        os.fsync(fh.fileno())
                     task.downloaded_bytes += len(chunk)
 
                     now = loop.time()
                     if now - last_tick >= 0.25:
+                        # fsync 只在这里做：此前是每 64KB 一次，10GB 模型会
+                        # 产生数十万次 fsync，吞吐严重下降。
+                        fh.flush()
+                        with contextlib.suppress(OSError):
+                            os.fsync(fh.fileno())
                         elapsed = max(now - last_tick, 1e-6)
                         task.speed_bps = (task.downloaded_bytes - last_bytes) / elapsed
                         last_tick = now
                         last_bytes = task.downloaded_bytes
                         await self._emit(task, "progress")
 
-            # Final fsync
-            try:
-                fh.flush()  # noqa: F821 — closed by `with`
-                os.fsync(partial.open("rb").fileno())
-            except (OSError, ValueError):
-                pass
+                # Final flush + fsync 必须在 with 内完成。此前这段在 with 外：
+                # fh 已关闭，flush() 抛 ValueError 被吞掉 → 最终 fsync 从未
+                # 生效；且 partial.open("rb") 新开的 fd 无人关闭，每次下载
+                # 泄漏一个描述符。
+                fh.flush()
+                with contextlib.suppress(OSError):
+                    os.fsync(fh.fileno())
 
     async def _sha256_file(self, path: Path) -> str:
         h = hashlib.sha256()

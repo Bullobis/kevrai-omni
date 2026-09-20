@@ -44,6 +44,7 @@ from .base import (
     as_iso,
     as_str_list,
     clamp_str,
+    degraded_message,
     hub_display,
     is_valid_repo,
     pick,
@@ -359,7 +360,9 @@ class HuggingFaceAdapter(SourceAdapter):
 
         outcome = await self._fetch("GET", "/models", kind="search", params=params)
         if not outcome.ok:
-            msg = f"HuggingFace 检索失败（{outcome.code}）"
+            # 限流是「本机自我保护」，不是上游故障 —— 必须给出可区分且可解释
+            # 的提示，否则用户只会看到空市场且无从判断原因。
+            msg = degraded_message("HuggingFace", outcome.code)
             self.last_warning = msg
             if outcome.code == "not_found":
                 return PageResult(items=[], next=None, total=0)
