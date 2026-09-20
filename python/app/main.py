@@ -937,6 +937,44 @@ def hub_sources(request: Request) -> dict[str, Any]:
     return {"sources": sources, "enabled": hub.enabled_sources()}
 
 
+@app.get("/api/hub/health")
+async def hub_health(request: Request, timeout_s: float = 12.0) -> dict[str, Any]:
+    """Probe each remote source's reachability (v2.9.0).
+
+    The market UI calls this once at start-up and **hides** any source the
+    user's network cannot reach, instead of rendering an empty section. This is
+    a NEW route — ``/api/hub/sources`` keeps its exact previous semantics.
+
+    Always HTTP 200: an unreachable source is data (``online: false``), not an
+    error. ``degraded`` is true only when *every* remote source is down and no
+    curated entries are available either.
+    """
+    hub = _get_hub(request)
+    try:
+        budget = max(1.0, min(float(timeout_s or 12.0), 30.0))
+    except (TypeError, ValueError):
+        budget = 12.0
+    try:
+        probed = await hub.probe_sources(timeout_s=budget)
+    except Exception as e:  # noqa: BLE001 — health must never 500
+        log.warning("hub.probe_sources failed", extra={"err": str(e)})
+        return {
+            "sources": {}, "enabled": hub.enabled_sources(),
+            "online": [], "degraded": False,
+            "warning": str(e)[:200],
+        }
+    sources = probed.get("sources") or {}
+    online = [h for h, info in sources.items() if info.get("online")]
+    return {
+        "sources": sources,
+        "enabled": probed.get("enabled") or hub.enabled_sources(),
+        "online": online,
+        # Curated is local and never fails, so the market is only fully degraded
+        # if the caller also excluded it.
+        "degraded": not online and "curated" not in (probed.get("enabled") or []),
+    }
+
+
 @app.get("/api/hub/search")
 async def hub_search(
     request: Request,
