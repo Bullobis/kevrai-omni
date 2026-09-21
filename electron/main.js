@@ -1152,6 +1152,30 @@ function registerIpc() {
   ipcMain.handle("kevrai:agent-reset-skills", async () =>
     sidecarFetch("/api/agent/skills/reset", { method: "POST", body: {} }));
 
+  // v2.9.0 — skill hub（导入外部 Anthropic SKILL.md 技能）
+  // 注意：/skill-hub 系列必须由 sidecar 端声明在 /skills/{skill_id} 之前，
+  // 否则 "skill-hub" 会被当成 skill id 匹配掉（见 python/app/main.py）。
+  ipcMain.handle("kevrai:skill-hub-list", async () => sidecarFetch("/api/agent/skill-hub"));
+  ipcMain.handle("kevrai:skill-hub-import", async (_e, dirPath) => {
+    assert(typeof dirPath === "string" && dirPath.length > 0 && dirPath.length <= 4096,
+           "path: invalid");
+    return sidecarFetch("/api/agent/skill-hub/import", { method: "POST", body: { path: dirPath } });
+  });
+  ipcMain.handle("kevrai:skill-hub-import-zip", async (_e, zipPath) => {
+    assert(typeof zipPath === "string" && zipPath.length > 0 && zipPath.length <= 4096,
+           "zipPath: invalid");
+    return sidecarFetch("/api/agent/skill-hub/import-zip", { method: "POST", body: { path: zipPath } });
+  });
+  ipcMain.handle("kevrai:skill-hub-import-git", async (_e, url) => {
+    assert(typeof url === "string" && url.length > 0 && url.length <= 2048, "url: invalid");
+    return sidecarFetch("/api/agent/skill-hub/import-git", { method: "POST", body: { url } });
+  });
+  ipcMain.handle("kevrai:skill-hub-remove", async (_e, skillId) => {
+    assert(typeof skillId === "string" && /^[a-z][a-z0-9_]{1,63}$/.test(skillId),
+           "skillId: invalid");
+    return sidecarFetch(`/api/agent/skill-hub/${encodeURIComponent(skillId)}`, { method: "DELETE" });
+  });
+
   // v2.4.0 — super search
   ipcMain.handle("api:search", async (_e, params) => {
     const p = (params && typeof params === "object") ? params : {};

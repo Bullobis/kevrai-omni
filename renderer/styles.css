@@ -1,99 +1,125 @@
-/* Kevrai Omni — hardened, dark-by-default UI */
+/* Kevrai Omni — 全局重构后的 UI
+ *
+ * 设计取向参考 Cherry Studio（github.com/CherryHQ/cherry-studio），其 DESIGN.md
+ * 的四条原则被逐条落实到下面的 token 里：
+ *
+ *   1. Neutral first    —— 默认全中性，颜色只用于表达语义。
+ *   2. Semantic color   —— 颜色 = 含义（成功/警告/危险），不是装饰。
+ *   3. Content before decoration
+ *                       —— 不用装饰性渐变/阴影/色块；层级靠表面色阶。
+ *   4. Surface-based hierarchy
+ *                       —— 越靠上的层，表面越亮（popover 在 card 之上，
+ *                          而不是靠堆阴影往上顶）。
+ *
+ * 具体做法：旧的紫/蓝渐变底 + 毛玻璃叠加被替换为一组中性表面阶
+ * （stack-0 → stack-3，逐层变亮），强调色收敛为单一品牌色，字重收敛到
+ * 400/500/700，圆角收敛到 5 档，正文字号收敛到 4 档。
+ */
 
 :root {
-  /* ── Surfaces (60% of the 60/30/10 rule) ── */
-  --bg-0: #0b1020;
-  --bg-1: #121835;
-  --bg-2: #1a2247;
-  --bg2: var(--bg-2);      /* alias used by the env page */
-  /* ── Text (30%) ── */
-  --fg:   #e6ecff;
-  --mut:  #93a6dc;            /* bumped for AA on glass panels (was #8ea0d8) */
-  /* ── Brand accent (10%, used sparingly) ── */
-  --acc:  #7aa2ff;
-  --acc2: #b388ff;
-  --ok:   #5dd39e;
-  --warn: #f6c177;
-  --err:  #ff6b8a;
-  /* ── Glass surfaces ── */
-  --card: rgba(255, 255, 255, 0.045);
-  --card-hover: rgba(255, 255, 255, 0.09);
-  --bord: rgba(255, 255, 255, 0.10);
-  --bord-strong: rgba(122, 162, 255, 0.45);
-  --line: rgba(255, 255, 255, 0.09);   /* FIX: was referenced by env page but never defined */
-  /* ── Elevation ── */
-  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.30);
-  /* ── Focus + reused corner radii (one radius family, applied everywhere) ── */
-  --focus: 0 0 0 2px rgba(122, 162, 255, 0.9);
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-lg: 16px;
+  /* ── 表面色阶（深色：越上层越亮，对齐 Cherry Studio 的层级直觉）── */
+  --stack-0: #0d0e11;   /* 应用底 */
+  --stack-1: #131418;   /* 面板 / 侧栏 */
+  --stack-2: #1a1c21;   /* 卡片 */
+  --stack-3: #22242a;   /* 浮层 / 弹窗 */
+  /* 兼容别名：老代码的 --bg-0/1/2 与 --bg2 仍大量使用 */
+  --bg-0: var(--stack-0);
+  --bg-1: var(--stack-1);
+  --bg-2: var(--stack-2);
+  --bg2: var(--stack-2);
+  /* ── 文本 ── */
+  --fg:   #e8eaed;
+  --mut:  #9aa0a6;            /* AA on stack-1/2 */
+  /* ── 语义色（唯一强调色 + 状态色）── */
+  --acc:  #4ca97a;            /* 品牌绿，对应 Cherry 的 oklch(0.77 0.208 146) */
+  --acc2: #6fb2d2;
+  --ok:   #4ca97a;
+  --warn: #d9a05b;
+  --err:  #e06c75;
+  /* ── 表面填充（中性叠加，不引入色相）── */
+  --card: rgba(255, 255, 255, 0.04);
+  --card-hover: rgba(255, 255, 255, 0.07);
+  --bord: rgba(255, 255, 255, 0.09);
+  --bord-strong: rgba(76, 169, 122, 0.55);
+  --line: rgba(255, 255, 255, 0.08);
+  /* ── 层级：靠表面色而非重阴影 ── */
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.22);
+  /* ── 焦点环 ── */
+  --focus: 0 0 0 2px rgba(76, 169, 122, 0.85);
+  /* ── 圆角：收敛到 5 档 ── */
+  --r-1: 6px; --r-2: 8px; --r-3: 10px; --r-4: 14px; --r-5: 18px;
+  --radius: var(--r-3);
+  --radius-sm: var(--r-2);
+  --radius-lg: var(--r-4);
   --radius-pill: 999px;
-  /* ── 8px spacing scale (no arbitrary 13/27px) ── */
+  /* ── 8px 间距阶 ── */
   --sp-1: 8px;  --sp-2: 16px; --sp-3: 24px; --sp-4: 32px;
-  /* ── Type scale (clear hierarchy, ≥16px body) ── */
+  /* ── 字号：收敛到 4 档 ── */
   --fs-xs: 12px; --fs-sm: 13px; --fs-base: 14px;
-  --fs-md: 16px; --fs-lg: 20px; --fs-xl: 24px;
+  --fs-md: 16px; --fs-lg: 18px; --fs-xl: 22px;
+
+  /* ── 字体 ── */
+  --sans: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, monospace;
+  --font-mono: var(--mono);
 
   /* ── 旧调色板兼容别名 ──
-     搜索下拉 / Agent 面板 / LaTeX 卡片等区块（styles.css:660 之后）用的是
-     早期的一套变量名，且每个都写了深色字面量兜底（var(--card, #1b1c1f)）。
-     深色主题下看不出问题，但 html[data-theme="light"] 只覆盖了新的
-     --bg-* / --fg / --bord 一族，这些兜底不会跟着换肤 —— 于是浅色主题下
-     这些区块仍是深色底配深色字，对比度直接不达标。
-     这里把旧名指向同一套真实令牌，两套主题自动保持一致；同时把缺失的
-     --radius-md / --mono / --font-mono / --sel 补齐。占位兜底保留不动，
-     以免影响任何未定义变量的降级路径。 */
+     搜索下拉 / Agent 面板 / LaTeX 卡片等区块用的是早期的一套变量名，且每个都
+     写了深色字面量兜底（var(--card, #1b1c1f)）。深色主题下看不出问题，但
+     html[data-theme="light"] 只覆盖了新的 --bg-* / --fg / --bord 一族，这些
+     兜底不会跟着换肤 —— 于是浅色主题下这些区块仍是深色底配深色字，对比度
+     只有 1.15:1（不可读）。这里把旧名指向同一套真实令牌，两套主题自动保持
+     一致；同时把缺失的 --radius-md / --sel 补齐。占位兜底保留不动，以免影响
+     任何未定义变量的降级路径。 */
   --accent: var(--acc);
   --border: var(--bord);
   /* --bg 在旧代码里用作「比卡片更暗的底」，且写了 #121316 兜底。
-     因此它应对应 --bg-0，而不是 --bg-1/--bg-2。 */
-  --bg: var(--bg-0);
+     因此它应对应 --stack-0，而不是 --stack-1/2。 */
+  --bg: var(--stack-0);
   --sel: rgba(255, 255, 255, 0.08);
   --radius-md: var(--radius-sm);
-  --mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, monospace;
-  --font-mono: var(--mono);
 }
 
 /* Light theme override (theme="light") */
 html[data-theme="light"] {
-  --bg-0: #f4f6ff;
-  --bg-1: #ffffff;
-  --bg-2: #e8ecff;
-  --fg:   #1b1f3a;
-  --mut:  #51608a;            /* darkened for AA on light glass */
-  --card: rgba(0, 0, 0, 0.03);
-  --card-hover: rgba(0, 0, 0, 0.06);
-  --bord: rgba(0, 0, 0, 0.08);
-  --bord-strong: rgba(60, 100, 240, 0.5);
+  /* 浅色下同样「越上层越亮」，但方向反转为「越上层越白」 */
+  --stack-0: #f6f7f9;
+  --stack-1: #ffffff;
+  --stack-2: #ffffff;
+  --stack-3: #ffffff;
+  --bg-0: var(--stack-0);
+  --bg-1: var(--stack-1);
+  --bg-2: #eef0f4;
+  --bg2: var(--bg-2);
+  --fg:   #1f2328;
+  --mut:  #5c6470;
+  --acc:  #2f7d55;
+  --acc2: #2b6b8f;
+  --card: rgba(0, 0, 0, 0.025);
+  --card-hover: rgba(0, 0, 0, 0.05);
+  --bord: rgba(0, 0, 0, 0.10);
+  --bord-strong: rgba(47, 125, 85, 0.6);
   --line: rgba(0, 0, 0, 0.09);
-  --shadow: 0 6px 18px rgba(20, 30, 60, 0.10);
+  --shadow: 0 2px 8px rgba(20, 30, 60, 0.10);
+  --shadow-sm: 0 1px 2px rgba(20, 30, 60, 0.08);
   /* 旧调色板别名跟随换肤（深色下是白色叠加，浅色下必须是黑色叠加，
      否则 var(--sel) 的高亮在浅色主题里完全看不见） */
   --sel: rgba(0, 0, 0, 0.06);
-  --bg: var(--bg-0);
+  --bg: var(--stack-0);
   color-scheme: light;
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; height: 100%; }
 body {
-  font-family: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  font-family: var(--sans);
   color: var(--fg);
-  background:
-    radial-gradient(1200px 800px at 80% -10%, #2a1f5a 0%, transparent 60%),
-    radial-gradient(900px 600px at -10% 100%, #143b6b 0%, transparent 60%),
-    linear-gradient(180deg, var(--bg-0), var(--bg-1));
-  background-attachment: fixed;
+  /* 纯色底 —— 装饰性渐变属于 Cherry Studio 明确排除的 "decoration"。
+     层级改由 --stack-* 表面色阶承担。 */
+  background: var(--stack-0);
   min-height: 100vh;
   display: flex; flex-direction: column;
-}
-html[data-theme="light"] body {
-  background:
-    radial-gradient(1200px 800px at 80% -10%, #d8e0ff 0%, transparent 60%),
-    radial-gradient(900px 600px at -10% 100%, #f0e6ff 0%, transparent 60%),
-    linear-gradient(180deg, var(--bg-0), var(--bg-1));
 }
 
 /* ---------- Skip link & accessibility helpers ---------- */
@@ -113,17 +139,16 @@ html[data-theme="light"] body {
 /* ---------- Titlebar ---------- */
 .titlebar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 22px; border-bottom: 1px solid var(--bord);
-  backdrop-filter: blur(20px); background: rgba(11, 16, 32, 0.4);
+  padding: 10px 16px; border-bottom: 1px solid var(--bord);
+  background: var(--stack-1);
   -webkit-app-region: drag;
 }
-html[data-theme="light"] .titlebar { background: rgba(244, 246, 255, 0.7); }
 
 .brand { display: flex; align-items: center; gap: 10px; }
-.logo { width: 28px; height: 28px; border-radius: 7px; box-shadow: 0 2px 8px rgba(60, 40, 200, 0.35); display: block; }
-.logo-fallback { color: var(--acc); font-size: 22px; line-height: 28px; display: inline-block; }
+.logo { width: 26px; height: 26px; border-radius: var(--r-1); display: block; }
+.logo-fallback { color: var(--acc); font-size: 20px; line-height: 26px; display: inline-block; }
 .logo-fallback[hidden] { display: none; }
-.title { margin: 0; font-weight: 700; font-size: 16px; letter-spacing: 0.5px; }
+.title { margin: 0; font-weight: 700; font-size: 15px; letter-spacing: 0.2px; }
 .subtitle { color: var(--mut); font-size: 12px; margin: 0; }
 .header-actions { display: flex; align-items: center; gap: 8px; -webkit-app-region: no-drag; }
 .status { display: flex; align-items: center; gap: 8px; color: var(--mut); }
@@ -131,34 +156,36 @@ html[data-theme="light"] .titlebar { background: rgba(244, 246, 255, 0.7); }
 .dot.ok { background: var(--ok); }
 .dot.err { background: var(--err); }
 
-/* ---------- App shell: sidebar + main + detail ---------- */
+/* ---------- App shell: 图标轨道 + 主区 + 详情列 ----------
+   对齐 Cherry Studio 的布局：窄图标轨道（~64px）承载导航，文字说明放
+   tooltip，主区获得更多横向空间。 */
 .app-shell {
-  flex: 1; display: grid; grid-template-columns: 220px 1fr 360px;
+  flex: 1; display: grid; grid-template-columns: 64px 1fr 340px;
   min-height: 0; overflow: hidden;
 }
 @media (max-width: 1280px) {
-  .app-shell { grid-template-columns: 200px 1fr 320px; }
+  .app-shell { grid-template-columns: 64px 1fr 300px; }
 }
 .sidebar {
   border-right: 1px solid var(--bord);
-  background: rgba(0, 0, 0, 0.18); backdrop-filter: blur(20px);
-  padding: 14px 10px; display: flex; flex-direction: column; gap: 6px;
-  overflow-y: auto;
+  background: var(--stack-1);
+  padding: 10px 8px; display: flex; flex-direction: column; gap: 4px;
+  overflow-y: auto; overflow-x: hidden;
 }
-html[data-theme="light"] .sidebar { background: rgba(255, 255, 255, 0.55); }
-.sidebar nav { display: flex; flex-direction: column; gap: 4px; }
+.sidebar nav { display: flex; flex-direction: column; gap: 2px; }
 .sidebar .pane-tab {
   background: transparent; color: var(--mut); border: 1px solid transparent;
-  border-radius: var(--radius-sm); padding: 9px 12px; cursor: pointer; font-size: var(--fs-sm);
-  text-align: left; display: flex; align-items: center; gap: 10px;
-  transition: background .15s, color .15s, border-color .15s;
+  border-radius: var(--r-2); width: 48px; height: 44px; margin: 0 auto;
+  padding: 0; cursor: pointer; font-size: 0;      /* 文字仅用于 tooltip */
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s, color .12s;
 }
 .sidebar .pane-tab:focus-visible { outline: none; box-shadow: var(--focus); }
-.sidebar .pane-tab:hover { color: var(--fg); background: var(--card); border-color: var(--bord); }
-.sidebar .pane-tab.active { color: var(--fg); background: var(--card); border-color: var(--bord-strong); }
-.sidebar .ico { width: 18px; opacity: 0.85; }
-.sidebar-foot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding-top: 12px; }
-.sidebar-foot .mut.tiny { margin: 0; }
+.sidebar .pane-tab:hover { color: var(--fg); background: var(--card); }
+.sidebar .pane-tab.active { color: var(--fg); background: var(--stack-3); }
+.sidebar .ico { width: auto; font-size: 19px; opacity: 1; line-height: 1; }
+.sidebar-foot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding-top: 10px; align-items: center; }
+.sidebar-foot .mut.tiny { margin: 0; display: none; }   /* 图标轨道放不下文字 */
 
 /* ---------- Main column ---------- */
 .main { padding: 18px 22px; overflow-y: auto; outline: none; min-width: 0; }
@@ -175,7 +202,7 @@ html[data-theme="light"] .sidebar { background: rgba(255, 255, 255, 0.55); }
 .toolbar input { flex: 1; }
 .counter { color: var(--mut); font-size: 12px; min-width: 56px; text-align: right; }
 .hint { color: var(--mut); font-size: 13px; margin: 0 0 14px; }
-.section { font-size: 13px; font-weight: 600; margin: 18px 0 8px; color: var(--mut); letter-spacing: 0.4px; text-transform: uppercase; }
+.section { font-size: 13px; font-weight: 500; margin: 18px 0 8px; color: var(--mut); letter-spacing: 0.4px; text-transform: uppercase; }
 
 /* ---------- Virtual grid ---------- */
 .vgrid { position: relative; }
@@ -186,7 +213,7 @@ html[data-theme="light"] .sidebar { background: rgba(255, 255, 255, 0.55); }
 .vgrid-spacer { width: 100%; }
 .vgrid-item {
   background: var(--card); border: 1px solid var(--bord);
-  border-radius: var(--radius); padding: 14px; backdrop-filter: blur(20px);
+  border-radius: var(--radius); padding: 14px;
   transition: transform .15s ease, border-color .15s ease, background .15s ease;
   display: flex; flex-direction: column; gap: 8px;
 }
@@ -197,7 +224,7 @@ html[data-theme="light"] .sidebar { background: rgba(255, 255, 255, 0.55); }
 .model-card .card-head, .engine-card .card-head {
   display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
 }
-.card-title { font-weight: 600; font-size: var(--fs-sm); line-height: 1.25; }
+.card-title { font-weight: 500; font-size: var(--fs-sm); line-height: 1.25; }
 .card-desc {
   color: var(--fg); opacity: 0.88; font-size: var(--fs-xs); line-height: 1.55;
   margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
@@ -259,7 +286,7 @@ html[data-theme="light"] .sidebar { background: rgba(255, 255, 255, 0.55); }
 }
 .row:focus-within { border-color: var(--acc); }
 .row .grow { flex: 1; min-width: 0; }
-.row .name { font-weight: 600; font-size: var(--fs-sm); }
+.row .name { font-weight: 500; font-size: var(--fs-sm); }
 .row .sub { color: var(--mut); font-size: var(--fs-xs); margin-top: 3px; word-break: break-word; }
 
 /* Engine grid (cards) */
@@ -277,7 +304,6 @@ html[data-theme="light"] .sidebar { background: rgba(255, 255, 255, 0.55); }
   max-height: 240px; overflow-y: auto; padding: 6px 12px;
   background: rgba(0, 0, 0, 0.20); border-radius: 8px; list-style: none; margin: 0;
 }
-html[data-theme="light"] .gguf-list { background: rgba(0, 0, 0, 0.04); }
 .gguf-list li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; font-size: 12px; border-bottom: 1px dashed var(--bord); }
 .gguf-list li:last-child { border-bottom: 0; }
 .gguf-name { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; word-break: break-all; }
@@ -294,8 +320,8 @@ button:active { transform: scale(0.98); }
 button:focus-visible { outline: none; box-shadow: var(--focus); }
 button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 button.primary {
-  background: linear-gradient(135deg, var(--acc), var(--acc2));
-  color: #0b1020; border: none; font-weight: 600;
+  background: var(--acc);
+  color: #0b1020; border: none; font-weight: 500;
 }
 html[data-theme="light"] button.primary { color: #fff; }
 button.primary:hover { filter: brightness(1.06); }
@@ -311,10 +337,9 @@ button.full { width: 100%; }
 /* ---------- Detail panel ---------- */
 .detail {
   border-left: 1px solid var(--bord);
-  background: rgba(0, 0, 0, 0.12); backdrop-filter: blur(20px);
+  background: var(--stack-1);
   padding: 18px; overflow-y: auto;
 }
-html[data-theme="light"] .detail { background: rgba(255, 255, 255, 0.5); }
 .detail-empty { color: var(--mut); font-size: 13px; }
 .panel-head h2 { margin: 0 0 6px; font-size: 16px; }
 .panel-head .card-pills { margin-bottom: 6px; }
@@ -323,7 +348,7 @@ html[data-theme="light"] .detail { background: rgba(255, 255, 255, 0.5); }
 .overlay {
   position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55);
   display: flex; align-items: center; justify-content: center;
-  z-index: 999; padding: 24px; backdrop-filter: blur(8px);
+  z-index: 999; padding: 24px;
 }
 .overlay[hidden] { display: none; }
 .overlay-card {
@@ -368,7 +393,7 @@ html[data-theme="light"] .detail { background: rgba(255, 255, 255, 0.5); }
 }
 .dl-name { font-size: 12px; word-break: break-all; }
 .dl-progress { background: rgba(0, 0, 0, 0.25); height: 8px; border-radius: 4px; overflow: hidden; }
-.dl-bar { height: 100%; background: linear-gradient(90deg, var(--acc), var(--acc2)); transition: width .25s ease; }
+.dl-bar { height: 100%; background: var(--acc); transition: width .25s ease; }
 .dl-meta { color: var(--mut); font-size: 11px; display: flex; flex-direction: column; gap: 2px; }
 .dl-actions { display: flex; gap: 6px; }
 .dl-actions .danger { padding: 5px 10px; font-size: 12px; }
@@ -403,7 +428,6 @@ html[data-theme="light"] .detail { background: rgba(255, 255, 255, 0.5); }
   color: var(--fg); font-size: 13px; animation: toast-in .2s ease;
   cursor: pointer; word-break: break-word;
 }
-html[data-theme="light"] .toast-item { background: rgba(255, 255, 255, 0.97); }
 .toast-item.ok  { border-color: rgba(93, 211, 158, 0.4); color: var(--ok); }
 .toast-item.warn{ border-color: rgba(246, 193, 119, 0.4); color: var(--warn); }
 .toast-item.err { border-color: rgba(255, 107, 138, 0.4); color: var(--err); }
@@ -415,7 +439,7 @@ html[data-theme="light"] .toast-item { background: rgba(255, 255, 255, 0.97); }
 .drop-mask {
   position: fixed; inset: 0; z-index: 1000;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(10, 14, 30, 0.6); backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.6);
   pointer-events: none;
 }
 .drop-mask[hidden] { display: none; }
@@ -431,7 +455,7 @@ body.dragging .drop-mask { display: flex; }
 .tiny { font-size: 11px; }
 .spacer { flex: 1; }
 .import-row { display: flex; gap: 10px; margin-bottom: 18px; }
-.import-row button.primary { font-weight: 600; padding: 9px 18px; }
+.import-row button.primary { font-weight: 500; padding: 9px 18px; }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 5px; }
@@ -519,11 +543,11 @@ body.dragging .drop-mask { display: flex; }
 .hw-card {
   background: var(--card); border: 1px solid var(--bord);
   border-radius: var(--radius); padding: var(--sp-1) var(--sp-2);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+
 }
 .hw-card-head {
   display: flex; align-items: center; gap: 6px;
-  font-weight: 600; font-size: var(--fs-sm); color: var(--mut);
+  font-weight: 500; font-size: var(--fs-sm); color: var(--mut);
   margin-bottom: 6px; letter-spacing: 0.02em;
 }
 .hw-kv { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; font-size: var(--fs-sm); }
@@ -536,17 +560,17 @@ body.dragging .drop-mask { display: flex; }
 .hw-score-row { display: flex; align-items: baseline; gap: 8px; }
 .hw-score-num {
   font-size: 32px; font-weight: 700; line-height: 1;
-  background: linear-gradient(120deg, var(--acc), var(--acc2));
+  background: var(--acc);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .hw-score-label { color: var(--mut); font-size: var(--fs-sm); }
 .hw-score-bar {
   height: 8px; border-radius: var(--radius-pill);
-  background: rgba(127, 140, 180, 0.18); overflow: hidden; margin-top: 8px;
+  background: var(--card); overflow: hidden; margin-top: 8px;
 }
 .hw-score-fill {
   height: 100%; border-radius: var(--radius-pill);
-  background: linear-gradient(90deg, var(--acc), var(--acc2));
+  background: var(--acc);
   transition: width 0.4s ease;
 }
 
@@ -568,7 +592,7 @@ body.dragging .drop-mask { display: flex; }
   display: flex; flex-direction: column; gap: 2px;
 }
 .hw-need .hw-k { font-size: var(--fs-xs); }
-.hw-need .hw-v { font-size: var(--fs-md); font-weight: 600; text-align: left; }
+.hw-need .hw-v { font-size: var(--fs-md); font-weight: 500; text-align: left; }
 
 /* MNN 引擎状态卡 */
 .mnn-state-card {
@@ -576,7 +600,7 @@ body.dragging .drop-mask { display: flex; }
   background: var(--card); border: 1px solid var(--bord);
   border-radius: var(--radius); padding: var(--sp-1) var(--sp-2);
   margin-bottom: var(--sp-2);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+
 }
 .mnn-state-card.ok { border-color: rgba(93, 211, 158, 0.4); }
 .mnn-state-card.warn { border-color: rgba(246, 193, 119, 0.4); }
@@ -586,7 +610,7 @@ body.dragging .drop-mask { display: flex; }
   background: var(--card); border: 1px solid var(--bord);
   border-radius: var(--radius); padding: var(--sp-1) var(--sp-2);
   margin-bottom: var(--sp-2);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+
 }
 .mnn-chat-head {
   display: flex; justify-content: space-between; align-items: center;
@@ -597,7 +621,6 @@ body.dragging .drop-mask { display: flex; }
   padding: 8px; border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.16);
 }
-html[data-theme="light"] .mnn-chat-log { background: rgba(255, 255, 255, 0.55); }
 .mnn-msg {
   max-width: 85%; padding: 8px 12px; border-radius: var(--radius);
   font-size: var(--fs-base); line-height: 1.55; word-break: break-word;
@@ -608,7 +631,7 @@ html[data-theme="light"] .mnn-chat-log { background: rgba(255, 255, 255, 0.55); 
   border-bottom-right-radius: 4px;
 }
 .mnn-msg.assistant {
-  align-self: flex-start; background: rgba(127, 140, 180, 0.16);
+  align-self: flex-start; background: var(--stack-2);
   border-bottom-left-radius: 4px;
 }
 .mnn-chat-input-row { display: flex; gap: 8px; margin-top: 8px; }
@@ -649,28 +672,6 @@ html[data-theme="light"] .mnn-chat-log { background: rgba(255, 255, 255, 0.55); 
   margin-top: 6px; max-height: 120px; overflow-y: auto;
   font-family: var(--font-mono, monospace); line-height: 1.5;
 }
-
-/* =========================================================================
-   Drama Agent (AI 短剧生成)
-   ========================================================================= */
-.drama-card { margin-bottom: var(--sp-2); }
-.drama-block {
-  background: var(--bg-1); border: 1px solid var(--bord);
-  border-radius: var(--radius-md); padding: var(--sp-2);
-  margin: var(--sp-1) 0;
-}
-.drama-char, .drama-scene, .drama-shot {
-  border: 1px solid var(--bord); border-radius: var(--radius-sm);
-  padding: 10px 12px; margin: 8px 0;
-  background: var(--bg-0);
-}
-.drama-shot { font-size: var(--fs-sm); }
-.drama-details {
-  margin-top: 6px; padding: 6px 8px; border-radius: var(--radius-sm);
-  background: rgba(127, 140, 180, 0.08);
-}
-.drama-details summary { cursor: pointer; color: var(--accent); font-weight: 600; }
-.drama-block h4 { margin: var(--sp-1) 0 4px; }
 
 /* ===========================================================================
    v2.4.0 — super search & LTX-2.5 video generation
@@ -721,7 +722,7 @@ html[data-theme="light"] .mnn-chat-log { background: rgba(255, 255, 255, 0.55); 
 /* --- highlights & no-results --- */
 .card-title mark, .card-desc mark {
   background: rgba(224,88,48,.28); color: #ffb89a; border-radius: 3px;
-  padding: 0 2px; font-weight: 600;
+  padding: 0 2px; font-weight: 500;
 }
 .no-results {
   text-align: center; padding: 48px 20px; color: var(--mut, #888);
@@ -772,7 +773,7 @@ html[data-theme="light"] .mnn-chat-log { background: rgba(255, 255, 255, 0.55); 
 .ltx-active-head { display: flex; gap: 12px; font-size: 12px; flex-wrap: wrap; align-items: center; }
 .ltx-active-head code { color: #ff8a5c; }
 .ltx-progress { position: relative; height: 18px; background: rgba(255,255,255,.07); border-radius: 9px; margin-top: 8px; overflow: hidden; }
-.ltx-progress .bar { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(90deg,#e05830,#ff8a5c); border-radius: 9px; transition: width .25s; }
+.ltx-progress .bar { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #e05830; border-radius: 9px; transition: width .25s; }
 .ltx-progress .pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; }
 
 .ltx-task-list { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
@@ -781,7 +782,7 @@ html[data-theme="light"] .mnn-chat-log { background: rgba(255, 255, 255, 0.55); 
   border: 1px solid var(--border, #2e2e2e); border-radius: 6px; background: var(--card, #1b1c1f);
 }
 .ltx-task-id { color: #ff8a5c; font-family: var(--mono, monospace); }
-.ltx-task-state { font-weight: 600; }
+.ltx-task-state { font-weight: 500; }
 .ltx-task-meta { color: var(--mut, #999); flex: 1; }
 .ltx-task-time { color: var(--mut, #777); }
 .state-done .ltx-task-state { color: #6fdc8c; }
@@ -827,7 +828,7 @@ html[data-theme="light"] .mnn-chat-log { background: rgba(255, 255, 255, 0.55); 
 
 /* v2.8.0 — 可插拔技能库面板 */
 .agent-skills-panel { border: 1px solid var(--border, #333); border-radius: 10px; background: var(--card, #1b1c1f); margin-bottom: 10px; overflow: hidden; }
-.agent-skills-panel > summary { cursor: pointer; padding: 9px 14px; font-size: 13px; font-weight: 600; user-select: none; list-style: none; display: flex; align-items: center; gap: 8px; }
+.agent-skills-panel > summary { cursor: pointer; padding: 9px 14px; font-size: 13px; font-weight: 500; user-select: none; list-style: none; display: flex; align-items: center; gap: 8px; }
 .agent-skills-panel > summary::-webkit-details-marker { display: none; }
 .agent-skills-panel[open] > summary { border-bottom: 1px solid var(--border, #333); }
 .agent-skills-summary { font-size: 11px; font-weight: 400; color: var(--mut, #999); }
@@ -839,20 +840,32 @@ html[data-theme="light"] .mnn-chat-log { background: rgba(255, 255, 255, 0.55); 
 .agent-skill-head { display: flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px; }
 .agent-skill-head input { margin: 0; cursor: pointer; }
 .agent-skill-icon { font-size: 15px; }
-.agent-skill-name { font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+.agent-skill-name { font-weight: 500; display: inline-flex; align-items: center; gap: 5px; }
 .agent-skill-lock, .agent-skill-default { font-size: 9px; padding: 0 5px; border-radius: 6px; font-weight: 500; }
 .agent-skill-lock { background: rgba(255, 184, 107, 0.15); color: #ffb86b; border: 1px solid rgba(255,184,107,0.3); }
 .agent-skill-default { background: rgba(122,163,255,0.12); color: #7aa3ff; border: 1px solid rgba(122,163,255,0.25); }
 .agent-skill-desc { font-size: 11px; color: var(--mut, #999); margin: 5px 0 6px; line-height: 1.45; }
 .agent-skill-tools { display: flex; flex-wrap: wrap; gap: 3px; }
 
-/* v2.8.0 — 短剧基调选择器 */
-.drama-mode-row { display: flex; gap: 10px; flex-wrap: wrap; }
-.drama-mode-opt { display: flex; align-items: flex-start; gap: 7px; flex: 1; min-width: 220px; border: 1px solid var(--border, #333); border-radius: 8px; padding: 8px 10px; cursor: pointer; background: var(--bg, #121316); }
-.drama-mode-opt input { margin-top: 3px; }
-.drama-mode-opt span { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
-.drama-mode-opt em { font-style: normal; font-size: 11px; color: var(--mut, #999); line-height: 1.4; }
-.drama-mode-opt:has(input:checked) { border-color: var(--accent, #4a7dff); background: rgba(74,125,255,0.08); }
+/* v2.9.0 — skill hub（导入外部 SKILL.md 技能） */
+.agent-skill-imported { font-size: 9px; padding: 0 5px; border-radius: 6px; font-weight: 500;
+  background: rgba(76, 169, 122, 0.14); color: var(--ok); border: 1px solid rgba(76, 169, 122, 0.3); }
+.agent-skillhub { margin-top: 10px; border: 1px solid var(--bord); border-radius: var(--radius-sm); background: var(--stack-2); }
+.agent-skillhub-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 12px; }
+.agent-skillhub-title { font-size: 12px; font-weight: 500; color: var(--fg); }
+.agent-skillhub-body { padding: 0 12px 12px; border-top: 1px solid var(--bord); }
+.agent-skillhub-body > .hint { margin: 10px 0; }
+.agent-skillhub-inputs { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+.agent-skillhub-input { flex: 1; min-width: 200px; background: var(--stack-0); color: var(--fg);
+  border: 1px solid var(--bord); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 12px; font-family: inherit; }
+.agent-skillhub-input:focus { outline: none; border-color: var(--acc); }
+.agent-skillhub-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.agent-skillhub-row { border: 1px solid var(--bord); border-radius: var(--radius-sm); padding: 8px 10px; background: var(--stack-1); }
+.agent-skillhub-row.is-broken { border-color: rgba(224, 108, 117, 0.45); }
+.agent-skillhub-rowhead { display: flex; align-items: center; gap: 8px; }
+.agent-skillhub-name { font-size: 13px; font-weight: 500; }
+.agent-skillhub-id { font-size: 10px; font-family: var(--mono); color: var(--mut); }
+.agent-skillhub-remove { margin-left: auto; }
 
 /* ===== v2.8.1 — Auto-update overlay ===== */
 .update-card { max-width: 460px; width: 90vw; }

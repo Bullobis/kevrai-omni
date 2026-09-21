@@ -166,13 +166,24 @@ BUILTIN_SKILLS: list[Skill] = [
 ]
 
 
-def build_skill_manager(state_path: str | Path | None = None) -> SkillManager:
+def build_skill_manager(
+    state_path: str | Path | None = None,
+    extra_skills: list[Skill] | None = None,
+) -> SkillManager:
     """Build the SkillManager over all built-in skills.
 
     ``state_path`` is the JSON file that persists which non-required skills are
     disabled. Pass ``None`` for an in-memory manager (tests / ephemeral use).
+
+    ``extra_skills`` (v2.9.0) are skills imported through the skill hub. They are
+    deliberately kept **outside** :data:`BUILTIN_SKILLS`: the built-in set is a
+    frozen contract (see ``tests/test_v280_skills.py``) and user imports must
+    never mutate it. ``None`` reproduces the previous behaviour exactly.
     """
-    return SkillManager(list(BUILTIN_SKILLS), state_path=state_path)
+    skills = list(BUILTIN_SKILLS)
+    if extra_skills:
+        skills.extend(extra_skills)
+    return SkillManager(skills, state_path=state_path)
 
 
 def all_skill_tools() -> list[Any]:

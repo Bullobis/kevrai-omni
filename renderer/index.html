@@ -53,9 +53,6 @@
         <button class="pane-tab" data-tab="mnn">
           <span class="ico" aria-hidden="true">⬢</span> MNN 引擎
         </button>
-        <button class="pane-tab" data-tab="drama">
-          <span class="ico" aria-hidden="true">🎬</span> 短剧 Agent
-        </button>
         <button class="pane-tab" data-tab="agent">
           <span class="ico" aria-hidden="true">🤖</span> AI Agent
         </button>
@@ -155,12 +152,8 @@
         <div id="mnn-root"></div>
       </section>
 
-      <!-- Drama Agent pane -->
-      <section id="pane-drama" class="pane" aria-label="短剧 Agent">
-        <div id="drama-root"></div>
-      </section>
-
       <!-- Kevrai Agent (general-purpose AI assistant) -->
+      <!-- 短剧能力已并入本页：由内置技能 drama_studio 提供（see agent/tools/drama_tools.py） -->
       <section id="pane-agent" class="pane" aria-label="AI Agent">
         <div id="agent-root"></div>
       </section>

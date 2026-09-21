@@ -54,9 +54,36 @@ class TestSkillDataclass:
         with pytest.raises(ValueError):
             Skill(id=bad, name="x", description="x", tools=[_noop_tool("ok_tool")])
 
-    def test_empty_tools_rejected(self):
+    def test_empty_tools_allowed_with_guidance(self):
+        # v2.9.0 — 纯指导型技能合法：Anthropic SKILL.md 常无任何可执行工具，
+        # 正文本身就是技能（见 app/agent/skill_hub.py）。
+        sk = Skill(id="guide_only", name="纯指导", description="x", tools=[],
+                   guidance="咨询时先问清受众。")
+        assert sk.tool_names == []
+        spec = sk.to_spec(True)
+        assert spec["tool_count"] == 0 and spec["has_guidance"] is True
+
+    def test_empty_tools_and_empty_guidance_rejected(self):
+        # 两个都空才是真错误：既不提供工具、也不提供任何指导。
         with pytest.raises(ValueError):
             Skill(id="empty_skill", name="x", description="x", tools=[])
+
+    def test_whitespace_only_guidance_rejected(self):
+        with pytest.raises(ValueError):
+            Skill(id="blank_guide", name="x", description="x", tools=[],
+                  guidance="   \n\t  ")
+
+    def test_spec_carries_source_and_path(self):
+        sk = Skill(id="imported_one", name="外部技能", description="d",
+                   tools=[_noop_tool("ext_tool")],
+                   source="imported", path="/tmp/skill_hub/imported_one")
+        spec = sk.to_spec(True)
+        assert spec["source"] == "imported"
+        assert spec["path"] == "/tmp/skill_hub/imported_one"
+        # 内置技能默认值不能变，前端靠它区分来源徽标
+        builtin = Skill(id="builtin_one", name="b", description="d",
+                        tools=[_noop_tool("bi_tool")])
+        assert builtin.to_spec(True)["source"] == "builtin"
 
     def test_duplicate_tool_within_skill_rejected(self):
         with pytest.raises(ValueError):

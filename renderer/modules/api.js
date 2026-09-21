@@ -108,6 +108,13 @@ export const api = {
   agentSkills:          wrap("agentSkills",          () => k().agentSkills()),
   agentToggleSkill:     wrap("agentToggleSkill",     (id, enabled) => k().agentToggleSkill(id, enabled)),
   agentResetSkills:     wrap("agentResetSkills",     () => k().agentResetSkills()),
+  // v2.9.0 — skill hub（导入外部 Anthropic SKILL.md 技能）
+  // 走 k() 守卫：老 preload 缺这些方法时抛可捕获的错误，而不是 TypeError。
+  skillHubList:      wrap("skillHubList",      () => k().skillHubList()),
+  skillHubImportDir: wrap("skillHubImportDir", (p) => k().skillHubImportDir(p)),
+  skillHubImportZip: wrap("skillHubImportZip", (p) => k().skillHubImportZip(p)),
+  skillHubImportGit: wrap("skillHubImportGit", (u) => k().skillHubImportGit(u)),
+  skillHubRemove:    wrap("skillHubRemove",    (id) => k().skillHubRemove(id)),
   // v2.4.0 — super search
   search:            wrap("search",            (params) => k().search(params)),
   searchRecent:      wrap("searchRecent",      () => k().searchRecent()),

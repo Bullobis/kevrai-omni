@@ -337,6 +337,24 @@ const api = {
     return invoke("kevrai:agent-toggle-skill", skillId, enabled);
   },
   agentResetSkills: () => invoke("kevrai:agent-reset-skills"),
+  // ----- v2.9.0: skill hub（导入外部 SKILL.md 技能）-----
+  skillHubList: () => invoke("kevrai:skill-hub-list"),
+  skillHubImportDir: (dirPath) => {
+    assertString(dirPath, "dirPath", 4096);
+    return invoke("kevrai:skill-hub-import", dirPath);
+  },
+  skillHubImportZip: (zipPath) => {
+    assertString(zipPath, "zipPath", 4096);
+    return invoke("kevrai:skill-hub-import-zip", zipPath);
+  },
+  skillHubImportGit: (url) => {
+    assertString(url, "url", 2048);
+    return invoke("kevrai:skill-hub-import-git", url);
+  },
+  skillHubRemove: (skillId) => {
+    assertString(skillId, "skillId", 64);
+    return invoke("kevrai:skill-hub-remove", skillId);
+  },
 
   // ----- v2.4.0: super search -----
   search: (params) => {
