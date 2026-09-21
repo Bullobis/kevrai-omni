@@ -627,21 +627,18 @@ class TestSkillHubAPI:
         assert r.status_code == 200
         assert r.json()["count"] == 1
 
-    def test_zip_upload_import(self, client):
-        c, _ = client
-        import io
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, "w") as zf:
-            zf.writestr("SKILL.md", SKILL_MD)
-        r = c.post("/api/agent/skill-hub/import-zip-upload",
-                   files={"file": ("s.zip", buf.getvalue(), "application/zip")})
-        assert r.status_code == 200
-        assert r.json()["count"] == 1
+    def test_zip_upload_route_absent_by_design(self, client):
+        """没有 multipart 上传端点：桌面端交付的是路径而非字节，
+        加它只会引入 python-multipart 运行时依赖（Starlette 会在
+        request.form() 处 assert），却没有真实调用方。
 
-    def test_zip_upload_missing_field(self, client):
+        POST 到该路径会落到 DELETE /skill-hub/{skill_id} 上，
+        因此返回 405（路由存在但方法不匹配）而不是 404 —— 两种都说明
+        「POST 上传」这条能力确实不存在，这里断言 405 并排除 2xx。
+        """
         c, _ = client
         r = c.post("/api/agent/skill-hub/import-zip-upload", files={})
-        assert r.status_code == 400
+        assert r.status_code == 405
 
     def test_git_import_bad_url_is_400(self, client):
         c, _ = client
