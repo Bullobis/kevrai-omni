@@ -21,7 +21,6 @@ import logging
 import os
 import re
 import sys
-import tempfile
 import time
 import uuid
 from pathlib import Path
@@ -2775,11 +2774,13 @@ def agent_skill_hub_import(req: SkillHubImportReq, request: Request) -> dict[str
 
 @app.post("/api/agent/skill-hub/import-zip")
 def agent_skill_hub_import_zip_path(req: SkillHubImportReq) -> dict[str, Any]:
-    """Import skills from a **zip already on disk** (path-based variant).
+    """Import skills from a zip archive that is **already on disk**.
 
-    The Electron shell hands the renderer a native file path rather than the
-    bytes, so this is the form the desktop app uses. A multipart variant lives
-    below for browser/HTTP clients.
+    Path-based rather than multipart on purpose: the Electron shell hands the
+    renderer a native file path, never the bytes, so there is nothing for a
+    multipart upload to do here — and accepting one would drag in the
+    ``python-multipart`` dependency (Starlette asserts on it at runtime) for a
+    code path no client actually uses.
     """
     from .agent import skill_hub
 
@@ -2787,41 +2788,6 @@ def agent_skill_hub_import_zip_path(req: SkillHubImportReq) -> dict[str, Any]:
         results = skill_hub.import_zip(req.path, _skill_hub_root())
     except skill_hub.SkillHubError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
-    _AGENT_SINGLETON.clear()
-    return {"ok": True, "imported": results, "count": len(results), "reloaded": True}
-
-
-@app.post("/api/agent/skill-hub/import-zip-upload")
-async def agent_skill_hub_import_zip_upload(request: Request) -> dict[str, Any]:
-    """Import one or more skills from an uploaded zip archive.
-
-    The upload is written to a temporary file first because
-    ``zipfile.ZipFile`` needs a seekable stream; the size cap is enforced here
-    as well as in the hub so an oversized body never reaches the disk.
-    """
-    from .agent import skill_hub
-
-    form = await request.form()
-    upload = form.get("file")
-    if upload is None or not hasattr(upload, "read"):
-        raise HTTPException(status_code=400, detail="missing multipart field 'file'")
-    raw = await upload.read()
-    if not raw:
-        raise HTTPException(status_code=400, detail="empty upload")
-    if len(raw) > skill_hub.MAX_ARCHIVE_BYTES:
-        raise HTTPException(status_code=413, detail="archive too large")
-    tmp_path = None
-    try:
-        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as fh:
-            fh.write(raw)
-            tmp_path = Path(fh.name)
-        results = skill_hub.import_zip(tmp_path, _skill_hub_root())
-    except skill_hub.SkillHubError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    finally:
-        if tmp_path is not None:
-            with contextlib.suppress(OSError):
-                tmp_path.unlink(missing_ok=True)
     _AGENT_SINGLETON.clear()
     return {"ok": True, "imported": results, "count": len(results), "reloaded": True}
 
