@@ -38,6 +38,7 @@ function _renderShell() {
         <div>
           <h2 class="section">🤖 Kevrai Agent</h2>
           <p class="hint">用自然语言管理本地 AI 模型：搜索、推荐、硬件检测、下载规划。
+            短剧创作已并入本面板（内置技能「短剧创作工坊」）。
             <span id="agent-mode-badge" class="agent-badge">加载中…</span>
           </p>
         </div>
@@ -57,12 +58,35 @@ function _renderShell() {
             <button id="agent-skills-reset" class="btn btn-sm" type="button">恢复默认</button>
           </div>
           <div id="agent-skills-list" class="agent-skills-list">加载中…</div>
+          <div class="agent-skillhub">
+            <div class="agent-skillhub-head">
+              <span class="agent-skillhub-title">📥 导入外部技能（SKILL.md）</span>
+              <button id="agent-skillhub-toggle" class="btn btn-sm" type="button">展开</button>
+            </div>
+            <div id="agent-skillhub-body" class="agent-skillhub-body" hidden>
+              <p class="hint">支持三种来源：本地目录 / .zip 压缩包 / git 仓库（含
+                <code>.claude-plugin/marketplace.json</code> 的插件市场）。导入的技能
+                <strong>不会覆盖或删除内置技能</strong>。</p>
+              <div class="agent-skillhub-inputs">
+                <input id="agent-skillhub-path" class="agent-skillhub-input" type="text"
+                  placeholder="本地目录路径，或 .zip 文件路径" maxlength="4096">
+                <button id="agent-skillhub-import-dir" class="btn btn-sm" type="button">导入目录</button>
+                <button id="agent-skillhub-import-zip" class="btn btn-sm" type="button">导入 zip</button>
+              </div>
+              <div class="agent-skillhub-inputs">
+                <input id="agent-skillhub-git" class="agent-skillhub-input" type="text"
+                  placeholder="git 仓库地址，例如 https://github.com/owner/skills" maxlength="2048">
+                <button id="agent-skillhub-import-git" class="btn btn-sm" type="button">从仓库导入</button>
+              </div>
+              <div id="agent-skillhub-list" class="agent-skillhub-list">尚未加载</div>
+            </div>
+          </div>
         </div>
       </details>
       <div id="agent-messages" class="agent-messages"></div>
       <div class="agent-input-area">
         <textarea id="agent-input" class="agent-input" rows="2"
-          placeholder="问我任何关于模型的问题，例如：&#10;• 我的硬件能跑什么模型？&#10;• 搜索音乐生成模型&#10;• 推荐适合8GB显存的图像模型"
+          placeholder="问我任何关于模型的问题，例如：&#10;• 我的硬件能跑什么模型？&#10;• 搜索音乐生成模型&#10;• 推荐适合8GB显存的图像模型&#10;• 帮我把「星际快递员」写成一部微电影短剧（短剧工坊技能）"
           maxlength="5000"></textarea>
         <button id="agent-send-btn" class="btn btn-primary agent-send-btn" disabled>发送</button>
       </div>
@@ -143,6 +167,131 @@ function _wireEvents(root) {
       }
     });
   }
+  _wireSkillHub(root);
+}
+
+// ---------------------------------------------------------------------------
+// Skill hub（导入外部 SKILL.md 技能，v2.9.0）
+// CSP 为 script-src 'self'，内联事件处理器会被拦截，全部走 addEventListener。
+// ---------------------------------------------------------------------------
+function _wireSkillHub(root) {
+  const box = $("#agent-skillhub-body", root);
+  const toggle = $("#agent-skillhub-toggle", root);
+  if (!box || !toggle) return;
+
+  toggle.addEventListener("click", () => {
+    box.hidden = !box.hidden;
+    toggle.textContent = box.hidden ? "展开" : "收起";
+    if (!box.hidden) _loadSkillHub();
+  });
+
+  const pathInput = $("#agent-skillhub-path", root);
+  const gitInput = $("#agent-skillhub-git", root);
+
+  const runImport = async (btn, fn, label) => {
+    const raw = (pathInput && pathInput.value || "").trim();
+    btn.disabled = true;
+    try {
+      await fn(raw);
+      toast(`${label}成功`, { kind: "ok" });
+      if (pathInput) pathInput.value = "";
+      await Promise.all([_loadSkillHub(), _loadSkills(), _refreshStatus()]);
+    } catch (err) {
+      toast(`${label}失败：${err.message || err}`, { kind: "err" });
+    } finally {
+      btn.disabled = false;
+    }
+  };
+
+  const dirBtn = $("#agent-skillhub-import-dir", root);
+  if (dirBtn) {
+    dirBtn.addEventListener("click", () => {
+      const raw = (pathInput && pathInput.value || "").trim();
+      if (!raw) { toast("请先填写本地目录路径", { kind: "err" }); return; }
+      runImport(dirBtn, (p) => api.skillHubImportDir(p), "导入目录");
+    });
+  }
+  const zipBtn = $("#agent-skillhub-import-zip", root);
+  if (zipBtn) {
+    zipBtn.addEventListener("click", () => {
+      const raw = (pathInput && pathInput.value || "").trim();
+      if (!raw) { toast("请先填写 .zip 文件路径", { kind: "err" }); return; }
+      runImport(zipBtn, (p) => api.skillHubImportZip(p), "导入 zip");
+    });
+  }
+  const gitBtn = $("#agent-skillhub-import-git", root);
+  if (gitBtn) {
+    gitBtn.addEventListener("click", async () => {
+      const url = (gitInput && gitInput.value || "").trim();
+      if (!url) { toast("请先填写 git 仓库地址", { kind: "err" }); return; }
+      gitBtn.disabled = true;
+      try {
+        await api.skillHubImportGit(url);
+        toast("从仓库导入成功", { kind: "ok" });
+        if (gitInput) gitInput.value = "";
+        await Promise.all([_loadSkillHub(), _loadSkills(), _refreshStatus()]);
+      } catch (err) {
+        toast(`从仓库导入失败：${err.message || err}`, { kind: "err" });
+      } finally {
+        gitBtn.disabled = false;
+      }
+    });
+  }
+
+  // 删除已导入技能（事件委托）。内置技能后端返回 403，这里也不会渲染删除按钮。
+  const list = $("#agent-skillhub-list", root);
+  if (list) {
+    list.addEventListener("click", async (e) => {
+      const btn = e.target.closest(".agent-skillhub-remove");
+      if (!btn) return;
+      const id = btn.dataset.id;
+      btn.disabled = true;
+      try {
+        await api.skillHubRemove(id);
+        toast(`已删除导入技能：${id}`, { kind: "ok" });
+        await Promise.all([_loadSkillHub(), _loadSkills(), _refreshStatus()]);
+      } catch (err) {
+        toast(`删除失败：${err.message || err}`, { kind: "err" });
+        btn.disabled = false;
+      }
+    });
+  }
+}
+
+async function _loadSkillHub() {
+  const list = document.getElementById("agent-skillhub-list");
+  if (!list) return;
+  try {
+    const res = unwrap(await api.skillHubList());
+    const items = res.skills || [];
+    if (!items.length) {
+      list.innerHTML = '<span class="hint">尚未导入任何外部技能。</span>';
+      return;
+    }
+    list.innerHTML = items.map(_renderHubRow).join("");
+  } catch (e) {
+    list.innerHTML = `<span class="hint">技能库加载失败：${esc(e.message || e)}</span>`;
+  }
+}
+
+function _renderHubRow(it) {
+  const ok = !!it.ok;
+  const tags = [];
+  if (it.has_scripts) tags.push('<span class="agent-tool-tag">scripts/</span>');
+  if (it.has_references) tags.push('<span class="agent-tool-tag">references/</span>');
+  if (it.has_assets) tags.push('<span class="agent-tool-tag">assets/</span>');
+  return `
+    <div class="agent-skillhub-row ${ok ? "" : "is-broken"}">
+      <div class="agent-skillhub-rowhead">
+        <span class="agent-skillhub-name">${esc(it.name || it.id)}</span>
+        <span class="agent-skillhub-id">${esc(it.id)}</span>
+        <button class="btn btn-sm agent-skillhub-remove" data-id="${esc(it.id)}"
+          type="button" title="删除该导入技能">删除</button>
+      </div>
+      <p class="agent-skill-desc">${esc(ok ? (it.description || "") : ("解析失败：" + (it.error || "")))}</p>
+      ${tags.length ? `<div class="agent-skill-tools">${tags.join("")}</div>` : ""}
+    </div>
+  `;
 }
 
 // ---------------------------------------------------------------------------
@@ -202,6 +351,7 @@ function _renderSkillRow(s) {
         <span class="agent-skill-name">${esc(s.name)}
           ${locked ? '<span class="agent-skill-lock" title="必备技能，不可关闭">必备</span>' : ""}
           ${s.default_enabled && !locked ? '<span class="agent-skill-default">默认</span>' : ""}
+          ${s.source === "imported" ? '<span class="agent-skill-imported" title="通过技能库导入">外部</span>' : ""}
         </span>
       </label>
       <p class="agent-skill-desc">${esc(s.description || "")}</p>

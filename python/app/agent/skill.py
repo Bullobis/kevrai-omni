@@ -46,12 +46,21 @@ class Skill:
     guidance: str = ""                 # injected into the LLM system prompt
     default_enabled: bool = True
     required: bool = False             # required skills cannot be disabled
+    source: str = "builtin"            # builtin | imported (skill hub)
+    path: str = ""                     # on-disk location for imported skills
 
     def __post_init__(self) -> None:
         if not _SKILL_ID_RE.fullmatch(self.id):
             raise ValueError(f"invalid skill id: {self.id!r}")
-        if not self.tools:
-            raise ValueError(f"skill {self.id!r} must provide at least one tool")
+        # v2.9.0 — guidance-only skills are allowed. The Anthropic SKILL.md
+        # format (which the skill hub imports) very often ships *no* executable
+        # tooling at all: the markdown body alone is the guidance. What is
+        # genuinely useless is a skill with neither tools nor guidance — it
+        # would occupy a slot in the prompt and contribute nothing.
+        if not self.tools and not self.guidance.strip():
+            raise ValueError(
+                f"skill {self.id!r} must provide at least one tool or non-empty guidance"
+            )
         names = [t.name for t in self.tools]
         if len(names) != len(set(names)):
             raise ValueError(f"skill {self.id!r} has duplicate tool names: {names}")
@@ -74,6 +83,8 @@ class Skill:
             "tool_names": self.tool_names,
             "tool_count": len(self.tools),
             "has_guidance": bool(self.guidance),
+            "source": self.source,
+            "path": self.path,
         }
 
 

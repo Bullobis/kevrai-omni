@@ -21,6 +21,7 @@ import logging
 import os
 import re
 import sys
+import tempfile
 import time
 import uuid
 from pathlib import Path
@@ -2632,7 +2633,7 @@ def _get_agent(request: Request):
     """Lazily build and cache the agent singleton for this sidecar instance."""
     if "agent" in _AGENT_SINGLETON:
         return _AGENT_SINGLETON["agent"]
-    from .agent import Agent, AgentMemory, ModelRouter, ToolContext
+    from .agent import Agent, AgentMemory, ModelRouter, ToolContext, skill_hub
     from .agent.tools import build_skill_manager
 
     db_path = APP_ROOT / "agent" / "memory.sqlite3"
@@ -2640,7 +2641,14 @@ def _get_agent(request: Request):
     router = ModelRouter()
     # v2.8.0: pluggable skills; enable/disable state persists next to memory.
     skill_state = APP_ROOT / "agent" / "skills.json"
-    skill_manager = build_skill_manager(skill_state)
+    # v2.9.0: skills imported through the skill hub are layered on top of the
+    # built-in set via ``extra_skills`` — they never mutate BUILTIN_SKILLS.
+    try:
+        imported = skill_hub.load_imported(skill_hub.default_library_root(APP_ROOT))
+    except Exception as exc:  # pragma: no cover - defensive
+        log.warning("skill hub load failed: %s", exc)
+        imported = []
+    skill_manager = build_skill_manager(skill_state, extra_skills=imported)
 
     hw = _HW_CACHE["data"] or {}
     # NOTE: detect_hardware is async; we must not call it here in this sync
@@ -2721,6 +2729,131 @@ def agent_reset_skills(request: Request) -> dict[str, Any]:
     agent.reload_skills()
     return {"ok": True, "skills": agent.skills.list_skills(),
             "active_tool_count": len(agent.registry.list_names())}
+
+
+class SkillHubImportReq(BaseModel):
+    path: str = Field("", max_length=4096)
+
+
+class SkillHubGitReq(BaseModel):
+    url: str = Field("", max_length=2048)
+
+
+def _skill_hub_root() -> Any:
+    from .agent import skill_hub
+
+    return skill_hub.default_library_root(APP_ROOT)
+
+
+@app.get("/api/agent/skill-hub")
+def agent_skill_hub_list() -> dict[str, Any]:
+    """List skills imported into the local skill hub."""
+    from .agent import skill_hub
+
+    items = skill_hub.scan_library(_skill_hub_root())
+    return {
+        "skills": items,
+        "count": len(items),
+        "ok_count": sum(1 for i in items if i.get("ok")),
+        "builtin_count": len(skill_hub.builtin_skill_ids()),
+        "root": str(_skill_hub_root()),
+    }
+
+
+@app.post("/api/agent/skill-hub/import")
+def agent_skill_hub_import(req: SkillHubImportReq, request: Request) -> dict[str, Any]:
+    """Import a local directory holding a SKILL.md."""
+    from .agent import skill_hub
+
+    try:
+        result = skill_hub.import_dir(req.path, _skill_hub_root())
+    except skill_hub.SkillHubError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    _AGENT_SINGLETON.clear()
+    return {"ok": True, "imported": [result], "reloaded": True}
+
+
+@app.post("/api/agent/skill-hub/import-zip")
+def agent_skill_hub_import_zip_path(req: SkillHubImportReq) -> dict[str, Any]:
+    """Import skills from a **zip already on disk** (path-based variant).
+
+    The Electron shell hands the renderer a native file path rather than the
+    bytes, so this is the form the desktop app uses. A multipart variant lives
+    below for browser/HTTP clients.
+    """
+    from .agent import skill_hub
+
+    try:
+        results = skill_hub.import_zip(req.path, _skill_hub_root())
+    except skill_hub.SkillHubError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    _AGENT_SINGLETON.clear()
+    return {"ok": True, "imported": results, "count": len(results), "reloaded": True}
+
+
+@app.post("/api/agent/skill-hub/import-zip-upload")
+async def agent_skill_hub_import_zip_upload(request: Request) -> dict[str, Any]:
+    """Import one or more skills from an uploaded zip archive.
+
+    The upload is written to a temporary file first because
+    ``zipfile.ZipFile`` needs a seekable stream; the size cap is enforced here
+    as well as in the hub so an oversized body never reaches the disk.
+    """
+    from .agent import skill_hub
+
+    form = await request.form()
+    upload = form.get("file")
+    if upload is None or not hasattr(upload, "read"):
+        raise HTTPException(status_code=400, detail="missing multipart field 'file'")
+    raw = await upload.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="empty upload")
+    if len(raw) > skill_hub.MAX_ARCHIVE_BYTES:
+        raise HTTPException(status_code=413, detail="archive too large")
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as fh:
+            fh.write(raw)
+            tmp_path = Path(fh.name)
+        results = skill_hub.import_zip(tmp_path, _skill_hub_root())
+    except skill_hub.SkillHubError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    finally:
+        if tmp_path is not None:
+            with contextlib.suppress(OSError):
+                tmp_path.unlink(missing_ok=True)
+    _AGENT_SINGLETON.clear()
+    return {"ok": True, "imported": results, "count": len(results), "reloaded": True}
+
+
+@app.post("/api/agent/skill-hub/import-git")
+def agent_skill_hub_import_git(req: SkillHubGitReq) -> dict[str, Any]:
+    """Shallow-clone a skill repo / plugin marketplace and import its skills."""
+    from .agent import skill_hub
+
+    try:
+        results = skill_hub.import_git(req.url, _skill_hub_root())
+    except skill_hub.SkillHubError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    _AGENT_SINGLETON.clear()
+    return {"ok": True, "imported": results, "count": len(results), "reloaded": True}
+
+
+@app.delete("/api/agent/skill-hub/{skill_id}")
+def agent_skill_hub_remove(skill_id: str) -> dict[str, Any]:
+    """Delete an imported skill. Built-in skills are refused with 403."""
+    from .agent import skill_hub
+
+    try:
+        result = skill_hub.remove_imported(skill_id, _skill_hub_root())
+    except skill_hub.SkillHubError as e:
+        if e.code == "builtin_protected":
+            raise HTTPException(status_code=403, detail=str(e)) from e
+        if e.code in ("not_found", "invalid_skill_id"):
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    _AGENT_SINGLETON.clear()
+    return {"ok": True, "removed": result, "reloaded": True}
 
 
 @app.post("/api/agent/skills/{skill_id}")

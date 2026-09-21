@@ -11,7 +11,6 @@ import { toast } from "./modules/toast.js";
 import { renderEnvironmentsPage } from "./modules/environments.js";
 import { renderHardwarePage } from "./modules/hardware.js";
 import { renderMnnPage } from "./modules/mnn.js";
-import { renderDramaPage } from "./modules/drama.js";
 import { initAgent } from "./modules/agent.js";
 import { state, setState } from "./modules/state.js";
 import { applyTheme, wireThemeListener } from "./modules/theme.js";
@@ -189,14 +188,6 @@ function switchView(name) {
     if (root) {
       root.dataset.rendered = "1";
       renderMnnPage(root).catch((e) => toast("MNN 页加载失败：" + e.message, { kind: "err" }));
-    }
-  }
-  // Drama Agent page (re-render on every visit to refresh model options).
-  if (name === "drama") {
-    const root = document.getElementById("drama-root");
-    if (root) {
-      root.dataset.rendered = "1";
-      renderDramaPage(root).catch((e) => toast("短剧 Agent 页加载失败：" + e.message, { kind: "err" }));
     }
   }
   // v2.4.0 — LTX-2.5 video generation page (init once).

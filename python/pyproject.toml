@@ -61,6 +61,10 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S", "B"]
+# The skill hub shells out to the system `git` for marketplace imports. The
+# argv is a fixed list with no shell, and no user input is ever split into
+# arguments, so S607 ("partial executable path") does not apply here.
+"app/agent/skill_hub.py" = ["S607"]
 
 [tool.mypy]
 python_version = "3.10"
