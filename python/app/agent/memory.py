@@ -89,7 +89,13 @@ class AgentMemory:
                 (session_id, title, now, now),
             )
             conn.commit()
-        return self.get_session(session_id)
+        # The row was just inserted (or already existed for this id), so the
+        # read-back cannot be None. Assert it rather than widening the return
+        # type to `| None`, which would force every caller to handle a case
+        # that is structurally impossible.
+        row = self.get_session(session_id)
+        assert row is not None, f"session {session_id!r} vanished immediately after insert"
+        return row
 
     def get_session(self, session_id: str) -> dict[str, Any] | None:
         with self._conn() as conn:
@@ -140,6 +146,9 @@ class AgentMemory:
             conn.commit()
             msg_id = cur.lastrowid
         self.touch_session(session_id)
+        # An INSERT always yields a rowid; sqlite3 types it as Optional only
+        # because it is also unset after a non-INSERT statement.
+        assert msg_id is not None, "INSERT did not produce a rowid"
         return int(msg_id)
 
     def get_messages(

@@ -126,7 +126,9 @@ def _total_ram_gb() -> float:
 
         stat = MEMORYSTATUSEX()
         stat.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
-        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
+        # `ctypes.windll` only exists on Windows; this whole function is wrapped
+        # in try/except so the Linux/macOS path returns the 8.0 fallback below.
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))  # type: ignore[attr-defined]
         return round(stat.ullTotalPhys / (1024 ** 3), 1)
     except Exception:
         return 8.0

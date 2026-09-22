@@ -2,7 +2,7 @@
 "use strict";
 import { api } from "./api.js";
 import { toast } from "./toast.js";
-import { unwrap } from "./net.js";
+import { unwrap, escapeHtml } from "./net.js";
 import { state, setState } from "./state.js";
 
 function fmtBytes(n) {
@@ -245,10 +245,4 @@ export async function startDownloadFromUrl(url, opts) {
       showDownloads();
     }
   } catch (_) { throw new Error("startDownload failed"); }
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (m) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[m]));
 }

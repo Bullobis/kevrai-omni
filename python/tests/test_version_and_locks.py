@@ -20,11 +20,13 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 # 1. Version single-source-of-truth
 # ---------------------------------------------------------------------------
 
-def test_version_is_2_8_1_everywhere():
+def test_version_is_consistent_everywhere():
     import app
 
-    assert app.__version__ == "2.8.1"
-    assert app.USER_AGENT == "kevrai-omni/2.8.1"
+    # Relational, never pinned to a literal: the version may move, but these
+    # two must always agree (asserting a literal here is what previously froze
+    # the version and caused the 2.8.1 → 2.9.0 drift).
+    assert f"kevrai-omni/{app.__version__}" == app.USER_AGENT
 
 
 def test_engine_ua_delegates_to_package_version():

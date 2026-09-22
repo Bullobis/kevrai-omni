@@ -620,12 +620,12 @@ def _normalize_script(obj: dict[str, Any], default_mode: str = DEFAULT_STORY_MOD
             "key_prop": _clean_str(c.get("key_prop"), 300),
         })
 
-    scenes = []
+    scenes: list[dict] = []
     for sc in (obj.get("scenes") or [])[:_MAX_SCENES]:
         if not isinstance(sc, dict):
             continue
         scene_id = int(sc.get("scene_id") or (len(scenes) + 1))
-        shots = []
+        shots: list[dict] = []
         for sh in (sc.get("shots") or [])[:_MAX_SHOTS_PER_SCENE]:
             if not isinstance(sh, dict):
                 continue

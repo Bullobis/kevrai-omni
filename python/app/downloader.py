@@ -148,6 +148,10 @@ class Downloader:
         self._enforce_allowlist = bool(allowed_hosts)  # if caller passed set, enforce
         self._client = client
         self._client_owned = client is None
+        # Connection pool built lazily in `_get_client` when no client was
+        # injected. Declared here (rather than first assigned inside the method)
+        # so `aclose` can simply test for None instead of `getattr`/`hasattr`.
+        self._own_client: httpx.AsyncClient | None = None
         self._chunk_size = chunk_size
 
     # --- public ---
@@ -223,10 +227,9 @@ class Downloader:
         # ``_own_client`` 是未注入 client 时自建的连接池。此前这里只关了
         # ``self._client``，导致每次 put_settings 重建 Downloader（并发数
         # 变更）都会泄漏一个 httpx 连接池（含 keep-alive socket）。
-        own = getattr(self, "_own_client", None)
-        if own is not None:
+        if self._own_client is not None:
             with contextlib.suppress(Exception):
-                await own.aclose()
+                await self._own_client.aclose()
             self._own_client = None
 
     # --- internals ---
@@ -244,12 +247,11 @@ class Downloader:
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is not None:
             return self._client
-        if not hasattr(self, "_own_client") or self._own_client is None:
-            import httpx as _httpx
-            self._own_client = _httpx.AsyncClient(
+        if self._own_client is None:
+            self._own_client = httpx.AsyncClient(
                 follow_redirects=True, timeout=DEFAULT_TIMEOUT
             )
-        return self._own_client  # type: ignore[return-value]
+        return self._own_client
 
     async def _run(self, task: DownloadTask) -> None:
         partial = Path(task.dest_path + ".partial")

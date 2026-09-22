@@ -3,6 +3,7 @@
 import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { state } from "./state.js";
+import { escapeHtml } from "./net.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -124,10 +125,4 @@ function engineRow(e) {
     </div>
   `;
   return card;
-}
-
-function escapeHtml(s) {
-  return String(s || "").replace(/[&<>"']/g, (m) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[m]));
 }

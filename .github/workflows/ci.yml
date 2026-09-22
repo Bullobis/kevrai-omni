@@ -109,6 +109,13 @@ jobs:
             echo "::error::no .coverage data — the pytest step did not complete; see its summary above"
             exit 1
           fi
+          # A stale or truncated .coverage satisfies `-f` but measures nothing.
+          # Distinguish "covered badly" from "never measured" so the failure
+          # points at the real problem.
+          if [ ! -s .coverage ]; then
+            echo "::error::.coverage exists but is empty — pytest did not record any data"
+            exit 1
+          fi
           python -c "
           import sys, coverage
           cov = coverage.Coverage()
@@ -119,15 +126,18 @@ jobs:
               analysis = cov._analyze(fname)
               total += len(analysis.statements)
               covered += len([s for s in analysis.statements if s in analysis.executed])
+          if total == 0:
+              print('::error::coverage data is present but measured 0 statements — pytest collected nothing; not a floor failure')
+              sys.exit(1)
           pct = (covered / total * 100.0) if total else 0.0
           print(f'Coverage: {pct:.1f}% ({covered}/{total})')
 
-          # Floor is deliberately set just below the measured baseline (66.5%)
+          # Floor is deliberately set just below the measured baseline (69.6%)
           # so the gate catches *regressions* without being permanently red.
           # Goal is 80%; see docs/COVERAGE.md for the gap and the priority
           # modules.  Raise this number as coverage actually improves — do not
           # raise it ahead of reality.
-          FLOOR = 65.0
+          FLOOR = 68.0
           GOAL  = 80.0
 
           if pct < FLOOR:
@@ -234,19 +244,54 @@ jobs:
       - name: mypy python/app/ --ignore-missing-imports
         working-directory: python
         run: |
-          # Ratchet, not a rubber stamp. The codebase carries a backlog of
-          # pre-existing type errors (29 at the time of writing), so a plain
-          # `mypy app/` gate would be permanently red and a plain `|| true`
-          # gate catches nothing. Measure the count and only fail if it grows.
+          # Hard gate: the backlog is now zero, so MAX_ERRORS is 0 and any new
+          # type error fails the build. It was previously 29 (the size of the
+          # pre-existing backlog, paid down in v2.9.0).
           #
-          # Lower MAX_ERRORS as the backlog is paid down — never raise it to
-          # make CI green.
-          MAX_ERRORS=29
+          # Never raise MAX_ERRORS to make CI green — fix the type error, or
+          # suppress it locally at the site with a narrowly-scoped
+          # `# type: ignore[<code>]` and a comment explaining why.
+          #
+          # IMPORTANT — mypy's own exit status is load-bearing here. The naive
+          # version of this gate (the one that shipped before v2.9.0) was:
+          #
+          #     mypy app/ ... > out 2>&1 || true
+          #     COUNT=$(grep -c "error:" out || true)
+          #     [ "$COUNT" -gt 29 ] && exit 1
+          #
+          # That silently passes whenever mypy never gets far enough to emit
+          # per-line diagnostics: a missing dependency, a bad config, a wrong
+          # path, or an interpreter mismatch makes mypy abort with a *usage*
+          # message that contains no `error:` line, so COUNT=0 and the gate
+          # reports "did not regress (0 <= 29)". Verified reproduction:
+          #
+          #     $ mypy onlyclean.py --no-error-summary   # file absent
+          #     mypy: can't read file 'onlyclean.py': No such file or directory
+          #     $ grep -c "error:" out
+          #     0            -> old gate: PASS
+          #
+          # So capture the real exit code first. mypy exits 0 when clean, 1 when
+          # it found type errors, and >= 2 when it could not run at all (fatal).
+          # Treat >= 2 as a hard failure rather than as "zero errors".
+          MAX_ERRORS=0
+          set +e
           mypy app/ --ignore-missing-imports \
-            --no-error-summary --no-incremental > /tmp/mypy.out 2>&1 || true
-          COUNT=$(grep -c "error:" /tmp/mypy.out || true)
-          echo "mypy errors: ${COUNT} (allowed: ${MAX_ERRORS})"
+            --no-error-summary --no-incremental > /tmp/mypy.out 2>&1
+          MYPY_RC=$?
+          set -e
+          echo "mypy exit code: ${MYPY_RC}"
           tail -20 /tmp/mypy.out
+
+          if [ "${MYPY_RC}" -ge 2 ]; then
+            echo "::error::mypy could not run (exit ${MYPY_RC}) — refusing to report '0 errors'. See output above."
+            exit 1
+          fi
+
+          # `grep -c` prints 0 and exits 1 on no matches; the tool runs with
+          # `set -e` in the runner, so normalise it explicitly.
+          COUNT=$(grep -c "error:" /tmp/mypy.out) || COUNT=0
+          echo "mypy errors: ${COUNT} (allowed: ${MAX_ERRORS})"
+
           if [ "${COUNT}" -gt "${MAX_ERRORS}" ]; then
             echo "::error::mypy errors grew from ${MAX_ERRORS} to ${COUNT}"
             exit 1

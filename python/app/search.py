@@ -478,9 +478,9 @@ def search(models: list[dict[str, Any]], sq: SearchQuery) -> dict[str, Any]:
         all_matched_tokens: set[str] = set()
         fields = corpus.fields[idx]
         for fname, ftext in fields.items():
-            s, matches, tok_hits = _score_field(fname, ftext, qn, qtokens)
-            if s > 0:
-                total += s
+            field_score, matches, tok_hits = _score_field(fname, ftext, qn, qtokens)
+            if field_score > 0:
+                total += field_score
                 all_matches.extend(matches)
                 matched_fields.append(fname)
             all_matched_tokens.update(tok_hits)
@@ -512,7 +512,12 @@ def search(models: list[dict[str, Any]], sq: SearchQuery) -> dict[str, Any]:
     page_items = scored[(page - 1) * page_size: page * page_size]
 
     # ---- serialize ----
-    items = []
+    # The annotation is load-bearing: `items` is also bound near the top of this
+    # module as a list[str] of recent search terms, and `s` is bound as a bare
+    # float in the scoring loop above. Without explicit types mypy carries those
+    # earlier bindings forward and reports every access below as an attribute
+    # error on `str` / `float`.
+    items: list[dict] = []
     for s in page_items:
         d = dict(s.model)
         d["_score"] = round(s.score, 3)

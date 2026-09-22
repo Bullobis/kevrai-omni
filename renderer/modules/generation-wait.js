@@ -9,6 +9,8 @@
  * - cycling stage captions + optional progress bar
  */
 
+import { escapeHtml } from "./net.js";
+
 const NS = "http://www.w3.org/2000/svg";
 let activeInstance = null;
 
@@ -197,10 +199,6 @@ function buildOverlay(options) {
 
   activeInstance = api;
   return api;
-}
-
-function escapeHtml(s) {
-  return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
 export function showGenerationWait(options) {

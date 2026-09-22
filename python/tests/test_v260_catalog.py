@@ -186,7 +186,10 @@ def test_unique_ids_and_sources_after_edit():
 
 def test_catalog_version_bumped():
     _, data = _models()
-    assert data["version"] == "2.8.1"
+    # Relational: the catalog version must agree with the product version,
+    # never a frozen literal (that would re-freeze the release version).
+    pkg = json.loads((Path(__file__).resolve().parents[2] / "package.json").read_text(encoding="utf-8"))
+    assert data["version"] == pkg["version"]
     # every non-pending entry still carries a safe id
     for m in data["models"]:
         assert re.fullmatch(r"[A-Za-z0-9._-]+", m["id"])

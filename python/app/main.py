@@ -121,7 +121,7 @@ except Exception:  # pragma: no cover
 # ---------------------------------------------------------------------------
 
 # Make engines.is_installed(eng_id) still importable for callers that use it.
-engines_module.is_installed = EngineManager.is_installed  # legacy alias
+engines_module.is_installed = EngineManager.is_installed  # type: ignore[attr-defined]  # legacy alias
 
 
 def _app_data_root() -> Path:
@@ -617,7 +617,10 @@ def model_gguf_files(model_id: str) -> dict[str, Any]:
 @app.get("/api/gguf-repos")
 def gguf_repos() -> dict[str, Any]:
     """List all GGUF repos and their files (enumerated live from HF)."""
-    out = []
+    # Two entry shapes (success carries `files` + `count`, failure carries
+    # `error`), so the element type must be declared — otherwise mypy unifies
+    # the list on whichever dict literal it sees first and rejects the other.
+    out: list[dict[str, Any]] = []
     for g in CATALOG.gguf_repos:
         try:
             files = list_gguf_files(g.owner_repo, g.filter)
@@ -1810,7 +1813,10 @@ def _mnn_download_one_file(f: dict[str, Any], dest: Path) -> None:
                 if resume:
                     headers["Range"] = f"bytes={resume}-"
                 with (
-                    httpx.Client(timeout=(15.0, 120.0), follow_redirects=True) as client,
+                    httpx.Client(
+                        timeout=httpx.Timeout(connect=15.0, read=120.0),
+                        follow_redirects=True,
+                    ) as client,
                     client.stream("GET", u, headers=headers) as resp,
                 ):
                     if resp.status_code in (301, 302, 303, 307, 308):

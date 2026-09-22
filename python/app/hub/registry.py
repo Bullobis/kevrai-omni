@@ -99,7 +99,7 @@ def _relevance_norm(model: RemoteModel, idx: int, bucket_len: int) -> float:
     if model.hub == HUB_CURATED:
         raw = model.hardware.get("_score") if isinstance(model.hardware, Mapping) else None
         try:
-            r = float(raw)
+            r = float(raw) if raw is not None else 0.0
         except (TypeError, ValueError):
             r = 0.0
         # `search.py` scores are unbounded; squash into [0, 1) monotonically.
@@ -279,10 +279,16 @@ def _annotate_candidates(urls: Sequence[str]) -> list[dict[str, Any]]:
     always zip URLs with metadata. Never raises.
     """
     out: list[dict[str, Any]] = []
+    # Imported lazily: `sources_registry` pulls in the curated catalog, which is
+    # heavy enough that paying for it on every registry import is wasteful.  The
+    # callable is looked up once here and compared against None explicitly,
+    # because mypy cannot model an import failing inside try/except.
+    matched_host_patterns: Any = None
     try:
-        from ..sources_registry import matched_host_patterns
-    except Exception:  # pragma: no cover — defensive
-        matched_host_patterns = None  # type: ignore[assignment]
+        from ..sources_registry import matched_host_patterns as _mhp
+    except ImportError:  # pragma: no cover — defensive
+        _mhp = None  # type: ignore[assignment]
+    matched_host_patterns = _mhp
     for u in urls or []:
         host = ""
         try:
@@ -290,7 +296,7 @@ def _annotate_candidates(urls: Sequence[str]) -> list[dict[str, Any]]:
             host = (urlparse(u).hostname or "").lower()
         except Exception:
             host = ""
-        ids = matched_host_patterns(host) if matched_host_patterns else []
+        ids = matched_host_patterns(host) if matched_host_patterns is not None else []
         out.append({"url": u, "host": host, "source_ids": ids})
     return out
 
@@ -438,10 +444,17 @@ class HubRegistry:
                     "message": res.warning or f"{hub} 已降级",
                 })
             # Keep the source cursor for the next page even on an empty page.
+            # `cursor_here` narrows the Optional in one place so the assignment
+            # below cannot receive a None. (The previous form computed an
+            # equivalent condition inline, but mypy could not see that the
+            # trailing `or has_more_here` still implied a non-None cursor.)
             cap = quota.get(hub, per_source_limit)
             has_more_here = res.next is not None and len(res.items) <= cap
-            if res.next is not None and (len(res.items) > 0 or hub != HUB_CURATED) or has_more_here:
-                next_cursors[hub] = res.next
+            cursor_here = res.next
+            if cursor_here is not None and (
+                len(res.items) > 0 or hub != HUB_CURATED or has_more_here
+            ):
+                next_cursors[hub] = cursor_here
 
         merged = merge_rank(buckets, limit=spec.page_size * 2)
         deduped = dedupe(merged)
