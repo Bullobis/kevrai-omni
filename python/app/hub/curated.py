@@ -36,6 +36,19 @@ from .taxonomy import curated_category
 CATALOG_DIR = Path(__file__).resolve().parents[3] / "catalog"
 
 
+def _dict_field(entry: Mapping[str, Any], key: str) -> dict[str, Any]:
+    """Return ``entry[key]`` when it is a mapping, else an empty dict.
+
+    Exists so the callers below stay one line each: mypy cannot narrow through
+    ``x if isinstance(x.get(k), dict) else {}`` because the guard and the value
+    are two separate ``.get`` calls, so it reports the result as
+    ``... | None``. Doing the narrowing inside a helper makes the result
+    unconditionally a ``dict``.
+    """
+    value = entry.get(key)
+    return dict(value) if isinstance(value, dict) else {}
+
+
 class CuratedAdapter(SourceAdapter):
     """Local curated catalog exposed through the uniform adapter surface."""
 
@@ -52,8 +65,8 @@ class CuratedAdapter(SourceAdapter):
     @staticmethod
     def _to_remote(entry: Mapping[str, Any]) -> RemoteModel:
         """Convert one ``ModelEntry.model_dump()``-shaped dict to RemoteModel."""
-        hardware = entry.get("hardware") if isinstance(entry.get("hardware"), dict) else {}
-        modality = entry.get("modality") if isinstance(entry.get("modality"), dict) else {}
+        hardware = _dict_field(entry, "hardware")
+        modality = _dict_field(entry, "modality")
         category = curated_category(entry.get("category"))
         engine = entry.get("engine") or []
         if isinstance(engine, str):
@@ -70,9 +83,9 @@ class CuratedAdapter(SourceAdapter):
             engine_confidence="high",
             trending=bool(entry.get("trending")),
             repo=clamp_str(entry.get("repo") or "", 220),
-            hardware=dict(hardware),
+            hardware=hardware,
             tags=list(entry.get("tags") or []),
-            modality=dict(modality),
+            modality=modality,
             files=list(entry.get("files") or []),
             size_bytes=int(entry.get("size_bytes") or 0),
             # NOTE: never write the hub id into `source` — that slot is a URL

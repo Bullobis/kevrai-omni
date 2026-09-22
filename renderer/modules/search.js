@@ -6,6 +6,7 @@ import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { state, setState } from "./state.js";
 import { debounce } from "./debounce.js";
+import { escapeHtml } from "./net.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -555,9 +556,4 @@ export function highlight(text, highlights) {
   return out;
 }
 
-function escapeHtml(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (m) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[m]));
-}
 function escapeAttr(s) { return escapeHtml(s).replace(/`/g, "&#96;"); }

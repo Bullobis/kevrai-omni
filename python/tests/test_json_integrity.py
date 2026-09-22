@@ -14,6 +14,22 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
+#: Directories that are build/tooling artefacts rather than repository content.
+#: ``.mypy_cache`` matters most: a single ``mypy`` run drops ~13k JSON files
+#: there, and without this exclusion the parametrisation below silently grows
+#: from ~800 cases to ~20k — all of them asserting that mypy's private cache is
+#: valid JSON. That inflated the collected-test count by 18x and made a local
+#: run look far more thorough than CI, which sees a clean checkout.
+_IGNORED_DIRS = frozenset({
+    "__pycache__",
+    "node_modules",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".git",
+})
+
+
 def _all_json_files() -> list[Path]:
     out: list[Path] = []
     for sub in ("catalog", "python", "renderer", "electron", "."):
@@ -21,9 +37,7 @@ def _all_json_files() -> list[Path]:
         if not base.exists():
             continue
         for p in base.rglob("*.json"):
-            if "__pycache__" in p.parts:
-                continue
-            if "node_modules" in p.parts:
+            if _IGNORED_DIRS.intersection(p.parts):
                 continue
             out.append(p)
     return sorted(out)

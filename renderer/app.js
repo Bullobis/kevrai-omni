@@ -8,6 +8,7 @@
 
 import { api } from "./modules/api.js";
 import { toast } from "./modules/toast.js";
+import { escapeHtml } from "./modules/net.js";
 import { renderEnvironmentsPage } from "./modules/environments.js";
 import { renderHardwarePage } from "./modules/hardware.js";
 import { renderMnnPage } from "./modules/mnn.js";
@@ -155,12 +156,6 @@ function renderLocal() {
               data-path="${escapeHtml(m.path)}" aria-label="在文件管理器中定位">定位</button>` : ""}
     </div>`;
   }).join("");
-}
-
-function escapeHtml(s) {
-  return String(s || "").replace(/[&<>"']/g, (m) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[m]));
 }
 
 function switchView(name) {

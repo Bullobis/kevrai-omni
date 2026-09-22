@@ -135,7 +135,10 @@ def parse_tool_call(text: str) -> tuple[str, dict[str, Any]] | None:
     if m:
         name = m.group(1).lower()
         raw = m.group(2).strip()
-        params: dict[str, Any] = {}
+        # `params` is already annotated in the Format 1 branch above; reusing the
+        # name without repeating the annotation keeps mypy from reporting a
+        # `no-redef` in the same function scope.
+        params = {}
         if raw:
             for pair in re.split(r",(?=(?:[^\"']*[\"'][^\"']*[\"'])*[^\"']*$)", raw):
                 if "=" in pair:

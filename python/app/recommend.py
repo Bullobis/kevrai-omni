@@ -151,7 +151,11 @@ def recommend(
 
         scored.append((score, -size, m, r))
 
-    scored.sort(key=lambda t: (-t[0], t[1]))
+    # ``t[1]`` holds ``-size`` (see the append above), so it must be negated
+    # again here: without this the tie-break sorts *larger* models first, the
+    # opposite of the documented "prefer moderate size" intent. Sorting on the
+    # pre-negated value already means "smaller first" once re-negated.
+    scored.sort(key=lambda t: (-t[0], -t[1]))
     out = []
     for score, _neg, m, r in scored[:max(1, limit)]:
         d = dict(m)

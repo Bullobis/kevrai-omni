@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import threading
 
+import httpx
+
 from .base import (
     ALL_HUBS,
     CATEGORIES,
@@ -116,8 +118,8 @@ def build_registry(
     *,
     hf_base_url: str | None = None,
     ms_base_url: str | None = None,
-    hf_client: object | None = None,
-    ms_client: object | None = None,
+    hf_client: httpx.AsyncClient | None = None,
+    ms_client: httpx.AsyncClient | None = None,
     ttl_s: int | None = None,
 ) -> HubRegistry:
     """Construct a fresh :class:`HubRegistry` with the three adapters.

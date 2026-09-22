@@ -5,6 +5,7 @@ import { toast } from "./toast.js";
 import { state, setState } from "./state.js";
 import { VirtualGrid } from "./virtual-grid.js";
 import { highlight as highlightText } from "./search.js";
+import { escapeHtml } from "./net.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -574,10 +575,4 @@ function renderDetail(m, gguf) {
 // 魔搭 exposes a Chinese display name; surface it when there is no prose yet.
 function chineseNameOf(m) {
   return (m.name_cn || "").trim();
-}
-
-function escapeHtml(s) {
-  return String(s || "").replace(/[&<>"']/g, (m) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[m]));
 }

@@ -183,21 +183,30 @@ def _summary(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
                 if bg not in _STOPWORDS:
                     bigrams.append(bg)
     freq = Counter(bigrams)
-    scored = []
+    # (score, original_index, sentence) — indexed by `picked` below.  The tuple
+    # shape is annotated because the mixed int/float/str elements would
+    # otherwise be inferred as `tuple[float, int, object]`.
+    scored: list[tuple[float, int, str]] = []
     for idx, s in enumerate(sentences):
         toks = re.findall(r"[一-鿿]{2,}|[A-Za-z]{2,}", s)
-        score = 0
+        score: float = 0
         for tok in toks:
             if re.fullmatch(r"[A-Za-z]{2,}", tok):
                 score += freq.get(tok.lower(), 0)
             else:
                 for i in range(len(tok) - 1):
                     score += freq.get(tok[i:i + 2], 0)
-        # Position bias: lead sentences usually carry the thesis.
+        # Position bias: lead sentences usually carry the thesis.  The literal is
+        # a float, which widens `score` from int to float — hence the explicit
+        # annotation above.
         score += max(0, len(sentences) - idx) * 0.5
         scored.append((score, idx, s))
     picked = sorted(sorted(scored, key=lambda x: -x[0])[:top_n], key=lambda x: x[1])
-    extractive = [{"index": idx, "sentence": s} for _, idx, s in picked]
+    # Indexed by the `"".join(...)` below, so the value type must be str rather
+    # than the `object` mypy infers from an unannotated list of dict literals.
+    extractive: list[dict[str, Any]] = [
+        {"index": idx, "sentence": s} for _, idx, s in picked
+    ]
     stats = _text_stats(text)
     prompt = f"请用 {top_n} 句话总结以下文本，保留关键事实，不要新增信息：\n\n{text}"
     out: dict[str, Any] = {

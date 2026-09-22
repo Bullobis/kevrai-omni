@@ -154,9 +154,20 @@ pass "no leaked secrets"
 # ----------------------------------------------------------------------
 section "Step 5/9 · pip install (Tencent mirror, dependencies only)"
 # ----------------------------------------------------------------------
-python3 -m pip install -i "${INDEX}" --quiet --disable-pip-version-check \
-  -r python/requirements.txt || true
-pass "pip install (best-effort)"
+# Deliberately best-effort: in CI the python job has already installed the
+# full dependency set, and this step exists so a *local* run can bootstrap
+# itself. A failure here is therefore not fatal on its own — but it must not
+# be invisible either, because Step 6 (pytest) is the step that actually
+# proves the deps import. Record the outcome so the summary distinguishes
+# "install skipped/failed, pytest still passed using preinstalled deps" from
+# "install succeeded".
+if python3 -m pip install -i "${INDEX}" --quiet --disable-pip-version-check \
+     -r python/requirements.txt; then
+  pass "pip install (Tencent mirror)"
+else
+  echo "  ⚠ pip install failed — continuing; Step 6 (pytest) is the real gate" >&2
+  echo "  warn: pip install failed (best-effort; pytest still decides)" >>"${SUMMARY_FILE}"
+fi
 
 # ----------------------------------------------------------------------
 section "Step 6/9 · pytest (full suite)"
