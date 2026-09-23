@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # Kevrai Omni — release runbook.
 #
 # Pre-flight checks (all must pass):
