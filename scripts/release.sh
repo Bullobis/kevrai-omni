@@ -111,7 +111,16 @@ if [ "${SKIP_BUILD}" -eq 1 ]; then
   info "skip-build requested; assuming build/output already populated"
 else
   bash scripts/build_windows.sh || fail "build_windows.sh failed"
-  npx --yes electron-builder --linux \
+  # Align with scripts/build_linux.sh: never auto-publish (gh release create
+  # below handles upload), disable code-sign auto-discovery, skip native
+  # rebuild, and pin the electron entry point.  --publish never is REQUIRED:
+  # without it electron-builder tries to upload assets to GitHub directly and
+  # races / double-uploads against our explicit `gh release create`.
+  export CSC_IDENTITY_AUTO_DISCOVERY=false
+  export ELECTRON_BUILDER_BINARIES_MIRROR="${ELECTRON_BUILDER_BINARIES_MIRROR:-https://registry.npmmirror.com/-/binary/electron-builder-binarie/}"
+  npx --yes electron-builder --linux --publish never \
+    --config.npmRebuild=false \
+    --config.extraMetadata.main="electron/main.js" \
     || fail "electron-builder --linux failed (try again or use --skip-build)"
 fi
 
