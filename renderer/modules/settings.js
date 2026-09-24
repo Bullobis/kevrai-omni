@@ -175,8 +175,12 @@ export function wireSettings() {
     if (t) { e.preventDefault(); openSettings().catch(() => {}); }
   });
 
-  // Close on Escape
   document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "," && overlay.hasAttribute("hidden")) {
+      e.preventDefault();
+      openSettings().catch(() => {});
+      return;
+    }
     if (e.key === "Escape" && !overlay.hasAttribute("hidden")) closeSettings();
   });
 }

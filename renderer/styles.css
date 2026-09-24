@@ -851,6 +851,19 @@ body.dragging .drop-mask { display: flex; }
 .agent-badge-ready { background: rgba(111, 220, 140, 0.15); color: #6fdc8c; border: 1px solid rgba(111, 220, 140, 0.3); }
 .agent-badge-fallback { background: rgba(255, 184, 107, 0.12); color: #ffb86b; border: 1px solid rgba(255, 184, 107, 0.3); }
 .agent-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--border, #333); border-radius: 10px; background: var(--bg, #121316); margin-bottom: 10px; }
+.agent-empty { margin: auto; max-width: 640px; padding: 28px; text-align: center; }
+.agent-empty h3 { margin: 0 0 8px; color: var(--fg); font-size: 20px; }
+.agent-suggestions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 18px; }
+.agent-suggestion {
+  border: 1px solid var(--bord);
+  background: var(--stack-1);
+  color: var(--fg);
+  border-radius: 999px;
+  padding: 8px 13px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.agent-suggestion:hover { border-color: var(--accent); color: var(--accent); }
 .agent-msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; line-height: 1.55; font-size: 13.5px; }
 .agent-msg-user { align-self: flex-end; background: var(--accent, #4a7dff); color: #fff; border-bottom-right-radius: 4px; }
 .agent-msg-assistant { align-self: flex-start; background: var(--card, #1b1c1f); color: var(--fg, #ccc); border: 1px solid var(--border, #333); border-bottom-left-radius: 4px; }
