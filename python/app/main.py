@@ -992,8 +992,10 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
     ranking = await measure_sources(sources)
     best = pick_best(ranking) or {"url": sources[0]}
     em: EngineManager = request.app.state.engine_manager
+    # engines.json has no per-binary sha256; pass None to skip hash verification
+    # (previously passed cat.get("version") which always mismatched and failed).
     result = await asyncio.to_thread(
-        em.install, eid, str(best["url"]), cat.get("version", "")
+        em.install, eid, str(best["url"]), None
     )
     return {
         "ok": True,
