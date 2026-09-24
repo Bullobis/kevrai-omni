@@ -15,8 +15,8 @@ Kevrai Omni 采用**标准安装包**交付（不是解压即用的便携包）�
 
 | 形态 | 文件 | 使用方式 |
 |---|---|---|
-| AppImage | `Kevrai-Omni-2.9.0-x64.AppImage` | `chmod +x` 后双击或命令行运行 |
-| deb | `kevrai-omni_2.9.0_amd64.deb` | `sudo apt install ./kevrai-omni_2.9.0_amd64.deb` |
+| AppImage | `Kevrai-Omni-2.9.0-x86_64.AppImage` | `chmod +x` 后双击或命令行运行 |
+| deb | `Kevrai-Omni-2.9.0-amd64.deb` | `sudo apt install ./Kevrai-Omni-2.9.0-amd64.deb` |
 
 deb 安装会写入桌面项与开始菜单项；AppImage 无需安装。
 
@@ -52,6 +52,14 @@ npm ci
 npm run test:js          # JS 语法冒烟
 cd python && pip install -e ".[dev]" && python -m pytest -q tests/ && cd ..
 npm run build:win        # 产出 NSIS 安装包（需 Windows；Linux 下可用 wine，见 scripts/build_linux.sh）
+```
+
+## 高级：并行实例
+
+默认 sidecar 端口为 `17890`。如需同时运行多个实例，可指定其他端口：
+
+```bash
+KEVRAI_PORT=17891 ./Kevrai-Omni-2.9.0-x86_64.AppImage
 ```
 
 ## 卸载

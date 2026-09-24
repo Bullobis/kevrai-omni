@@ -31,8 +31,12 @@ const { URL } = require("node:url");
 // Constants
 // ---------------------------------------------------------------------------
 
-const SIDECAR_PORT = 17890;
-const SIDECAR_HOST = "127.0.0.1";
+function readSidecarPort() {
+  const value = Number.parseInt(process.env.KEVRAI_PORT || "17890", 10);
+  return Number.isInteger(value) && value >= 1024 && value <= 65535 ? value : 17890;
+}
+const SIDECAR_PORT = readSidecarPort();
+const SIDECAR_HOST = process.env.KEVRAI_HOST || "127.0.0.1";
 const SIDECAR_HEALTH_TIMEOUT_MS = 30_000;
 const SIDECAR_HEALTH_INTERVAL_MS = 2_000;
 const SHUTDOWN_TIMEOUT_MS = 5_000;

@@ -15,10 +15,21 @@ files:
 extraResources:
   - from: "catalog"
     to: "catalog"
-    filter: ["**/*"]
+    filter:
+      - "**/*"
+      - "!**/__pycache__/**"
+      - "!**/*.pyc"
+      - "!**/.DS_Store"
   - from: "python"
     to: "python"
-    filter: ["**/*.py", "**/*.toml", "**/*.txt"]
+    filter:
+      - "**/*.py"
+      - "**/*.toml"
+      - "**/*.txt"
+      - "!**/.venv/**"
+      - "!**/__pycache__/**"
+      - "!**/.pytest_cache/**"
+      - "!**/*.egg-info/**"
 
 # ---------- Windows: installer (NSIS) + portable zip, both published ----------
 # Per-target artifactName is NOT supported by electron-builder 25 (target item
