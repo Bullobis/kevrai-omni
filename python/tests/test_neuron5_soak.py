@@ -101,9 +101,10 @@ class _FakeLlm:
 
 
 def _install_fake_mnn(monkeypatch):
-    def _fake_create(cfg_path: str):
-        return _FakeLlm(cfg_path)
-    monkeypatch.setattr(mnn_runtime, "_import_llm", lambda: _fake_create)
+    # Spawn children re-import app.mnn_runtime fresh, so a parent-side
+    # monkeypatch of _import_llm never reaches them. Select the in-process fake
+    # through the inherited env var (OS-level, crosses the spawn boundary).
+    monkeypatch.setenv(mnn_runtime._TEST_FAKE_ENV_VAR, "normal")
 
 
 # ---------------------------------------------------------------------------
