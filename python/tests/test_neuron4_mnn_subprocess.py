@@ -76,11 +76,14 @@ class _FakeChildLlm:
 
 
 def _install_fake_engine(monkeypatch, behavior: str = "normal"):
-    """Monkeypatch ``_import_llm`` in the parent; the forked child inherits it."""
-    def _fake_create(cfg_path: str):
-        return _FakeChildLlm(cfg_path, behavior=behavior)
+    """Point the child at the in-process fake engine.
 
-    monkeypatch.setattr(mnn_runtime, "_import_llm", lambda: _fake_create)
+    Under spawn the child re-imports ``app.mnn_runtime`` fresh, so a parent-side
+    monkeypatch of ``_import_llm`` never reaches it. The fake is instead
+    selected through the inherited ``_TEST_FAKE_ENV_VAR`` (an OS env var, which
+    DOES cross the spawn boundary).
+    """
+    monkeypatch.setenv(mnn_runtime._TEST_FAKE_ENV_VAR, behavior)
 
 
 @pytest.fixture
