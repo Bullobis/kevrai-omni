@@ -232,7 +232,11 @@ export function openCommandPalette() {
   if (!hasDocument) return;
   buildOverlay();
   overlay.hidden = false;
-  if (inputEl) { inputEl.value = ""; }
+  if (inputEl) {
+    inputEl.value = "";
+    // 每次打开按当前语言刷新占位文案（防御初始化时序与语言切换）。
+    inputEl.placeholder = t("cmdpal.placeholder");
+  }
   renderList();
   if (inputEl) inputEl.focus();
 }

@@ -1,6 +1,10 @@
 /* renderer/styles/command-palette.css — 命令面板浮层。
  * 复用 styles.css 的设计 token（中性表面阶 + 品牌绿），不引入紫/靛蓝。 */
 
+/* 作者样式 display:flex 会覆盖浏览器默认的 [hidden]{display:none}，
+ * 必须显式恢复隐藏，否则浮层会常驻首屏。 */
+.cmdpal-overlay[hidden] { display: none; }
+
 .cmdpal-overlay {
   position: fixed;
   inset: 0;
