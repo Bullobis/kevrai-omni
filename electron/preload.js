@@ -493,6 +493,12 @@ const api = {
   // ----- Dialogs / paths / errors / shell -----
   pickFolder:   () => invoke("dialog:pickFolder"),
   pickFile:     () => invoke("dialog:pickFile"),
+  // Custom / frameless title bar controls (see main.js window:* handlers).
+  winMinimize:       () => invoke("window:minimize"),
+  winToggleMaximize: () => invoke("window:toggle-maximize"),
+  winClose:          () => invoke("window:close"),
+  winIsMaximized:    () => invoke("window:is-maximized"),
+  onWinMaxChange:    (cb) => listen("window:maximize-change", cb),
   // Resolve the absolute path of a dropped/selected File object. The nonstandard
   // File.path was removed in Electron 32 (the app runs Electron 33); webUtils is
   // the supported replacement and must be called from preload under context
