@@ -529,8 +529,10 @@ function createWindow(bootstrapMode = false) {
     icon: path.join(__dirname, "..", "assets", "icons", "icon-256.png"),
     backgroundColor: resolveBackgroundColor(),
     autoHideMenuBar: true,
-    frame: true,
-    titleBarStyle: "hiddenInset",
+    // macOS keeps native traffic lights (hiddenInset); Linux/Windows use the
+    // in-app custom title-bar controls (frame:false) to avoid a double title bar.
+    frame: process.platform === "darwin",
+    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

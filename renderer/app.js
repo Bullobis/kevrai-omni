@@ -206,6 +206,33 @@ function switchView(name) {
 
 // ---------------------------------------------------------------------------
 
+// Frameless title bar: wire custom minimize / maximize-restore / close controls.
+function wireWindowControls() {
+  const k = window.kevrai;
+  if (!k) return;
+  document.body.classList.toggle("is-mac", k.platform === "darwin");
+  const btnMin = document.getElementById("win-btn-min");
+  const btnMax = document.getElementById("win-btn-max");
+  const btnClose = document.getElementById("win-btn-close");
+  const ico = document.getElementById("win-ico-max");
+  if (btnMin) btnMin.addEventListener("click", () => { k.winMinimize(); });
+  if (btnClose) btnClose.addEventListener("click", () => { k.winClose(); });
+  const setMax = (isMax) => {
+    if (btnMax) {
+      btnMax.setAttribute("aria-label", isMax ? "还原" : "最大化");
+      btnMax.title = isMax ? "还原" : "最大化";
+    }
+    if (ico) {
+      ico.innerHTML = isMax
+        ? '<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>'
+        : '<rect x="5" y="5" width="14" height="14" rx="1"/>';
+    }
+  };
+  if (btnMax) btnMax.addEventListener("click", () => { k.winToggleMaximize(); });
+  if (k.onWinMaxChange) k.onWinMaxChange((v) => setMax(!!v));
+  if (k.winIsMaximized) k.winIsMaximized().then((v) => setMax(!!v)).catch(() => {});
+}
+
 function wireGlobalUI() {
   // Sidebar category buttons
   document.addEventListener("click", (e) => {
@@ -297,6 +324,7 @@ async function bootstrap() {
   wireDownloads();
   wireDragDrop();
   wireGlobalUI();
+  wireWindowControls();
   wireUpdate();
   wireThemeListener();
   initCommandPalette();
