@@ -952,7 +952,7 @@
       ],
       "license": "Apache-2.0",
       "trending": true,
-      "description": "阿里 Wan 2.2 27B MoE 文生视频，开源 SOTA。",
+      "description": "阿里 Wan 2.2 27B MoE 文生视频，开源 高性能。",
       "sources": [
         "https://huggingface.co/Wan-AI/Wan2.2-T2V-A14B-Diffusers/",
         "https://hf-mirror.com/Wan-AI/Wan2.2-T2V-A14B-Diffusers/",
@@ -1182,7 +1182,7 @@
       ],
       "license": "FLUX.1-dev-NC",
       "trending": true,
-      "description": "Black Forest Labs FLUX.1 dev 开源版，图像生成 SOTA。",
+      "description": "Black Forest Labs FLUX.1 dev 开源版，图像生成 高性能。",
       "sources": [
         "https://huggingface.co/city96/FLUX.1-dev-gguf/",
         "https://hf-mirror.com/city96/FLUX.1-dev-gguf/",
@@ -4693,7 +4693,7 @@
       ],
       "license": "Apache-2.0",
       "trending": true,
-      "description": "快手 Keye-VL-2.0（2026-05）：30B/3B MoE 视觉语言模型，首次 DSA 入多模态，长视频时序 SOTA，内置 Agent。",
+      "description": "快手 Keye-VL-2.0（2026-05）：30B/3B MoE 视觉语言模型，首次 DSA 入多模态，长视频时序 高性能，内置 Agent。",
       "sources": [
         "https://huggingface.co/Kwai-Keye/Keye-VL-2.0-30B-A3B/",
         "https://hf-mirror.com/Kwai-Keye/Keye-VL-2.0-30B-A3B/",
@@ -4745,7 +4745,7 @@
       ],
       "license": "Apache-2.0",
       "trending": true,
-      "description": "Tether/QVAC VisionPsy-Nano（2026-07）：460M 端侧 VLM（SigLIP2+SmolLM2），0.5B 以下 SOTA，手机 36x 加速。",
+      "description": "Tether/QVAC VisionPsy-Nano（2026-07）：460M 端侧 VLM（SigLIP2+SmolLM2），0.5B 以下 高性能，手机 36x 加速。",
       "sources": [
         "https://huggingface.co/qvac/VisionPsy-Nano-460M/",
         "https://hf-mirror.com/qvac/VisionPsy-Nano-460M/"
