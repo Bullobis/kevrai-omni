@@ -13,8 +13,10 @@ from . import USER_AGENT
 
 # Mirror prefixes tried in order for both API listing and file downloads.
 # More sources = better reachability from CN networks (user preference).
+# NOTE: ``hf-cdn.sufy.com`` is a typosquat/phishing clone and is hard-blocked
+# by SECURITY.md / ``DEFAULT_BLOCKED_MIRRORS`` — it must never appear here, even
+# as a last-resort fallback (Neuron3-Engines audit).
 _MIRRORS = (
-    "https://hf-cdn.sufy.com",     # verified reachable from CN (small files OK)
     "https://hf-mirror.com",
     "https://hf-mirror.us",
     "https://hf-cn-mirror.com",
