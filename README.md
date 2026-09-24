@@ -197,15 +197,22 @@ GET  /api/ltx/outputs           # 已生成文件列表
 仓库内置一个独立的 [Remotion](https://www.remotion.dev/) 工程（`remotion/`），
 用 React 代码化生成片头动画与版本海报（H.264 MP4），不依赖录制屏：
 
-- `remotion/src/components/GradientBg.tsx` / `ParticleField.tsx` —— 动态背景素材
-- 合成：`LogoIntro`（Logo 片头）、`VersionPoster`（版本发布海报）
+- `remotion/src/components/GradientBg.tsx` / `ParticleField.tsx` / `TypeWriter.tsx` —— 动态背景素材
+- 合成：`LogoIntro`（10s · 1920×1080 · Logo 片头）、`VersionPoster`（15s · 1080×1080 · 版本发布海报）
+- `remotion/out/` 已加入 `.gitignore`，渲染产物不进 git，通过 GitHub Release 分发
 
 ```bash
 cd remotion
 npm install
 npm run dev          # 打开 Remotion Studio 实时预览 / 调参
 npm run render:all   # 渲染全部合成到 remotion/out/*.mp4
+# 自定义版本号 / 亮点：
+npx remotion render LogoIntro out/logo-intro.mp4 --props='{"version":"v3.0.0"}'
 ```
+
+`.github/workflows/remotion-render.yml` 会在**每月 1 号 UTC 00:00**（或手动
+`workflow_dispatch`）在 Ubuntu runner 上自动渲染两个视频，并上传到最新 GitHub
+Release 与 Actions artifact。
 
 生成的 MP4 可用于 GitHub Release 视频、官网首页或宣传物料；这与运行时的
 **LTX-2.5 视频生成**（用户在应用内文生/图生视频）相互独立。
