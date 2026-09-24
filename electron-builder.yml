@@ -18,7 +18,27 @@ extraResources:
     filter: ["**/*"]
   - from: "python"
     to: "python"
-    filter: ["**/*.py", "**/*.toml", "**/*.txt"]
+    # Include only the runtime sidecar sources; exclude the test suite,
+    # bytecode caches and coverage/lint artifacts that `**/*.py` would
+    # otherwise drag into the installer (40+ test files, __pycache__, etc.).
+    # electron-builder filter = ordered glob list; `!` patterns are exclusions
+    # and the LAST matching pattern wins, so exclusions must come after the
+    # includes.  Filters are relative to `from` (python/).
+    filter:
+      - "**/*.py"
+      - "**/*.toml"
+      - "**/*.txt"
+      - "!tests/**"
+      - "!**/__pycache__/**"
+      - "!**/*.pyc"
+      - "!**/*.pyo"
+      - "!**/*.pyd"
+      - "!.pytest_cache/**"
+      - "!.mypy_cache/**"
+      - "!.ruff_cache/**"
+      - "!.coverage"
+      - "!coverage.xml"
+      - "!**/*.egg-info/**"
 
 # ---------- Windows: installer (NSIS) + portable zip, both published ----------
 # Per-target artifactName is NOT supported by electron-builder 25 (target item

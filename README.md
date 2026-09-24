@@ -16,7 +16,7 @@
 > 点击播放 [assets/media/promo.mp4](assets/media/promo.mp4)。全部画面取自 v2.8.1 真实运行界面（真实模型目录、真实硬件检测、真实 Agent 工具调用）：模型市场双源检索、硬件体检与模型推荐、Kevrai Agent 工具调用、短剧 Agent、LTX-2.5 视频生成、MNN 引擎。
 
 ![License: Kevrai Omni Community License v2.1](https://img.shields.io/badge/License-Kevrai%20Community%20v2.1-orange)
-![Version](https://img.shields.io/badge/version-2.8.1-orange)
+![Version](https://img.shields.io/badge/version-3.0.0-orange)
 ![Tests](https://img.shields.io/badge/tests-577%20passed-brightgreen)
 
 ---
@@ -135,7 +135,7 @@
 ## 快速开始
 
 ### Windows 用户（普通用户）
-1. 从 [Releases](https://github.com/Bullobis/kevrai-omni/releases) 下载 `Kevrai-Omni-Setup-2.4.1.exe`
+1. 从 [Releases](https://github.com/Bullobis/kevrai-omni/releases) 下载 `Kevrai-Omni-3.0.0-x64.exe`（安装包名与 `electron-builder.yml` 的 `artifactName` 模板一致）
 2. 双击安装 → 桌面出现 **Kevrai Omni** 快捷方式
 3. 启动后 → "AI 引擎"标签 → 安装需要的引擎（如 `llama.cpp`）
 4. "模型市场" → 顶部搜索框支持模糊/中文搜索，选模型 → 安装
@@ -144,20 +144,27 @@
 6. "本地模型" → 一键导入你的 `model.gguf` / safetensors
 
 ### 开发者
+
+> 完整的本地开发环境搭建（Windows / Linux / macOS）、测试与打包细节见
+> **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**；sidecar REST/WebSocket 接口见
+> **[docs/API.md](docs/API.md)**；常见问题排查见 **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)**。
+
 ```bash
 git clone https://github.com/Bullobis/kevrai-omni.git
-cd kevrai-studio
+cd kevrai-omni
 npm install
-pip install -r python/requirements.txt
-npm run dev                 # 启动 Electron 开发模式
+cd python && pip install -r requirements.txt && cd ..
+npm run dev                 # 启动 Electron 开发模式（sidecar 自动拉起于 127.0.0.1:17890）
 
 # 测试
-npm run test:python         # Python pytest（303 项）
+npm run test:python         # Python pytest
 npm run test:js             # JS 语法检查
-bash scripts/smoke.sh       # 端到端冒烟
+npm run smoke               # 端到端冒烟（bash scripts/smoke.sh）
 
-# 打包 Windows 安装包
-npm run build:win           # 产物在 dist/
+# 打包（产物在 build/output/）
+npm run build:win           # Windows NSIS .exe
+npm run build:linux         # Linux AppImage + deb
+npm run build:mac           # macOS .dmg
 ```
 
 ---
@@ -185,6 +192,33 @@ GET  /api/ltx/outputs           # 已生成文件列表
 
 ---
 
+## 🎞️ Remotion 动画视频（宣传物料）
+
+仓库内置一个独立的 [Remotion](https://www.remotion.dev/) 工程（`remotion/`），
+用 React 代码化生成片头动画与版本海报（H.264 MP4），不依赖录制屏：
+
+- `remotion/src/components/GradientBg.tsx` / `ParticleField.tsx` / `TypeWriter.tsx` —— 动态背景素材
+- 合成：`LogoIntro`（10s · 1920×1080 · Logo 片头）、`VersionPoster`（15s · 1080×1080 · 版本发布海报）
+- `remotion/out/` 已加入 `.gitignore`，渲染产物不进 git，通过 GitHub Release 分发
+
+```bash
+cd remotion
+npm install
+npm run dev          # 打开 Remotion Studio 实时预览 / 调参
+npm run render:all   # 渲染全部合成到 remotion/out/*.mp4
+# 自定义版本号 / 亮点：
+npx remotion render LogoIntro out/logo-intro.mp4 --props='{"version":"v3.0.0"}'
+```
+
+`.github/workflows/remotion-render.yml` 会在**每月 1 号 UTC 00:00**（或手动
+`workflow_dispatch`）在 Ubuntu runner 上自动渲染两个视频，并上传到最新 GitHub
+Release 与 Actions artifact。
+
+生成的 MP4 可用于 GitHub Release 视频、官网首页或宣传物料；这与运行时的
+**LTX-2.5 视频生成**（用户在应用内文生/图生视频）相互独立。
+
+---
+
 ## 🔍 超级搜索
 
 模型市场顶部工具栏：
@@ -203,37 +237,39 @@ API：`GET /api/search?q=&category=&engine=&license=&size_bucket=&trending=&sort
 ## 项目结构
 
 ```
-kevrai-studio/
+kevrai-omni/
 ├── electron/                # Electron 主进程 + preload
-│   ├── main.js              # 窗口、spawn Python sidecar、IPC 桥（含 v2.4 搜索/LTX 通道）
+│   ├── main.js              # 窗口、spawn Python sidecar、IPC 桥（含搜索/LTX/Agent 通道）
 │   └── preload.js           # contextBridge（sandbox=true，入参校验）
 ├── renderer/                # 渲染层
 │   ├── index.html           # 含 LTX-2.5 生成面板
 │   ├── app.js               # 模块装配
-│   ├── styles.css           # 含搜索下拉/分面/LTX 面板样式
+│   ├── styles.css           # 含搜索下拉/分面/LTX 面板/浅色主题样式
 │   └── modules/
-│       ├── search.js        # ★ 超级搜索 UI（v2.4）
-│       ├── ltx.js           # ★ LTX-2.5 生成面板（v2.4）
+│       ├── search.js        # 超级搜索 UI
+│       ├── ltx.js           # LTX-2.5 生成面板
 │       ├── models.js        # 虚拟滚动网格 + 搜索高亮
 │       └── ...
 ├── python/                  # Python sidecar（FastAPI）
 │   ├── app/
-│   │   ├── main.py          # HTTP 控制面（+ /api/search、/api/ltx/*、GZip）
-│   │   ├── search.py        # ★ 加权模糊搜索引擎（v2.4）
-│   │   ├── ltx_runtime.py   # ★ LTX-2.5 推理任务管理（v2.4）
+│   │   ├── main.py          # HTTP 控制面（/api/*、/v1/*、WebSocket、GZip）
+│   │   ├── search.py        # 加权模糊搜索引擎
+│   │   ├── ltx_runtime.py   # LTX-2.5 推理任务管理
 │   │   ├── catalog.py       # 模型/引擎目录
 │   │   ├── engines.py       # 引擎管理器
 │   │   ├── importer.py      # HF 下载（断点续传）+ 本地导入
-│   │   └── ...
-│   └── tests/               # pytest（372 项）
+│   │   └── agent/           # Kevrai Agent（ReAct、技能库、SQLite 记忆）
+│   └── tests/               # pytest
 ├── catalog/                 # 静态目录（随安装包发行）
-│   ├── models.json          # 121 模型（带 tags/modality）
-│   └── engines.json         # 30 引擎（含 ltx-video、sglang-omni）
+│   ├── models.json          # 模型条目（带 tags/modality）
+│   └── engines.json         # 引擎（含 ltx-video、sglang-omni）
+├── remotion/                # Remotion 动画视频（Logo 片头 / 版本海报，见下）
+├── docs/                    # 开发 / API / 故障排查文档
 ├── scripts/
 │   ├── build_windows.sh     # 打 Windows .exe
 │   └── release.sh           # gh release create
 ├── electron-builder.yml     # NSIS 配置
-└── package.json             # v2.6.0
+└── package.json             # v3.0.0
 ```
 
 ---

@@ -52,3 +52,6 @@ htmlcov/
 *.key
 *.p12
 *.pfx
+
+# Remotion 渲染产物（不跟踪 mp4 等视频文件）
+remotion/out/

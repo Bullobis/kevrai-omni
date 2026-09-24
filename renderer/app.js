@@ -322,6 +322,40 @@ async function bootstrap() {
   const settingsBtn = document.querySelector("[data-action=open-settings]");
   if (settingsBtn) settingsBtn.addEventListener("click", (e) => { e.preventDefault(); openSettings().catch(() => {}); });
 
+  // v3.0.0 — Sidebar expand/collapse toggle (persisted in localStorage)
+  const sidebarToggle = document.getElementById("sidebar-toggle");
+  const appShell = document.querySelector(".app-shell");
+  const sidebar = document.querySelector(".sidebar");
+  if (sidebarToggle && appShell && sidebar) {
+    const SIDEBAR_KEY = "kevrai:sidebar-expanded";
+    const applySidebar = (expanded) => {
+      appShell.classList.toggle("sidebar-expanded", expanded);
+      sidebar.classList.toggle("expanded", expanded);
+      sidebarToggle.textContent = expanded ? "⟨" : "☰";
+      sidebarToggle.setAttribute("aria-label", expanded ? "收起侧边栏" : "展开侧边栏");
+    };
+    try { applySidebar(localStorage.getItem(SIDEBAR_KEY) === "1"); } catch (_) {}
+    sidebarToggle.addEventListener("click", () => {
+      const expanded = !appShell.classList.contains("sidebar-expanded");
+      applySidebar(expanded);
+      try { localStorage.setItem(SIDEBAR_KEY, expanded ? "1" : "0"); } catch (_) {}
+    });
+  }
+
+  // v3.0.0 — Token field show/hide toggle
+  document.querySelectorAll(".token-toggle").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const wrap = btn.closest(".token-field-wrap");
+      if (!wrap) return;
+      const input = wrap.querySelector("input");
+      if (!input) return;
+      const isPwd = input.type === "password";
+      input.type = isPwd ? "text" : "password";
+      btn.textContent = isPwd ? "🙈" : "👁";
+      btn.setAttribute("aria-label", isPwd ? "隐藏 Token" : "显示 Token");
+    });
+  });
+
   // First render
   loadAll().catch((e) => toast("加载失败：" + (e?.message || e), { kind: "err" }));
 }
