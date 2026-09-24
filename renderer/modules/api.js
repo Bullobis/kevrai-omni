@@ -3,6 +3,7 @@
 // Errors are caught and logged as toasts; the caller may also catch them.
 "use strict";
 import { toast } from "./toast.js";
+import { httpBridge } from "./http-bridge.js";
 
 function wrap(name, fn) {
   return async (...args) => {
@@ -19,10 +20,10 @@ function wrap(name, fn) {
 }
 
 const k = () => {
-  if (!window.kevrai) {
-    throw new Error("preload bridge unavailable (window.kevrai missing)");
-  }
-  return window.kevrai;
+  // 优先使用 Electron preload 桥；preload 缺失时（拦截 / 加载失败 / 浏览器
+  // 调试）自动降级为 HTTP 直连桥，避免整个界面因 window.kevrai 缺失而空白。
+  if (window.kevrai) return window.kevrai;
+  return httpBridge;
 };
 
 export const api = {
