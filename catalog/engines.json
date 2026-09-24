@@ -6,23 +6,23 @@
       "id": "llama.cpp",
       "name": "llama.cpp",
       "category": "llm",
-      "description": "ggml-org/llama.cpp — 业界事实标准的本地 GGUF LLM 推理引擎。",
-      "github": "ggerganov/llama.cpp",
+      "description": "ggml-org/llama.cpp — 广泛使用的本地 GGUF LLM 推理引擎。",
+      "github": "ggml-org/llama.cpp",
       "license": "MIT",
       "platforms": {
-        "windows-x64": "https://github.com/ggerganov/llama.cpp/releases/latest/download/llama-bin-win-cuda-x64.zip",
-        "linux-x64": "https://github.com/ggerganov/llama.cpp/releases/latest/download/llama-bin-linux-x64-cuda.zip",
-        "darwin-arm64": "https://github.com/ggerganov/llama.cpp/releases/latest/download/llama-bin-macos-arm64.zip"
+        "windows-x64": "https://github.com/ggml-org/llama.cpp/releases/latest/download/llama-bin-win-cuda-x64.zip",
+        "linux-x64": "https://github.com/ggml-org/llama.cpp/releases/latest/download/llama-bin-linux-x64-cuda.zip",
+        "darwin-arm64": "https://github.com/ggml-org/llama.cpp/releases/latest/download/llama-bin-macos-arm64.zip"
       },
       "size_mb": 250,
       "trending": true,
       "sources": [
-        "https://github.com/ggerganov/llama.cpp/releases/latest",
-        "https://github.com/ggerganov/llama.cpp",
-        "https://objects.githubusercontent.com/ggerganov/llama.cpp",
-        "https://github.com/ggerganov/llama.cpp/releases/latest/download/llama-bin-win-cuda-x64.zip",
-        "https://github.com/ggerganov/llama.cpp/releases/latest/download/llama-bin-linux-x64-cuda.zip",
-        "https://github.com/ggerganov/llama.cpp/releases/latest/download/llama-bin-macos-arm64.zip"
+        "https://github.com/ggml-org/llama.cpp/releases/latest",
+        "https://github.com/ggml-org/llama.cpp",
+        "https://objects.githubusercontent.com/ggml-org/llama.cpp",
+        "https://github.com/ggml-org/llama.cpp/releases/latest/download/llama-bin-win-cuda-x64.zip",
+        "https://github.com/ggml-org/llama.cpp/releases/latest/download/llama-bin-linux-x64-cuda.zip",
+        "https://github.com/ggml-org/llama.cpp/releases/latest/download/llama-bin-macos-arm64.zip"
       ]
     },
     {
@@ -52,7 +52,7 @@
       "id": "mnn",
       "name": "MNN (alibaba)",
       "category": "llm",
-      "description": "alibaba/MNN — 阿里端侧推理引擎，CPU 汇编级优化 + GPU(Metal/OpenCL/Vulkan/CUDA)，MNN-LLM 在 PC/手机上跑 Qwen 系速度常优于 llama.cpp。2.3.0 起内置 Python LLM 运行时（pip 包自带 MNN.llm），可直接加载官方预转换模型（taobao-mnn 组织）对话推理。",
+      "description": "alibaba/MNN — 阿里端侧推理引擎，CPU 汇编级优化 + GPU(Metal/OpenCL/Vulkan/CUDA)。2.3.0 起内置 Python LLM 运行时（pip 包自带 MNN.llm），可加载官方预转换模型（taobao-mnn 组织）对话推理。",
       "github": "alibaba/MNN",
       "install": "pip",
       "pypi": "MNN",
@@ -468,7 +468,8 @@
       "sources": [
         "https://github.com/filliptm/ComfyUI-FL-MiniMaxMusic3",
         "https://objects.githubusercontent.com/filliptm/ComfyUI-FL-MiniMaxMusic3"
-      ]
+      ],
+      "source_note": "ComfyUI 自定义节点包，通过 ComfyUI Manager 搜索 \"FL MiniMax Music 3\" 安装；无独立二进制。"
     },
     {
       "id": "mlx",
