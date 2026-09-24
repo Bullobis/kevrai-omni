@@ -190,8 +190,12 @@ body {
 /* ---------- Main column ---------- */
 .main { padding: 18px 22px; overflow-y: auto; outline: none; min-width: 0; }
 .pane { display: none; }
-.pane.active { display: block; }
+.pane.active { display: block; animation: pane-in 0.22s ease-out; }
 .pane:focus { outline: none; }
+@keyframes pane-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
 
 .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
 .toolbar select, .toolbar input {
