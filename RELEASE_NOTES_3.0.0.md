@@ -17,13 +17,11 @@ API、故障排查三份文档；同时打磨界面体验并接入 Remotion 动�
 
 | 项 | 说明 |
 |---|---|
-| 🔒 **sidecar 网络面收敛** | sidecar 仅绑定 `127.0.0.1:17890`，CORS 限定在 Electron 本地源与 dev server（`app://.`、`file://`、`localhost:5173/3000`），不再对任意源开放；渲染层 `connect-src` 明确指向本机回环。 |
-| 🔑 **HF Token 保护** | `hf_token` / `ms_token` 等敏感设置在 `GET/PUT /api/settings` 响应中**一律脱敏**，只回传 `*_set` 存在性标记，永不把明文 Token 吐给渲染层；Token 仅由 sidecar 服务端在下载 gated 模型时作为 `Authorization: Bearer` 附加给 HuggingFace。 |
-| 🛡️ **下载主机白名单 + SHA-256** | 模型/引擎下载继续走默认白名单主机（huggingface.co、hf-mirror.com、github.com、pypi 官方/国内镜像），钓鱼 CDN `hf-cdn.sufy.com` 在三层（schema / Pydantic / 运行时）硬封禁；引擎清单带 SHA-256 时强制校验。 |
+| 🔐 **sidecar Bearer 鉴权** | Electron 启动 sidecar 时生成 32 字节随机 secret，经 `KEVRAI_SIDECAR_SECRET` 环境变量传入；`sidecarFetch` 每个请求带 `Authorization: Bearer`，Python 中间件用 `hmac.compare_digest` 恒定时间校验（除 `/api/health`）。两个 WebSocket 端点在 `accept()` 前校验，失败以 1008 关闭。secret 未配置时 fail-closed 返回 500。 |
+| 🔒 **CORS 收紧** | 移除 `file://`，仅保留 `app://.` 与 dev origin；`allow_headers` 从 `["*"]` 收窄为 `content-type, x-request-id, authorization`。 |
+| 🔑 **HF Token 外带防护** | `downloader._check_url` 检测到 Authorization 头时强制启用 host 白名单；`/api/download/start` 在 `gated=true` 时对入口 URL 强制白名单。用户 HF Bearer 绝不再被发往任意 URL。 |
+| 🛡️ **钓鱼镜像硬阻断** | 从 `DEFAULT_MODEL_HOSTS` 移除 `hf-cdn.sufy.com`；`DEFAULT_BLOCKED_MIRRORS` 恢复为 `{"hf-cdn.sufy.com"}`；`_check_url` 无条件拒绝 blocked 镜像，使 SECURITY.md 承诺与代码一致。 |
 | 📮 **安全报告通道** | SECURITY.md 中失效的占位邮箱 `security@kevrai-studio.example` 已替换为 GitHub Security Advisory 私有报告通道。 |
-
-> 说明：sidecar 不引入额外的调用方 Bearer 鉴权——它的安全模型是
-> 「仅本机回环可达 + CORS 白名单 + 下载主机白名单」，而非网络层面的 token 校验。
 
 ## 2. UI / UX 改进
 
