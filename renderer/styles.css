@@ -898,3 +898,41 @@ body.dragging .drop-mask { display: flex; }
 .pill.hub-hf { background: rgba(255, 183, 0, 0.18); }
 .pill.hub-modelscope { background: rgba(60, 130, 255, 0.18); }
 .pill.hub-curated { background: rgba(80, 200, 120, 0.18); }
+
+/* ---------------------------------------------------------------------------
+   v2.9.1 — 命令面板（Ctrl/Cmd+K），由 modules/command-palette.js 动态挂载。
+   复用设计 token：面板用 stack-3 浮层表面，与其它 overlay 视觉一致。
+   --------------------------------------------------------------------------- */
+.cmdpal-overlay { align-items: flex-start; padding-top: 12vh; z-index: 1000; }
+.cmdpal-panel {
+  background: var(--stack-3); border: 1px solid var(--bord); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow); width: min(560px, 92vw);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+#cmdpal-input {
+  background: transparent; border: none; border-bottom: 1px solid var(--bord);
+  color: var(--fg); padding: 14px 16px; font-size: var(--fs-md);
+  outline: none;
+}
+#cmdpal-input::placeholder { color: var(--mut); }
+#cmdpal-list {
+  list-style: none; margin: 0; padding: 6px; max-height: 50vh; overflow-y: auto;
+}
+.cmdpal-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: var(--r-2); cursor: pointer; font-size: var(--fs-base);
+  color: var(--fg);
+}
+.cmdpal-item.active { background: var(--card-hover); }
+.cmdpal-item .cmdpal-title { flex: 1; }
+.cmdpal-item .cmdpal-hint { color: var(--mut); font-size: var(--fs-xs); }
+.cmdpal-empty { padding: 16px 12px; color: var(--mut); font-size: var(--fs-sm); text-align: center; }
+.cmdpal-foot {
+  display: flex; gap: 14px; align-items: center; padding: 8px 14px;
+  border-top: 1px solid var(--bord); color: var(--mut); font-size: var(--fs-xs);
+}
+.cmdpal-foot kbd {
+  font-family: var(--mono); font-size: 11px; color: var(--mut);
+  border: 1px solid var(--bord); border-bottom-width: 2px; border-radius: 4px; padding: 1px 5px;
+}
+.cmdpal-kbd { margin-left: auto; display: inline-flex; gap: 4px; }

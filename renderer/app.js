@@ -25,6 +25,7 @@ import { wireDownloads, showDownloads } from "./modules/downloads.js";
 import { wireDragDrop } from "./modules/dragdrop.js";
 import { wireOnboarding } from "./modules/onboarding.js";
 import { wireUpdate } from "./modules/update.js";
+import { initCommandPalette } from "./modules/command-palette.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -305,6 +306,8 @@ async function bootstrap() {
   wireEngineUpdates();
   // logo / 头像的加载失败降级（替代此前被 CSP 拦截的内联 onerror）
   wireLogoFallbacks();
+  // v2.9.1 — 命令面板（Ctrl/Cmd+K）：快速跳转标签 / 触发常用动作
+  initCommandPalette();
 
   // Initial settings fetch (for theme)
   try {
