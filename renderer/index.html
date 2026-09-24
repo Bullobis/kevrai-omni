@@ -17,6 +17,7 @@
   <a href="#main" class="skip-link">跳到正文</a>
 
   <header class="titlebar" role="banner">
+    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="切换侧边栏" title="切换侧边栏展开/收起">☰</button>
     <div class="brand">
       <img class="logo" src="../assets/icons/icon-256.png" width="28" height="28" alt="Kevrai Omni" id="brand-logo" />
       <span id="logo-fallback" class="logo-fallback" aria-hidden="true" hidden>◈</span>
@@ -312,60 +313,72 @@
         <button class="ghost icon" data-action="close-settings" aria-label="关闭设置">×</button>
       </header>
       <div class="settings-grid">
-        <label class="field">
-          <span>模型存储目录</span>
-          <div class="row">
-            <input id="set-model-dir" type="text" placeholder="/path/to/models" />
-            <button class="secondary" id="btn-pick-model-dir">浏览…</button>
-          </div>
-        </label>
-        <label class="field">
-          <span>引擎目录</span>
-          <div class="row">
-            <input id="set-engine-dir" type="text" placeholder="/path/to/engines" />
-            <button class="secondary" id="btn-pick-engine-dir">浏览…</button>
-          </div>
-        </label>
-        <label class="field">
-          <span>主题</span>
-          <select id="set-theme">
-            <option value="system">跟随系统</option>
-            <option value="dark">深色</option>
-            <option value="light">浅色</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>硬件加速</span>
-          <select id="set-hwaccel">
-            <option value="auto">自动检测</option>
-            <option value="nvidia">NVIDIA</option>
-            <option value="amd">AMD</option>
-            <option value="cpu">仅 CPU</option>
-          </select>
-        </label>
-        <label class="field inline">
-          <input id="set-telemetry" type="checkbox" />
-          <span>启用遥测（匿名使用统计）</span>
-        </label>
-        <label class="field inline">
-          <input id="set-allowlist-advanced" type="checkbox" />
-          <span>高级：编辑下载主机白名单</span>
-        </label>
-        <label class="field">
-          <span>白名单（逗号分隔）</span>
-          <input id="set-allowlist" type="text" placeholder="huggingface.co, github.com" />
-          <span class="mut tiny" id="set-allowlist-hint">默认：huggingface.co, github.com</span>
-        </label>
-        <label class="field">
-          <span>HuggingFace Token（可选）</span>
-          <input id="set-hf-token" type="password" autocomplete="off" placeholder="hf_xxxxxxxx" />
-          <span class="mut tiny">仅 gated（受控访问）模型需要，如 LTX-2.5：须先在 HuggingFace 仓库页面接受许可协议，再在此填入你的 Token。仅保存在本机。</span>
-        </label>
-        <label class="field">
-          <span>魔搭 ModelScope Token（可选）</span>
-          <input id="set-ms-token" type="password" autocomplete="off" placeholder="ms_xxxxxxxx" />
-          <span class="mut tiny">仅私有 / 受控仓库需要；公开检索与下载无需填写。仅保存在本机。</span>
-        </label>
+        <div class="settings-group">
+          <h3 class="settings-group-title">通用</h3>
+          <label class="field">
+            <span>模型存储目录</span>
+            <div class="row">
+              <input id="set-model-dir" type="text" placeholder="/path/to/models" />
+              <button class="secondary" id="btn-pick-model-dir">浏览…</button>
+            </div>
+          </label>
+          <label class="field">
+            <span>引擎目录</span>
+            <div class="row">
+              <input id="set-engine-dir" type="text" placeholder="/path/to/engines" />
+              <button class="secondary" id="btn-pick-engine-dir">浏览…</button>
+            </div>
+          </label>
+          <label class="field">
+            <span>主题</span>
+            <select id="set-theme">
+              <option value="system">跟随系统</option>
+              <option value="dark">深色</option>
+              <option value="light">浅色</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>硬件加速</span>
+            <select id="set-hwaccel">
+              <option value="auto">自动检测</option>
+              <option value="nvidia">NVIDIA</option>
+              <option value="amd">AMD</option>
+              <option value="cpu">仅 CPU</option>
+            </select>
+          </label>
+          <label class="field inline">
+            <input id="set-telemetry" type="checkbox" />
+            <span>启用遥测（匿名使用统计）</span>
+          </label>
+        </div>
+        <div class="settings-group">
+          <h3 class="settings-group-title">下载与令牌</h3>
+          <label class="field inline">
+            <input id="set-allowlist-advanced" type="checkbox" />
+            <span>高级：编辑下载主机白名单</span>
+          </label>
+          <label class="field">
+            <span>白名单（逗号分隔）</span>
+            <input id="set-allowlist" type="text" placeholder="huggingface.co, github.com" />
+            <span class="mut tiny" id="set-allowlist-hint">默认：huggingface.co, github.com</span>
+          </label>
+          <label class="field">
+            <span>HuggingFace Token（可选）</span>
+            <div class="token-field-wrap">
+              <input id="set-hf-token" type="password" autocomplete="off" placeholder="hf_xxxxxxxx" />
+              <button type="button" class="token-toggle" id="toggle-hf-token" aria-label="显示/隐藏 Token">👁</button>
+            </div>
+            <span class="mut tiny">仅 gated（受控访问）模型需要，如 LTX-2.5：须先在 HuggingFace 仓库页面接受许可协议，再在此填入你的 Token。仅保存在本机。</span>
+          </label>
+          <label class="field">
+            <span>魔搭 ModelScope Token（可选）</span>
+            <div class="token-field-wrap">
+              <input id="set-ms-token" type="password" autocomplete="off" placeholder="ms_xxxxxxxx" />
+              <button type="button" class="token-toggle" id="toggle-ms-token" aria-label="显示/隐藏 Token">👁</button>
+            </div>
+            <span class="mut tiny">仅私有 / 受控仓库需要；公开检索与下载无需填写。仅保存在本机。</span>
+          </label>
+        </div>
       </div>
       <footer class="overlay-foot">
         <button id="btn-settings-reset" class="ghost">重置默认</button>

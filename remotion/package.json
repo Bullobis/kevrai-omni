@@ -1,0 +1,23 @@
+{
+  "name": "kevrai-remotion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Remotion animated videos for Kevrai Omni (logo intro, version poster).",
+  "scripts": {
+    "dev": "remotion studio",
+    "render": "remotion render",
+    "render:all": "remotion render LogoIntro out/logo-intro.mp4 --codec=h264 && remotion render VersionPoster out/version-poster.mp4 --codec=h264",
+    "upgrade": "remotion upgrade"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.528",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.528"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
+    "typescript": "5.5.4"
+  }
+}
