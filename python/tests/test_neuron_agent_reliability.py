@@ -95,3 +95,31 @@ async def test_run_coerces_non_string_text(_agent):
                   registry=build_default_registry(), ctx=ctx)
     result = await agent.run("任意问题", session_id="num-text")
     assert isinstance(result.answer, str)
+
+
+# ===========================================================================
+# Final-answer extraction: Chinese markers
+# ===========================================================================
+class TestChineseFinalAnswer:
+    def test_full_width_colon(self):
+        text = "Thought: 我已经分析完了。\n最终答案：这是最终的回答内容。"
+        assert extract_final_answer(text) == "这是最终的回答内容。"
+
+    def test_half_width_colon(self):
+        text = "Thought: done\n最终回答: half-width colon answer"
+        assert extract_final_answer(text) == "half-width colon answer"
+
+    def test_english_marker_still_works(self):
+        text = "Thought: done\nFinal Answer: The answer is 42."
+        assert extract_final_answer(text) == "The answer is 42."
+
+    def test_no_marker_fallback(self):
+        assert extract_final_answer("plain text") == "plain text"
+
+    def test_chinese_does_not_leak_thought_prefix(self):
+        # Before the fix, the thought line was included because the English-only
+        # regex could not match the Chinese marker.
+        text = "Thought: 让我想想看。\n最终答案：直接给出的结论。"
+        out = extract_final_answer(text)
+        assert out == "直接给出的结论。"
+        assert "让我想想" not in out
