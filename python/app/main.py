@@ -2592,6 +2592,32 @@ def _v1_stream(prompt: str, hist: list[dict[str, str]], images: list[str],
 _SORT_WHITELIST = {"relevance", "name_asc", "size_desc", "size_asc", "trending"}
 
 
+# ---------------------------------------------------------------------------
+# Search corpus cache
+#
+# ``CATALOG.models`` is a list of pydantic ModelEntry; ``.model_dump()`` is
+# called per-request below. We memoize the dumped list *and* the tokenized
+# Corpus keyed on ``CATALOG.version`` so that repeated searches (including
+# per-keystroke typeahead) reuse the same Corpus instead of rebuilding it
+# for all 121 models on every request. A version bump invalidates both.
+# ---------------------------------------------------------------------------
+
+_DUMPED_MODELS_CACHE: dict[str, list[dict[str, Any]]] = {}
+
+
+def _get_dumped_models() -> list[dict[str, Any]]:
+    v = CATALOG.version
+    cached = _DUMPED_MODELS_CACHE.get(v)
+    if cached is not None:
+        return cached
+    dumped = [m.model_dump() for m in CATALOG.models]
+    _DUMPED_MODELS_CACHE[v] = dumped
+    # bound the cache (we expect at most a handful of catalog versions)
+    if len(_DUMPED_MODELS_CACHE) > 4:
+        _DUMPED_MODELS_CACHE.pop(next(iter(_DUMPED_MODELS_CACHE)))
+    return dumped
+
+
 @app.get("/api/search")
 def api_search(
     q: str = "",
@@ -2616,8 +2642,8 @@ def api_search(
         page=max(1, int(page or 1)),
         page_size=max(1, min(int(page_size or 50), 200)),
     )
-    models = [m.model_dump() for m in CATALOG.models]
-    result = run_search(models, sq)
+    models = _get_dumped_models()
+    result = run_search(models, sq, cache_key=CATALOG.version)
     if q and q.strip():
         search_push_recent(q.strip())
     return result

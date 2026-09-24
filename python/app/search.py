@@ -320,12 +320,27 @@ class Corpus:
 
 
 _CORPUS_LOCK = threading.Lock()
-_CORPUS_CACHE: dict[int, Corpus] = {}
+# Keys may be ``int`` (object id of the list, legacy fallback) or ``str``
+# (a caller-supplied stable cache_key). The two namespaces never collide
+# because Python hashes ``1`` and ``"1"`` differently.
+_CORPUS_CACHE: dict[Any, Corpus] = {}
 
 
-def get_corpus(models: list[dict[str, Any]]) -> Corpus:
-    """Return a memoized Corpus keyed by the object identity of the list."""
-    key = id(models)
+def get_corpus(models: list[dict[str, Any]], cache_key: str | None = None) -> Corpus:
+    """Return a memoized Corpus.
+
+    By default the cache is keyed by ``id(models)`` — the *object identity*
+    of the list. This is correct only when the caller reuses the *same*
+    list object across calls; if a fresh list is built on every request the
+    cache never hits, and worse, ``id()`` values can be recycled after GC,
+    causing a stale Corpus to be served for a different list.
+
+    Pass an explicit, stable ``cache_key`` (e.g. a catalog version string)
+    when the same underlying corpus should be reused even across different
+    list instances. When ``cache_key`` is provided, ``id()`` is *not* used
+    and the GC-recycle hazard does not apply.
+    """
+    key: Any = cache_key if cache_key is not None else id(models)
     with _CORPUS_LOCK:
         c = _CORPUS_CACHE.get(key)
         if c is None:
@@ -457,10 +472,14 @@ def _passes_filters(m: dict[str, Any], sq: SearchQuery) -> bool:
     return not (sq.trending_only and not m.get("trending"))
 
 
-def search(models: list[dict[str, Any]], sq: SearchQuery) -> dict[str, Any]:
-    """Execute a search and return a dict ready for JSON serialization."""
+def search(models: list[dict[str, Any]], sq: SearchQuery, cache_key: str | None = None) -> dict[str, Any]:
+    """Execute a search and return a dict ready for JSON serialization.
+
+    ``cache_key`` is forwarded to :func:`get_corpus`; see its docstring for
+    why a stable key matters on the request path.
+    """
     t0 = time.perf_counter()
-    corpus = get_corpus(models)
+    corpus = get_corpus(models, cache_key=cache_key)
     qn = _normalize(sq.q)
     qtokens = _tokens(qn) if qn else []
 
