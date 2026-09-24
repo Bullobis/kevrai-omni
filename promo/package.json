@@ -1,0 +1,20 @@
+{
+  "name": "kevrai-promo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Kevrai Omni promotional video rendered with Remotion (headless Linux).",
+  "scripts": {
+    "render": "remotion render",
+    "preview": "remotion preview"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.528"
+  },
+  "devDependencies": {
+    "@remotion/cli": "4.0.528",
+    "typescript": "5.9.3"
+  }
+}
