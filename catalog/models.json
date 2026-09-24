@@ -1,7 +1,7 @@
 {
   "version": "2.9.0",
-  "updated": "2026-09-18",
-  "notice": "v2.6.0: 接入 MiniMax-Music3 全精度/ComfyUI/GGUF/量化/MLX 全家桶并逐条联网核验仓库；新增 13 个 2026 年 5 月后开放权重的高质量模型（Granite 4.2、MiniMax M3、Muse Glimmer、DeepSeek V4 Flash Vision、GLM-5.3、LFM2.5-VL、MOSS-TTS、dots.tts、Stable Audio 3、Magenta Realtime 2、Krea 2 等）；修正 14 处错误/失效仓库 slug，移除不存在的 Llama-4-Multilingual。",
+  "updated": "2026-09-24",
+  "notice": "v2.9.0 K-Catalog 事实核验（ADR-0003）：修正 14 处失效/错误仓库 slug(THUDM/glm-4-9b-chat→zai-org/GLM-4.5, Tencent-Hunyuan→tencent, xinntao/Real-ESRGAN→ai-forever, Kiteretsu77/APISR→camenduru, Fanghua-Yu/SUPIR→camenduru[非官方转存], Kim2091/4x-UltraSharp→lokCX, haoheliu/audioldm2→audioldm2-full, ASLP-lab/DiffRhythm→DiffRhythm-base, VAST-AI-Research/TripoSR→stabilityai, RVC-Boss/GPT-SoVITS→lj1995, THU-MIG/yolov10→onnx-community, hpcaitech/Open-Sora→hpcai-tech, dummy9996/MiniMax-Music3-w4a8→NidAll, buffalo_l→immich-app/buffalo_l)；清除广告软文式描述；按平台分拆 sources（GitHub/HF 各用各 slug）。",
   "categories": [
     {
       "id": "llm",
@@ -290,28 +290,28 @@
     {
       "id": "glm-4.5",
       "category": "llm",
-      "name": "GLM-4.5 (Air / Plus)",
-      "repo": "THUDM/glm-4-9b-chat",
+      "name": "GLM-4.5 (355B-A32B MoE)",
+      "repo": "zai-org/GLM-4.5",
       "gguf_repo": "",
-      "size_gb": 20,
+      "size_gb": 700,
       "engine": [
         "llama.cpp",
         "vllm"
       ],
-      "license": "Apache-2.0",
+      "license": "MIT",
       "trending": true,
-      "description": "智谱 GLM-4 系列，9B 起步、中英文双语强。",
+      "description": "智谱 GLM-4.5：355B 总参 / 32B 激活 MoE，128K 上下文，中英文双语，MIT 协议；BF16 需多卡，GGUF Q4 可单卡量化部署。",
       "sources": [
-        "https://huggingface.co/THUDM/glm-4-9b-chat/",
-        "https://hf-mirror.com/THUDM/glm-4-9b-chat/"
+        "https://huggingface.co/zai-org/GLM-4.5/",
+        "https://hf-mirror.com/zai-org/GLM-4.5/"
       ],
-      "primary_url": "https://huggingface.co/THUDM/glm-4-9b-chat/",
+      "primary_url": "https://huggingface.co/zai-org/GLM-4.5/",
       "hardware": {
-        "vram_gb": 20,
-        "min_vram_gb": 12,
-        "ram_gb": 40,
-        "disk_gb": 20,
-        "notes": "Q4 约 20GB；24GB 显卡可跑"
+        "vram_gb": 80,
+        "min_vram_gb": 24,
+        "ram_gb": 128,
+        "disk_gb": 700,
+        "notes": "BF16 需多卡（8×80G）；Q4_K_M GGUF 约 200GB，单 48GB 卡可跑量化"
       },
       "modality": {
         "multimodal": false,
@@ -319,7 +319,7 @@
         "generate": [
           "text"
         ],
-        "notes": "GLM-4.5 文本系列，视觉需 GLM-4.5V"
+        "notes": "GLM-4.5 文本；视觉版见 GLM-4.5V"
       },
       "tags": [
         "LLM",
@@ -812,7 +812,7 @@
       "id": "gpt-sovits",
       "category": "tts",
       "name": "GPT-SoVITS",
-      "repo": "RVC-Boss/GPT-SoVITS",
+      "repo": "lj1995/GPT-SoVITS",
       "gguf_repo": "",
       "size_gb": 1.5,
       "engine": [
@@ -822,10 +822,10 @@
       "trending": false,
       "description": "经典少样本中文声音克隆。",
       "sources": [
-        "https://huggingface.co/RVC-Boss/GPT-SoVITS/",
-        "https://hf-mirror.com/RVC-Boss/GPT-SoVITS/"
+        "https://huggingface.co/lj1995/GPT-SoVITS/",
+        "https://hf-mirror.com/lj1995/GPT-SoVITS/"
       ],
-      "primary_url": "https://huggingface.co/RVC-Boss/GPT-SoVITS/",
+      "primary_url": "https://huggingface.co/lj1995/GPT-SoVITS/",
       "hardware": {
         "vram_gb": 4,
         "min_vram_gb": 2,
@@ -1036,7 +1036,7 @@
       "id": "hunyuanvideo",
       "category": "video",
       "name": "HunyuanVideo (T2V/I2V)",
-      "repo": "Tencent-Hunyuan/HunyuanVideo",
+      "repo": "tencent/HunyuanVideo",
       "gguf_repo": "",
       "size_gb": 30,
       "engine": [
@@ -1046,11 +1046,11 @@
       "trending": true,
       "description": "腾讯混元视频，文生/图生视频开源。",
       "sources": [
-        "https://huggingface.co/Tencent-Hunyuan/HunyuanVideo/",
-        "https://hf-mirror.com/Tencent-Hunyuan/HunyuanVideo/",
-        "https://modelscope.cn/models/Tencent-Hunyuan/HunyuanVideo/resolve/master/"
+        "https://huggingface.co/tencent/HunyuanVideo/",
+        "https://hf-mirror.com/tencent/HunyuanVideo/",
+        "https://modelscope.cn/models/tencent/HunyuanVideo/resolve/master/"
       ],
-      "primary_url": "https://huggingface.co/Tencent-Hunyuan/HunyuanVideo/",
+      "primary_url": "https://huggingface.co/tencent/HunyuanVideo/",
       "hardware": {
         "vram_gb": 45,
         "min_vram_gb": 24,
@@ -1128,7 +1128,7 @@
       "id": "opensora-2.0",
       "category": "video",
       "name": "Open-Sora 2.0",
-      "repo": "hpcaitech/Open-Sora",
+      "repo": "hpcai-tech/Open-Sora",
       "gguf_repo": "",
       "size_gb": 20,
       "engine": [
@@ -1138,10 +1138,10 @@
       "trending": true,
       "description": "潞晨 Open-Sora 2.0，开源文/图/视频生视频。",
       "sources": [
-        "https://huggingface.co/hpcaitech/Open-Sora/",
-        "https://hf-mirror.com/hpcaitech/Open-Sora/"
+        "https://huggingface.co/hpcai-tech/Open-Sora/",
+        "https://hf-mirror.com/hpcai-tech/Open-Sora/"
       ],
-      "primary_url": "https://huggingface.co/hpcaitech/Open-Sora/",
+      "primary_url": "https://huggingface.co/hpcai-tech/Open-Sora/",
       "hardware": {
         "vram_gb": 24,
         "min_vram_gb": 12,
@@ -1339,7 +1339,7 @@
       ],
       "license": "Tencent Hunyuan Community License",
       "trending": true,
-      "description": "腾讯混元图像 3.0（2025-09-28 开源）：80B 总参/13B 激活的工业级原生多模态生图 MoE，中文与文字排版 SOTA、LMArena 文生图第一梯队。HF 权重在小写 tencent 组织（代码在 Tencent-Hunyuan）。",
+      "description": "腾讯混元图像 3.0：80B 总参/13B 激活的原生多模态生图 MoE，中文与文字排版表现较好。HF 权重在小写 tencent 组织。",
       "sources": [
         "https://huggingface.co/tencent/HunyuanImage-3.0/",
         "https://hf-mirror.com/tencent/HunyuanImage-3.0/"
@@ -1404,7 +1404,7 @@
       "id": "real-esrgan",
       "category": "superres",
       "name": "Real-ESRGAN x4plus",
-      "repo": "xinntao/Real-ESRGAN",
+      "repo": "ai-forever/Real-ESRGAN",
       "gguf_repo": "",
       "size_gb": 0.07,
       "engine": [
@@ -1415,10 +1415,10 @@
       "trending": true,
       "description": "腾讯 ARC 经典超分，老照片/通用图。",
       "sources": [
-        "https://huggingface.co/xinntao/Real-ESRGAN/",
-        "https://hf-mirror.com/xinntao/Real-ESRGAN/"
+        "https://huggingface.co/ai-forever/Real-ESRGAN/",
+        "https://hf-mirror.com/ai-forever/Real-ESRGAN/"
       ],
-      "primary_url": "https://huggingface.co/xinntao/Real-ESRGAN/",
+      "primary_url": "https://huggingface.co/ai-forever/Real-ESRGAN/",
       "hardware": {
         "vram_gb": 4,
         "min_vram_gb": 2,
@@ -1443,7 +1443,7 @@
       "id": "apisr",
       "category": "superres",
       "name": "APISR (Anime/Photo)",
-      "repo": "Kiteretsu77/APISR",
+      "repo": "camenduru/APISR",
       "gguf_repo": "",
       "size_gb": 0.5,
       "engine": [
@@ -1453,10 +1453,10 @@
       "trending": true,
       "description": "动漫/真人双模态超分。",
       "sources": [
-        "https://huggingface.co/Kiteretsu77/APISR/",
-        "https://hf-mirror.com/Kiteretsu77/APISR/"
+        "https://huggingface.co/camenduru/APISR/",
+        "https://hf-mirror.com/camenduru/APISR/"
       ],
-      "primary_url": "https://huggingface.co/Kiteretsu77/APISR/",
+      "primary_url": "https://huggingface.co/camenduru/APISR/",
       "hardware": {
         "vram_gb": 8,
         "min_vram_gb": 4,
@@ -1480,7 +1480,7 @@
       "id": "supir",
       "category": "superres",
       "name": "SUPIR",
-      "repo": "Fanghua-Yu/SUPIR",
+      "repo": "camenduru/SUPIR",
       "gguf_repo": "",
       "size_gb": 3.5,
       "engine": [
@@ -1488,12 +1488,12 @@
       ],
       "license": "Apache-2.0",
       "trending": true,
-      "description": "基于 SDXL 的高保真超分。",
+      "description": "基于 SDXL 的高保真超分（HF 权重为社区非官方转存，官方权重随 GitHub 仓库发布）。",
       "sources": [
-        "https://huggingface.co/Fanghua-Yu/SUPIR/",
-        "https://hf-mirror.com/Fanghua-Yu/SUPIR/"
+        "https://huggingface.co/camenduru/SUPIR/",
+        "https://hf-mirror.com/camenduru/SUPIR/"
       ],
-      "primary_url": "https://huggingface.co/Fanghua-Yu/SUPIR/",
+      "primary_url": "https://huggingface.co/camenduru/SUPIR/",
       "hardware": {
         "vram_gb": 16,
         "min_vram_gb": 8,
@@ -1511,13 +1511,14 @@
         "热门",
         "超分",
         "超分辨率"
-      ]
+      ],
+      "source_note": "HF 仓库 camenduru/SUPIR 为社区非官方转存；官方发布渠道为 GitHub Fanghua-Yu/SUPIR。"
     },
     {
       "id": "4x-ultrasharp",
       "category": "superres",
       "name": "4x-UltraSharp",
-      "repo": "Kim2091/4x-UltraSharp",
+      "repo": "lokCX/4x-Ultrasharp",
       "gguf_repo": "",
       "size_gb": 0.07,
       "engine": [
@@ -1525,12 +1526,12 @@
       ],
       "license": "CC-BY-NC-SA-4.0",
       "trending": true,
-      "description": "社区最强 4x 写实超分。",
+      "description": "社区常用 4x 写实超分模型。",
       "sources": [
-        "https://huggingface.co/Kim2091/4x-UltraSharp/",
-        "https://hf-mirror.com/Kim2091/4x-UltraSharp/"
+        "https://huggingface.co/lokCX/4x-Ultrasharp/",
+        "https://hf-mirror.com/lokCX/4x-Ultrasharp/"
       ],
-      "primary_url": "https://huggingface.co/Kim2091/4x-UltraSharp/",
+      "primary_url": "https://huggingface.co/lokCX/4x-Ultrasharp/",
       "hardware": {
         "vram_gb": 4,
         "min_vram_gb": 2,
@@ -1703,7 +1704,7 @@
       "id": "audioldm2",
       "category": "audio",
       "name": "AudioLDM 2",
-      "repo": "haoheliu/audioldm2",
+      "repo": "haoheliu/audioldm2-full",
       "gguf_repo": "",
       "size_gb": 1.5,
       "engine": [
@@ -1713,10 +1714,10 @@
       "trending": false,
       "description": "AudioLDM 2，音效/语音/音乐统一生成。",
       "sources": [
-        "https://huggingface.co/haoheliu/audioldm2/",
-        "https://hf-mirror.com/haoheliu/audioldm2/"
+        "https://huggingface.co/haoheliu/audioldm2-full/",
+        "https://hf-mirror.com/haoheliu/audioldm2-full/"
       ],
-      "primary_url": "https://huggingface.co/haoheliu/audioldm2/",
+      "primary_url": "https://huggingface.co/haoheliu/audioldm2-full/",
       "hardware": {
         "vram_gb": 6,
         "min_vram_gb": 2,
@@ -1738,7 +1739,7 @@
       "id": "diffrhythm",
       "category": "audio",
       "name": "DiffRhythm",
-      "repo": "ASLP-lab/DiffRhythm",
+      "repo": "ASLP-lab/DiffRhythm-base",
       "gguf_repo": "",
       "size_gb": 2,
       "engine": [
@@ -1748,10 +1749,10 @@
       "trending": true,
       "description": "西北工业大学 DiffRhythm，全曲生成。",
       "sources": [
-        "https://huggingface.co/ASLP-lab/DiffRhythm/",
-        "https://hf-mirror.com/ASLP-lab/DiffRhythm/"
+        "https://huggingface.co/ASLP-lab/DiffRhythm-base/",
+        "https://hf-mirror.com/ASLP-lab/DiffRhythm-base/"
       ],
-      "primary_url": "https://huggingface.co/ASLP-lab/DiffRhythm/",
+      "primary_url": "https://huggingface.co/ASLP-lab/DiffRhythm-base/",
       "hardware": {
         "vram_gb": 6,
         "min_vram_gb": 2,
@@ -1848,7 +1849,7 @@
       "id": "triposr",
       "category": "3d",
       "name": "TripoSR",
-      "repo": "VAST-AI-Research/TripoSR",
+      "repo": "stabilityai/TripoSR",
       "gguf_repo": "",
       "size_gb": 1.2,
       "engine": [
@@ -1856,13 +1857,13 @@
       ],
       "license": "MIT",
       "trending": true,
-      "description": "VAST + Stability 单图秒级 3D 重建（官方组织为 VAST-AI-Research）。",
+      "description": "Stability + Tripo 单图秒级 3D 重建。",
       "sources": [
-        "https://huggingface.co/VAST-AI-Research/TripoSR/",
-        "https://hf-mirror.com/VAST-AI-Research/TripoSR/",
-        "https://modelscope.cn/models/VAST-AI-Research/TripoSR/resolve/master/"
+        "https://huggingface.co/stabilityai/TripoSR/",
+        "https://hf-mirror.com/stabilityai/TripoSR/",
+        "https://modelscope.cn/models/stabilityai/TripoSR/resolve/master/"
       ],
-      "primary_url": "https://huggingface.co/VAST-AI-Research/TripoSR/",
+      "primary_url": "https://huggingface.co/stabilityai/TripoSR/",
       "hardware": {
         "vram_gb": 8,
         "min_vram_gb": 4,
@@ -2067,7 +2068,7 @@
       "id": "insightface",
       "category": "vision",
       "name": "InsightFace (buffalo_l)",
-      "repo": "buffalo_l",
+      "repo": "immich-app/buffalo_l",
       "gguf_repo": "",
       "size_gb": 0.3,
       "engine": [
@@ -2077,10 +2078,10 @@
       "trending": false,
       "description": "人脸检测/识别/对齐，行业标准。",
       "sources": [
-        "https://huggingface.co/buffalo_l/",
-        "https://hf-mirror.com/buffalo_l/"
+        "https://huggingface.co/immich-app/buffalo_l/",
+        "https://hf-mirror.com/immich-app/buffalo_l/"
       ],
-      "primary_url": "https://huggingface.co/buffalo_l/",
+      "primary_url": "https://huggingface.co/immich-app/buffalo_l/",
       "hardware": {
         "vram_gb": 2,
         "min_vram_gb": 0,
@@ -2102,7 +2103,7 @@
       "id": "yolov10",
       "category": "vision",
       "name": "YOLOv10",
-      "repo": "THU-MIG/yolov10",
+      "repo": "onnx-community/YOLOv10",
       "gguf_repo": "",
       "size_gb": 0.07,
       "engine": [
@@ -2112,11 +2113,11 @@
       "trending": false,
       "description": "清华实时目标检测 YOLOv10。",
       "sources": [
-        "https://huggingface.co/THU-MIG/yolov10/",
-        "https://hf-mirror.com/THU-MIG/yolov10/",
-        "https://modelscope.cn/models/THU-MIG/yolov10/resolve/master/"
+        "https://huggingface.co/onnx-community/YOLOv10/",
+        "https://hf-mirror.com/onnx-community/YOLOv10/",
+        "https://modelscope.cn/models/onnx-community/YOLOv10/resolve/master/"
       ],
-      "primary_url": "https://huggingface.co/THU-MIG/yolov10/",
+      "primary_url": "https://huggingface.co/onnx-community/YOLOv10/",
       "hardware": {
         "vram_gb": 2,
         "min_vram_gb": 0,
@@ -2485,7 +2486,7 @@
       ],
       "license": "MIT",
       "trending": true,
-      "description": "2026-04-24 MIT 协议开源：744B MoE 架构，主打高吞吐低延迟，综合性能第一梯队，价格仅 V4-Pro 一半。",
+      "description": "2026-04-24 MIT 协议开源：744B MoE 架构，主打高吞吐低延迟，定位轻量版 V4。",
       "hardware": {
         "vram_gb": 512,
         "min_vram_gb": 256,
@@ -2535,7 +2536,7 @@
       ],
       "license": "MIT",
       "trending": true,
-      "description": "DeepSeek 2026 旗舰：1.6T 总参 / 49B 激活 MoE，1M 上下文，综合能力对标闭源前沿（AAI 开源第一梯队），MIT 完全开源可商用。权重仓库为 deepseek-ai/DeepSeek-V4-Pro（0813 为后续更新版，已另列）。",
+      "description": "DeepSeek 2026 旗舰：1.6T 总参 / 49B 激活 MoE，1M 上下文，MIT 协议开源可商用。0813 为后续更新版，已另列。",
       "hardware": {
         "vram_gb": 1024,
         "min_vram_gb": 512,
@@ -2631,7 +2632,7 @@
       ],
       "license": "Modified-MIT",
       "trending": true,
-      "description": "2026-04-20 开源：1T 参数 MoE / 激活 32B，原生多模态（MoonViT 视觉编码器）+ 300 路智能体并行，256K 上下文，编程与 Agent 能力开源第一梯队。",
+      "description": "2026-04-20 开源：1T 参数 MoE / 激活 32B，原生多模态（MoonViT 视觉编码器），256K 上下文，编程与 Agent 能力较强。",
       "hardware": {
         "vram_gb": 640,
         "min_vram_gb": 320,
@@ -3677,7 +3678,7 @@
       "id": "minimax-music3-w4a8-comfyui",
       "category": "audio",
       "name": "MiniMax-Music3（W4A8 低显存 ComfyUI）",
-      "repo": "dummy9996/MiniMax-Music3-w4a8-bf16-comfyui",
+      "repo": "NidAll/MiniMax-Music3-W4A8",
       "gguf_repo": "",
       "size_gb": 13,
       "engine": [
@@ -3687,10 +3688,10 @@
       "trending": true,
       "description": "社区 W4A8 混合量化 ComfyUI 版（12.8GB），低显存友好，适合 8-12GB 显卡。",
       "sources": [
-        "https://huggingface.co/dummy9996/MiniMax-Music3-w4a8-bf16-comfyui",
-        "https://hf-mirror.com/dummy9996/MiniMax-Music3-w4a8-bf16-comfyui"
+        "https://huggingface.co/NidAll/MiniMax-Music3-W4A8",
+        "https://hf-mirror.com/NidAll/MiniMax-Music3-W4A8"
       ],
-      "primary_url": "https://huggingface.co/dummy9996/MiniMax-Music3-w4a8-bf16-comfyui",
+      "primary_url": "https://huggingface.co/NidAll/MiniMax-Music3-W4A8",
       "hardware": {
         "vram_gb": 12,
         "min_vram_gb": 8,
@@ -4066,7 +4067,7 @@
       ],
       "license": "腾讯社区许可（禁 EU/UK/KR）",
       "trending": true,
-      "description": "腾讯 RGB-D 视频扩散 3D 世界生成模型：3D 一致的世界探索+快速重建，WorldScore 开源方法综合第一。",
+      "description": "腾讯 RGB-D 视频扩散 3D 世界生成模型：3D 一致的世界探索与重建。",
       "sources": [
         "https://huggingface.co/tencent/HunyuanWorld-Voyager",
         "https://hf-mirror.com/tencent/HunyuanWorld-Voyager"
@@ -4446,7 +4447,7 @@
       ],
       "license": "MIT",
       "trending": true,
-      "description": "智谱 GLM-5.2（2026-06 开源）：744B 总参 / 40B 激活 MoE，1M 上下文，Code Arena 开源第一，MIT 协议。",
+      "description": "智谱 GLM-5.2（2026-06 开源）：744B 总参 / 40B 激活 MoE，1M 上下文，MIT 协议。",
       "sources": [
         "https://huggingface.co/zai-org/GLM-5.2/",
         "https://hf-mirror.com/zai-org/GLM-5.2/",
@@ -5196,7 +5197,7 @@
       ],
       "license": "GLM 许可（other）",
       "trending": true,
-      "description": "智谱 GLM-5.3（2026-08-19 发 API、08-25 开放权重）：GlmMoeDsa 稀疏 MoE、1M 上下文，AAI 综合 60 分并列开源第一，复杂编码/防御性网络安全/长程任务强化。",
+      "description": "智谱 GLM-5.3（2026-08-19 发 API、08-25 开放权重）：GlmMoeDsa 稀疏 MoE、1M 上下文，强化编码与长程任务。",
       "sources": [
         "https://huggingface.co/zai-org/GLM-5.3/",
         "https://hf-mirror.com/zai-org/GLM-5.3/"
