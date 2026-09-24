@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import multiprocessing
 import os
 import threading
 import time
@@ -78,6 +79,8 @@ def engine_version() -> str:
 
 def load_model(model_dir: str | Path, model_name: str = "") -> dict[str, Any]:
     """Load an MNN model directory (contains config.json). Blocking."""
+    if _subprocess_mode():
+        return _get_client().load_model(model_dir, model_name)
     global _LLM
     d = Path(model_dir)
     cfg = d / "config.json"
@@ -124,6 +127,8 @@ def unload_model_locked() -> None:
 
 
 def unload_model() -> dict[str, Any]:
+    if _subprocess_mode():
+        return _get_client().unload_model()
     with _LOCK:
         unload_model_locked()
     return {"ok": True}
@@ -144,6 +149,8 @@ def status_locked() -> dict[str, Any]:
 
 
 def status() -> dict[str, Any]:
+    if _subprocess_mode():
+        return _get_client().status()
     with _LOCK:
         return status_locked()
 
@@ -155,6 +162,8 @@ def chat(prompt: str, history: list[dict[str, str]] | None = None,
     MNN keeps its own context between response() calls, so we simply feed
     the latest user turn through the chat template and generate.
     """
+    if _subprocess_mode():
+        return _get_client().chat(prompt, history, max_new_tokens)
     if _LLM is None:
         raise RuntimeError("MNN 模型尚未加载（先调用 load）")
     prompt = str(prompt or "").strip()
@@ -257,6 +266,8 @@ def chat_multimodal(prompt: str, history: list[dict[str, str]] | None = None,
                     images: list[str] | None = None,
                     audios: list[str] | None = None) -> dict[str, Any]:
     """多模态对话：images/audios 为本地文件路径列表，可为空（等价 chat()）。"""
+    if _subprocess_mode():
+        return _get_client().chat_multimodal(prompt, history, max_new_tokens, images, audios)
     _require_llm()
     prompt = str(prompt or "").strip()
     if not prompt and not images and not audios:
@@ -318,6 +329,9 @@ def chat_stream(prompt: str, history: list[dict[str, str]] | None = None,
     finished=True 的最后一段 delta 为空字符串，仅作结束信号；
     调用方负责把 delta 拼成完整回复。全程持有 _LOCK（MNN 非重入）。
     """
+    if _subprocess_mode():
+        yield from _get_client().chat_stream(prompt, history, max_new_tokens, images, audios)
+        return
     _require_llm()
     prompt = str(prompt or "").strip()
     if not prompt and not images and not audios:
@@ -418,3 +432,340 @@ def _fallback_once(llm: Any, templated: Any, m_prompt: Any) -> Iterator[tuple[st
     if text:
         yield text, False
     yield "", True
+
+
+# ===========================================================================
+# Subprocess isolation (opt-in via KEVRAI_MNN_SUBPROCESS=1)
+# ---------------------------------------------------------------------------
+# The C++ MNN engine can hard-deadlock during generate(). In-process that
+# leaves a parked daemon thread holding the engine's internal state and no way
+# to unwind it — the wall-clock timeout only releases the Python lock. With
+# this mode the engine lives in a forked child process; the parent talks to it
+# over a multiprocessing.Pipe (pickle frames). If the child hangs or dies, the
+# parent SIGKILLs the child — reclaiming every C++ resource at the OS level —
+# and raises; the next load spawns a fresh child.
+#
+# Default (env unset) keeps the in-process path byte-identical. Zero new deps:
+# multiprocessing/Pipe are stdlib. The child runs the SAME in-process functions
+# above (no logic duplication); it just dispatches JSON-ish tuples from the pipe.
+# ===========================================================================
+
+_SUBPROCESS_ENV_VAR = "KEVRAI_MNN_SUBPROCESS"
+_CHILD_INDICATOR_VAR = "KEVRAI_MNN_IN_CHILD"  # set inside the child → never recurse
+_CHILD_READY_TIMEOUT_S = 30.0
+_LOAD_TIMEOUT_S = 600.0
+_CHAT_TIMEOUT_S = 600.0
+# Parent-side ceiling on waiting for the next stream message from the child.
+# Reuses the same default as the in-process timeout; tests monkeypatch it short.
+_SUBPROCESS_STREAM_TIMEOUT_S = _STREAM_GENERATION_TIMEOUT_S
+
+_CLIENT: _MnnSubprocessClient | None = None
+
+
+def _subprocess_mode() -> bool:
+    """True when the parent should delegate MNN work to a child process.
+
+    The child itself sets ``_CHILD_INDICATOR_VAR`` so it always runs the
+    in-process path (no recursive fork).
+    """
+    if os.environ.get(_CHILD_INDICATOR_VAR, "") == "1":
+        return False
+    return os.environ.get(_SUBPROCESS_ENV_VAR, "") == "1"
+
+
+def _get_client() -> _MnnSubprocessClient:
+    global _CLIENT
+    if _CLIENT is None:
+        _CLIENT = _MnnSubprocessClient()
+    return _CLIENT
+
+
+def _reset_client_for_tests() -> None:
+    """Drop the singleton client (test teardown); never called in production."""
+    global _CLIENT
+    if _CLIENT is not None:
+        with contextlib.suppress(Exception):
+            _CLIENT.close()
+    _CLIENT = None
+
+
+# -- exception tagging across the pipe ---------------------------------------
+
+def _exc_tag(e: BaseException) -> str:
+    if isinstance(e, MnnEngineMissing):
+        return "MnnEngineMissing"
+    if isinstance(e, FileNotFoundError):
+        return "FileNotFoundError"
+    if isinstance(e, ValueError):
+        return "ValueError"
+    if isinstance(e, TimeoutError):
+        return "TimeoutError"
+    if isinstance(e, RuntimeError):
+        return "RuntimeError"
+    return "Exception"
+
+
+def _raise_tagged(tag: str, msg: str) -> None:
+    if tag == "MnnEngineMissing":
+        raise MnnEngineMissing(msg)
+    if tag == "FileNotFoundError":
+        raise FileNotFoundError(msg)
+    if tag == "ValueError":
+        raise ValueError(msg)
+    if tag == "TimeoutError":
+        raise TimeoutError(msg)
+    if tag == "RuntimeError":
+        raise RuntimeError(msg)
+    raise RuntimeError(msg)
+
+
+# -- child entry point (runs in the forked child) ----------------------------
+
+def _mnn_child_main(conn: multiprocessing.connection.Connection) -> None:
+    """Dispatch loop inside the child: run in-process MNN calls, pipe back results.
+
+    The child never uses subprocess mode (sets the indicator env var first), so
+    every call below hits the normal in-process path with its own _LLM/_STATE.
+    """
+    os.environ[_CHILD_INDICATOR_VAR] = "1"
+    with contextlib.suppress(Exception):
+        os.setsid()  # own session group; parent may killpg if grandchildren appear
+    try:
+        conn.send(("ready",))
+    except Exception:
+        return
+    while True:
+        try:
+            cmd = conn.recv()
+        except EOFError:
+            return
+        if not isinstance(cmd, tuple) or not cmd:
+            continue
+        kind = cmd[0]
+        try:
+            if kind == "shutdown":
+                with contextlib.suppress(Exception):
+                    unload_model()
+                with contextlib.suppress(Exception):
+                    conn.send(("bye",))
+                return
+            if kind == "load":
+                _, model_dir, model_name = cmd
+                conn.send(("ok", load_model(model_dir, model_name)))
+            elif kind == "unload":
+                unload_model()
+                conn.send(("ok", status_locked()))
+            elif kind == "status":
+                conn.send(("ok", status_locked()))
+            elif kind == "chat":
+                _, prompt, history, mx = cmd
+                conn.send(("ok", chat(prompt, history, mx)))
+            elif kind == "chat_multimodal":
+                _, prompt, history, mx, images, audios = cmd
+                conn.send(("ok", chat_multimodal(prompt, history, mx, images, audios)))
+            elif kind == "chat_stream":
+                _, prompt, history, mx, images, audios = cmd
+                for delta, _fin in chat_stream(prompt, history, mx, images, audios):
+                    conn.send(("delta", delta))
+                conn.send(("done", status_locked()))
+            else:
+                conn.send(("err", "RuntimeError", f"unknown command: {kind!r}"))
+        except Exception as e:  # noqa: BLE001 — reflect any failure back
+            with contextlib.suppress(Exception):
+                conn.send(("err", _exc_tag(e), str(e)))
+
+
+# -- parent-side client ------------------------------------------------------
+
+class _MnnSubprocessClient:
+    """Parent-side proxy to the forked MNN child.
+
+    Every call serializes on ``_call_lock`` (MNN is non-reentrant anyway).
+    On a child hang (pipe read timeout) or crash (EOFError / process exit) the
+    child is SIGKILLed — the whole point of isolation — and the caller sees an
+    error. The next ``load_model`` respawns a fresh child.
+    """
+
+    def __init__(self) -> None:
+        self._conn: Any = None
+        self._proc: multiprocessing.Process | None = None
+        self._call_lock = threading.Lock()
+        self._state: dict[str, Any] = {
+            "loaded": False, "model_dir": "", "model_name": "",
+            "loading": False, "error": "", "loaded_at": 0.0, "chat_count": 0,
+        }
+        self._watchdog_stop = threading.Event()
+        self._killed_by_us = False
+
+    # -- lifecycle -----------------------------------------------------------
+    def _ensure_started(self) -> None:
+        if self._proc is not None and self._proc.is_alive() and self._conn is not None:
+            return
+        parent_conn, child_conn = multiprocessing.Pipe(duplex=True)
+        p = multiprocessing.Process(
+            target=_mnn_child_main, args=(child_conn,), daemon=True,
+        )
+        p.start()
+        child_conn.close()
+        self._conn = parent_conn
+        self._proc = p
+        self._killed_by_us = False
+        self._state["error"] = ""
+        if not parent_conn.poll(_CHILD_READY_TIMEOUT_S):
+            self._kill()
+            raise RuntimeError(f"MNN 子进程 {_CHILD_READY_TIMEOUT_S:.0f}s 内未就绪")
+        try:
+            msg = parent_conn.recv()
+        except EOFError:
+            self._kill()
+            raise RuntimeError("MNN 子进程启动后立即退出") from None
+        if not (isinstance(msg, tuple) and msg and msg[0] == "ready"):
+            self._kill()
+            raise RuntimeError(f"MNN 子进程未正常就绪: {msg!r}")
+        threading.Thread(target=self._watchdog_loop, daemon=True).start()
+
+    def _kill(self) -> None:
+        self._killed_by_us = True
+        if self._proc is not None:
+            with contextlib.suppress(Exception):
+                if self._proc.is_alive():
+                    self._proc.kill()
+            with contextlib.suppress(Exception):
+                self._proc.join(timeout=5)
+        self._proc = None
+        self._conn = None
+        self._state["loaded"] = False
+        self._state["loading"] = False
+
+    def close(self) -> None:
+        """Clean shutdown (app exit / test teardown). Best-effort."""
+        self._watchdog_stop.set()
+        with contextlib.suppress(Exception):
+            if self._proc is not None and self._proc.is_alive() and self._conn is not None:
+                self._conn.send(("shutdown",))
+                if self._conn.poll(2.0):
+                    self._conn.recv()
+        self._kill()
+
+    def _watchdog_loop(self) -> None:
+        """Detect idle crashes (segfault / OOM between calls) without touching
+        the pipe (no contention with in-flight calls)."""
+        while not self._watchdog_stop.wait(3.0):
+            proc = self._proc
+            if proc is None:
+                return
+            if not proc.is_alive() and not self._killed_by_us:
+                self._state["loaded"] = False
+                self._state["loading"] = False
+                self._state["error"] = "MNN 子进程意外退出"
+                self._conn = None
+                return
+
+    # -- RPC primitives ------------------------------------------------------
+    def _request(self, cmd: tuple, timeout: float) -> Any:
+        self._ensure_started()
+        self._conn.send(cmd)
+        deadline = time.monotonic() + timeout
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                self._kill()
+                raise TimeoutError(f"MNN 子进程调用超时（{timeout:.0f}s 无响应）")
+            if self._conn.poll(remaining):
+                try:
+                    return self._conn.recv()
+                except EOFError:
+                    self._kill()
+                    raise RuntimeError("MNN 子进程在响应期间意外退出") from None
+
+    @staticmethod
+    def _unwrap_ok(msg: tuple) -> Any:
+        if msg[0] == "ok":
+            return msg[1]
+        if msg[0] == "err":
+            _raise_tagged(msg[1], msg[2])
+        raise RuntimeError(f"子进程返回未知消息: {msg!r}")
+
+    # -- public operations (mirror the module API) --------------------------
+    def load_model(self, model_dir: str | Path, model_name: str = "") -> dict[str, Any]:
+        with self._call_lock:
+            st = self._unwrap_ok(self._request(
+                ("load", str(model_dir), model_name), _LOAD_TIMEOUT_S))
+            self._state.update(st)
+            return st
+
+    def unload_model(self) -> dict[str, Any]:
+        with self._call_lock:
+            with contextlib.suppress(RuntimeError):
+                self._unwrap_ok(self._request(("unload",), 30.0))
+            self._state["loaded"] = False
+            self._state["model_dir"] = ""
+            self._state["model_name"] = ""
+            return {"ok": True}
+
+    def status(self) -> dict[str, Any]:
+        with self._call_lock:
+            if self._proc is None or not self._proc.is_alive():
+                st = dict(self._state)
+                st["loaded"] = False
+                st["loading"] = False
+                st["engine_available"] = is_engine_available()
+                st["engine_version"] = engine_version()
+                return st
+            try:
+                st = self._unwrap_ok(self._request(("status",), 10.0))
+            except Exception:  # noqa: BLE001
+                st = dict(self._state)
+            self._state.update(st)
+            return st
+
+    def chat(self, prompt: str, history: list | None = None,
+             max_new_tokens: int = 512) -> dict[str, Any]:
+        with self._call_lock:
+            return self._unwrap_ok(self._request(
+                ("chat", prompt, history or [], int(max_new_tokens)), _CHAT_TIMEOUT_S))
+
+    def chat_multimodal(self, prompt: str, history: list | None = None,
+                        max_new_tokens: int = 512,
+                        images: list | None = None,
+                        audios: list | None = None) -> dict[str, Any]:
+        with self._call_lock:
+            return self._unwrap_ok(self._request(
+                ("chat_multimodal", prompt, history or [], int(max_new_tokens),
+                 images or [], audios or []), _CHAT_TIMEOUT_S))
+
+    def chat_stream(self, prompt: str, history: list | None = None,
+                    max_new_tokens: int = 512,
+                    images: list | None = None,
+                    audios: list | None = None) -> Iterator[tuple[str, bool]]:
+        with self._call_lock:
+            self._ensure_started()
+            self._conn.send(("chat_stream", prompt, history or [],
+                             int(max_new_tokens), images or [], audios or []))
+            deadline = time.monotonic() + _SUBPROCESS_STREAM_TIMEOUT_S
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    self._kill()
+                    raise TimeoutError(
+                        f"MNN 流式生成超时（{_SUBPROCESS_STREAM_TIMEOUT_S:.0f}s 无完成信号）")
+                if not self._conn.poll(remaining):
+                    self._kill()
+                    raise TimeoutError(
+                        f"MNN 流式生成超时（{_SUBPROCESS_STREAM_TIMEOUT_S:.0f}s 无完成信号）")
+                try:
+                    msg = self._conn.recv()
+                except EOFError:
+                    self._kill()
+                    raise RuntimeError("MNN 子进程在流式生成中崩溃") from None
+                kind = msg[0]
+                if kind == "delta":
+                    yield msg[1], False
+                elif kind == "done":
+                    self._state.update(msg[1])
+                    yield "", True
+                    return
+                elif kind == "err":
+                    self._state["error"] = msg[2]
+                    _raise_tagged(msg[1], msg[2])
+
