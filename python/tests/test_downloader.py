@@ -6,6 +6,7 @@ network access. The downloader code-under-test accepts a custom
 
 Plus unit tests for ``DownloadRefused`` / URL policy.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -62,7 +63,7 @@ class _RangeAwareHandler(BaseHTTPRequestHandler):
         rng = self.headers.get("Range")
         if rng and rng.startswith("bytes="):
             try:
-                start = int(rng[len("bytes="):].split("-", 1)[0])
+                start = int(rng[len("bytes=") :].split("-", 1)[0])
             except ValueError:
                 start = 0
             end = len(self.payload) - 1
@@ -121,9 +122,9 @@ def local_server() -> Iterator[tuple[str, Callable[[bytes], None]]]:
         ("https://huggingface.co/foo/bar", False),
         ("https://hf-mirror.com/foo", False),
         ("https://example.com/foo", False),
-        # NOTE: typosquat domains (e.g. hf-cdn.sufy.com) are also accepted now —
-        # the user opted in via the in-app Download sources panel.
-        ("https://hf-cdn.sufy.com/foo", False),
+        # P0-3: hf-cdn.sufy.com is a phishing typosquat on the hard-block list —
+        # refused unconditionally (even though no allowlist is enforced here).
+        ("https://hf-cdn.sufy.com/foo", True),
         ("http://127.0.0.1/x", False),
         ("ftp://huggingface.co/x", True),
         ("file:///etc/passwd", True),
@@ -136,6 +137,58 @@ def test_check_url(url: str, refused: bool):
             _check_url(url)
     else:
         _check_url(url)  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# P0-2: credential-bearing (gated) downloads must stay on the host allowlist
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://attacker.example/collect",
+        "https://evil.example.com/model.gguf",
+        "https://hf-cdn.sufy.com/owner/repo.bin",
+    ],
+)
+def test_credential_bearing_download_rejected_on_non_allowlisted_host(url: str):
+    """When an Authorization credential will be attached, the host allowlist is
+    force-enabled: the user's HF Bearer token must never be sent to an arbitrary
+    (potentially attacker-controlled) URL."""
+    with pytest.raises(DownloadRefused) as exc:
+        _check_url(url, has_auth_header=True)
+    msg = str(exc.value).lower()
+    assert "allowlist" in msg or "blocked" in msg
+
+
+def test_credential_bearing_download_allows_trusted_hosts():
+    """Trusted model hosts remain reachable for gated downloads."""
+    for host in ("huggingface.co", "cdn-lfs.huggingface.co",
+                 "hf-mirror.com", "modelscope.cn", "www.modelscope.cn"):
+        _check_url(f"https://{host}/owner/repo/resolve/main/m.bin",
+                   has_auth_header=True)  # must not raise
+
+
+def test_plain_download_without_credential_still_permissive():
+    """Without a credential, the permissive default is preserved (backward compat)."""
+    _check_url("https://attacker.example/collect")  # must not raise
+
+
+@pytest.mark.asyncio
+async def test_downloader_start_refuses_authorization_to_evil_host(tmp_path: Path):
+    """Downloader.start must refuse a task that would send Authorization to a
+    host outside the allowlist — belt-and-suspenders with the module check."""
+    dl = Downloader(max_concurrent=1)
+    try:
+        with pytest.raises(DownloadRefused):
+            await dl.start(
+                "https://attacker.example/model.gguf",
+                tmp_path / "m.gguf",
+                extra_headers={"Authorization": "Bearer hf_fake_token"},
+            )
+    finally:
+        await dl.aclose()
 
 
 # ---------------------------------------------------------------------------
@@ -226,7 +279,8 @@ async def test_downloader_sha_mismatch_marks_failed(tmp_path: Path, local_server
     client = httpx.AsyncClient(follow_redirects=True, timeout=30.0)
     dl = Downloader(max_concurrent=1, client=client, extra_allowed_hosts=LOCAL_HOSTS)
     tid = await dl.start(
-        f"{base}/file.bin", dst,
+        f"{base}/file.bin",
+        dst,
         sha256=hashlib.sha256(b"different").hexdigest(),
     )
     deadline = time.monotonic() + 10.0
@@ -255,15 +309,15 @@ async def test_downloader_rejects_disallowed_host(tmp_path: Path):
 
 @pytest.mark.asyncio
 async def test_downloader_accepts_any_https_host(tmp_path: Path):
-    """v2.2.0: typosquat hosts (e.g. hf-cdn.sufy.com) are accepted by
-    default; the user opts in via the in-app Download sources panel."""
+    """Permissive default: any well-formed https URL (outside the hard-block
+    list) is accepted up-front; the user opts in via the in-app sources panel."""
     client = httpx.AsyncClient(follow_redirects=True, timeout=30.0)
     dl = Downloader(max_concurrent=1, client=client)
-    # Should NOT raise — any https URL is allowed.
-    # We don't actually fetch (network blocked in tests), so we just check
-    # the URL is not rejected up-front.
+    # Should NOT raise — any https URL is allowed (blocked mirrors are the
+    # exception, covered by their own test). We don't actually fetch (network
+    # blocked in tests), so we just check the URL is not rejected up-front.
     try:
-        await dl.start("https://hf-cdn.sufy.com/file", tmp_path / "out")
+        await dl.start("https://example.com/file", tmp_path / "out")
     except (FileExistsError, DownloadRefused) as e:
         if isinstance(e, DownloadRefused):
             pytest.fail(f"https URL was refused: {e}")
@@ -309,9 +363,7 @@ async def test_downloader_concurrency_cap(tmp_path: Path, local_server):
     dl = Downloader(max_concurrent=2, extra_allowed_hosts=LOCAL_HOSTS)
     starts = []
     for i in range(4):
-        starts.append(
-            dl.start(f"{base}/a{i}.bin", tmp_path / f"out{i}.bin")
-        )
+        starts.append(dl.start(f"{base}/a{i}.bin", tmp_path / f"out{i}.bin"))
     tids = await asyncio.gather(*starts)
     # Wait for all to complete
     deadline = time.monotonic() + 15.0
@@ -344,8 +396,12 @@ async def test_downloader_list_tasks(tmp_path: Path, local_server):
 
 def test_downloadtask_snapshot_shape():
     t = DownloadTask(
-        id="x", url="https://huggingface.co/y", dest_path="/tmp/y",
-        expected_sha256=None, total_bytes=10, downloaded_bytes=5,
+        id="x",
+        url="https://huggingface.co/y",
+        dest_path="/tmp/y",
+        expected_sha256=None,
+        total_bytes=10,
+        downloaded_bytes=5,
     )
     snap = t.snapshot()
     assert snap["id"] == "x"

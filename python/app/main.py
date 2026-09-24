@@ -1481,10 +1481,13 @@ async def download_start(request: Request, body: DownloadStartReq) -> dict[str, 
     else:
         chosen_url = candidates[0]
 
-    # Validate the chosen URL (permissive: only scheme + host presence).
+    # Validate the chosen URL (permissive: scheme + host presence). When the
+    # request is gated we will attach the user's HF Bearer token, so the host
+    # allowlist is force-enabled here (P0-2) — the token must never be sent to
+    # an arbitrary/caller-controlled URL.
     try:
         from .downloader import _check_url as _ck
-        _ck(chosen_url)
+        _ck(chosen_url, has_auth_header=bool(body.gated))
     except DownloadRefused as e:
         raise HTTPException(status_code=400, detail=f"refused url: {e}") from e
     except Exception:
