@@ -25,6 +25,19 @@ const k = () => {
   return window.kevrai;
 };
 
+// Event subscriptions return an unsubscribe function. They are invoked
+// synchronously during bootstrap wiring, so they must NOT throw when the
+// bridge is unavailable (otherwise the rest of bootstrap — including nav,
+// updates and the command palette — is never wired). Degrade to a no-op
+// unsubscribe instead.
+function safeOn(name) {
+  return (cb) => {
+    const b = window.kevrai;
+    if (b && typeof b[name] === "function") return b[name](cb);
+    return () => {};
+  };
+}
+
 export const api = {
   health:        wrap("health",        () => k().health()),
   categories:    wrap("categories",    () => k().categories()),
@@ -44,7 +57,7 @@ export const api = {
   putSettings:   wrap("putSettings",   (s) => k().putSettings(s)),
   startDownload: wrap("startDownload", (opts) => k().startDownload(opts)),
   cancelDownload:wrap("cancelDownload",(tid) => k().cancelDownload(tid)),
-  onDownloadProgress: (cb) => k().onDownloadProgress(cb),
+  onDownloadProgress: safeOn("onDownloadProgress"),
   openPath:      wrap("openPath",      (p) => k().openPath(p)),
   showErrorDialog: wrap("showErrorDialog", (opts) => k().showErrorDialog(opts)),
   pickFolder:    wrap("pickFolder",    () => k().pickFolder()),
@@ -53,9 +66,9 @@ export const api = {
   checkUpdates:  wrap("checkUpdates",  () => k().checkUpdates()),
   downloadUpdate: wrap("downloadUpdate", () => k().downloadUpdate()),
   installUpdate:  wrap("installUpdate",  () => k().installUpdate()),
-  onUpdateProgress:   (cb) => k().onUpdateProgress(cb),
-  onUpdateDownloaded: (cb) => k().onUpdateDownloaded(cb),
-  onUpdateError:      (cb) => k().onUpdateError(cb),
+  onUpdateProgress:   safeOn("onUpdateProgress"),
+  onUpdateDownloaded: safeOn("onUpdateDownloaded"),
+  onUpdateError:      safeOn("onUpdateError"),
   getAppVersion: wrap("getAppVersion", () => k().getAppVersion()),
   // v2.2.0 — multi-source & environment management
   envStatus:     wrap("envStatus",     () => k().envStatus()),
