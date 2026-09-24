@@ -2249,7 +2249,7 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.5-27B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.5-27B-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/Qwen3.5-27B-GGUF/",
+        "https://hf-mirror.com/unsloth/Qwen3.5-27B-GGUF/",
         "https://modelscope.cn/models/Qwen/Qwen3.5-27B/resolve/master/",
         "https://modelscope.cn/models/unsloth/Qwen3.5-27B-GGUF/resolve/master/"
       ],
@@ -2300,7 +2300,7 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.5-9B-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/Qwen3.5-9B-GGUF/",
+        "https://hf-mirror.com/unsloth/Qwen3.5-9B-GGUF/",
         "https://modelscope.cn/models/Qwen/Qwen3.5-9B/resolve/master/",
         "https://modelscope.cn/models/unsloth/Qwen3.5-9B-GGUF/resolve/master/"
       ],
@@ -2349,7 +2349,7 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.5-397B-A17B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.5-397B-A17B-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/Qwen3.5-397B-A17B-GGUF/",
+        "https://hf-mirror.com/unsloth/Qwen3.5-397B-A17B-GGUF/",
         "https://modelscope.cn/models/Qwen/Qwen3.5-397B-A17B/resolve/master/",
         "https://modelscope.cn/models/unsloth/Qwen3.5-397B-A17B-GGUF/resolve/master/"
       ],
@@ -2399,7 +2399,7 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.6-27B-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/Qwen3.6-27B-GGUF/",
+        "https://hf-mirror.com/unsloth/Qwen3.6-27B-GGUF/",
         "https://modelscope.cn/models/Qwen/Qwen3.6-27B/resolve/master/",
         "https://modelscope.cn/models/unsloth/Qwen3.6-27B-GGUF/resolve/master/"
       ],
@@ -2448,7 +2448,7 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.6-35B-A3B-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/Qwen3.6-35B-A3B-GGUF/",
+        "https://hf-mirror.com/unsloth/Qwen3.6-35B-A3B-GGUF/",
         "https://modelscope.cn/models/Qwen/Qwen3.6-35B-A3B/resolve/master/",
         "https://modelscope.cn/models/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/master/"
       ],
@@ -2497,7 +2497,7 @@
       "sources": [
         "https://huggingface.co/unsloth/DeepSeek-V4-Flash-GGUF/",
         "https://hf-mirror.com/unsloth/DeepSeek-V4-Flash-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/DeepSeek-V4-Flash-GGUF/",
+        "https://hf-mirror.com/unsloth/DeepSeek-V4-Flash-GGUF/",
         "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Flash/resolve/master/",
         "https://modelscope.cn/models/unsloth/DeepSeek-V4-Flash-GGUF/resolve/master/"
       ],
@@ -2594,7 +2594,7 @@
       "sources": [
         "https://huggingface.co/unsloth/GLM-5-GGUF/",
         "https://hf-mirror.com/unsloth/GLM-5-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/GLM-5-GGUF/",
+        "https://hf-mirror.com/unsloth/GLM-5-GGUF/",
         "https://modelscope.cn/models/unsloth/GLM-5-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/GLM-5-GGUF/",
@@ -2643,7 +2643,7 @@
       "sources": [
         "https://huggingface.co/unsloth/Kimi-K2.6-GGUF/",
         "https://hf-mirror.com/unsloth/Kimi-K2.6-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/Kimi-K2.6-GGUF/",
+        "https://hf-mirror.com/unsloth/Kimi-K2.6-GGUF/",
         "https://modelscope.cn/models/moonshotai/Kimi-K2.6/resolve/master/",
         "https://modelscope.cn/models/unsloth/Kimi-K2.6-GGUF/resolve/master/"
       ],
@@ -2696,7 +2696,7 @@
       "sources": [
         "https://huggingface.co/unsloth/MiniMax-M2.7-GGUF/",
         "https://hf-mirror.com/unsloth/MiniMax-M2.7-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/MiniMax-M2.7-GGUF/",
+        "https://hf-mirror.com/unsloth/MiniMax-M2.7-GGUF/",
         "https://modelscope.cn/models/unsloth/MiniMax-M2.7-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/unsloth/MiniMax-M2.7-GGUF/",
@@ -2743,7 +2743,7 @@
       "sources": [
         "https://huggingface.co/ggml-org/gpt-oss-120b-GGUF/",
         "https://hf-mirror.com/ggml-org/gpt-oss-120b-GGUF/",
-        "https://hf-cdn.sufy.com/ggml-org/gpt-oss-120b-GGUF/",
+        "https://hf-mirror.com/ggml-org/gpt-oss-120b-GGUF/",
         "https://modelscope.cn/models/ggml-org/gpt-oss-120b-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/ggml-org/gpt-oss-120b-GGUF/",
@@ -2792,7 +2792,7 @@
       "sources": [
         "https://huggingface.co/ggml-org/gpt-oss-20b-GGUF/",
         "https://hf-mirror.com/ggml-org/gpt-oss-20b-GGUF/",
-        "https://hf-cdn.sufy.com/ggml-org/gpt-oss-20b-GGUF/",
+        "https://hf-mirror.com/ggml-org/gpt-oss-20b-GGUF/",
         "https://modelscope.cn/models/ggml-org/gpt-oss-20b-GGUF/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/ggml-org/gpt-oss-20b-GGUF/",
@@ -2841,7 +2841,7 @@
       "sources": [
         "https://huggingface.co/unsloth/LFM2.5-8B-A1B-GGUF/",
         "https://hf-mirror.com/unsloth/LFM2.5-8B-A1B-GGUF/",
-        "https://hf-cdn.sufy.com/unsloth/LFM2.5-8B-A1B-GGUF/",
+        "https://hf-mirror.com/unsloth/LFM2.5-8B-A1B-GGUF/",
         "https://modelscope.cn/models/LiquidAI/LFM2.5-8B-A1B/resolve/master/",
         "https://modelscope.cn/models/unsloth/LFM2.5-8B-A1B-GGUF/resolve/master/"
       ],
@@ -3006,7 +3006,7 @@
       "sources": [
         "https://huggingface.co/black-forest-labs/FLUX.2-dev/",
         "https://hf-mirror.com/black-forest-labs/FLUX.2-dev/",
-        "https://hf-cdn.sufy.com/black-forest-labs/FLUX.2-dev/",
+        "https://hf-mirror.com/black-forest-labs/FLUX.2-dev/",
         "https://modelscope.cn/models/black-forest-labs/FLUX.2-dev/resolve/master/"
       ],
       "primary_url": "https://huggingface.co/black-forest-labs/FLUX.2-dev/",
