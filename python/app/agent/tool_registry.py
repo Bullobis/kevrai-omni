@@ -115,17 +115,27 @@ def parse_tool_call(text: str) -> tuple[str, dict[str, Any]] | None:
     """
     # Format 1: name|json
     m = re.search(
-        r"Action\s*:\s*([a-z][a-z0-9_]{1,63})\s*\|\s*(\{.*?\})\s*(?:\n|$)",
+        r"Action\s*:\s*([a-z][a-z0-9_]{1,63})\s*\|\s*(\{.*)",
         text, re.S | re.I,
     )
     if m:
         name = m.group(1).lower()
-        try:
-            params = json.loads(m.group(2))
+        rest = m.group(2)
+        # The JSON object may be followed by free-text commentary on the same
+        # line (a small local LLM occasionally appends "# search for ...").
+        # Non-greedily stopping at the first '}' breaks nested objects, so we
+        # walk the '}' positions and retry json.loads until one parses.
+        end = rest.find("}")
+        while end != -1:
+            candidate = rest[: end + 1]
+            try:
+                params = json.loads(candidate)
+            except json.JSONDecodeError:
+                end = rest.find("}", end + 1)
+                continue
             if isinstance(params, dict):
                 return name, params
-        except json.JSONDecodeError:
-            pass
+            break
 
     # Format 2: name(key=value, ...)
     m = re.search(

@@ -12,14 +12,10 @@ robust output parsing that the v2.7.0 suite did not cover:
 """
 from __future__ import annotations
 
-import asyncio
-from pathlib import Path
-
 import pytest
 
 from app.agent import Agent, AgentMemory, ToolContext
 from app.agent.tool_registry import (
-    ToolRegistry,
     extract_final_answer,
     parse_tool_call,
 )
@@ -123,3 +119,49 @@ class TestChineseFinalAnswer:
         out = extract_final_answer(text)
         assert out == "直接给出的结论。"
         assert "让我想想" not in out
+
+
+# ===========================================================================
+# Tool-call parsing robustness
+# ===========================================================================
+class TestParseToolCallRobustness:
+    def test_trailing_comment_after_json(self):
+        # A small local LLM may append a trailing comment on the same line.
+        text = 'Thought: search\nAction: search_models|{"query": "music", "limit": 5} # find music\n'
+        result = parse_tool_call(text)
+        assert result is not None
+        name, params = result
+        assert name == "search_models"
+        assert params == {"query": "music", "limit": 5}
+
+    def test_nested_json_object(self):
+        text = 'Action: foo|{"a": {"b": 1}, "c": [2, 3]}\n'
+        result = parse_tool_call(text)
+        assert result is not None
+        _, params = result
+        assert params == {"a": {"b": 1}, "c": [2, 3]}
+
+    def test_trailing_text_no_newline(self):
+        text = 'Action: build_image_prompt|{"subject": "cat"} extra'
+        result = parse_tool_call(text)
+        assert result is not None
+        assert result[0] == "build_image_prompt"
+        assert result[1] == {"subject": "cat"}
+
+    def test_json_array_not_treated_as_params(self):
+        text = "Action: foo|[1, 2, 3]\n"
+        assert parse_tool_call(text) is None
+
+    def test_malformed_json_falls_through_gracefully(self):
+        text = "Action: foo|{broken json\n"
+        # Must not raise; falls through to format 2 / None.
+        assert parse_tool_call(text) is None
+
+    def test_empty_braces(self):
+        result = parse_tool_call("Action: check_hardware|{}\n")
+        assert result == ("check_hardware", {})
+
+    def test_case_insensitive(self):
+        result = parse_tool_call("ACTION: check_hardware|{}\n")
+        assert result is not None
+        assert result[0] == "check_hardware"
