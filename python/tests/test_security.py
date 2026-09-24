@@ -136,11 +136,22 @@ def test_sufy_url_rejected_at_engine_install(tmp_path):
 
 
 def test_sufy_url_rejected_at_downloader_check():
-    """Downloader has its OWN check too — belt-and-suspenders."""
+    """Downloader has its OWN check too — belt-and-suspenders. P0-3: blocked
+    mirrors are refused unconditionally, even without allowlist enforcement."""
     for bad in DEFAULT_BLOCKED_MIRRORS:
         with pytest.raises(DownloadRefused) as exc:
             downloader_check_url(f"https://{bad}/file.bin")
         assert bad in str(exc.value) or "blocked" in str(exc.value).lower()
+
+
+def test_blocked_mirror_not_in_allowlist():
+    """P0-3: SECURITY.md must match code — hf-cdn.sufy.com is hard-blocked and
+    must NOT be present in the positive allowlist."""
+    assert "hf-cdn.sufy.com" in DEFAULT_BLOCKED_MIRRORS
+    assert "hf-cdn.sufy.com" not in ALLOWED_MODEL_HOSTS
+    # Belt-and-suspenders: the module-level URL check refuses it unconditionally.
+    with pytest.raises(DownloadRefused):
+        downloader_check_url("https://hf-cdn.sufy.com/file.bin")
 
 
 def test_evil_random_host_rejected(tmp_path):
@@ -176,13 +187,14 @@ def test_pydantic_accepts_any_repo_string():
 
 
 def test_is_host_allowed_full_table():
-    """v2.2.0: allowlist is *advisory*; is_host_allowed returns accurate
-    membership for the curated default set, but a host outside the set
-    simply returns False (advisory, not enforced)."""
+    """is_host_allowed returns accurate membership for the curated default set.
+    P0-3: the hard-blocked phishing mirror is NOT a member of the allowlist."""
     for ok in ALLOWED_MODEL_HOSTS:
         assert is_host_allowed(f"https://{ok}/file", set(ALLOWED_MODEL_HOSTS))
-    # Blocked mirrors are no longer in the catalog; ensure the set is empty.
-    assert set() == DEFAULT_BLOCKED_MIRRORS, "v2.2.0 removed the global blocklist"
+    # P0-3: blocked mirrors must be explicitly enumerated, not empty.
+    assert DEFAULT_BLOCKED_MIRRORS, "expected a non-empty hard-block list"
+    for bad in DEFAULT_BLOCKED_MIRRORS:
+        assert bad not in ALLOWED_MODEL_HOSTS
 
 
 def test_engines_json_every_url_is_well_formed():
