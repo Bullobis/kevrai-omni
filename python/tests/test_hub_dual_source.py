@@ -97,6 +97,8 @@ async def test_S01_curated_single_source():
     assert page.items, "curated catalog should return items"
     assert all(m.hub == HUB_CURATED for m in page.items)
     assert page.has_more is True
+    assert page.degraded is False
+    assert page.warnings == []
 
 
 async def test_S02_hf_single_source(fake_hub):

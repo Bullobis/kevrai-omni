@@ -1,0 +1,25 @@
+{
+  "name": "kevrai-omni-rolling-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Programmatic rolling demo video for Kevrai Omni",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio remotion/index.ts",
+    "render": "remotion render remotion/index.ts KevraiDemo ../assets/media/demo.mp4",
+    "render:rolling": "remotion render remotion/index.ts KevraiDemo kevrai-omni-demo.mp4 --props=./demo-props.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.528",
+    "@remotion/renderer": "4.0.528",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "remotion": "4.0.528"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "7.0.2"
+  }
+}

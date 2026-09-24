@@ -33,6 +33,10 @@ export async function openSettings() {
 export function closeSettings() {
   const overlay = $("#settings-overlay");
   if (!overlay) return;
+  if (typeof overlay._trapHandler === "function") {
+    overlay.removeEventListener("keydown", overlay._trapHandler);
+    overlay._trapHandler = null;
+  }
   overlay.setAttribute("hidden", "");
   overlay.setAttribute("aria-hidden", "true");
 }

@@ -41,34 +41,34 @@
     <!-- Sidebar -->
     <aside class="sidebar" aria-label="分类导航">
       <nav>
-        <button class="pane-tab active" data-tab="market">
+        <button class="pane-tab active" data-tab="market" title="模型市场">
           <span class="ico" aria-hidden="true">◇</span> 模型市场
         </button>
-        <button class="pane-tab" data-tab="hardware">
+        <button class="pane-tab" data-tab="hardware" title="硬件推荐">
           <span class="ico" aria-hidden="true">⚡</span> 硬件推荐
         </button>
-        <button class="pane-tab" data-tab="engines">
+        <button class="pane-tab" data-tab="engines" title="AI 引擎">
           <span class="ico" aria-hidden="true">⟁</span> AI 引擎
         </button>
-        <button class="pane-tab" data-tab="mnn">
+        <button class="pane-tab" data-tab="mnn" title="MNN 引擎">
           <span class="ico" aria-hidden="true">⬢</span> MNN 引擎
         </button>
-        <button class="pane-tab" data-tab="agent">
+        <button class="pane-tab" data-tab="agent" title="AI Agent">
           <span class="ico" aria-hidden="true">🤖</span> AI Agent
         </button>
-        <button class="pane-tab" data-tab="ltx">
+        <button class="pane-tab" data-tab="ltx" title="LTX-2.5 视频">
           <span class="ico" aria-hidden="true">🎥</span> LTX-2.5 视频
         </button>
-        <button class="pane-tab" data-tab="local">
+        <button class="pane-tab" data-tab="local" title="本地模型">
           <span class="ico" aria-hidden="true">⛁</span> 本地模型
         </button>
-        <button class="pane-tab" data-tab="gguf">
+        <button class="pane-tab" data-tab="gguf" title="GGUF 仓库">
           <span class="ico" aria-hidden="true">▤</span> GGUF 仓库
         </button>
-        <button class="pane-tab" data-tab="pending">
+        <button class="pane-tab" data-tab="pending" title="待官方开源">
           <span class="ico" aria-hidden="true">⌛</span> 待官方开源
         </button>
-        <button class="pane-tab" data-tab="environments">
+        <button class="pane-tab" data-tab="environments" title="环境管理">
           <span class="ico" aria-hidden="true">⚙</span> 环境管理
         </button>
       </nav>
@@ -268,6 +268,7 @@
 
     <!-- Right detail panel -->
     <aside class="detail" aria-label="详情">
+      <button class="ghost icon detail-close" data-action="close-detail" aria-label="关闭详情面板" title="关闭详情">×</button>
       <div id="detail-panel" class="detail-empty">
         <p class="mut">← 选择一个模型查看详情。</p>
       </div>
@@ -312,6 +313,7 @@
         <button class="ghost icon" data-action="close-settings" aria-label="关闭设置">×</button>
       </header>
       <div class="settings-grid">
+        <div class="settings-section">存储与外观</div>
         <label class="field">
           <span>模型存储目录</span>
           <div class="row">
@@ -334,6 +336,7 @@
             <option value="light">浅色</option>
           </select>
         </label>
+        <div class="settings-section">硬件与遥测</div>
         <label class="field">
           <span>硬件加速</span>
           <select id="set-hwaccel">
@@ -347,6 +350,7 @@
           <input id="set-telemetry" type="checkbox" />
           <span>启用遥测（匿名使用统计）</span>
         </label>
+        <div class="settings-section">网络与访问令牌</div>
         <label class="field inline">
           <input id="set-allowlist-advanced" type="checkbox" />
           <span>高级：编辑下载主机白名单</span>

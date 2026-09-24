@@ -27,6 +27,7 @@ let searchState = {
   reqSeq: 0,               // request-generation guard (H5)
   lastError: null,
   usingHub: false,         // true when the last successful search used hub
+  remoteSearch: false,     // true when the last request included remote hubs
 };
 let highlightIdx = -1;
 let recentDropdown = null;
@@ -248,17 +249,26 @@ function toLegacyParams(params) {
   };
 }
 
+function normalizeSources(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === "string" && value.trim()) {
+    return value.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+  return searchState.sources.slice();
+}
+
 export async function runSearch(opts = {}) {
   if (opts.resetPage) searchState.page = 1;
   const mySeq = ++searchState.reqSeq;   // H5: generation guard
+  const requestedSources = normalizeSources(opts.sources || searchState.sources);
+  searchState.remoteSearch = requestedSources.some((s) => s !== "curated");
   searchState.loading = true;
   searchState.lastError = null;
-  updateCount("搜索中…");
+  updateCount(searchState.items.length ? "后台更新中…" : "搜索中…");
   clearLoadMoreBar();
-
   const params = {
     q: searchState.q,
-    sources: searchState.sources,
+    sources: requestedSources,
     category: searchState.cat,
     engine: searchState.engine,
     license: searchState.license,
@@ -371,9 +381,9 @@ export async function loadMore() {
 function formatCount() {
   const n = searchState.items.length;
   const base = `${searchState.count || n} 条`;
-  const online = searchState.usingHub ? " · 在线" : "";
+  const sourceLabel = searchState.remoteSearch ? " · 在线" : " · 本地精选";
   const more = searchState.hasMore ? " · 滚动加载更多" : "";
-  return `${base}${online} · ${searchState.elapsedMs}ms${more}`;
+  return `${base}${sourceLabel} · ${searchState.elapsedMs}ms${more}`;
 }
 
 function clearLoadMoreBar() {

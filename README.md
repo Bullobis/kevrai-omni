@@ -9,15 +9,23 @@
 
 **一个安装包 · 桌面快捷方式 · 引擎按需下载 · 模型从 huggingface.co 一键拉取 · 支持本地导入 · 全部开源**
 
-## 🎬 宣传视频 (30 秒 · 1080p)
+## 🎬 演示视频
+
+### 7 秒滚动演示（Remotion 程序化生成）
+
+[![Kevrai Omni 滚动演示](assets/media/logo.png)](assets/media/demo.mp4)
+
+> 点击播放 [assets/media/demo.mp4](assets/media/demo.mp4)。滚动演示由 `video/` 中的 Remotion 工程生成，GitHub Actions 每 6 小时刷新 `rolling-demo` Release 资产。
+
+### 30 秒完整宣传视频（1080p）
 
 [![Kevrai Omni 宣传视频](assets/media/logo.png)](assets/media/promo.mp4)
 
-> 点击播放 [assets/media/promo.mp4](assets/media/promo.mp4)。全部画面取自 v2.8.1 真实运行界面（真实模型目录、真实硬件检测、真实 Agent 工具调用）：模型市场双源检索、硬件体检与模型推荐、Kevrai Agent 工具调用、短剧 Agent、LTX-2.5 视频生成、MNN 引擎。
+> 点击播放 [assets/media/promo.mp4](assets/media/promo.mp4)。完整宣传视频展示真实运行界面（真实模型目录、真实硬件检测、真实 Agent 工具调用）：模型市场双源检索、硬件体检与模型推荐、Kevrai Agent 工具调用、短剧 Agent、LTX-2.5 视频生成、MNN 引擎。
 
 ![License: Kevrai Omni Community License v2.1](https://img.shields.io/badge/License-Kevrai%20Community%20v2.1-orange)
-![Version](https://img.shields.io/badge/version-2.8.1-orange)
-![Tests](https://img.shields.io/badge/tests-577%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-2.9.0-orange)
+![Tests](https://img.shields.io/badge/tests-874%20passed-brightgreen)
 
 ---
 
@@ -135,7 +143,7 @@
 ## 快速开始
 
 ### Windows 用户（普通用户）
-1. 从 [Releases](https://github.com/Bullobis/kevrai-omni/releases) 下载 `Kevrai-Omni-Setup-2.4.1.exe`
+1. 从 [Releases](https://github.com/Bullobis/kevrai-omni/releases) 下载 `Kevrai-Omni-2.9.0-x64.exe`
 2. 双击安装 → 桌面出现 **Kevrai Omni** 快捷方式
 3. 启动后 → "AI 引擎"标签 → 安装需要的引擎（如 `llama.cpp`）
 4. "模型市场" → 顶部搜索框支持模糊/中文搜索，选模型 → 安装
@@ -146,13 +154,13 @@
 ### 开发者
 ```bash
 git clone https://github.com/Bullobis/kevrai-omni.git
-cd kevrai-studio
+cd kevrai-omni
 npm install
-pip install -r python/requirements.txt
+pip install -e "python[dev]"
 npm run dev                 # 启动 Electron 开发模式
 
 # 测试
-npm run test:python         # Python pytest（303 项）
+npm run test:python         # Python pytest（874 项）
 npm run test:js             # JS 语法检查
 bash scripts/smoke.sh       # 端到端冒烟
 
@@ -203,7 +211,7 @@ API：`GET /api/search?q=&category=&engine=&license=&size_bucket=&trending=&sort
 ## 项目结构
 
 ```
-kevrai-studio/
+kevrai-omni/
 ├── electron/                # Electron 主进程 + preload
 │   ├── main.js              # 窗口、spawn Python sidecar、IPC 桥（含 v2.4 搜索/LTX 通道）
 │   └── preload.js           # contextBridge（sandbox=true，入参校验）
@@ -225,15 +233,15 @@ kevrai-studio/
 │   │   ├── engines.py       # 引擎管理器
 │   │   ├── importer.py      # HF 下载（断点续传）+ 本地导入
 │   │   └── ...
-│   └── tests/               # pytest（372 项）
+│   └── tests/               # pytest（874 项）
 ├── catalog/                 # 静态目录（随安装包发行）
 │   ├── models.json          # 121 模型（带 tags/modality）
-│   └── engines.json         # 30 引擎（含 ltx-video、sglang-omni）
+│   └── engines.json         # 32 引擎（含 ltx-video、sglang-omni）
 ├── scripts/
 │   ├── build_windows.sh     # 打 Windows .exe
 │   └── release.sh           # gh release create
 ├── electron-builder.yml     # NSIS 配置
-└── package.json             # v2.6.0
+└── package.json             # v2.9.0
 ```
 
 ---
