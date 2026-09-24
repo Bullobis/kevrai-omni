@@ -301,6 +301,36 @@ if _HAS_GZIP:
 
 
 # ---------------------------------------------------------------------------
+# Global uncaught-exception handler
+#
+# Without this, an endpoint that raises a plain (non-HTTPException) error
+# falls through to Starlette's default plain-text 500, which leaks a
+# traceback-ish body and breaks the frontend's assumption that every error
+# is JSON. We return a uniform JSON envelope and *never* echo exception
+# text, file paths, tokens, or stack frames back to the client.
+#
+# HTTPException keeps its default handler (FastAPI registers one for the
+# more-specific type, so it wins during MRO lookup); we additionally
+# re-raise HTTPException here as a belt-and-braces guard.
+# ---------------------------------------------------------------------------
+
+
+@app.exception_handler(Exception)
+async def _unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    # HTTPException has its own registered handler; let it through.
+    if isinstance(exc, HTTPException):
+        raise exc
+    log.exception("unhandled error on %s", request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error_type": "internal_error",
+            "error": "服务器内部错误，请稍后重试",
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
 # Request-ID middleware + access log
 # ---------------------------------------------------------------------------
 
