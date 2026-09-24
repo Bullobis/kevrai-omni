@@ -74,7 +74,6 @@ from .hardware import detect_hardware
 from .hub import (
     HUB_CURATED,
     BadCursor,
-    build_registry,
     cross_source_candidates,
     get_registry,
     reset_registry,
@@ -242,8 +241,12 @@ async def _lifespan(app: FastAPI):
     # LTX-2.5 video generation manager (outputs to data_root/outputs/ltx)
     app.state.ltx = LtxManager(APP_ROOT / "outputs" / "ltx")
     # Dual-source hub registry (HF + ModelScope + curated). Adapters own their
-    # httpx clients, so the lifespan must aclose() them on shutdown.
-    app.state.hub = build_registry(settings)
+    # httpx clients, so the lifespan must aclose() them on shutdown. Wire the
+    # lifespan handle to the *process singleton* (get_registry), NOT a fresh
+    # build_registry(): otherwise two registries exist, the one actually
+    # serving requests is never the one shutdown closes, and its HTTP pools
+    # leak at exit.
+    app.state.hub = get_registry(settings)
     # v2.8.1 — source metadata registry + health (design §2.4).
     app.state.source_registry = _build_source_registry(settings)
     # Aggregated multi-file download jobs (in-process; restart clears them).
@@ -599,6 +602,41 @@ def _get_hub(request: Request):
     """
     settings = _get_settings(request)
     return get_registry(settings)
+
+
+async def _aclose_hub_quietly(hub: Any) -> None:
+    """Close a retired hub registry's HTTP pools, best-effort.
+
+    Called from ``PUT /api/settings`` after the registry singleton was rebuilt.
+    Searches are short and already fault-tolerant (never 5xx), so closing the
+    warm old client mid-flight only degrades one in-flight request — far better
+    than leaking the old pool on every settings change.
+    """
+    with contextlib.suppress(Exception):
+        await hub.aclose()
+
+
+async def _retire_downloader(dl: Downloader) -> None:
+    """Close a retired downloader's connection pool once its tasks drain.
+
+    A ``PUT /api/settings`` that changes ``max_concurrent_downloads`` swaps in a
+    fresh :class:`Downloader`; the old one keeps running any in-flight tasks
+    (they are intentionally left to finish — the UI already loses track of
+    them). Its self-built httpx pool used to be dropped on the floor, leaking
+    keep-alive sockets on every settings change. We wait for the task table to
+    drain before closing, so an in-flight download is never cut mid-stream.
+    """
+    try:
+        while True:
+            snaps = await dl.list_tasks()
+            if not any(t["status"] not in {"done", "failed", "cancelled"} for t in snaps):
+                break
+            await asyncio.sleep(1.0)
+    finally:
+        # Runs even when the loop is cancelled at shutdown — the pool must
+        # still be closed.
+        with contextlib.suppress(Exception):
+            await dl.aclose()
 
 
 def _build_source_registry(settings: Settings) -> SourceRegistry:
@@ -1022,7 +1060,7 @@ def get_settings(request: Request) -> dict[str, Any]:
 
 
 @app.put("/api/settings")
-def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]:
+async def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]:
     s = _get_settings(request).model_copy()
     patch = body.model_dump(exclude_unset=True)
     try:
@@ -1042,8 +1080,14 @@ def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]:
     save_settings(s, request.app.state.settings_path)
     request.app.state.settings = s
     # Settings identity changed → rebuild the hub registry so new tokens/mirrors
-    # take effect immediately without a restart.
+    # take effect immediately without a restart. Repoint the lifespan handle at
+    # the fresh singleton so shutdown closes the registry actually serving
+    # requests; the warm old registry's HTTP pools are retired in the background.
+    old_hub = getattr(request.app.state, "hub", None)
     reset_registry()
+    request.app.state.hub = get_registry(s)
+    if old_hub is not None and old_hub is not request.app.state.hub:
+        asyncio.create_task(_aclose_hub_quietly(old_hub))
     # v2.8.1 — rebuild the source registry so new mirrors / GitCode settings apply.
     prev_reg = getattr(request.app.state, "source_registry", None)
     if prev_reg is not None:
@@ -1053,11 +1097,14 @@ def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]:
     # Update downloader concurrency — only rebuild when the concurrency limit
     # actually changes. Rebuilding unconditionally orphans every in-flight
     # download task (progress/cancel return 404 while the download continues)
-    # (BUG-04).
+    # (BUG-04). The retired downloader keeps its in-flight tasks until they
+    # drain, then closes its httpx pool (previously leaked on every change).
     new_concurrency = max(1, int(s.max_concurrent_downloads))
     old_dl: Downloader | None = getattr(request.app.state, "downloader", None)
     if old_dl is None or old_dl.max_concurrent != new_concurrency:
         request.app.state.downloader = Downloader(max_concurrent=new_concurrency)
+        if old_dl is not None and old_dl is not request.app.state.downloader:
+            asyncio.create_task(_retire_downloader(old_dl))
     # P0-1: redact secrets in the PUT echo too.
     return _redact_settings(s)
 
@@ -1422,7 +1469,10 @@ async def hub_job(request: Request, job_id: str) -> dict[str, Any]:
         done_b = 0
         if snap is not None:
             status = str(snap.get("status") or snap.get("state") or "running")
-            done_b = int(snap.get("downloaded") or snap.get("bytes_done") or 0)
+            # DownloadTask.snapshot() emits ``downloaded_bytes`` (downloader.py);
+            # the previous ``downloaded``/``bytes_done`` guesses never existed, so
+            # bytes_done/ratio stayed 0 while multi-file hub jobs were in flight.
+            done_b = int(snap.get("downloaded_bytes") or 0)
         if status in {"done", "completed", "success"}:
             files_done += 1
         elif status in {"failed", "error", "canceled", "cancelled"}:
