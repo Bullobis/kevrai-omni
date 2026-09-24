@@ -246,6 +246,10 @@ class LtxTask:
 class LtxManager:
     """Single-flight LTX-2.5 generation manager."""
 
+    # In-memory task history is bounded: a desktop app may run generations for
+    # days, and every task object (params + snapshot data) must not leak.
+    _MAX_TASKS = 100
+
     def __init__(self, output_root: Path) -> None:
         self.output_root = Path(output_root)
         self.output_root.mkdir(parents=True, exist_ok=True)
@@ -280,11 +284,29 @@ class LtxManager:
             task = LtxTask(id=tid, params=params, total_steps=params.num_inference_steps)
             self._tasks[tid] = task
             self._active = tid
+            self._prune_tasks()
             self._thread = threading.Thread(
                 target=self._run_safe, args=(task,), daemon=True, name=f"ltx-{tid}"
             )
             self._thread.start()
             return task
+
+    def _prune_tasks(self) -> None:
+        """Drop the oldest *terminal* tasks once history exceeds the cap.
+
+        Called under ``self._lock``. Never removes the active task or any task
+        still in a non-terminal state.
+        """
+        if len(self._tasks) <= self._MAX_TASKS:
+            return
+        terminal = sorted(
+            (t for t in self._tasks.values()
+             if t.state not in (TaskState.QUEUED, TaskState.LOADING, TaskState.RUNNING)),
+            key=lambda t: t.created_at,
+        )
+        excess = len(self._tasks) - self._MAX_TASKS
+        for t in terminal[:excess]:
+            self._tasks.pop(t.id, None)
 
     def cancel(self, task_id: str) -> bool:
         t = self._tasks.get(task_id)
@@ -300,6 +322,13 @@ class LtxManager:
     def _run_safe(self, task: LtxTask) -> None:
         try:
             self._run(task)
+        except _Cancelled:
+            # Raised inside diffusers' step-end callback when the user cancels
+            # mid-generation. It must surface as CANCELLED, not FAILED.
+            task.state = TaskState.CANCELLED
+            task.error = ""
+            task.finished_at = time.time()
+            task.elapsed_s = max(0.0, task.finished_at - task.started_at)
         except Exception as e:  # noqa: BLE001
             task.state = TaskState.FAILED
             task.error = f"{type(e).__name__}: {e}"
@@ -326,6 +355,7 @@ class LtxManager:
         if task._cancel.is_set():
             task.state = TaskState.CANCELLED
             task.finished_at = time.time()
+            task.elapsed_s = max(0.0, task.finished_at - task.started_at)
             return
 
         task.state = TaskState.RUNNING
@@ -333,6 +363,7 @@ class LtxManager:
         if task._cancel.is_set():
             task.state = TaskState.CANCELLED
             task.finished_at = time.time()
+            task.elapsed_s = max(0.0, task.finished_at - task.started_at)
             return
 
         task.state = TaskState.SAVING
@@ -348,8 +379,7 @@ class LtxManager:
         stem = f"ltx25_{task.id}_{int(task.started_at)}"
         ext = "mp4" if p.output_format == "mp4" else "gif"
         out = self.output_root / f"{stem}.{ext}"
-        _write_video(frames, out, fps=p.fps, fmt=p.output_format)
-        return out
+        return _write_video(frames, out, fps=p.fps, fmt=p.output_format)
 
 
 # ---------------------------------------------------------------------------
@@ -464,8 +494,10 @@ def _generate(pipe: Any, p: LtxParams, task: LtxTask) -> Any:
 class _Cancelled(Exception):
     """Raised inside the step callback to abort generation."""
 
-def _write_video(frames: Any, out: Path, *, fps: int, fmt: str) -> None:
-    """Write frames to MP4 (imageio-ffmpeg) or GIF."""
+def _write_video(frames: Any, out: Path, *, fps: int, fmt: str) -> Path:
+    """Write frames to MP4 (imageio-ffmpeg) or GIF. Returns the path that
+    was actually written (may differ from ``out`` when the MP4 writer is
+    unavailable and a GIF fallback file is produced)."""
     try:
         import imageio
         import numpy as np
@@ -483,23 +515,30 @@ def _write_video(frames: Any, out: Path, *, fps: int, fmt: str) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     if fmt == "gif":
         imageio.mimsave(str(out), arr, fps=fps, loop=0)
-    else:
+        return out
+    try:
+        writer = imageio.get_writer(str(out), fps=fps, codec="libx264",
+                                    quality=8, macro_block_size=1)
+        for f in arr:
+            writer.append_data(f)
+        writer.close()
+        return out
+    except Exception:  # noqa: BLE001
+        # ffmpeg unavailable — fall back to mp4v via imageio-ffmpeg or gif
         try:
-            writer = imageio.get_writer(str(out), fps=fps, codec="libx264",
-                                        quality=8, macro_block_size=1)
+            writer = imageio.get_writer(str(out), fps=fps)
             for f in arr:
                 writer.append_data(f)
             writer.close()
-        except Exception:  # noqa: BLE001
-            # ffmpeg unavailable — fall back to mp4v via imageio-ffmpeg or gif
-            try:
-                writer = imageio.get_writer(str(out), fps=fps)
-                for f in arr:
-                    writer.append_data(f)
-                writer.close()
-            except Exception:
-                gif_out = out.with_suffix(".gif")
-                imageio.mimsave(str(gif_out), arr, fps=fps, loop=0)
+            return out
+        except Exception:
+            # The partial/untouched .mp4 would otherwise be recorded as the
+            # task output; remove it and write a .gif next to it.
+            with contextlib.suppress(FileNotFoundError):
+                out.unlink()
+            gif_out = out.with_suffix(".gif")
+            imageio.mimsave(str(gif_out), arr, fps=fps, loop=0)
+            return gif_out
 
 
 # ---------------------------------------------------------------------------

@@ -449,12 +449,23 @@ class Agent:
 
             # Call LLM
             llm_res = self.router.chat(prompt, system="", max_new_tokens=1500)
-            if not llm_res.get("ok"):
-                error_msg = f"LLM 调用失败：{llm_res.get('error', 'unknown')}"
+            # A misbehaving router may return a non-dict (None, raised, ...) or a
+            # dict without "ok"/"text". Degrade gracefully instead of letting an
+            # AttributeError/TypeError crash the whole ReAct run.
+            if not isinstance(llm_res, dict) or not llm_res.get("ok"):
+                if isinstance(llm_res, dict):
+                    err = llm_res.get("error", "unknown")
+                else:
+                    err = f"router 返回非法结果类型: {type(llm_res).__name__}"
+                error_msg = f"LLM 调用失败：{err}"
                 log.warning("agent LLM call failed at iteration %d: %s", iteration, error_msg)
                 break
 
-            raw = llm_res.get("text", "")
+            raw = llm_res.get("text")
+            if not isinstance(raw, str):
+                # Coerce non-string (e.g. None, number) to a string rather than
+                # crashing on concatenation below.
+                raw = str(raw or "")
             # Prepend "Thought: " because the prompt ends with it
             full_output = "Thought: " + raw
 

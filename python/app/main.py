@@ -39,7 +39,7 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from . import USER_AGENT, __version__, ltx_runtime, mnn_runtime
 from . import converter as converter_service
@@ -885,12 +885,20 @@ def get_settings(request: Request) -> dict[str, Any]:
 def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]:
     s = _get_settings(request).model_copy()
     patch = body.model_dump(exclude_unset=True)
-    for k, v in patch.items():
-        if v is None:
-            continue
-        # Theme / HardwareAccel are Literal — let pydantic catch typos
-        if hasattr(s, k):
-            setattr(s, k, v)
+    try:
+        for k, v in patch.items():
+            if v is None:
+                continue
+            # Theme / HardwareAccel are Literal — validate_assignment re-runs
+            # the validator on setattr so typos here become a 400, not a
+            # silently-persisted garbage value (which previously survived).
+            if hasattr(s, k):
+                setattr(s, k, v)
+    except ValidationError as e:
+        locs = ".".join(str(x) for x in e.errors()[0].get("loc", [])) or "value"
+        raise HTTPException(
+            status_code=400, detail=f"invalid settings value for {locs}"
+        ) from e
     save_settings(s, request.app.state.settings_path)
     request.app.state.settings = s
     # Settings identity changed → rebuild the hub registry so new tokens/mirrors

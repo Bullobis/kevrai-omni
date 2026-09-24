@@ -207,6 +207,18 @@ def _clean_str(v: Any, max_len: int = 2000) -> str:
     return s[:max_len]
 
 
+def _safe_int(v: Any, default: int) -> int:
+    """LLM 输出的整数字段容错：非法值回退默认，而不是让 ValueError 炸穿流水线。
+
+    本地小模型可能输出 ``"duration_s": "fast"`` 之类的垃圾；归一化阶段必须把
+    这类输入降级为默认值，由后续钳制逻辑兜底。
+    """
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return default
+
+
 def _try_parse_object(s: str) -> dict[str, Any] | None:
     """从字符串中提取首个完整 JSON 对象；失败返回 None。"""
     start = s.find("{")
@@ -624,7 +636,7 @@ def _normalize_script(obj: dict[str, Any], default_mode: str = DEFAULT_STORY_MOD
     for sc in (obj.get("scenes") or [])[:_MAX_SCENES]:
         if not isinstance(sc, dict):
             continue
-        scene_id = int(sc.get("scene_id") or (len(scenes) + 1))
+        scene_id = _safe_int(sc.get("scene_id") or None, len(scenes) + 1)
         shots: list[dict] = []
         for sh in (sc.get("shots") or [])[:_MAX_SHOTS_PER_SCENE]:
             if not isinstance(sh, dict):
@@ -634,10 +646,10 @@ def _normalize_script(obj: dict[str, Any], default_mode: str = DEFAULT_STORY_MOD
             chars = sh.get("characters") or []
             if not isinstance(chars, list):
                 chars = [chars]
-            dur = int(sh.get("duration_s") or 4)
+            dur = _safe_int(sh.get("duration_s") or None, 4)
             dur = max(2, min(dur, _MAX_SHOT_SECONDS))
             shots.append({
-                "shot_id": int(sh.get("shot_id") or (len(shots) + 1)),
+                "shot_id": _safe_int(sh.get("shot_id") or None, len(shots) + 1),
                 "scene_id": scene_id,
                 "shot_type": shot_type or "中景",
                 "camera": camera or "固定",
@@ -713,7 +725,7 @@ def build_storyboard(script: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(sc, dict):
             continue
         _scene_seq += 1
-        scene_id = int(sc.get("scene_id") or _scene_seq)
+        scene_id = _safe_int(sc.get("scene_id") or None, _scene_seq)
         scene_shots = sc.get("shots") or []
         if not isinstance(scene_shots, list):
             continue

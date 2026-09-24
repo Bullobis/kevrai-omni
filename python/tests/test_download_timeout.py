@@ -1,58 +1,116 @@
-"""Regression test for download_file() timeout safety.
+"""Regression tests for importer.download_file timeout and allowlist behaviour.
 
-Prior to the fix, ``httpx.Client(timeout=None)`` was used in
-``app.importer.download_file``, meaning a wedged upstream (server accepts
-the connection but stops sending bytes) would hang the UI forever.
-Main now uses ``httpx.Timeout(600.0, connect=30.0)`` — finite on all axes.
-This test pins that no ``timeout=None`` can creep back into the download path.
+Guards against the historical bug where `httpx.Client(timeout=None)` was used,
+which could hang indefinitely on a stalled connection (bandit S113).  The fix
+uses `httpx.Timeout(600.0, connect=30.0)`.
+
+Note: `httpx` is imported *locally* inside `download_file`, so we patch the
+global `httpx.Client` rather than `app.importer.httpx`.
 """
+
 from __future__ import annotations
 
-import inspect
-import sys
-import pathlib
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-
-import httpx
+import pytest
 
 from app import importer
 
 
-def test_download_source_has_no_none_timeout():
-    """The download path must never pass timeout=None (would hang forever)."""
-    src = inspect.getsource(importer)
-    # Guard against the exact anti-pattern returning.
-    assert "timeout=None" not in src, (
-        "timeout=None found in app.importer — a wedged upstream would hang "
-        "the UI forever. Use httpx.Timeout with finite connect/read values."
-    )
+def _make_mock_client() -> MagicMock:
+    """Build a mock httpx.Client that supports the `with` + stream protocol."""
+    mock_response = MagicMock()
+    mock_response.headers = {"Content-Length": "0"}
+    mock_response.iter_bytes.return_value = []
+    mock_response.raise_for_status = MagicMock()
+
+    mock_stream_cm = MagicMock()
+    mock_stream_cm.__enter__ = MagicMock(return_value=mock_response)
+    mock_stream_cm.__exit__ = MagicMock(return_value=False)
+
+    mock_client = MagicMock()
+    mock_client.__enter__ = MagicMock(return_value=mock_client)
+    mock_client.__exit__ = MagicMock(return_value=False)
+    mock_client.stream.return_value = mock_stream_cm
+    return mock_client
 
 
-def test_download_uses_httpx_timeout():
-    """download_file must construct an httpx.Timeout (finite on all axes)."""
-    src = inspect.getsource(importer)
-    assert "httpx.Timeout(" in src, (
-        "app.importer should use httpx.Timeout(...) for downloads, not a "
-        "bare float or None."
-    )
+class TestDownloadFileTimeout:
+    """Verify the client is constructed with an explicit, non-None timeout."""
+
+    @patch("httpx.Client")
+    def test_client_uses_explicit_timeout(self, mock_client_cls, tmp_path):
+        mock_client_cls.return_value = _make_mock_client()
+
+        target = tmp_path / "out.bin"
+        result = importer.download_file(
+            "https://huggingface.co/repo/resolve/main/f.bin", target
+        )
+
+        assert result is True
+        call_kwargs = mock_client_cls.call_args.kwargs
+        timeout = call_kwargs.get("timeout")
+        assert timeout is not None, "timeout must not be None (S113 regression)"
+        # The real httpx.Timeout is constructed inside the function.
+        assert hasattr(timeout, "connect"), "timeout should be httpx.Timeout"
+        assert timeout.connect == 30.0
+        assert timeout.read == 600.0
+
+    @patch("httpx.Client")
+    def test_follow_redirects_enabled(self, mock_client_cls, tmp_path):
+        mock_client_cls.return_value = _make_mock_client()
+
+        target = tmp_path / "out.bin"
+        importer.download_file("https://huggingface.co/x/y/resolve/main/f", target)
+
+        assert mock_client_cls.call_args.kwargs.get("follow_redirects") is True
 
 
-def test_importer_timeout_values_are_finite():
-    """Parse the httpx.Timeout(...) call and assert all axes are finite."""
-    src = inspect.getsource(importer)
-    # Find the httpx.Timeout(...) construction in download_file.
-    import re
-    m = re.search(r"httpx\.Timeout\(([^)]+)\)", src)
-    assert m is not None, "httpx.Timeout(...) construction not found"
-    args = m.group(1)
-    # The first positional arg is read timeout; connect= is keyword.
-    read_match = re.match(r"\s*([\d.]+)", args)
-    assert read_match is not None, f"cannot parse read timeout from: {args}"
-    read_val = float(read_match.group(1))
-    assert read_val > 0, f"read timeout must be positive, got {read_val}"
-    assert read_val < 3600, f"read timeout must be < 1h, got {read_val}"
-    connect_match = re.search(r"connect\s*=\s*([\d.]+)", args)
-    assert connect_match is not None, "connect= timeout missing"
-    connect_val = float(connect_match.group(1))
-    assert connect_val > 0, f"connect timeout must be positive, got {connect_val}"
+class TestDownloadFileAllowlist:
+    def test_enforce_allowlist_rejects_unknown_host(self):
+        with pytest.raises(ValueError, match="non-allowlisted host"):
+            importer.download_file(
+                "https://evil.example.com/malware.bin",
+                Path("/tmp/should_not_exist_k_cortex.bin"),
+                enforce_allowlist=True,
+            )
+
+    @patch("httpx.Client")
+    def test_enforce_allowlist_accepts_huggingface(self, mock_client_cls, tmp_path):
+        mock_client_cls.return_value = _make_mock_client()
+        target = tmp_path / "ok.bin"
+        # No ValueError from allowlist gate.
+        importer.download_file(
+            "https://huggingface.co/repo/resolve/main/f.bin",
+            target,
+            enforce_allowlist=True,
+        )
+
+
+class TestDownloadFileResume:
+    @patch("httpx.Client")
+    def test_range_header_for_existing_partial(self, mock_client_cls, tmp_path):
+        target = tmp_path / "partial.bin"
+        target.write_bytes(b"x" * 100)
+
+        mock_client_cls.return_value = _make_mock_client()
+
+        importer.download_file("https://huggingface.co/r/resolve/main/f.bin", target)
+
+        mock_client = mock_client_cls.return_value
+        stream_call = mock_client.stream.call_args
+        # headers is passed as keyword arg.
+        headers = stream_call.kwargs.get("headers", {})
+        assert headers.get("Range") == "bytes=100-"
+
+    @patch("httpx.Client")
+    def test_no_range_header_for_fresh_file(self, mock_client_cls, tmp_path):
+        target = tmp_path / "fresh.bin"
+        mock_client_cls.return_value = _make_mock_client()
+
+        importer.download_file("https://huggingface.co/r/resolve/main/f.bin", target)
+
+        mock_client = mock_client_cls.return_value
+        headers = mock_client.stream.call_args.kwargs.get("headers", {})
+        assert "Range" not in headers
