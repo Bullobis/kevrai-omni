@@ -255,6 +255,8 @@ export async function runSearch(opts = {}) {
   searchState.lastError = null;
   updateCount("搜索中…");
   clearLoadMoreBar();
+  // v3.0.0 — show skeleton cards in the grid while searching
+  if (vgrid && typeof vgrid.setLoading === "function") vgrid.setLoading(true);
 
   const params = {
     q: searchState.q,
@@ -274,6 +276,7 @@ export async function runSearch(opts = {}) {
     searchState.loading = false;
     searchState.lastError = String(e && e.message || e);
     updateCount("搜索失败");
+    if (vgrid && typeof vgrid.setLoading === "function") vgrid.setLoading(false);
     renderLoadError();
     return;
   }
@@ -303,6 +306,7 @@ export async function runSearch(opts = {}) {
 
   setState({ searchResults: searchState.items });
   vgrid.setItems(searchState.items);
+  if (vgrid && typeof vgrid.setLoading === "function") vgrid.setLoading(false);
   updateCount(formatCount());
   renderFacets();
   renderDegradedBanner();

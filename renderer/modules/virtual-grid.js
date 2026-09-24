@@ -97,6 +97,28 @@ export class VirtualGrid {
     const rowH = this.itemHeight + this.gap;
     const top = this.viewport.scrollTop;
     const h = this.viewport.clientHeight;
+
+    // v3.0.0 — Show skeleton cards when empty and loading
+    if (this.items.length === 0 && this.loading) {
+      const frag = document.createDocumentFragment();
+      const skeletonCount = Math.min(8, cols * 2);
+      for (let i = 0; i < skeletonCount; i++) {
+        const r = Math.floor(i / cols);
+        const c = i % cols;
+        const node = document.createElement("div");
+        node.className = `${this.itemClass} skeleton`;
+        node.style.position = "absolute";
+        node.style.left   = `${this.padding + c * (this.host.clientWidth - this.padding*2) / cols}px`;
+        node.style.width  = `${(this.host.clientWidth - this.padding*2) / cols - this.gap}px`;
+        node.style.top    = `${this.padding + r * rowH}px`;
+        node.style.height = `${this.itemHeight}px`;
+        frag.appendChild(node);
+      }
+      this.spacer.style.height = `${Math.max(1, Math.ceil(skeletonCount / cols) * rowH + this.padding)}px`;
+      this.viewport.replaceChildren(this.spacer, frag);
+      return;
+    }
+
     const firstRow = Math.max(0, Math.floor((top - this.padding) / rowH) - 4);
     const lastRow  = Math.min(
       Math.ceil(this.items.length / cols),

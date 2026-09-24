@@ -898,3 +898,238 @@ body.dragging .drop-mask { display: flex; }
 .pill.hub-hf { background: rgba(255, 183, 0, 0.18); }
 .pill.hub-modelscope { background: rgba(60, 130, 255, 0.18); }
 .pill.hub-curated { background: rgba(80, 200, 120, 0.18); }
+
+/* ===========================================================================
+   v3.0.0 — UI/UX Enhancements
+   =========================================================================== */
+
+/* --- Skeleton loading (shimmer) --- */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--card) 25%, var(--card-hover) 50%, var(--card) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--r-2);
+}
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.skeleton-card {
+  height: 120px;
+  border-radius: var(--radius);
+  border: 1px solid var(--bord);
+}
+.skeleton-line {
+  height: 12px;
+  border-radius: 4px;
+  margin: 8px 0;
+}
+.skeleton-line.wide { width: 80%; }
+.skeleton-line.mid { width: 55%; }
+.skeleton-line.narrow { width: 35%; }
+
+/* --- Pane transition animation --- */
+@keyframes paneIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pane.active {
+  animation: paneIn .18s ease-out;
+}
+
+/* --- Overlay entrance animation --- */
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes overlayCardIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.overlay:not([hidden]) {
+  animation: overlayIn .18s ease-out;
+}
+.overlay:not([hidden]) .overlay-card {
+  animation: overlayCardIn .22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- Button hover lift --- */
+button.primary, button.secondary, button.ghost, button.danger {
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
+}
+button.primary:hover:not(:disabled),
+button.secondary:hover:not(:disabled),
+button.ghost:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+button.primary:active:not(:disabled),
+button.secondary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* --- Sidebar expand mode (v3.0.0) --- */
+.app-shell.sidebar-expanded {
+  grid-template-columns: 180px 1fr 340px;
+}
+@media (max-width: 1280px) {
+  .app-shell.sidebar-expanded {
+    grid-template-columns: 180px 1fr 300px;
+  }
+}
+.sidebar.expanded {
+  padding: 10px 10px;
+}
+.sidebar.expanded .pane-tab {
+  width: 100%;
+  height: 38px;
+  font-size: var(--fs-sm);
+  justify-content: flex-start;
+  padding: 0 12px;
+  gap: 10px;
+}
+.sidebar.expanded .pane-tab .ico {
+  font-size: 17px;
+  width: 22px;
+  text-align: center;
+}
+.sidebar.expanded .sidebar-foot {
+  align-items: stretch;
+}
+.sidebar.expanded .sidebar-foot .ghost.full {
+  width: 100%;
+}
+.sidebar-toggle {
+  background: transparent;
+  border: 1px solid var(--bord);
+  color: var(--mut);
+  border-radius: var(--r-2);
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: background .12s, color .12s, border-color .12s;
+  -webkit-app-region: no-drag;
+}
+.sidebar-toggle:hover {
+  background: var(--card);
+  color: var(--fg);
+  border-color: var(--bord-strong);
+}
+
+/* --- Toast enhanced styles --- */
+.toast-stack {
+  position: fixed;
+  top: 56px;
+  right: 16px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast-item {
+  pointer-events: auto;
+  background: var(--stack-3);
+  border: 1px solid var(--bord);
+  border-left: 3px solid var(--mut);
+  color: var(--fg);
+  padding: 10px 16px;
+  border-radius: var(--r-2);
+  font-size: var(--fs-sm);
+  box-shadow: var(--shadow);
+  max-width: 360px;
+  cursor: pointer;
+  animation: toastIn .2s ease-out;
+}
+.toast-item.ok {
+  border-left-color: var(--ok);
+  background: linear-gradient(135deg, var(--stack-3), rgba(76, 169, 122, 0.08));
+}
+.toast-item.warn {
+  border-left-color: var(--warn);
+  background: linear-gradient(135deg, var(--stack-3), rgba(217, 160, 91, 0.08));
+}
+.toast-item.err {
+  border-left-color: var(--err);
+  background: linear-gradient(135deg, var(--stack-3), rgba(224, 108, 117, 0.08));
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.toast-item.toast-leave {
+  animation: toastOut .24s ease-in forwards;
+}
+@keyframes toastOut {
+  to { opacity: 0; transform: translateX(20px); }
+}
+
+/* --- Settings panel grouping --- */
+.settings-group {
+  margin-bottom: 18px;
+}
+.settings-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--mut);
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--bord);
+}
+.token-field-wrap {
+  position: relative;
+}
+.token-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--mut);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+}
+.token-toggle:hover { color: var(--fg); background: var(--card); }
+
+/* --- Agent thinking dots --- */
+.thinking-dots {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+.thinking-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--acc);
+  animation: dotBounce 1.2s ease-in-out infinite;
+}
+.thinking-dots span:nth-child(2) { animation-delay: 0.15s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* --- Reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .skeleton { animation: none; }
+}

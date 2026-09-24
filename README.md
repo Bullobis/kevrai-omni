@@ -144,20 +144,27 @@
 6. "本地模型" → 一键导入你的 `model.gguf` / safetensors
 
 ### 开发者
+
+> 完整的本地开发环境搭建（Windows / Linux / macOS）、测试与打包细节见
+> **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**；sidecar REST/WebSocket 接口见
+> **[docs/API.md](docs/API.md)**；常见问题排查见 **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)**。
+
 ```bash
 git clone https://github.com/Bullobis/kevrai-omni.git
-cd kevrai-studio
+cd kevrai-omni
 npm install
-pip install -r python/requirements.txt
-npm run dev                 # 启动 Electron 开发模式
+cd python && pip install -r requirements.txt && cd ..
+npm run dev                 # 启动 Electron 开发模式（sidecar 自动拉起于 127.0.0.1:17890）
 
 # 测试
-npm run test:python         # Python pytest（303 项）
+npm run test:python         # Python pytest
 npm run test:js             # JS 语法检查
-bash scripts/smoke.sh       # 端到端冒烟
+npm run smoke               # 端到端冒烟（bash scripts/smoke.sh）
 
-# 打包 Windows 安装包
-npm run build:win           # 产物在 dist/
+# 打包（产物在 build/output/）
+npm run build:win           # Windows NSIS .exe
+npm run build:linux         # Linux AppImage + deb
+npm run build:mac           # macOS .dmg
 ```
 
 ---
@@ -203,37 +210,39 @@ API：`GET /api/search?q=&category=&engine=&license=&size_bucket=&trending=&sort
 ## 项目结构
 
 ```
-kevrai-studio/
+kevrai-omni/
 ├── electron/                # Electron 主进程 + preload
-│   ├── main.js              # 窗口、spawn Python sidecar、IPC 桥（含 v2.4 搜索/LTX 通道）
+│   ├── main.js              # 窗口、spawn Python sidecar、IPC 桥（含搜索/LTX/Agent 通道）
 │   └── preload.js           # contextBridge（sandbox=true，入参校验）
 ├── renderer/                # 渲染层
 │   ├── index.html           # 含 LTX-2.5 生成面板
 │   ├── app.js               # 模块装配
-│   ├── styles.css           # 含搜索下拉/分面/LTX 面板样式
+│   ├── styles.css           # 含搜索下拉/分面/LTX 面板/浅色主题样式
 │   └── modules/
-│       ├── search.js        # ★ 超级搜索 UI（v2.4）
-│       ├── ltx.js           # ★ LTX-2.5 生成面板（v2.4）
+│       ├── search.js        # 超级搜索 UI
+│       ├── ltx.js           # LTX-2.5 生成面板
 │       ├── models.js        # 虚拟滚动网格 + 搜索高亮
 │       └── ...
 ├── python/                  # Python sidecar（FastAPI）
 │   ├── app/
-│   │   ├── main.py          # HTTP 控制面（+ /api/search、/api/ltx/*、GZip）
-│   │   ├── search.py        # ★ 加权模糊搜索引擎（v2.4）
-│   │   ├── ltx_runtime.py   # ★ LTX-2.5 推理任务管理（v2.4）
+│   │   ├── main.py          # HTTP 控制面（/api/*、/v1/*、WebSocket、GZip）
+│   │   ├── search.py        # 加权模糊搜索引擎
+│   │   ├── ltx_runtime.py   # LTX-2.5 推理任务管理
 │   │   ├── catalog.py       # 模型/引擎目录
 │   │   ├── engines.py       # 引擎管理器
 │   │   ├── importer.py      # HF 下载（断点续传）+ 本地导入
-│   │   └── ...
-│   └── tests/               # pytest（372 项）
+│   │   └── agent/           # Kevrai Agent（ReAct、技能库、SQLite 记忆）
+│   └── tests/               # pytest
 ├── catalog/                 # 静态目录（随安装包发行）
-│   ├── models.json          # 121 模型（带 tags/modality）
-│   └── engines.json         # 30 引擎（含 ltx-video、sglang-omni）
+│   ├── models.json          # 模型条目（带 tags/modality）
+│   └── engines.json         # 引擎（含 ltx-video、sglang-omni）
+├── remotion/                # Remotion 动画视频（Logo 片头 / 版本海报，见下）
+├── docs/                    # 开发 / API / 故障排查文档
 ├── scripts/
 │   ├── build_windows.sh     # 打 Windows .exe
 │   └── release.sh           # gh release create
 ├── electron-builder.yml     # NSIS 配置
-└── package.json             # v2.6.0
+└── package.json             # v3.0.0
 ```
 
 ---
