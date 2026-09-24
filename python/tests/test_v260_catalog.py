@@ -41,7 +41,7 @@ def _engines():
     ("hunyuanimage-3.0", "tencent/HunyuanImage-3.0"),
     ("seedvr2", "ByteDance-Seed/SeedVR2-3B"),
     ("direct3d-s2", "wushuang98/Direct3D-S2"),
-    ("triposr", "VAST-AI-Research/TripoSR"),
+    ("triposr", "stabilityai/TripoSR"),  # v2.9.1: HF org is stabilityai (VAST-AI-Research has no HF models)
     ("ace-step-1.5", "ACE-Step/Ace-Step1.5"),
     ("dots3-note-preview", "dots-studio/dots3-note-prev"),
     ("magi2-preview", "sand-ai/MAGI-2-preview"),
