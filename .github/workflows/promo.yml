@@ -1,0 +1,54 @@
+name: promo-render
+
+# 定时重渲染宣传片（用户需求：定期更新 GitHub 上的视频）。
+# Remotion v4 会自动下载 Chrome Headless Shell，因此 ubuntu-latest 上
+# 无需 apt 安装 Chrome/Chromium，也无需 Xvfb/DISPLAY。
+on:
+  schedule:
+    # 每周一 03:00 UTC（北京时间周一 11:00）
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+# 回推 promo.mp4 需要写权限；使用内置 GITHUB_TOKEN。
+permissions:
+  contents: write
+
+concurrency:
+  group: promo-render
+  cancel-in-progress: false
+
+jobs:
+  render:
+    name: 渲染并回推宣传片
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install promo deps
+        working-directory: promo
+        run: npm ci
+
+      # npm run render = 准备数据 + remotion render src/index.js Promo
+      # -> ../assets/media/promo.mp4（1920x1080）。
+      - name: Render promo
+        working-directory: promo
+        run: npm run render
+
+      - name: Commit & push rendered video
+        run: |
+          if [ -z "$(git status --porcelain assets/media/promo.mp4)" ]; then
+            echo "promo.mp4 与上一版逐字节相同，无需提交。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/media/promo.mp4
+          git commit -m "chore(promo): scheduled promo refresh $(date -u +%Y-%m-%d)"
+          git push
