@@ -19,7 +19,7 @@
  *     declares a matching meta CSP).
  */
 
-const { app, BrowserWindow, ipcMain, shell, dialog, session, Menu } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog, session, Menu, nativeTheme } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 const fsp = require("node:fs/promises");
@@ -38,6 +38,15 @@ const SIDECAR_HEALTH_INTERVAL_MS = 2_000;
 const SHUTDOWN_TIMEOUT_MS = 5_000;
 const ALLOW_DEFAULT = ["huggingface.co", "github.com", "modelscope.cn"];
 const SIDECAR_RESTART_MAX = 3;
+
+// Single source for the Electron-side download User-Agent. Previously this was
+// hardcoded as "kevrai-omni/2.5.0" in the bootstrap downloader (a stale literal
+// that never tracked the real version). app.getVersion() reads package.json and
+// is safe to call once the app is ready (these downloads only run after).
+function kevraiUserAgent() {
+  try { return `kevrai-omni/${app.getVersion()}`; }
+  catch (_) { return "kevrai-omni"; }
+}
 
 // Packaged: <resources>/python/app/main.py (extraResources).
 // Dev (running from repo): <repo>/python/app/main.py — process.resourcesPath
@@ -262,7 +271,7 @@ function bootstrapProgress(stage, pct, text) {
 function downloadFile(urls, dest, stage) {
   const https = require("node:https");
   const tryOne = (url, redirectsLeft) => new Promise((resolve, reject) => {
-    const req = https.get(url, { headers: { "User-Agent": "kevrai-omni/2.5.0" }, timeout: 60000 }, (res) => {
+    const req = https.get(url, { headers: { "User-Agent": kevraiUserAgent() }, timeout: 60000 }, (res) => {
       if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location && redirectsLeft > 0) {
         res.resume();
         let next = res.headers.location;
@@ -498,6 +507,17 @@ async function stopSidecar(graceMs = SHUTDOWN_TIMEOUT_MS) {
 
 let mainWindow = null;
 
+// Resolve the pre-paint window background from the saved theme so there is no
+// white/dark flash before the renderer loads. The old constant "#0b1020" was a
+// stale navy from the pre-v2.9 palette and also forced a dark flash on light
+// theme users. Values match the renderer tokens --stack-0 (dark) and light base.
+function resolveBackgroundColor() {
+  let theme = "system";
+  try { theme = loadSettingsSync().theme || "system"; } catch (_) {}
+  const isDark = theme === "dark" || (theme !== "light" && nativeTheme.shouldUseDarkColors);
+  return isDark ? "#0d0e11" : "#f6f7f9";
+}
+
 function createWindow(bootstrapMode = false) {
   mainWindow = new BrowserWindow({
     width: 1380,
@@ -507,7 +527,7 @@ function createWindow(bootstrapMode = false) {
     title: "Kevrai Omni",
     // PNG works from inside the asar archive on every platform (.ico does not).
     icon: path.join(__dirname, "..", "assets", "icons", "icon-256.png"),
-    backgroundColor: "#0b1020",
+    backgroundColor: resolveBackgroundColor(),
     autoHideMenuBar: true,
     frame: true,
     titleBarStyle: "hiddenInset",
@@ -1507,6 +1527,15 @@ async function bootstrap() {
   // webSecurity default is true; explicit here for clarity.
   try { session.defaultSession.webRequest.onBeforeRequest((_d, cb) => cb({ cancel: false })); } catch (_) {}
 
+  // Deny every Chromium permission by default (camera, microphone, geolocation,
+  // notifications, clipboard-read, media keys, etc.). The app does not request
+  // any of these; an explicit deny removes the default-allow ambiguity and
+  // shrinks the attack surface.
+  try {
+    session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
+    session.defaultSession.setPermissionCheckHandler(() => false);
+  } catch (e) { logWarn("permission handler setup failed", String(e && e.message || e)); }
+
   const sc = startSidecar();
   if (sc === "no-python") {
     // 没有任何 Python：进引导页，软件内一键安装运行环境。
@@ -1546,6 +1575,16 @@ async function bootstrap() {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 }
+
+// Defense-in-depth for every WebContents (main window or otherwise):
+//   - block <webview> attachment (webviewTag is already false in webPreferences)
+//   - default-deny new windows even if a future surface forgets to set its own
+//     setWindowOpenHandler.
+// Registered at module load, before app `ready`, per Electron security guidance.
+app.on("web-contents-created", (_event, contents) => {
+  contents.on("will-attach-webview", (e) => e.preventDefault());
+  contents.setWindowOpenHandler(() => ({ action: "deny" }));
+});
 
 app.whenReady().then(bootstrap).catch((e) => {
   logError("bootstrap failed:", e.message);
