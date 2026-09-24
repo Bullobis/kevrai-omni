@@ -16,7 +16,7 @@
 > 点击播放 [assets/media/promo.mp4](assets/media/promo.mp4)。全部画面取自 v2.8.1 真实运行界面（真实模型目录、真实硬件检测、真实 Agent 工具调用）：模型市场双源检索、硬件体检与模型推荐、Kevrai Agent 工具调用、短剧 Agent、LTX-2.5 视频生成、MNN 引擎。
 
 ![License: Kevrai Omni Community License v2.1](https://img.shields.io/badge/License-Kevrai%20Community%20v2.1-orange)
-![Version](https://img.shields.io/badge/version-2.8.1-orange)
+![Version](https://img.shields.io/badge/version-3.0.0-orange)
 ![Tests](https://img.shields.io/badge/tests-577%20passed-brightgreen)
 
 ---
@@ -135,7 +135,7 @@
 ## 快速开始
 
 ### Windows 用户（普通用户）
-1. 从 [Releases](https://github.com/Bullobis/kevrai-omni/releases) 下载 `Kevrai-Omni-Setup-2.4.1.exe`
+1. 从 [Releases](https://github.com/Bullobis/kevrai-omni/releases) 下载 `Kevrai-Omni-3.0.0-x64.exe`（安装包名与 `electron-builder.yml` 的 `artifactName` 模板一致）
 2. 双击安装 → 桌面出现 **Kevrai Omni** 快捷方式
 3. 启动后 → "AI 引擎"标签 → 安装需要的引擎（如 `llama.cpp`）
 4. "模型市场" → 顶部搜索框支持模糊/中文搜索，选模型 → 安装
