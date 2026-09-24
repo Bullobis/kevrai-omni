@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import html
 import math
 import re
 from abc import ABC, abstractmethod
@@ -342,6 +343,14 @@ def split_owner(repo: str) -> str:
 _FENCE_RE = re.compile(r"```.*?```", re.S)
 #: Inline HTML tag (the HF cards are full of `<a href=…><img …/></a>` badges).
 _HTML_TAG_RE = re.compile(r"<[^>]{0,400}>")
+#: Text-bearing anchor `<a href="URL">label</a>` → `label (URL)`. Anchors that
+# only wrap an <img> (badge "shields" / logo) have no text and are dropped by
+# the repl. href may use single or double quotes (back-referenced); only http(s)
+# links are surfaced. Non-greedy body so adjacent anchors don't merge.
+_HTML_ANCHOR_RE = re.compile(
+    r"<a\b[^>]*?href=(['\"])(?P<href>[^'\"]*?)\1[^>]*?>(?P<body>.*?)</a>",
+    re.I | re.S,
+)
 #: Leading ATX heading / blockquote / list markers.
 _MD_LINE_PREFIX_RE = re.compile(r"^\s{0,3}(?:#{1,6}\s*|>\s*|[-*+]\s+|\d+[.)]\s+)")
 #: `![alt](url)` and `[text](url)` → alt / text.
@@ -366,10 +375,28 @@ def strip_markdown(text: Any, limit: int = 4000) -> str:
         return ""
     s = _FRONT_MATTER_RE.sub("", s)
     s = _FENCE_RE.sub(" ", s)
+
+    # Text anchors first: keep the label and append the URL in parentheses so
+    # nav rows (ModelScope/HuggingFace/Blog/Demo/…) don't degrade into a list of
+    # orphan labels. Image-only badge/logo anchors have no text and are removed.
+    def _anchor_repl(m: re.Match[str]) -> str:
+        href = (m.group("href") or "").strip()
+        label = _HTML_TAG_RE.sub(" ", m.group("body") or "")
+        label = re.sub(r"\s+", " ", label).strip()
+        if not label:
+            return " "
+        if href.lower().startswith(("http://", "https://")):
+            return f"{label} ({href})"
+        return label
+
+    s = _HTML_ANCHOR_RE.sub(_anchor_repl, s)
     s = _HTML_TAG_RE.sub(" ", s)
     s = _MD_IMAGE_RE.sub(r"\1", s)
     s = _MD_LINK_RE.sub(r"\1", s)
     s = _MD_EMPHASIS_RE.sub(r"\2", s)
+    # Decode HTML entities (&nbsp; &amp; &#39; &hellip; …) only now, after every
+    # tag has been removed, so a decoded entity can never reintroduce markup.
+    s = html.unescape(s)
     lines = [_MD_LINE_PREFIX_RE.sub("", ln).strip() for ln in s.splitlines()]
     joined = " ".join(ln for ln in lines if ln)
     return re.sub(r"\s+", " ", joined).strip()[:limit]

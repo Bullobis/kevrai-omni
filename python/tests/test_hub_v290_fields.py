@@ -102,6 +102,44 @@ class TestStripMarkdown:
         assert "<a" not in out and "<img" not in out
         assert "Real prose." in out
 
+    def test_html_entities_are_decoded(self):
+        src = "Foo&nbsp;&nbsp;|&nbsp;Bar &amp; Baz&#39;s."
+        out = strip_markdown(src)
+        assert "&nbsp;" not in out and "&amp;" not in out and "&#39;" not in out
+        assert "Bar & Baz's." in out
+
+    def test_text_anchor_keeps_label_and_url(self):
+        src = '<a href="https://example.com/p">Example</a> body.'
+        out = strip_markdown(src)
+        assert "Example (https://example.com/p)" in out
+        assert "<a" not in out
+
+    def test_image_only_anchor_is_dropped(self):
+        src = '<a href="https://x"><img alt="" src="y"/></a> Keep.'
+        out = strip_markdown(src)
+        assert "https://x" not in out
+        assert "Keep." in out
+
+    def test_nav_row_of_anchors_is_readable(self):
+        src = (
+            '<a href="https://a">A</a>&nbsp;&nbsp;|'
+            '&nbsp;&nbsp;<a href="https://b">B</a>'
+        )
+        out = strip_markdown(src)
+        assert "&nbsp;" not in out
+        assert "A (https://a)" in out and "B (https://b)" in out
+
+    def test_single_quoted_href_is_recognized(self):
+        src = "<a href='https://x'>X</a>"
+        out = strip_markdown(src)
+        assert "X (https://x)" in out
+
+    def test_non_http_href_does_not_render_url(self):
+        src = '<a href="javascript:alert(1)">X</a>'
+        out = strip_markdown(src)
+        assert "javascript:" not in out
+        assert out.strip() == "X"
+
     def test_code_fences_are_dropped(self):
         src = "Before.\n\n```python\nprint(1)\n```\n\nAfter."
         out = strip_markdown(src)
