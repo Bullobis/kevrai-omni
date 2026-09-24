@@ -376,7 +376,36 @@ jobs:
           echo "::notice::packaged structure OK (python/tests correctly excluded)"
 
   # ------------------------------------------------------------------
-  # 6. summary — always reports what was tested
+  # 6. pre-commit — run the project's pre-commit hooks on every file.
+  #    Advisory (continue-on-error): the pinned hook revs have drifted from the
+  #    authoritative `lint` job (ruff/mypy), and mypy under pre-commit runs
+  #    without the project deps, so this surfaces whitespace / yaml / json /
+  #    shell / format issues early without turning PRs red.  Fix the reported
+  #    nits as you touch files; promote this to a hard gate once the hook revs
+  #    match the lint job and the isolated-env debt is paid down.
+  # ------------------------------------------------------------------
+  pre-commit:
+    name: pre-commit (all files, advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pre-commit
+        run: python -m pip install pre-commit
+
+      - name: pre-commit run --all-files
+        run: pre-commit run --all-files
+
+  # ------------------------------------------------------------------
+  # 7. summary — always reports what was tested
   # ------------------------------------------------------------------
   summary:
     name: ci summary
