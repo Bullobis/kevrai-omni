@@ -1,246 +1,301 @@
-# DEVELOPMENT.md — 开发者指南
+# 本地开发环境搭建（Development Guide）
 
-> 面向想改代码、跑测试、提 PR 的工程师。终端用户装软件请见 [DEPLOYMENT.md](./DEPLOYMENT.md)；架构见 [ARCHITECTURE.md](./ARCHITECTURE.md)。
+本文档面向想从源码运行、调试或打包 Kevrai Omni 的开发者。
+应用由两部分组成：
 
-## 目录
+- **Electron 主进程 + 渲染层**（Node.js / 原生前端，无构建框架，`renderer/`）
+- **Python sidecar**（FastAPI，负责目录、下载、引擎、GPU 检测、Agent、LTX 等）
 
-- [1. 环境搭建](#1-环境搭建)
-- [2. 安装依赖](#2-安装依赖)
-- [3. 运行](#3-运行)
-- [4. 测试](#4-测试)
-- [5. 代码规范](#5-代码规范)
-- [6. 提交规范](#6-提交规范)
-- [7. 调试](#7-调试)
-- [8. CI 概览](#8-ci-概览)
+Electron 启动时会以子进程方式拉起 sidecar（`uvicorn app.main:app`，绑定
+`127.0.0.1:17890`），并通过 HTTP / WebSocket 与之通信。
 
 ---
 
-## 1. 环境搭建
+## 前置要求
 
-| 工具 | 版本 | 说明 |
+| 工具 | 版本要求 | 说明 |
 |---|---|---|
-| Node.js | **20.x 或更高**（CI 在 22 上跑 `node --check`） | Electron 33 内置 Node 20.x；仓库 `package.json` 未声明 `engines`，但 CI 用 22。 |
-| Python | **3.11**（pyproject 声明 `>=3.10`；CI 统一用 3.11） | sidecar 跑在这个版本上。 |
-| git | 任意现代版 |  |
-| （可选）pnpm | — | 仓库用 npm / package-lock.json，**未**锁 pnpm；用 npm 即可。 |
-| 操作系统 | 任意能跑 Electron 33 的桌面 OS | 见 [DEPLOYMENT §1](./DEPLOYMENT.md#1-系统要求)。 |
+| **Node.js** | **22 LTS 及以上** | 提供 Electron 与 npm 脚本；推荐用 nvm / fnm 管理 |
+| **Python** | **3.11+**（发行内嵌版为 3.12.7） | 运行 sidecar；`pyproject.toml` 要求 `>=3.10`，推荐 3.12 |
+| **Git** | 任意较新版本 | 克隆仓库；技能市场 import-git 还会调用系统 `git` |
+| 系统库 | 见下文各平台 | Linux 下 Electron 需要一组图形/沙箱运行库 |
 
-一键检查环境是否就绪：
-
-```bash
-bash scripts/setup/bootstrap.sh --dry-run
-```
-
-脚本会检查 node / python3 / npm / git 的版本，并在自检阶段 import 关键 Python 包、确认 17890 端口空闲。
+> 不需要预装 CUDA / PyTorch 才能启动开发环境——sidecar 的核心控制面只依赖
+> `requirements.txt` 里的轻量包（fastapi/uvicorn/httpx/pydantic 等）。
+> torch / diffusers 等重型推理依赖是**按需**在使用对应引擎时才安装的。
 
 ---
 
-## 2. 安装依赖
+## 获取源码
 
 ```bash
 git clone https://github.com/Bullobis/kevrai-omni.git
 cd kevrai-omni
+git checkout kevrai-forge/v3.0.0     # 或你要开发的分支
+```
 
-# 1) 前端依赖
+---
+
+## Windows 开发环境
+
+1. **安装 Node.js 22 LTS**：从 <https://nodejs.org/> 下载 LTS 安装包，勾选
+   "Add to PATH"。验证：
+   ```powershell
+   node -v    # 应输出 v22.x
+   npm -v
+   ```
+
+2. **安装 Python 3.12**：从 <https://www.python.org/downloads/> 安装，
+   安装时**务必勾选 "Add python.exe to PATH"**。验证：
+   ```powershell
+   python --version    # 应输出 Python 3.12.x
+   ```
+
+3. **创建并激活 venv**（推荐，避免污染系统 Python）：
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\activate
+   ```
+
+4. **安装 JS 依赖**（仓库根目录）：
+   ```powershell
+   npm install
+   ```
+
+5. **安装 Python sidecar 依赖**（在已激活 venv 的终端里）：
+   ```powershell
+   cd python
+   pip install -r requirements.txt
+   cd ..
+   ```
+
+6. **启动开发模式**：
+   ```powershell
+   npm run dev
+   ```
+   Electron 会自动打开 DevTools 并尝试拉起 sidecar。若系统有多个 Python，
+   可用环境变量指定用哪个解释器启动 sidecar：
+   ```powershell
+   set KEVRAI_PYTHON=C:\path\to\.venv\Scripts\python.exe
+   npm run dev
+   ```
+
+### Windows 常见问题
+
+- **`'python' 不是内部或外部命令`**：安装 Python 时没勾 "Add to PATH"，
+  重新运行安装包选 Modify 勾上，或改用 `py -3.12`。
+- **venv 激活脚本报 "无法加载文件…因为禁止运行脚本"**：PowerShell 默认禁止
+  执行脚本，执行一次 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`，
+  或改用 CMD（`.\.venv\Scripts\activate.bat`）。
+- **pip 下载慢**：临时加清华/腾讯镜像
+  `-i https://mirrors.tencent.com/pypi/simple/`。
+
+---
+
+## Linux 开发环境（Ubuntu / Debian）
+
+1. **系统依赖**（Electron 运行所需的图形/沙箱库）：
+   ```bash
+   sudo apt update
+   sudo apt install -y \
+     libgtk-3-0 libnss3 libgbm1 libasound2 \
+     libxss1 libxshmfence1 libdrm2 libxtst6 \
+     libatspi2.0-0 libcups2 libglib2.0-0
+   ```
+   > 这些是 Electron 在无头/桌面环境下正常开窗与 GPU 初始化所需的运行库；
+   > 在 SSH 无显示环境下调试可配合 `xvfb-run`。
+
+2. **Node.js 22**（推荐用 nvm）：
+   ```bash
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+   nvm install 22
+   nvm use 22
+   ```
+
+3. **Python 3.11+**：
+   ```bash
+   sudo apt install -y python3 python3-venv python3-pip
+   ```
+
+4. **创建 venv 并安装依赖**：
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   npm install
+   cd python && pip install -r requirements.txt && cd ..
+   ```
+
+5. **启动**：
+   ```bash
+   npm run dev
+   # 指定 sidecar 解释器：
+   # KEVRAI_PYTHON=$PWD/.venv/bin/python npm run dev
+   ```
+
+### Linux 常见问题
+
+- **Electron 报 `libgtk-3.so.0: cannot open shared object file`**：上面 apt
+   依赖没装全，补装 `libgtk-3-0`。
+- **沙箱报错 `No SUID sandbox` / `chrome-sandbox`**：在无特权容器里跑时，
+   可临时 `npm run dev -- --no-sandbox`（仅开发调试用，勿在发布包这么做）。
+- **GPU 初始化失败**：见 [TROUBLESHOOTING.md](TROUBLESHOOTING.md) 的 GPU 节。
+
+---
+
+## macOS 开发环境
+
+1. **安装 Homebrew**（如未装）：
+   ```bash
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+
+2. **用 brew 安装 Node 与 Python**：
+   ```bash
+   brew install node@22 python@3.12
+   brew link --overwrite node@22 python@3.12
+   ```
+
+3. **创建 venv 并安装依赖**：
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   npm install
+   cd python && pip install -r requirements.txt && cd ..
+   ```
+
+4. **启动**：
+   ```bash
+   npm run dev
+   ```
+
+> Apple Silicon（arm64）与 Intel（x64）均可。首次从源码打包 dmg 时，
+> 内部构建未签名，需在「系统设置 → 隐私与安全性」允许打开。
+
+---
+
+## 从源码运行（标准流程）
+
+在**仓库根目录**、且 Python venv 已激活的终端里：
+
+```bash
+# 1. 安装前端依赖
 npm install
 
-# 2) Python sidecar 依赖（国内建议加镜像源）
-python3 -m pip install -i https://mirrors.tencent.com/pypi/simple/ -r python/requirements.txt
+# 2. 安装 Python sidecar 依赖
+cd python
+pip install -r requirements.txt
+cd ..
 
-# 3) 开发依赖（pytest / ruff / mypy / black / pytest-cov）
-python3 -m pip install -i https://mirrors.tencent.com/pypi/simple/ \
-    pytest pytest-asyncio pytest-cov ruff mypy black
-```
-
-> 也可以用 `pip install -e "python/[dev]"` 一键装运行 + 开发依赖（`python/pyproject.toml` 里定义了 `[project.optional-dependencies].dev`）。
-
-**pip 镜像选择**（CI 默认用腾讯）：
-
-| 镜像 | index URL |
-|---|---|
-| 腾讯（默认，CI 在用） | `https://mirrors.tencent.com/pypi/simple/` |
-| 阿里云 | `https://mirrors.aliyun.com/pypi/simple/` |
-| 清华 TUNA | `https://pypi.tuna.tsinghua.edu.cn/simple/` |
-| 华为云 | `https://mirrors.huaweicloud.com/repository/pypi/simple/` |
-| 官方 | `https://pypi.org/simple/` |
-
-设为默认：`pip config set global.index-url <URL>`，或临时 `-i <URL>`。
-
----
-
-## 3. 运行
-
-```bash
-# 生产模式启动（Electron 加载 renderer/index.html，spawn sidecar）
-npm start
-
-# 开发模式：开 DevTools、打开 Electron 日志
+# 3. 一键启动（Electron 自动拉起 sidecar）
 npm run dev
 ```
 
-sidecar 默认绑 `127.0.0.1:17890`。如果你想单独调试 sidecar（不开 Electron）：
+启动后：
 
-```bash
-cd python
-python3 -m uvicorn app.main:app --host 127.0.0.1 --port 17890 --reload
-```
-
-注意：Electron 主进程会自己 spawn 一个 sidecar；手动再开一个会因端口占用而失败。开发时二选一。
+- 渲染层为 Electron 窗口（`renderer/index.html`）
+- sidecar 健康检查在 `http://127.0.0.1:17890/api/health`
+- 可另开终端直接打 API 调试：
+  ```bash
+  curl http://127.0.0.1:17890/api/health
+  # {"ok": true, "version": "3.0.0", ...}
+  ```
 
 ---
 
-## 4. 测试
-
-### 4.1 Python 测试
+## 运行测试
 
 ```bash
-cd python
-python -m pytest -q tests/
-```
+# Python 单元测试（pytest；默认排除需要真实网络的 live 标记）
+npm run test:python
+# 等价于：cd python && python -m pytest -q tests/
 
-基线：**833 passed**（约 127s，v2.9.0）。pytest 配置在 `python/pyproject.toml`：
-
-- `addopts = "-ra --strict-markers -m 'not live'"`——默认排除需要真实网络的 `live` 标记测试。
-- `asyncio_mode = "auto"`。
-- 覆盖率门槛在 CI 里：floor 68%、goal 80%（见 [docs/COVERAGE.md](./COVERAGE.md)）。
-
-跑单个测试文件：
-
-```bash
-cd python
-python -m pytest tests/test_gpu.py -q
-```
-
-### 4.2 JS 语法检查
-
-```bash
+# JS 语法冒烟（对 electron/*.js、renderer/*.js、renderer/modules/*.js 逐个 node --check）
 npm run test:js
-```
 
-实质是对 `electron/*.js`、`renderer/*.js`、`renderer/modules/*.js` 逐个 `node --check`（当前 25 个文件）。
-
-### 4.3 冒烟
-
-```bash
+# 端到端冒烟脚本（拉起 sidecar、打关键健康/目录接口）
 npm run smoke
-# 等价于
-bash scripts/smoke.sh
+# 等价于：bash scripts/smoke.sh
 ```
 
-9 步检查：catalog JSON 合法性 → jsonschema 校验 → URL 白名单 → 无泄露密钥 → pip 装依赖 → pytest → node --check → electron-builder.yml 合法性 → catalog 统计。CI 里 `smoke` job 跑的就是它。
-
----
-
-## 5. 代码规范
-
-### 5.1 Python
-
-- **ruff** 选了 `E W F I B UP S SIM`（pycodestyle / pyflakes / isort / bugbear / pyupgrade / bandit / simplify），line-length 110。
-- **mypy**：`python_version="3.10"`、`ignore_missing_imports=true`、`no_implicit_optional=true`。CI 硬门 **`MAX_ERRORS=0`**——任何新类型错误直接挂。需要压制时用窄作用域 `# type: ignore[<code>]` 并写注释。
-- **black**：line-length 110，target py310/311/312。
-- 测试目录放宽了 `S` / `B` 规则（`pyproject.toml` 里 `per-file-ignores`）。
-
-本地跑：
+开发 Python sidecar 时也可直接在 `python/` 目录下用 pytest 跑单文件：
 
 ```bash
 cd python
-ruff check .
-mypy app/ --ignore-missing-imports
-black --check .
-```
-
-### 5.2 JavaScript
-
-- **没有 ESLint 配置**，唯一硬门是 `node --check` 语法通过。
-- 风格上沿用现有：双引号、2 空格、`"use strict";`、ES Module（renderer 端）、CommonJS（electron 端）。
-- 新增 IPC channel 时**必须**在 `electron/preload.js` 的白名单里登记，并做入参校验。
-
-### 5.3 目录约定
-
-```
-electron/        # 主进程 + preload（CommonJS）
-renderer/        # UI（ES Module，无打包器）
-  modules/       # 21 个功能模块
-python/
-  app/           # sidecar 包
-    agent/       # Agent 子包
-    hub/         # 多源 hub 客户端
-    tools/       # Agent 工具
-  tests/         # pytest
-catalog/         # 静态 models.json / engines.json / schema.py
-scripts/         # 构建/发布/冒烟（别在这放临时脚本）
-scripts/setup/   # 环境引导（bootstrap.sh）
-docs/            # 本文档集合
+python -m pytest -q tests/test_security.py -x
 ```
 
 ---
 
-## 6. 提交规范
+## 打包
 
-沿用 Conventional Commits 前缀：
-
-| 前缀 | 用途 |
-|---|---|
-| `feat` | 新功能 |
-| `fix` | 修 bug |
-| `docs` | 文档 |
-| `chore` | 构建/脚本/杂项 |
-| `refactor` / `test` / `style` | 视情况 |
-
-关联 issue：commit message 里写 `(#123)` 或正文提 `Closes #123`。
-
-分支约定（ADR-0002）：**只在 `cabinet/*` 分支提交**，开 PR 合回 `main`；不直接 push main、不 force push、不打 tag。
-
----
-
-## 7. 调试
-
-### 7.1 Electron DevTools
+打包产物输出到 **`build/output/`**（见 `electron-builder.yml`）：
 
 ```bash
-npm run dev
+npm run build:win     # Windows NSIS .exe（需在 Windows 上；Linux 下可用 wine）
+npm run build:linux   # Linux AppImage + .deb
+npm run build:mac     # macOS .dmg（需在 macOS 上）
 ```
 
-自动 `--enable-logging --devtools`，DevTools 打开。渲染进程的 console / network 可直接看。
+产物命名模板来自 `electron-builder.yml` 的 `artifactName`：
+`Kevrai-Omni-${version}-${arch}.${ext}`。
 
-### 7.2 sidecar 日志
-
-- 主进程日志：`<userData>/logs/main.log`（Windows: `%APPDATA%\KevraiOmni\logs\main.log`）。
-- sidecar 的 stdout/stderr 会被主进程前缀 `[sidecar]` / `[sidecar-stderr]` 写进同一个 `main.log`。
-- sidecar stderr 尾部最多保留 80 行（`sidecarStderrTail`），崩溃诊断时用。
-- 设置里打开 `debug_http_logs=true` 可以看到 sidecar 的 HTTP 请求日志。
-
-### 7.3 Python 远程调试
-
-sidecar 是主进程 spawn 的子进程。两种方式：
-
-1. **不开 Electron，手动跑 uvicorn**（见 [§3](#3-运行)），在 IDE 里直接打断点。
-2. 在 sidecar 代码里加 `import debugpy; debugpy.listen(5678); debugpy.wait_for_client()`，然后从 VS Code attach。注意这种方式下 `KEVRAI_PORT` 要和主进程期望的一致，或者干脆只手动跑 sidecar。
-
-### 7.4 常用环境变量
-
-| 变量 | 作用 |
-|---|---|
-| `KEVRAI_PYTHON` | 覆盖 sidecar Python 解释器路径。 |
-| `KEVRAI_PORT` | sidecar 端口（默认 17890）。 |
-| `KEVRAI_PIP_INDEX` | smoke.sh 用的 pip 镜像（默认腾讯）。 |
-| `HF_ENDPOINT` | 覆盖 HF 端点（如 `https://hf-mirror.com`）。 |
-| `HF_HUB_OFFLINE=1` | 离线模式。 |
+> 不要在打包后手工改产物名；自动更新靠 `latest.yml` / `latest-linux.yml`
+> 与文件名严格对应。发版流程见 [../RELEASE.md](../RELEASE.md)。
 
 ---
 
-## 8. CI 概览
+## 常见开发问题排查
 
-`.github/workflows/ci.yml`，5 个 job：
+### 1. 找不到 Python / sidecar 起不来
 
-| # | Job | Runner | 做什么 |
-|---|---|---|---|
-| 1 | `python` | ubuntu-latest, Python 3.11 | 装依赖（腾讯镜像）→ `pytest --cov=app` → 覆盖率门（floor 68%，goal 80%）；失败时把 pytest 尾部和 pip freeze 写进 Summary。 |
-| 2 | `node` | ubuntu-latest, Node 22 | 不装依赖，直接对所有 `.js`（排除 node_modules/build/dist）跑 `node --check`。 |
-| 3 | `smoke` | ubuntu-latest, Python 3.11 + Node 22 | 跑 `bash scripts/smoke.sh`。 |
-| 4 | `lint` | ubuntu-latest, Python 3.11 | `ruff check .` + `mypy app/ --ignore-missing-imports`（**MAX_ERRORS=0**；mypy 退出码 >=2 视为硬失败）。 |
-| 5 | `summary` | ubuntu-latest | `needs: [python, node, smoke, lint]`，永远跑；任一前置失败则本 job 失败。 |
+症状：启动后弹 "Python sidecar failed to start" 或 `no-python`。
 
-触发：push 到 main/master、PR 到 main/master、手动 `workflow_dispatch`。同一 ref 上新 push 会取消在跑的旧 run。
+- 确认 `python --version`（Windows）/ `python3 --version`（Linux/macOS）可用。
+- 确认已 `pip install -r python/requirements.txt`。
+- 用 `KEVRAI_PYTHON` 显式指向 venv 里的解释器再 `npm run dev`。
+- 看 DevTools 控制台与终端里 `[sidecar-stderr]` 日志尾；若出现
+  `ModuleNotFoundError: No module named 'xxx'`，就是缺依赖，补装即可。
 
-> 覆盖率门槛刻意设在实测基线（约 69.6%）之下，用来抓**回归**而不是永久红；目标 80%，见 [docs/COVERAGE.md](./COVERAGE.md)。
+### 2. 端口 17890 被占用
+
+sidecar 固定监听 `127.0.0.1:17890`。若被别的进程占用，Electron 健康检查会超时：
+
+```bash
+# 查谁占用（Linux/macOS）
+lsof -i :17890
+# Windows PowerShell
+netstat -ano | findstr :17890
+```
+
+结束占用进程，或改由该进程退出后再启动。开发期不要把 sidecar 暴露到
+`0.0.0.0`——这会绕过 localhost 与 CORS 的安全边界。
+
+### 3. Python 依赖冲突
+
+- 始终在 venv 里安装依赖，不要 `pip install` 到系统环境。
+- 若同时跑多个 Python 项目，确认激活的是本仓库 `.venv`。
+- `pip install` 走默认 PyPI 慢时可用 `pip install -i https://mirrors.tencent.com/pypi/simple/ -r requirements.txt`。
+
+### 4. GPU 驱动 / 显存
+
+- sidecar 的 `/api/gpu` 只做**检测**，不要求你有 GPU 才能跑开发环境。
+- 真正跑 LTX 视频生成 / 大模型推理时才需要 NVIDIA 驱动 + 对应 CUDA 版
+  PyTorch；显存不足会在生成面板报显存错误，详见
+  [TROUBLESHOOTING.md](TROUBLESHOOTING.md)。
+
+### 5. Electron sandbox / 渲染层报错
+
+- 本项目 preload 使用 `contextIsolation` + `sandbox`，**不要**为了图方便
+  把 `nodeIntegration` 打开或关掉 sandbox。
+- 无特权容器 / CI 里开窗失败时，临时加 `--no-sandbox` 仅用于本地调试。
+- 渲染层请求 sidecar 必须走 preload 暴露的 `api:*` 通道，CORS 白名单见
+  `python/app/main.py` 的 `ALLOWED_ORIGINS`。
+
+---
+
+## 相关文档
+
+- API 参考：[docs/API.md](API.md)
+- 用户/开发者故障排查：[docs/TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- 发布流程：[../RELEASE.md](../RELEASE.md)
+- 安全模型：[../SECURITY.md](../SECURITY.md)

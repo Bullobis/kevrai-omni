@@ -111,7 +111,16 @@ if [ "${SKIP_BUILD}" -eq 1 ]; then
   info "skip-build requested; assuming build/output already populated"
 else
   bash scripts/build_windows.sh || fail "build_windows.sh failed"
-  npx --yes electron-builder --linux \
+  # Align with scripts/build_linux.sh: never auto-publish (gh release create
+  # below handles upload), disable code-sign auto-discovery, skip native
+  # rebuild, and pin the electron entry point.  --publish never is REQUIRED:
+  # without it electron-builder tries to upload assets to GitHub directly and
+  # races / double-uploads against our explicit `gh release create`.
+  export CSC_IDENTITY_AUTO_DISCOVERY=false
+  export ELECTRON_BUILDER_BINARIES_MIRROR="${ELECTRON_BUILDER_BINARIES_MIRROR:-https://registry.npmmirror.com/-/binary/electron-builder-binarie/}"
+  npx --yes electron-builder --linux --publish never \
+    --config.npmRebuild=false \
+    --config.extraMetadata.main="electron/main.js" \
     || fail "electron-builder --linux failed (try again or use --skip-build)"
 fi
 
@@ -139,6 +148,38 @@ for a in "${ARTIFACTS[@]}"; do
   size=$(stat -c %s "$a" 2>/dev/null || stat -f %z "$a")
   printf "    %s (%s bytes)\n" "$a" "$size"
 done
+
+# ----------------------------------------------------------------------
+step "6b. Generate SHA256SUMS.txt for distributables"
+# ----------------------------------------------------------------------
+# Users verify installers out-of-band.  Auto-update metadata (latest*.yml +
+# blockmap) already carries electron-updater's own sha512, so this manifest
+# covers only the user-downloadable installers/archives.  Generated with the
+# standard `sha256sum` (fallback `shasum -a 256` on macOS) so the file is
+# directly verifiable with `sha256sum -c SHA256SUMS.txt`.
+SUMS_FILE="build/output/SHA256SUMS.txt"
+SUMS_ARTIFACTS=(
+  build/output/*.exe
+  build/output/*.zip
+  build/output/*.AppImage
+  build/output/*.deb
+  build/output/*.dmg
+)
+if [ "${#SUMS_ARTIFACTS[@]}" -eq 0 ]; then
+  fail "no distributable installers found to checksum"
+fi
+(
+  cd build/output
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "${SUMS_ARTIFACTS[@]#build/output/}" > SHA256SUMS.txt
+  else
+    shasum -a 256 "${SUMS_ARTIFACTS[@]#build/output/}" > SHA256SUMS.txt
+  fi
+)
+info "SHA256SUMS.txt:"
+sed 's/^/    /' "${SUMS_FILE}"
+# Upload the checksum manifest alongside the installers.
+ARTIFACTS+=("${SUMS_FILE}")
 
 # ----------------------------------------------------------------------
 step "7. Generate release notes"
@@ -173,6 +214,15 @@ the in-app updater can discover and verify this release.
 2. Launch from desktop shortcut (installer) or the unzipped folder (portable).
 3. Open "AI 引擎" tab → install \`llama.cpp\` (first time).
 4. Open "模型市场" → pick a model → download, or use GGUF 全量化.
+
+## Verify downloads (optional but recommended)
+A \`SHA256SUMS.txt\` is attached to this release. After downloading an
+installer, verify its integrity from the same folder:
+\`\`\`bash
+sha256sum -c SHA256SUMS.txt --ignore-missing
+\`\`\`
+On Windows, compare the printed SHA256 in \`SHA256SUMS.txt\` against
+\`Get-FileHash .\\Kevrai-Omni-${VERSION}-x64.exe -Algorithm SHA256\`.
 EOF
   info "generated fallback release notes (${PROJECT_NOTES} not found)"
 fi

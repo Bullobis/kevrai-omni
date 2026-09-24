@@ -122,10 +122,14 @@ conversation transcript has it. We:
 
 ## Reporting a vulnerability
 
-**Preferred (private)**: Email `security@kevrai-studio.example` with PGP
-key … (fingerprint `XXXX XXXX XXXX XXXX XXXX  XXXX XXXX XXXX XXXX XXXX`).
+**Preferred (private)**: 请通过 GitHub 私有安全报告通道提交 ——
+打开本仓库的 **Security → Report a vulnerability → New draft security advisory**
+（`https://github.com/Bullobis/kevrai-omni/security/advisories/new`）。
+该通道对维护者私有可见，在修复发布前不会公开你的报告。
 
-**Public**: Open an issue tagged `security` once a fix is shipped.
+> 说明：本项目不维护独立的对外安全邮箱；历史文档中出现的
+> `security@kevrai-studio.example` 为占位符，请勿使用。所有私有漏洞报告一律走
+> GitHub Security Advisory。
 
 Please include:
 * A reproducible proof of concept (ideally a failing test).

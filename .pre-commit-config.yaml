@@ -38,8 +38,9 @@ repos:
         args: ["--unsafe"]
       - id: check-json
         files: \.(json|json5)$
-        # package.json has no trailing newline — allow
-        args: ["--no-ensure-ascii=false"]
+        # NOTE: check-json (pre-commit-hooks) takes no args.  The old
+        # `--no-ensure-ascii=false` here made the hook exit 2 (usage error) on
+        # every run.  Trailing-newline enforcement is end-of-file-fixer's job.
       - id: mixed-line-ending
         args: ["--fix=lf"]
 

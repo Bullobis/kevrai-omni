@@ -32,9 +32,23 @@ from urllib.parse import urlparse
 import httpx
 
 from .catalog import (
+    DEFAULT_BLOCKED_MIRRORS,
     DEFAULT_MODEL_HOSTS,
     is_host_allowed,
 )
+
+
+def _host_is_blocked(url: str) -> bool:
+    """True when the URL's host (case-insensitive, www-stripped) is on the
+    hard-blocked mirror list (P0-3). Blocked hosts are refused UNCONDITIONALLY,
+    independent of the positive allowlist setting."""
+    try:
+        host = (urlparse(url).hostname or "").lower()
+    except Exception:
+        return False
+    if host.startswith("www."):
+        host = host[4:]
+    return host in DEFAULT_BLOCKED_MIRRORS
 
 
 class DownloadStatus(str, Enum):
@@ -54,20 +68,37 @@ class DownloadStatus(str, Enum):
 class DownloadRefused(Exception):
     """Raised when URL fails validation (unsupported scheme, etc.)."""
 
-def _check_url(url: str, *, enforce_allowlist: bool = False) -> None:
+def _check_url(url: str, *, enforce_allowlist: bool = False,
+               has_auth_header: bool = False) -> None:
     """Validate a URL.
 
     Permissive by default — only the scheme is checked. Pass
-    `enforce_allowlist=True` to additionally require the host to be in
-    `DEFAULT_MODEL_HOSTS`.
+    ``enforce_allowlist=True`` to additionally require the host to be in
+    ``DEFAULT_MODEL_HOSTS``.
+
+    P0-2: when ``has_auth_header`` is True (the request will carry an
+    ``Authorization`` credential such as a gated HF Bearer token), the host
+    allowlist is FORCE-ENABLED regardless of the caller's opt-in. A credential
+    must never be sent to a host outside the curated trusted set — otherwise a
+    caller could trick the sidecar into exfiltrating the user's token to an
+    arbitrary URL.
     """
     parsed = urlparse(url)
     if parsed.scheme not in {"http", "https"}:
         raise DownloadRefused(f"unsupported scheme {parsed.scheme!r}")
     if not parsed.hostname:
         raise DownloadRefused(f"url has no host: {url!r}")
+    # P0-3: hard-blocked mirrors are always refused, even when the positive
+    # allowlist is otherwise permissive.
+    if _host_is_blocked(url):
+        raise DownloadRefused(f"host is on the blocked mirror list: {parsed.hostname}")
+    if has_auth_header:
+        enforce_allowlist = True
     if enforce_allowlist and not is_host_allowed(url, DEFAULT_MODEL_HOSTS):
-        raise DownloadRefused(f"host not in allowlist: {parsed.hostname}")
+        raise DownloadRefused(
+            "host not in allowlist (credential-bearing downloads are restricted "
+            f"to trusted hosts): {parsed.hostname}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -192,8 +223,11 @@ class Downloader:
         """
         dest_path = Path(dest).expanduser().resolve()
         dest_path.parent.mkdir(parents=True, exist_ok=True)
-        # Validate url (permissive: only scheme + host presence)
-        self._check_url(url)
+        # Validate url. When the task carries an Authorization credential
+        # (gated HF Bearer), _check_url force-enables the host allowlist so the
+        # token is never sent to an arbitrary host (P0-2).
+        has_auth = any(str(k).lower() == "authorization" for k in (extra_headers or {}))
+        self._check_url(url, has_auth_header=has_auth)
         if dest_path.exists():
             raise FileExistsError(str(dest_path))
 
@@ -262,14 +296,20 @@ class Downloader:
 
     # --- internals ---
 
-    def _check_url(self, url: str) -> None:
+    def _check_url(self, url: str, *, has_auth_header: bool = False) -> None:
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"}:
             raise DownloadRefused(f"unsupported scheme {parsed.scheme!r}")
         if not parsed.hostname:
             raise DownloadRefused(f"url has no host: {url!r}")
-        # Positive allowlist only enforced when the caller explicitly opted in.
-        if self._enforce_allowlist and not is_host_allowed(url, self._allowed_hosts):
+        # P0-3: hard-blocked mirrors are always refused.
+        if _host_is_blocked(url):
+            raise DownloadRefused(f"host is on the blocked mirror list: {parsed.hostname}")
+        # Positive allowlist enforced when the caller opted in OR when the task
+        # carries an Authorization credential (P0-2): never leak a Bearer token
+        # to a host outside the trusted set.
+        enforce = self._enforce_allowlist or has_auth_header
+        if enforce and not is_host_allowed(url, self._allowed_hosts):
             raise DownloadRefused(f"host not in allowlist: {parsed.hostname}")
 
     async def _get_client(self) -> httpx.AsyncClient:

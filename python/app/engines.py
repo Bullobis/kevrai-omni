@@ -138,7 +138,8 @@ def _UA() -> str:
         from . import USER_AGENT as _ua
         return _ua
     except Exception:  # noqa: BLE001 — defensive; package import should work
-        return "kevrai-omni/2.9.0"
+        from . import __version__
+        return f"kevrai-omni/{__version__}"
 
 
 # ---------------------------------------------------------------------------

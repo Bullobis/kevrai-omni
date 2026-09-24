@@ -1,0 +1,66 @@
+name: Remotion Video Render
+
+# 每月 1 号 UTC 00:00 自动渲染，同时支持手动触发
+on:
+  schedule:
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version label (e.g. v3.0.0)"
+        required: false
+        default: "v3.0.0"
+
+jobs:
+  render:
+    name: Render Remotion videos
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: remotion
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: remotion/package-lock.json
+
+      - name: Install headless Chrome system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-0 libnotify-dev libnss3 libxss1 \
+            libasound2 libxtst6 xauth xvfb libgbm1 libxshmfence1 \
+            libatk-bridge2.0-0 libatk1.0-0 libcups2 libdrm2 libxcomposite1 \
+            libxdamage1 libxfixes3 libxrandr2 libpango-1.0-0 libcairo2
+
+      - name: Install Remotion deps
+        run: npm ci
+
+      - name: Render LogoIntro (10s, 1920x1080)
+        run: npx remotion render LogoIntro out/logo-intro.mp4 --codec=h264 --props='{"version":"${{ github.event.inputs.version || 'v3.0.0' }}"}'
+
+      - name: Render VersionPoster (15s, 1080x1080)
+        run: npx remotion render VersionPoster out/version-poster.mp4 --codec=h264 --props='{"version":"${{ github.event.inputs.version || 'v3.0.0' }}"}'
+
+      - name: Upload to GitHub Release
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "continuous")
+          echo "Uploading videos to release: $TAG"
+          gh release upload "$TAG" out/logo-intro.mp4 out/version-poster.mp4 --clobber || echo "::warning::Release $TAG not found, skipped upload"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: remotion-videos
+          path: remotion/out/*.mp4
+          if-no-files-found: warn

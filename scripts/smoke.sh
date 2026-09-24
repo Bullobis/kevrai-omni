@@ -61,10 +61,13 @@ pass "jsonschema validation"
 
 # ----------------------------------------------------------------------
 section "Step 3/9 · Multi-source catalog & URL well-formedness"
-# v2.2.0: there is NO negative blocklist. This step now verifies the
-# opposite: every model exposes a `sources[]` mirror list with at least
-# 2 entries, every engine `platforms[*]` URL is well-formed http(s), and
-# every GGUF repo also has a `sources[]` list.
+# The positive allowlist is advisory (users may opt into mirrors in-app), but
+# there IS a hard negative blocklist (P0-3): hf-cdn.sufy.com is a phishing
+# typosquat and is refused unconditionally by the downloader. This step verifies
+# every model exposes a `sources[]` mirror list with at least 2 entries, every
+# engine `platforms[*]` URL is well-formed http(s), and every GGUF repo also
+# has a `sources[]` list. The blocked-mirror guarantee itself is asserted by the
+# pytest suite (test_security.py / test_catalog.py).
 # ----------------------------------------------------------------------
 python3 - <<'PY' || fail "multi-source / url well-formedness check failed"
 import json, sys
