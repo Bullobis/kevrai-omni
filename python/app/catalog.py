@@ -388,9 +388,21 @@ def load_catalog(
     engines_path = catalog_dir / "engines.json"
     engines: dict[str, Any] = {}
     if engines_path.exists():
-        with engines_path.open("r", encoding="utf-8") as fh:
-            engines_data = json.load(fh)
-        engines = {e["id"]: e for e in engines_data.get("engines", [])}
+        try:
+            with engines_path.open("r", encoding="utf-8") as fh:
+                engines_data = json.load(fh)
+        except (OSError, json.JSONDecodeError):
+            # Corrupt engines.json must not take down the whole catalog load;
+            # fall back to an empty engine map (mirrors _read_manifest).
+            engines_data = {}
+        if isinstance(engines_data, dict):
+            raw_engines = engines_data.get("engines")
+            if isinstance(raw_engines, list):
+                for e in raw_engines:
+                    # Skip malformed entries (non-dict / missing id) instead of
+                    # raising KeyError/AttributeError and losing every engine.
+                    if isinstance(e, dict) and e.get("id"):
+                        engines[str(e["id"])] = e
 
     return catalog, engines
 
