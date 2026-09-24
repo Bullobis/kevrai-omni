@@ -11,6 +11,7 @@ The tests use ``monkeypatch`` and stand-alone functions where network is
 unavoidable, but prefer the FastAPI ``TestClient`` path so they mirror what a
 real Electron renderer would do.
 """
+
 from __future__ import annotations
 
 import os
@@ -37,6 +38,7 @@ CATALOG_DIR = REPO_ROOT / "catalog"
 
 # ---------- path traversal in model_id ----------
 
+
 @pytest.fixture(scope="module")
 def client():
     """Shared FastAPI test client (env-redirected to a tempdir)."""
@@ -49,6 +51,7 @@ def client():
     from fastapi.testclient import TestClient
 
     from app.main import app  # imported here so env is set first
+
     with TestClient(app) as c:
         yield c
 
@@ -65,9 +68,7 @@ def test_model_id_path_traversal(client):
     ]
     for p in payloads:
         r = client.get(f"/api/models/{p}")
-        assert r.status_code in (400, 404), (
-            f"path-traversal {p!r} returned {r.status_code}, body={r.text}"
-        )
+        assert r.status_code in (400, 404), f"path-traversal {p!r} returned {r.status_code}, body={r.text}"
         # Body must not echo the input path or contain any file contents
         body = r.text
         assert "root:" not in body
@@ -86,7 +87,45 @@ def test_model_id_url_encoded_traversal(client):
         assert r.status_code in (400, 404)
 
 
+# ---------- P0-1: sidecar bearer-secret authentication ----------
+
+def test_health_is_unauthenticated(client):
+    """/api/health stays open (Electron polls it before anything else)."""
+    r = client.get("/api/health")
+    assert r.status_code == 200
+    assert r.json()["ok"] is True
+
+
+def test_protected_route_accepts_valid_bearer(client):
+    """The default test client presents the pinned bearer -> 200."""
+    r = client.get("/api/categories")
+    assert r.status_code == 200
+
+
+def test_protected_route_rejects_wrong_bearer(client):
+    """A tampered/forged bearer must be rejected with 401."""
+    r = client.get("/api/categories", headers={"Authorization": "Bearer not-the-real-secret"})
+    assert r.status_code == 401
+
+
+def test_protected_route_rejects_absent_bearer(client):
+    """An empty Authorization header must be rejected with 401."""
+    # Override the client's default bearer with an empty value.
+    r = client.get("/api/categories", headers={"Authorization": ""})
+    assert r.status_code == 401
+
+
+def test_fail_closed_when_secret_unset(client, monkeypatch):
+    """Started without KEVRAI_SIDECAR_SECRET -> protected routes 500, not silent open."""
+    monkeypatch.delenv("KEVRAI_SIDECAR_SECRET", raising=False)
+    r = client.get("/api/categories")
+    assert r.status_code == 500
+    # Health must still be reachable so boot diagnostics keep working.
+    assert client.get("/api/health").status_code == 200
+
+
 # ---------- blocked-mirror URLs ----------
+
 
 def test_sufy_url_rejected_at_engine_install(tmp_path):
     """``download_zip_engine`` must refuse any non-allowlisted host."""
@@ -121,14 +160,20 @@ def test_pydantic_accepts_any_repo_string():
     (e.g. ``hf-cdn.sufy.com``) parse cleanly so the user can opt in via
     the in-app Settings → Download sources panel."""
     from app.catalog import ModelEntry
-    entry = ModelEntry.model_validate({
-        "id": "evil-1", "category": "llm", "name": "x",
-        "repo": "hf-cdn.sufy.com/some/repo",
-    })
+
+    entry = ModelEntry.model_validate(
+        {
+            "id": "evil-1",
+            "category": "llm",
+            "name": "x",
+            "repo": "hf-cdn.sufy.com/some/repo",
+        }
+    )
     assert entry.repo == "hf-cdn.sufy.com/some/repo"
 
 
 # ---------- is_host_allowed ----------
+
 
 def test_is_host_allowed_full_table():
     """v2.2.0: allowlist is *advisory*; is_host_allowed returns accurate
@@ -144,6 +189,7 @@ def test_engines_json_every_url_is_well_formed():
     """engines.json must not contain any malformed URL — any http(s) URL is
     acceptable in v2.2.0, but it must at least parse."""
     import json
+
     engines = json.loads((CATALOG_DIR / "engines.json").read_text(encoding="utf-8"))
     bad: list[tuple[str, str]] = []
     for eng in engines["engines"]:
@@ -152,6 +198,7 @@ def test_engines_json_every_url_is_well_formed():
                 continue
             # v2.2.0: any http(s) URL is well-formed; no allowlist check.
             from urllib.parse import urlparse
+
             p = urlparse(url)
             if p.scheme not in ("http", "https") or not p.netloc:
                 bad.append((eng.get("id", "?"), url))
@@ -159,6 +206,7 @@ def test_engines_json_every_url_is_well_formed():
 
 
 # ---------- settings: invalid theme ----------
+
 
 def test_settings_invalid_theme_rejected_by_pydantic():
     """`theme` is a Literal — any value outside the enum fails validation."""

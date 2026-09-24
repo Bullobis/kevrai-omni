@@ -23,6 +23,7 @@ const { app, BrowserWindow, ipcMain, shell, dialog, session, Menu } = require("e
 const path = require("node:path");
 const fs = require("node:fs");
 const fsp = require("node:fs/promises");
+const crypto = require("node:crypto");
 const { spawn } = require("node:child_process");
 const http = require("node:http");
 const { URL } = require("node:url");
@@ -189,11 +190,20 @@ let sidecarProc = null;
 let sidecarManualStop = false;
 let sidecarRestartCount = 0;
 let sidecarReady = false;
+// P0-1: per-session bearer secret shared with the Python sidecar via env.
+// Generated once, reused across auto-restarts so the main process and the
+// (re-spawned) sidecar always agree. The sidecar refuses every protected route
+// unless the request carries `Authorization: Bearer <this secret>`.
+let sidecarSecret = "";
 
 function sidecarEnv() {
+  if (!sidecarSecret) {
+    sidecarSecret = crypto.randomBytes(32).toString("hex");
+  }
   return {
     ...process.env,
     KEVRAI_PORT: String(SIDECAR_PORT),
+    KEVRAI_SIDECAR_SECRET: sidecarSecret,
     PYTHONUNBUFFERED: "1",
     PYTHONIOENCODING: "UTF-8",
     NODE_OPTIONS: "--max-old-space-size=2048", // belt-and-braces; python ignores but pinned per spec
@@ -442,7 +452,14 @@ function sidecarFetch(p, opts = {}) {
     const req = http.request({
       host: u.hostname, port: u.port, path: u.pathname + u.search,
       method: opts.method || "GET",
-      headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
+      headers: {
+        "Content-Type": "application/json",
+        // P0-1: every control-plane call must present the per-session secret.
+        // /api/health is exempt server-side, but sending it unconditionally is
+        // harmless and keeps the caller simple.
+        ...(sidecarSecret ? { Authorization: `Bearer ${sidecarSecret}` } : {}),
+        ...(opts.headers || {}),
+      },
       timeout: timeoutMs,
     }, (res) => {
       let buf = "";

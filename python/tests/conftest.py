@@ -9,8 +9,10 @@ Everything defined here is **offline**: the fake hub server binds port 0 (the
 kernel assigns a free port) and is torn down + joined in teardown, and
 ``no_sleep`` never waits on real time.
 """
+
 from __future__ import annotations
 
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -21,6 +23,30 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # Ensure sibling test helpers (``hub_fake_server``) are importable too.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+# P0-1: the sidecar refuses every protected route unless the caller presents the
+# per-session bearer secret. The Electron main process generates one at spawn
+# time; in the test-suite we pin a fixed value so the app under test has a
+# secret to check against. This MUST be set before ``app.main`` is imported and
+# before any TestClient makes a request.
+os.environ.setdefault("KEVRAI_SIDECAR_SECRET", "test-sidecar-secret")
+
+# Inject the bearer header into EVERY TestClient in the suite, exactly like the
+# Electron main process does. Individual tests stay focused on what they
+# actually assert; the auth-enforcement tests override this per-request.
+from starlette.testclient import TestClient as _TestClient  # noqa: E402
+
+_orig_testclient_init = _TestClient.__init__
+
+
+def _testclient_init_with_bearer(self, app, *args, **kwargs):
+    headers = dict(kwargs.pop("headers", None) or {})
+    headers.setdefault("authorization", f"Bearer {os.environ['KEVRAI_SIDECAR_SECRET']}")
+    kwargs["headers"] = headers
+    _orig_testclient_init(self, app, *args, **kwargs)
+
+
+_TestClient.__init__ = _testclient_init_with_bearer
 
 
 @pytest.fixture(autouse=True)
@@ -35,6 +61,7 @@ def _reset_source_registry():
     """
     try:
         from app import main as app_main
+
         if hasattr(app_main.app, "state"):
             app_main.app.state.source_registry = None
     except Exception:

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hmac
 import json
 import logging
 import os
@@ -38,7 +39,7 @@ from fastapi import (
     Path as PathParam,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import USER_AGENT, __version__, ltx_runtime, mnn_runtime
@@ -140,6 +141,11 @@ except Exception:
     # If catalog files are missing in dev, fall back to empty.
     CATALOG, ENGINES = Catalog(version="0", models=[]), {}
 
+# P0-1 hardening: CORS is restricted to the Electron app origin plus the known
+# vite dev servers. ``file://`` is deliberately REMOVED — it let any local HTML
+# page (opened from disk) issue simple POSTs at the control plane. The real
+# boundary is the per-request Bearer secret (see ``_auth_middleware`` below);
+# CORS only governs browser reads and is kept narrow as defense-in-depth.
 ALLOWED_ORIGINS = [
     "http://localhost:5173",    # vite dev server
     "http://localhost:5174",
@@ -147,9 +153,17 @@ ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:3000",
-    "app://.",                   # electron file scheme
-    "file://",
+    "app://.",                   # Electron custom-file/protocol origin
 ]
+
+# Only the headers the Electron main process actually sends. ``*`` was removed
+# because it let any local page preflight a wider header surface.
+ALLOWED_HEADERS = ["content-type", "x-request-id", "authorization"]
+
+# Paths exempt from the Bearer-secret check. /api/health is polled by the
+# Electron main process during bootstrap and carries no state-changing
+# capability, so it stays open.
+_UNAUTHENTICATED_PATHS = {"/api/health"}
 
 
 # ---------------------------------------------------------------------------
@@ -280,7 +294,7 @@ app.add_middleware(
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
+    allow_headers=ALLOWED_HEADERS,
 )
 if _HAS_GZIP:
     app.add_middleware(GZipMiddleware, minimum_size=1024)
@@ -318,6 +332,100 @@ async def _request_id_middleware(request: Request, call_next):
         _RidToken.reset(token)
     response.headers["x-request-id"] = rid
     return response
+
+
+# ---------------------------------------------------------------------------
+# P0-1: sidecar bearer-secret authentication
+# ---------------------------------------------------------------------------
+# The sidecar binds 127.0.0.1:17890 but exposes a state-changing control plane
+# (download arbitrary URLs, install engines, git-clone skills, load/unload
+# models, read settings incl. tokens). CORS only governs *browser reads* and
+# does nothing against a local non-browser process, so we require a per-session
+# random secret that the Electron main process generates at spawn time and
+# passes via ``KEVRAI_SIDECAR_SECRET``. Every request (except /api/health) must
+# carry ``Authorization: Bearer <secret>``.
+
+
+def _sidecar_secret() -> str:
+    """Expected bearer secret from the environment.
+
+    Returns "" when the sidecar was started without the env var (e.g. a dev
+    running ``uvicorn`` directly). The middleware fails CLOSED in that case
+    rather than silently serving an unauthenticated control plane.
+    """
+    return os.environ.get("KEVRAI_SIDECAR_SECRET", "")
+
+
+def _extract_bearer(headers: Any) -> str:
+    """Pull the token out of an ``Authorization: Bearer <token>`` header.
+
+    Accepts a Starlette ``Headers`` / dict-like (HTTP and WebSocket requests)
+    or a raw ASGI header list of ``(bytes, bytes)`` pairs. Returns "" when
+    missing or malformed.
+    """
+    auth = ""
+    if hasattr(headers, "get") and callable(headers.get):
+        # Starlette Headers is case-insensitive.
+        auth = headers.get("authorization", "") or ""
+    else:  # ASGI list of (bytes, bytes) pairs
+        for pair in headers or []:
+            k, v = pair[0], pair[1]
+            if k == b"authorization":
+                auth = v.decode("latin-1", "ignore")
+                break
+    if isinstance(auth, bytes):
+        auth = auth.decode("latin-1", "ignore")
+    auth = str(auth)
+    if auth[:7].lower() == "bearer ":
+        return auth[7:].strip()
+    return ""
+
+
+def _bearer_matches(headers: Any) -> bool:
+    expected = _sidecar_secret()
+    if not expected:
+        return False
+    presented = _extract_bearer(headers)
+    return bool(presented) and hmac.compare_digest(presented, expected)
+
+
+@app.middleware("http")
+async def _auth_middleware(request: Request, call_next):
+    path = request.url.path
+    # CORS preflight must reach CORSMiddleware; never reject OPTIONS here.
+    if request.method == "OPTIONS" or path in _UNAUTHENTICATED_PATHS:
+        return await call_next(request)
+
+    if not _sidecar_secret():
+        # Started directly without Electron's generated secret: fail closed
+        # with an explicit 500 instead of silently trusting every local caller.
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": (
+                    "sidecar secret not configured (KEVRAI_SIDECAR_SECRET); "
+                    "the control plane is refused until launched by the Electron host"
+                )
+            },
+        )
+
+    if not _bearer_matches(request.headers):
+        return JSONResponse(status_code=401, content={"detail": "unauthorized"})
+
+    return await call_next(request)
+
+
+async def _ws_authorize(websocket: WebSocket) -> bool:
+    """Authenticate a WebSocket upgrade (the HTTP middleware does not cover WS).
+
+    Closes with policy-violation (1008) when the bearer secret is missing/wrong
+    or when no secret was configured at all. Returns True only when the caller
+    may proceed to ``accept()``.
+    """
+    if not _sidecar_secret() or not _bearer_matches(websocket.headers):
+        await websocket.close(code=1008)
+        return False
+    return True
 
 
 # Lightweight contextvar for log enrichment
@@ -1529,6 +1637,8 @@ async def ws_download(websocket: WebSocket, task_id: str) -> None:
     On connect, the server sends the current snapshot, then all subsequent
     events from the task queue. Closes when the task reaches a terminal state.
     """
+    if not await _ws_authorize(websocket):
+        return
     await websocket.accept()
     dl: Downloader = websocket.app.state.downloader
     task = dl.get_task(task_id)
@@ -2958,6 +3068,8 @@ async def ws_agent(websocket: WebSocket, session_id: str) -> None:
         {"event": "final", "answer": "...", "tools_used": [...], "duration_ms": N}
         {"event": "error", "message": "..."}
     """
+    if not await _ws_authorize(websocket):
+        return
     await websocket.accept()
     if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", session_id or ""):
         await websocket.send_json({"event": "error", "message": "invalid session_id"})
