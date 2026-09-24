@@ -284,7 +284,8 @@ class InstallError(RuntimeError):
 
 
 def install_pip_package(name: str, version: str | None = None,
-                        extra_index_urls: list[str] | None = None) -> dict[str, Any]:
+                        extra_index_urls: list[str] | None = None,
+                        upgrade: bool = False) -> dict[str, Any]:
     """Install a pip package using whichever pip is bundled with the sidecar.
 
     `extra_index_urls` lets the user pick specific mirrors (e.g. aliyun, tsinghua,
@@ -292,6 +293,8 @@ def install_pip_package(name: str, version: str | None = None,
     speed things up inside the firewall.
     """
     cmd = [sys.executable, "-m", "pip", "install", "--no-input", "--disable-pip-version-check"]
+    if upgrade:
+        cmd.append("--upgrade")
     # Append user-selected mirrors as additional index URLs.
     mirrors = extra_index_urls or [
         "https://mirrors.aliyun.com/pypi/simple/",
@@ -304,9 +307,15 @@ def install_pip_package(name: str, version: str | None = None,
     cmd.append(target)
     rc, out, err = _run(cmd, timeout=300.0)
     if rc != 0:
-        raise InstallError(f"pip install failed: {err.strip()[:500]}")
+        action = "升级" if upgrade else "安装"
+        tail = (err or out or "").strip()[-500:]
+        raise InstallError(
+            f"pip {action}依赖包失败：{name}。请检查网络或切换镜像源后重试。"
+            f"错误输出：{tail}"
+        )
     return {"ok": True, "name": name, "version": version, "output_tail": out[-500:]}
 
 
 def upgrade_pip_package(name: str, extra_index_urls: list[str] | None = None) -> dict[str, Any]:
-    return install_pip_package(name, version=None, extra_index_urls=extra_index_urls)
+    return install_pip_package(name, version=None, extra_index_urls=extra_index_urls,
+                               upgrade=True)
