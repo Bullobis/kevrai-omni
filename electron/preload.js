@@ -494,6 +494,7 @@ const api = {
   pickFolder:   () => invoke("dialog:pickFolder"),
   pickFile:     () => invoke("dialog:pickFile"),
   // Custom / frameless title bar controls (see main.js window:* handlers).
+  platform: process.platform,
   winMinimize:       () => invoke("window:minimize"),
   winToggleMaximize: () => invoke("window:toggle-maximize"),
   winClose:          () => invoke("window:close"),
