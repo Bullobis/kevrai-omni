@@ -1,0 +1,19 @@
+{
+  "name": "kevrai-promo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Kevrai Omni — programmatic promo video built with Remotion",
+  "license": "SEE LICENSE IN ../LICENSE",
+  "scripts": {
+    "data": "node prepare-data.mjs",
+    "studio": "npm run data && remotion studio",
+    "render": "npm run data && remotion render src/index.js Promo ../assets/media/promo.mp4",
+    "render:fast": "npm run data && remotion render src/index.js Promo ../assets/media/promo.mp4 --concurrency=50%"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.528",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.528"
+  }
+}

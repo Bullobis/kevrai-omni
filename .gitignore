@@ -22,6 +22,11 @@ engines/
 dist-packages/
 docs/promo_assets/
 
+# Remotion promo — generated data + deps/bundle (source is tracked)
+promo/src/data.json
+promo/node_modules/
+promo/out/
+
 # crash dumps
 core.*
 core
