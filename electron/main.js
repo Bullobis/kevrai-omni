@@ -781,7 +781,8 @@ function registerIpc() {
     assert(isString(id, 128), "id: invalid");
     return sidecarFetch(`/api/models/${encodeURIComponent(id)}/gguf-files`);
   });
-  ipcMain.handle("api:gguf-repos",    async () => sidecarFetch("/api/gguf-repos"));
+  ipcMain.handle("api:gguf-repos", async () =>
+    sidecarFetch("/api/gguf-repos", { timeoutMs: 120_000 }));
   ipcMain.handle("api:engines",       async () => sidecarFetch("/api/engines"));
   ipcMain.handle("api:engines:install", async (_e, engine_id) => {
     assert(isString(engine_id, 128), "engine_id: invalid");
@@ -1565,8 +1566,18 @@ async function bootstrap() {
 
   registerIpc();
 
-  // webSecurity default is true; explicit here for clarity.
-  try { session.defaultSession.webRequest.onBeforeRequest((_d, cb) => cb({ cancel: false })); } catch (_) {}
+  // webSecurity default is true; explicit here for clarity. The application
+  // does not use camera, microphone, geolocation, notifications, or other
+  // Chromium permission-gated features, so permission checks default deny.
+  try {
+    const defaultSession = session.defaultSession;
+    defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
+    defaultSession.setPermissionCheckHandler(() => false);
+    if (typeof defaultSession.setDevicePermissionHandler === "function") {
+      defaultSession.setDevicePermissionHandler(() => false);
+    }
+    defaultSession.webRequest.onBeforeRequest((_d, cb) => cb({ cancel: false }));
+  } catch (_) {}
 
   // Deny every Chromium permission by default (camera, microphone, geolocation,
   // notifications, clipboard-read, media keys, etc.). The app does not request

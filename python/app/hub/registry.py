@@ -462,8 +462,9 @@ class HubRegistry:
         has_more = bool(next_cursors) and len(deduped) > 0
 
         next_cursor = encode_cursor(spec.signature(), next_cursors) if has_more else ""
-        degraded = bool(warnings) or (not any(buckets.get(h) for h in REMOTE_HUBS if h in self._adapters)
-                                      and any(h in self._adapters for h in REMOTE_HUBS))
+        requested_remote = [h for h in REMOTE_HUBS if h in sources]
+        degraded = bool(warnings) or (not any(buckets.get(h) for h in requested_remote)
+                                      and bool(requested_remote))
         return MergedPage(items=trimmed, next_cursor=next_cursor, has_more=has_more,
                           counts=counts, warnings=warnings, degraded=degraded)
 

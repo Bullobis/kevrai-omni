@@ -1,0 +1,103 @@
+name: rolling-demo
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rolling-demo-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  render-and-publish:
+    name: Render and update rolling demo
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: video/package-lock.json
+
+      - name: Generate current demo props
+        run: |
+          python3 - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          root = Path('.')
+          models = json.loads((root / 'catalog/models.json').read_text(encoding='utf-8'))
+          engines = json.loads((root / 'catalog/engines.json').read_text(encoding='utf-8'))
+          props = {
+              'generatedAt': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC'),
+              'modelCount': len(models.get('models', [])),
+              'engineCount': len(engines.get('engines', [])),
+          }
+          (root / 'video/demo-props.json').write_text(
+              json.dumps(props, indent=2) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(props, indent=2))
+          PY
+
+      - name: Install Remotion dependencies
+        working-directory: video
+        run: npm ci
+
+      - name: Render demo
+        working-directory: video
+        run: |
+          set -e
+          browser=""
+          for candidate in \
+            /usr/bin/chromium-browser \
+            /usr/bin/chromium \
+            /usr/bin/google-chrome-stable; do
+            if [ -x "$candidate" ]; then
+              browser="$candidate"
+              break
+            fi
+          done
+
+          args="remotion/index.ts KevraiDemo kevrai-omni-demo.mp4 --props=./demo-props.json --overwrite"
+          if [ -n "$browser" ]; then
+            npx remotion render $args --browser-executable="$browser"
+          else
+            npx remotion render $args
+          fi
+
+      - name: Update rolling-demo release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          notes_file="$(mktemp)"
+          {
+            echo "Automated rolling demo."
+            echo
+            cat video/demo-props.json
+            echo
+            echo "Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > "$notes_file"
+
+          if gh release view rolling-demo; then
+            gh release upload rolling-demo video/kevrai-omni-demo.mp4 video/demo-props.json --clobber
+            gh release edit rolling-demo --notes-file "$notes_file" --prerelease
+          else
+            gh release create rolling-demo \
+              video/kevrai-omni-demo.mp4 video/demo-props.json \
+              --title "Rolling demo" \
+              --notes-file "$notes_file" \
+              --prerelease \
+              --target main
+          fi
