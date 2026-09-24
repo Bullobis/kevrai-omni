@@ -172,8 +172,14 @@ async def _detect_ascend() -> list[GPUInfo]:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
+    except (FileNotFoundError, PermissionError, OSError):
+        return []
+    try:
         stdout_b, _ = await asyncio.wait_for(proc.communicate(), timeout=3.0)
-    except (FileNotFoundError, asyncio.TimeoutError, OSError):
+    except asyncio.TimeoutError:
+        # Regression: a hanging `npu-smi` must not leak a child process. The
+        # nvidia/amd detectors already kill on timeout; this one must match.
+        proc.kill()
         return []
     if proc.returncode != 0:
         return []
