@@ -60,7 +60,10 @@ class Settings(BaseModel):
 
     # Fields legitimately start with "model_" (model_dir); opt out of the
     # pydantic v2 protected namespace warning.
-    model_config = {"protected_namespaces": ()}
+    # ``validate_assignment`` makes ``setattr`` re-run field validators, so the
+    # PUT /api/settings patch loop cannot silently persist an out-of-Literal
+    # value (e.g. theme="rainbow") that bypassed model construction.
+    model_config = {"protected_namespaces": (), "validate_assignment": True}
 
     schema_version: int = 1
 
