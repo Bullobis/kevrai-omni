@@ -95,6 +95,33 @@ function setHealthErr(msg) {
   dot.className = "dot err"; text.textContent = "sidecar: ✗ " + msg;
 }
 
+// ── 启动期：等待 sidecar 健康（快速轮询，自愈，不依赖事件时序）──
+async function waitForSidecarReady(timeoutMs = 30_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try { await api.health(); return true; } catch (_) {}
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return false;
+}
+function hideBootSplash() {
+  const s = $("#boot-splash");
+  if (!s) return;
+  s.classList.add("done");
+  setTimeout(() => { if (s.parentNode) s.parentNode.removeChild(s); }, 280);
+}
+function setBootError(msg) {
+  $("#boot-splash-msg").textContent = msg;
+  $("#boot-splash-err").hidden = false;
+  $("#boot-splash-sub").hidden = true;
+  $("#boot-splash-bar").hidden = true;
+}
+function clearBootError() {
+  $("#boot-splash-err").hidden = true;
+  $("#boot-splash-sub").hidden = false;
+  $("#boot-splash-bar").hidden = false;
+}
+
 function renderGGUF() {
   const el = $("#gguf-repos");
   if (!el) return;
@@ -132,7 +159,16 @@ function renderLocal() {
   const el = $("#local-list");
   if (!el) return;
   const list = state.local || [];
-  if (!list.length) { el.innerHTML = `<div class="hint">还没有本地模型，拖拽文件到窗口或使用下方按钮导入。</div>`; return; }
+  if (!list.length) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📦</div>
+        <p class="empty-state-title">还没有本地模型</p>
+        <p class="empty-state-sub">从「模型市场」下载，或把 .gguf 文件 / 模型文件夹拖进窗口</p>
+        <button class="btn btn-primary btn-sm" data-action="goto-market" type="button">去模型市场</button>
+      </div>`;
+    return;
+  }
   el.innerHTML = list.map((m) => {
     // v2.8.0 DIY: compatible_engines comes from /api/models/local (read-time
     // detection) — .gguf → llama.cpp, config.json+*.mnn → mnn, HF dir →
@@ -246,6 +282,12 @@ function wireGlobalUI() {
     // open downloads overlay (anywhere)
     const dl = e.target.closest("[data-action=open-downloads]");
     if (dl) { e.preventDefault(); showDownloads(); }
+    // empty-state CTA: jump back to the market pane
+    const toMarket = e.target.closest("[data-action=goto-market]");
+    if (toMarket) {
+      e.preventDefault();
+      document.querySelector('.pane-tab[data-tab="market"]')?.click();
+    }
     // reveal a local model in the OS file manager (restored from v1)
     const reveal = e.target.closest("[data-action=reveal-local]");
     if (reveal) {
@@ -363,7 +405,19 @@ function wirePaletteEvents() {
   });
 }
 
+async function startApp() {
+  // sidecar 就绪后的首启：拉设置（决定主题）→ 隐藏启动画面 → 加载全部数据
+  try {
+    const s = await api.getSettings();
+    setState({ settings: s || {} });
+    applyTheme();
+  } catch (_) {}
+  hideBootSplash();
+  loadAll().catch((e) => toast("加载失败：" + (e?.message || e), { kind: "err" }));
+}
+
 async function bootstrap() {
+  // 1) 不依赖 sidecar 的同步装配
   initModels();
   initSearch(getVgrid());
   wireSettings();
@@ -382,22 +436,13 @@ async function bootstrap() {
   //   - wireEngineUpdates → #btn-engines-check-updates 点击无响应
   wireOnboarding();
   wireEngineUpdates();
-  // logo / 头像的加载失败降级（替代此前被 CSP 拦截的内联 onerror）
   wireLogoFallbacks();
 
-  // Initial settings fetch (for theme)
-  try {
-    const s = await api.getSettings();
-    setState({ settings: s || {} });
-    applyTheme();
-  } catch (_) {}
-
-  // Pre-fill settings form with current settings too.
   document.addEventListener("kevrai:open-settings", () => openSettings().catch(() => {}));
-
-  // Sidebar settings
   const settingsBtn = document.querySelector("[data-action=open-settings]");
-  if (settingsBtn) settingsBtn.addEventListener("click", (e) => { e.preventDefault(); openSettings().catch(() => {}); });
+  if (settingsBtn) settingsBtn.addEventListener("click", (e) => {
+    e.preventDefault(); openSettings().catch(() => {});
+  });
 
   // v3.0.0 — Sidebar expand/collapse toggle (persisted in localStorage)
   const sidebarToggle = document.getElementById("sidebar-toggle");
@@ -433,8 +478,30 @@ async function bootstrap() {
     });
   });
 
-  // First render
-  loadAll().catch((e) => toast("加载失败：" + (e?.message || e), { kind: "err" }));
+  // 运行中 sidecar 崩溃/断开：主进程会自动重启，这里先提示并标记健康状态，
+  // 恢复后由既有 15s 健康轮询感知。
+  window.kevrai.onSidecarDown(() => {
+    toast("本地引擎连接断开，正在尝试自动恢复…", { kind: "warn" });
+    setHealthErr("连接断开，自动恢复中");
+  });
+
+  // 2) 等待 sidecar 就绪（启动画面在此期间可见）
+  let ready = await waitForSidecarReady();
+  if (!ready) {
+    setBootError("本地引擎启动超时。若反复失败，请检查 Python 环境后点击重试。");
+    $("#boot-splash-retry").addEventListener("click", async () => {
+      const btn = $("#boot-splash-retry");
+      btn.disabled = true; btn.textContent = "重启中…";
+      let okNow = false;
+      try { await window.kevrai.restartSidecar(); okNow = true; } catch (_) {}
+      if (!okNow) okNow = await waitForSidecarReady(15_000);
+      btn.disabled = false; btn.textContent = "重试";
+      if (okNow) { clearBootError(); await startApp(); }
+      else setBootError("仍无法启动本地引擎，请稍后再试。");
+    });
+    return;
+  }
+  await startApp();
 }
 
 document.addEventListener("DOMContentLoaded", () => {

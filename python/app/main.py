@@ -936,10 +936,24 @@ def progress() -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+_GPU_CACHE: dict[str, Any] = {"ts": 0.0, "data": None}
+_GPU_CACHE_TTL = 300.0
+
+
 @app.get("/api/gpu")
-async def gpu() -> dict[str, Any]:
+async def gpu(refresh: int = 0) -> dict[str, Any]:
+    # GPU 拓扑在一次运行内不变：重复探测（nvidia-smi / wmic shell-out）走缓存，
+    # 从 ~150–400ms 降到 ~0.1ms。?refresh=1 强制重探（与 /api/hardware 一致）。
+    now = time.time()
+    if (not refresh and _GPU_CACHE["data"]
+            and now - _GPU_CACHE["ts"] < _GPU_CACHE_TTL):
+        return {"gpus": _GPU_CACHE["data"], "count": len(_GPU_CACHE["data"]),
+                "cached": True}
     gpus = await detect_gpus()
-    return {"gpus": [g.model_dump() for g in gpus], "count": len(gpus)}
+    dumped = [g.model_dump() for g in gpus]
+    _GPU_CACHE["data"] = dumped
+    _GPU_CACHE["ts"] = now
+    return {"gpus": dumped, "count": len(dumped), "cached": False}
 
 
 # ---------------------------------------------------------------------------

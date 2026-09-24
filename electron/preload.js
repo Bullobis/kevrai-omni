@@ -534,6 +534,9 @@ const api = {
     return invoke("kevrai:log-event", { level, msg });
   },
 
+  // ----- Sidecar lifecycle -----
+  restartSidecar:  () => invoke("sidecar:restart"),
+
   // ----- Subscriptions / events -----
   onHealth:        (cb) => listen("sidecar:health", cb),
   onSidecarDown:   (cb) => listen("sidecar:down", cb),

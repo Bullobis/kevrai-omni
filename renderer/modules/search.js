@@ -268,6 +268,23 @@ export async function runSearch(opts = {}) {
     page_size: searchState.pageSize,
   };
 
+  // 快路径：有查询词时，先对已加载到内存的本地精选（state.models）即时过滤
+  // 上屏，敲键到结果 <16ms（纯内存 filter），不必等一次 hub HTTP 往返；
+  // 远端 hub 结果回来后由下方逻辑照常覆盖（reqSeq 守卫仍生效）。
+  const qTrim = searchState.q.trim().toLowerCase();
+  if (qTrim && Array.isArray(state.models) && state.models.length) {
+    const local = state.models.filter((m) => {
+      const hay = [m.name, m.id, ...(Array.isArray(m.tags) ? m.tags : [])]
+        .map((x) => String(x || "").toLowerCase()).join(" ");
+      return hay.includes(qTrim);
+    });
+    if (local.length) {
+      searchState.items = local;
+      vgrid.setItems(local);
+      updateCount(`${local.length} 条 · 本地精选（在线结果加载中…）`);
+    }
+  }
+
   let r;
   try {
     r = await callHubSearch(params);

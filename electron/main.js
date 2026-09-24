@@ -35,7 +35,7 @@ const { URL } = require("node:url");
 const SIDECAR_PORT = 17890;
 const SIDECAR_HOST = "127.0.0.1";
 const SIDECAR_HEALTH_TIMEOUT_MS = 30_000;
-const SIDECAR_HEALTH_INTERVAL_MS = 2_000;
+const SIDECAR_HEALTH_INTERVAL_MS = 300;
 const SHUTDOWN_TIMEOUT_MS = 5_000;
 const ALLOW_DEFAULT = ["huggingface.co", "github.com", "modelscope.cn"];
 const SIDECAR_RESTART_MAX = 3;
@@ -403,7 +403,8 @@ function startSidecar() {
     "-X", "utf8", "-u",
     "-m", "uvicorn", "app.main:app",
     "--host", SIDECAR_HOST, "--port", String(SIDECAR_PORT),
-    "--log-level", "info",
+    "--no-access-log",
+    "--log-level", "warning",
   ];
   const cwd = path.dirname(path.dirname(SIDECAR_PY));
   logInfo("spawn sidecar:", py, cmd.join(" "), "cwd=", cwd);
@@ -518,6 +519,28 @@ async function stopSidecar(graceMs = SHUTDOWN_TIMEOUT_MS) {
   try { sidecarProc.kill("SIGKILL"); } catch (_) {}
 }
 
+// Manually restart the sidecar (renderer "retry" button). Distinct from the
+// automatic crash-restart inside startSidecar(): stop the old process cleanly,
+// wait for it to actually exit (freeing the port), then spawn fresh.
+async function restartSidecar() {
+  const old = sidecarProc;
+  if (old && !old.killed && old.exitCode === null) {
+    await new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        try { old.kill("SIGKILL"); } catch (_) {}
+        resolve();
+      }, 2_000);
+      old.once("exit", () => { clearTimeout(timer); resolve(); });
+      sidecarManualStop = true;
+      try { old.kill("SIGTERM"); } catch (_) {}
+    });
+  }
+  sidecarManualStop = false;
+  sidecarReady = false;
+  sidecarRestartCount = 0;
+  return startSidecar();
+}
+
 // ---------------------------------------------------------------------------
 // Window
 // ---------------------------------------------------------------------------
@@ -545,6 +568,7 @@ function createWindow(bootstrapMode = false) {
     // PNG works from inside the asar archive on every platform (.ico does not).
     icon: path.join(__dirname, "..", "assets", "icons", "icon-256.png"),
     backgroundColor: resolveBackgroundColor(),
+    show: false,
     autoHideMenuBar: true,
     // macOS keeps native traffic lights (hiddenInset); Linux/Windows use the
     // in-app custom title-bar controls (frame:false) to avoid a double title bar.
@@ -571,6 +595,11 @@ function createWindow(bootstrapMode = false) {
 
   mainWindow.loadFile(path.join(__dirname, "..", "renderer",
     bootstrapMode ? "bootstrap.html" : "index.html"));
+
+  // Show only once the first frame is painted — no empty white frame.
+  mainWindow.once("ready-to-show", () => {
+    if (!mainWindow.isDestroyed()) mainWindow.show();
+  });
 
   // Hard-deny any attempt to open a new window.
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -765,6 +794,11 @@ function installUpdate() {
 function registerIpc() {
   // Original / first-party surface (kept stable so renderer/app.js style wiring still works).
   ipcMain.handle("api:health",       async () => sidecarFetch("/api/health"));
+  ipcMain.handle("sidecar:restart",  async () => {
+    const ok = await restartSidecar();
+    if (!ok) throw err("sidecar restart failed", "ESIDECAR");
+    return waitForSidecar();
+  });
   ipcMain.handle("api:categories",   async () => sidecarFetch("/api/categories"));
   ipcMain.handle("api:models", async (_e, params) => {
     const p = (params && typeof params === "object") ? params : {};
@@ -847,7 +881,7 @@ function registerIpc() {
 
   // --- New handlers -------------------------------------------------------
 
-  ipcMain.handle("kevrai:detect-gpu", async () => sidecarFetch("/api/gpu"));
+  ipcMain.handle("kevrai:detect-gpu", async () => sidecarFetch("/api/gpu?refresh=1"));
 
   // v2.2.0 — environment / dependency / engine management IPC.
   ipcMain.handle("kevrai:env-status", async () => sidecarFetch("/api/env/status"));
@@ -1587,30 +1621,30 @@ async function bootstrap() {
     app.quit();
     return;
   }
-  try {
-    const info = await waitForSidecar();
-    logInfo("sidecar healthy");
-    notifyRenderer("sidecar:health", { ok: true, info });
-    createWindow();
-  } catch (e) {
-    logError("sidecar NOT ready:", e.message);
-    const tail = sidecarStderrTail.join("\n");
-    const depsMissing = /ModuleNotFoundError|No module named|ImportError/.test(tail);
-    if (depsMissing) {
-      // 有 Python 但缺依赖：同样进引导页，一键补装依赖。
-      createWindow(true);
-      return;
-    }
-    dialog.showErrorBox(
-      "Kevrai Omni — Python sidecar failed to start",
-      `The Python inference sidecar could not be reached on http://${SIDECAR_HOST}:${SIDECAR_PORT}.\n\n` +
-        `Reason: ${e.message}\n\n` +
-        `Fix: install Python 3.10+ and the deps in python/pyproject.toml ` +
-        `(pip install -r requirements), then relaunch.`
-    );
-    app.quit();
-    return;
-  }
+
+  // 关键：先建窗口（renderer 自带启动等待态），再在后台等待 sidecar。
+  // Python 启动被「藏」在窗口启动画面之后，用户感知为秒开 + 转圈，而非卡死。
+  createWindow();
+
+  waitForSidecar()
+    .then((info) => {
+      logInfo("sidecar healthy");
+      notifyRenderer("sidecar:health", { ok: true, info });
+    })
+    .catch((e) => {
+      logError("sidecar NOT ready:", e.message);
+      const tail = sidecarStderrTail.join("\n");
+      const depsMissing = /ModuleNotFoundError|No module named|ImportError/.test(tail);
+      if (depsMissing) {
+        // 有 Python 但缺依赖：切到引导页，一键补装依赖。
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.loadFile(path.join(__dirname, "..", "renderer", "bootstrap.html"));
+        }
+        return;
+      }
+      // 其它启动失败：不弹系统框、不强制退出，通知 renderer 显示可重试的错误页。
+      notifyRenderer("sidecar:down", { reason: "start-timeout", message: e.message });
+    });
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -5,6 +5,7 @@
 import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { unwrap } from "./net.js";
+import { renderMarkdown } from "./markdown.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -456,11 +457,31 @@ function _appendMessage(role, content, animate = false, tools = []) {
   const toolsHtml = tools && tools.length
     ? `<div class="agent-tools-used">工具: ${tools.map((t) => `<span class="agent-tool-tag">${esc(t)}</span>`).join("")}</div>`
     : "";
+  // 助手回复走 Markdown 渲染（内部已做 HTML 转义与链接白名单）；用户输入保持纯文本。
+  const bodyHtml = role === "assistant"
+    ? `<div class="agent-msg-content md-body">${renderMarkdown(content)}</div>`
+    : `<div class="agent-msg-content">${esc(content).replace(/\n/g, "<br>")}</div>`;
+  const actionsHtml = role === "assistant"
+    ? `<div class="agent-msg-actions"><button type="button" class="agent-msg-copy btn btn-sm" title="复制回复内容">复制</button></div>`
+    : "";
   div.innerHTML = `
     <div class="agent-msg-label">${esc(label)}</div>
-    <div class="agent-msg-content">${esc(content).replace(/\n/g, "<br>")}</div>
+    ${bodyHtml}
+    ${actionsHtml}
     ${toolsHtml}
   `;
+  const copyBtn = div.querySelector(".agent-msg-copy");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(String(content));
+        copyBtn.textContent = "已复制";
+        setTimeout(() => { copyBtn.textContent = "复制"; }, 1500);
+      } catch {
+        toast("复制失败", { kind: "err" });
+      }
+    });
+  }
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;
 }
