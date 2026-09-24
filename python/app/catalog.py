@@ -38,7 +38,9 @@ DEFAULT_MODEL_HOSTS: set[str] = {
     "hf-mirror.com",
     # Community/popular mirrors (as many sources as possible)
     "hf-mirror.us",
-    "hf-cdn.sufy.com",
+    # NOTE: hf-cdn.sufy.com is a phishing/typosquat mirror. It is deliberately
+    # NOT here — see DEFAULT_BLOCKED_MIRRORS. (P0-3: previously it was wrongly
+    # added to the positive allowlist, contradicting SECURITY.md.)
     "huggingface.dl.in.tel",
     "hf-cn-mirror.com",
     "modelscope.cn",
@@ -83,9 +85,10 @@ DEFAULT_ENGINE_HOSTS: set[str] = DEFAULT_MODEL_HOSTS | {
 # Backward-compat aliases (older callers/tests imported these names).
 ALLOWED_MODEL_HOSTS = DEFAULT_MODEL_HOSTS
 ALLOWED_ENGINE_HOSTS = DEFAULT_ENGINE_HOSTS
-# Removed in v2.2.0: no host is refused by default. Kept as an empty set
-# so older imports don't break.
-DEFAULT_BLOCKED_MIRRORS: set[str] = set()
+# P0-3: hard-blocked mirrors. These are refused UNCONDITIONALLY by
+# ``downloader._check_url`` (regardless of whether the positive allowlist is
+# enforced) — see SECURITY.md. ``hf-cdn.sufy.com`` is a phishing typosquat.
+DEFAULT_BLOCKED_MIRRORS: set[str] = {"hf-cdn.sufy.com"}
 
 
 # ---------------------------------------------------------------------------

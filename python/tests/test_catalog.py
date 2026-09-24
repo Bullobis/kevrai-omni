@@ -1,4 +1,5 @@
 """Tests for catalog loading and v2.2.0 permissive multi-source policy."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -36,10 +37,14 @@ def test_blocked_mirror_in_models_now_accepted():
     the in-app Settings → Download sources panel."""
     bad = {
         "version": "1.0",
-        "models": [{
-            "id": "bad", "category": "llm", "name": "bad",
-            "repo": "hf-cdn.sufy.com/some/repo",
-        }],
+        "models": [
+            {
+                "id": "bad",
+                "category": "llm",
+                "name": "bad",
+                "repo": "hf-cdn.sufy.com/some/repo",
+            }
+        ],
         "gguf_repos": [],
     }
     cat = Catalog.model_validate(bad)
@@ -51,8 +56,14 @@ def test_is_host_allowed_truth_table():
     accurate membership for the curated default set, but a host outside the
     set simply returns False (it is not "blocked", it is just not
     recognised by the curated default)."""
-    for ok in ["huggingface.co", "cdn-lfs.huggingface.co", "hf-mirror.com",
-               "github.com", "mirrors.aliyun.com", "pypi.org"]:
+    for ok in [
+        "huggingface.co",
+        "cdn-lfs.huggingface.co",
+        "hf-mirror.com",
+        "github.com",
+        "mirrors.aliyun.com",
+        "pypi.org",
+    ]:
         assert is_host_allowed(f"https://{ok}/x", DEFAULT_MODEL_HOSTS)
     for bad in ["someshadysite.example.com", "evil.example.com"]:
         # NOT in the default allowlist (advisory, not enforced).
@@ -66,10 +77,10 @@ def test_engine_host_whitelist():
         assert is_host_allowed(f"https://{ok}/x", ALLOWED_ENGINE_HOSTS)
 
 
-def test_default_blocked_mirrors_empty():
-    """v2.2.0: the global blocklist is empty by design. The user opts in
-    to any mirror via the in-app UI."""
-    assert set() == DEFAULT_BLOCKED_MIRRORS
+def test_default_blocked_mirrors():
+    """P0-3: the global blocklist hard-refuses known phishing mirrors (e.g.
+    hf-cdn.sufy.com), independent of the positive allowlist."""
+    assert "hf-cdn.sufy.com" in DEFAULT_BLOCKED_MIRRORS
 
 
 def test_every_model_has_multi_source_mirrors():
@@ -80,12 +91,10 @@ def test_every_model_has_multi_source_mirrors():
     exempt — by definition they have no real repo yet.
     """
     cat, _ = load_catalog(CATALOG_DIR)
-    missing = [m.id for m in cat.models
-               if m.category != "pending" and not (m.sources or [])]
+    missing = [m.id for m in cat.models if m.category != "pending" and not (m.sources or [])]
     assert not missing, f"non-pending models without sources[]: {missing[:10]}"
     # For non-pending models, at least 2 mirrors each (official + mirror).
-    short = [m.id for m in cat.models
-             if m.category != "pending" and len(m.sources or []) < 2]
+    short = [m.id for m in cat.models if m.category != "pending" and len(m.sources or []) < 2]
     assert not short, f"non-pending models with <2 sources: {short[:10]}"
 
 
@@ -109,5 +118,6 @@ def test_pending_minimax_2k_present():
     cat, _ = load_catalog(CATALOG_DIR)
     pend = [m for m in cat.models if m.category == "pending"]
     assert pend, "must have at least one pending entry"
-    assert any("MiniMax" in m.name or "minimax" in (m.description or "").lower() for m in pend), \
-        "MiniMax 2K pending entry missing"
+    assert any(
+        "MiniMax" in m.name or "minimax" in (m.description or "").lower() for m in pend
+    ), "MiniMax 2K pending entry missing"
