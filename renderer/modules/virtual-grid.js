@@ -32,10 +32,34 @@ export class VirtualGrid {
     this.viewport.appendChild(this.spacer);
 
     this.items = [];
-    this.scrollHandler = () => this._render();
-    this.resizeHandler = () => this._layout();
+    // rAF coalescing: scroll and resize fire at high frequency; without a frame
+    // gate each event synchronously re-rendered/re-laid-out the whole window,
+    // which janked fast scrolling and window resizing. One pass per frame is
+    // enough (the ±4-row overscan keeps neighbours pre-mounted).
+    this._raf = 0;
+    this._rafResize = 0;
+    this.scheduleRender = () => {
+      if (this._raf) return;
+      this._raf = requestAnimationFrame(() => { this._raf = 0; this._render(); });
+    };
+    this.scrollHandler = () => this.scheduleRender();
+    this.resizeHandler = () => {
+      if (this._rafResize) return;
+      this._rafResize = requestAnimationFrame(() => { this._rafResize = 0; this._layout(); });
+    };
+    // Cards expose role="button" + tabindex; let Enter/Space activate them so
+    // keyboard users can open the detail panel (previously mouse-only).
+    this.keydownHandler = (e) => {
+      if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+      const t = e.target && e.target.closest ? e.target.closest("[data-idx]") : null;
+      if (!t) return;
+      e.preventDefault();
+      const idx = +t.dataset.idx;
+      this.onItemClick(idx, this.items[idx], e);
+    };
     this.viewport.addEventListener("scroll", this.scrollHandler, { passive: true });
     window.addEventListener("resize", this.resizeHandler);
+    this.viewport.addEventListener("keydown", this.keydownHandler);
     // Click delegation
     this.viewport.addEventListener("click", (e) => {
       const t = e.target.closest("[data-idx]");
@@ -47,7 +71,10 @@ export class VirtualGrid {
   }
 
   _defaultCols() {
-    const w = this.host.clientWidth || 1024;
+    // Prefer the viewport's inner width: it excludes the vertical scrollbar,
+    // unlike host.clientWidth, so the column count matches the space the items
+    // actually get.
+    const w = (this.viewport && this.viewport.clientWidth) || this.host.clientWidth || 1024;
     const min = 280, pad = this.padding * 2, gap = this.gap;
     return Math.max(1, Math.floor((w - pad + gap) / (min + gap)));
   }
@@ -112,8 +139,12 @@ export class VirtualGrid {
         node.classList.add(this.itemClass);
         node.dataset.idx = String(idx);
         node.style.position = "absolute";
-        node.style.left   = `${this.padding + c * (this.host.clientWidth - this.padding*2) / cols}px`;
-        node.style.width  = `${(this.host.clientWidth - this.padding*2) / cols - this.gap}px`;
+        // Use the viewport inner width (excludes the vertical scrollbar). The
+        // old host.clientWidth included the scrollbar gutter, which pushed the
+        // rightmost column ~15px under the scrollbar and clipped its content.
+        const innerW = this.viewport.clientWidth - this.padding * 2;
+        node.style.left   = `${this.padding + c * innerW / cols}px`;
+        node.style.width  = `${innerW / cols - this.gap}px`;
         node.style.top    = `${this.padding + r * rowH}px`;
         node.style.height = `${this.itemHeight}px`;
         frag.appendChild(node);
@@ -151,6 +182,9 @@ export class VirtualGrid {
   destroy() {
     this.viewport.removeEventListener("scroll", this.scrollHandler);
     window.removeEventListener("resize", this.resizeHandler);
+    this.viewport.removeEventListener("keydown", this.keydownHandler);
+    if (this._raf) cancelAnimationFrame(this._raf);
+    if (this._rafResize) cancelAnimationFrame(this._rafResize);
     this.host.replaceChildren();
   }
 }
