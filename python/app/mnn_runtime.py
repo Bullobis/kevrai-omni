@@ -29,6 +29,11 @@ from typing import Any
 log = logging.getLogger("kevrai.mnn")
 
 _LOCK = threading.Lock()
+
+# 流式生成轮询的墙钟上限。C++ 引擎一旦死锁/挂起，后台线程永远不会 set done 事件，
+# 而 chat_stream 全程持有 _LOCK——不设上限会让整个 MNN 子系统永久不可用。
+_STREAM_GENERATION_TIMEOUT_S = 600.0
+
 _STATE: dict[str, Any] = {
     "loaded": False,
     "model_dir": "",
@@ -178,6 +183,7 @@ def chat(prompt: str, history: list[dict[str, str]] | None = None,
             raise
         elapsed = time.monotonic() - t0
         _STATE["chat_count"] += 1
+        _STATE["error"] = ""  # 成功一次后清掉上一轮的失败残留
         text = str(out or "")
         return {
             "text": text,
@@ -292,6 +298,7 @@ def chat_multimodal(prompt: str, history: list[dict[str, str]] | None = None,
             raise
         elapsed = time.monotonic() - t0
         _STATE["chat_count"] += 1
+        _STATE["error"] = ""  # 成功一次后清掉上一轮的失败残留
         text = str(out or "")
         return {
             "text": text,
@@ -356,7 +363,15 @@ def chat_stream(prompt: str, history: list[dict[str, str]] | None = None,
             t = threading.Thread(target=_run, daemon=True)
             t.start()
             prev = ""
+            deadline = time.monotonic() + _STREAM_GENERATION_TIMEOUT_S
             while not done.is_set():
+                if time.monotonic() >= deadline:
+                    # 引擎挂死：记录错误并抛超时。锁随生成器退出而释放，
+                    # 后台 daemon 线程最终会自行结束（见模块 docstring 的提案说明）。
+                    _STATE["error"] = (
+                        f"MNN 流式生成超时（{_STREAM_GENERATION_TIMEOUT_S:.0f}s 无完成信号）"
+                    )
+                    raise TimeoutError(_STATE["error"])
                 try:
                     ctx = _LLM.get_context() or {}
                 except Exception:  # noqa: BLE001
@@ -374,8 +389,10 @@ def chat_stream(prompt: str, history: list[dict[str, str]] | None = None,
             if cur != prev:
                 yield cur[len(prev):], False
             if err:
+                _STATE["error"] = str(err[0])
                 raise err[0]
             _STATE["chat_count"] += 1
+            _STATE["error"] = ""  # 成功后清掉上一轮的失败残留
             yield "", True
             return
 
