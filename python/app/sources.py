@@ -14,6 +14,7 @@ No host is refused — only malformed schemes or unreachable hosts are skipped.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -92,6 +93,7 @@ async def _probe_one(client: httpx.AsyncClient, url: str) -> SourceProbe:
                            speed_mbps=0, status=0, size_bytes=0,
                            error=f"unsupported scheme: {parsed.scheme}")
     t0 = time.perf_counter()
+    resp: httpx.Response | None = None
     try:
         req = client.build_request(
             "GET", url,
@@ -108,7 +110,6 @@ async def _probe_one(client: httpx.AsyncClient, url: str) -> SourceProbe:
         elapsed = time.perf_counter() - t0
         size = len(body)
         speed = (size / (1024 * 1024)) / max(elapsed, 1e-6) if elapsed > 0 else 0
-        await resp.aclose()
         # 2xx and 206 (partial) are both acceptable
         ok = 200 <= resp.status_code < 400
         return SourceProbe(
@@ -121,6 +122,14 @@ async def _probe_one(client: httpx.AsyncClient, url: str) -> SourceProbe:
         return SourceProbe(url=url, host=host, ok=False,
                            latency_ms=elapsed * 1000.0, speed_mbps=0,
                            status=0, size_bytes=0, error=str(e)[:200])
+    finally:
+        # `client.send()` does NOT read/close the body — the caller owns the
+        # response. Without this, a mid-iteration network error jumped straight
+        # to `except` and left the connection half-open in the pool until the
+        # whole batch finished (a slow leak under repeated flaky probes).
+        if resp is not None:
+            with contextlib.suppress(Exception):
+                await resp.aclose()
 
 
 async def measure_sources(
