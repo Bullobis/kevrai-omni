@@ -905,6 +905,19 @@ body.dragging .drop-mask { display: flex; }
 .pill.hub-curated { background: rgba(80, 200, 120, 0.18); }
 
 /* ---------------------------------------------------------------------------
+   v2.9.1 — 统一内联 SVG 图标集（lucide/feather 风格，stroke=currentColor）
+   替换侧边栏与标题栏的 emoji / unicode 几何符号，跨平台字形一致。
+   仅补 SVG 尺寸，不改按钮本身的布局与配色。
+   --------------------------------------------------------------------------- */
+.ico svg.ic, button.ghost.icon svg.ic, .sidebar-foot button.ghost svg.ic { display: block; }
+.sidebar .ico svg.ic { width: 18px; height: 18px; }
+button.ghost.icon { display: inline-flex; align-items: center; justify-content: center; }
+button.ghost.icon svg.ic { width: 16px; height: 16px; }
+.sidebar-foot .ghost.full {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: var(--fs-xs);
+}
+.sidebar-foot .ghost.full svg.ic { width: 15px; height: 15px; }
    Command palette (Ctrl/Cmd+K) — Cherry-Studio-style quick navigation
    --------------------------------------------------------------------------- */
 .cmd-overlay {
