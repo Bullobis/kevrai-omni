@@ -2478,6 +2478,9 @@ async def v1_chat_completions(req: V1ChatReq):
     prompt = ""
     images: list[str] = []
     audios: list[str] = []
+    # N5：本请求由 _media_to_local 临时落盘的文件（data:/http(s) 下载产物）。
+    # 请求结束（成功/失败/取消）后必须统一 unlink；用户自己的本地路径不在此列。
+    created_temp: list[str] = []
     for msg in req.messages:
         role = str(msg.get("role", "user"))
         content = msg.get("content")
@@ -2494,13 +2497,13 @@ async def v1_chat_completions(req: V1ChatReq):
                     url = part.get("image_url")
                     if isinstance(url, dict):
                         url = url.get("url", "")
-                    img = await _media_to_local(str(url or ""), "image")
+                    img = await _media_to_local(str(url or ""), "image", created_temp)
                     if img:
                         images.append(img)
                 elif ptype == "audio":
                     src = part.get("audio") or part.get("input_audio") or {}
                     url = src.get("url") or src.get("data") if isinstance(src, dict) else src
-                    aud_path = await _media_to_local(str(url or ""), "audio")
+                    aud_path = await _media_to_local(str(url or ""), "audio", created_temp)
                     if aud_path:
                         audios.append(aud_path)
             content = "\n".join(text_parts) if text_parts else ""
@@ -2510,6 +2513,10 @@ async def v1_chat_completions(req: V1ChatReq):
         history.append({"role": role if role in ("user", "assistant") else "user", "content": content})
 
     if not history and not images and not audios:
+        # 提前失败也清理已落盘的临时媒体。
+        for p in created_temp:
+            with contextlib.suppress(OSError):
+                os.unlink(p)
         raise HTTPException(status_code=400, detail="messages 中没有可用内容")
     prompt = history[-1]["content"] if history else ""
     hist = history[:-1]
@@ -2517,16 +2524,27 @@ async def v1_chat_completions(req: V1ChatReq):
     model_id = req.model or (mnn_runtime.status().get("model_name") or "kevrai-mnn")
 
     if req.stream:
-        return _v1_stream(prompt, hist, images, audios, req, model_id)
-    return await _v1_once(prompt, hist, images, audios, req, model_id)
+        return _v1_stream(prompt, hist, images, audios, req, model_id, created_temp)
+    try:
+        return await _v1_once(prompt, hist, images, audios, req, model_id)
+    finally:
+        for p in created_temp:
+            with contextlib.suppress(OSError):
+                os.unlink(p)
 
 
-async def _media_to_local(url: str, kind: str) -> str:
+async def _media_to_local(url: str, kind: str,
+                          created: list[str] | None = None) -> str:
     """把多段 content 里的媒体引用落成本地文件路径（http(s)/data:base64/file:///绝对路径）。
 
     注意：本函数是 async —— 它由 ``v1_chat_completions`` 这条纯 async 链路调用，
     此前用同步 ``httpx.Client`` 会在网络慢时**冻结整个 sidecar 最长 60 秒**
     （下载进度、WebSocket、Agent 全部停摆）。改为 AsyncClient。
+
+    临时文件生命周期（N5 泄漏修复）：data:/http(s) 分支会 ``mkstemp`` 出一个新文件，
+    其路径会被追加到 ``created`` 由调用方在请求结束（成功/失败/取消）时统一 unlink；
+    本地绝对路径 / file:// 原样返回，**绝不**删除用户自己的文件。若本函数在 mkstemp
+    之后、return 之前异常，这里就地 unlink 刚建的临时文件，避免半写文件泄漏。
     """
     url = (url or "").strip()
     if not url:
@@ -2534,6 +2552,7 @@ async def _media_to_local(url: str, kind: str) -> str:
     import base64
     import tempfile
     if url.startswith("data:"):
+        path = ""
         try:
             meta, _, b64 = url.partition(",")
             raw = base64.b64decode(b64)
@@ -2550,12 +2569,18 @@ async def _media_to_local(url: str, kind: str) -> str:
             fd, path = tempfile.mkstemp(prefix=f"kevrai-{kind}-", suffix=ext)
             with os.fdopen(fd, "wb") as f:
                 f.write(raw)
+            if created is not None:
+                created.append(path)
             return path
         except Exception as e:  # noqa: BLE001
+            if path:
+                with contextlib.suppress(OSError):
+                    os.unlink(path)
             raise HTTPException(status_code=400, detail=f"data URL 解码失败: {e}") from e
     if url.startswith("file://"):
         url = url[len("file://"):]
     if url.startswith(("http://", "https://")):
+        path = ""
         try:
             import httpx
             async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
@@ -2572,10 +2597,15 @@ async def _media_to_local(url: str, kind: str) -> str:
             fd, path = tempfile.mkstemp(prefix=f"kevrai-{kind}-", suffix=ext)
             with os.fdopen(fd, "wb") as f:
                 f.write(r.content)
+            if created is not None:
+                created.append(path)
             return path
         except Exception as e:  # noqa: BLE001
+            if path:
+                with contextlib.suppress(OSError):
+                    os.unlink(path)
             raise HTTPException(status_code=400, detail=f"媒体下载失败: {e}") from e
-    # 本地绝对路径
+    # 本地绝对路径 —— 用户自己的文件，原样返回，不纳入 created 清理清单。
     if os.path.exists(url):
         return url
     raise HTTPException(status_code=400, detail=f"{kind} 文件不存在: {url}")
@@ -2626,7 +2656,8 @@ async def _v1_once(prompt: str, hist: list[dict[str, str]], images: list[str],
 
 
 def _v1_stream(prompt: str, hist: list[dict[str, str]], images: list[str],
-               audios: list[str], req: V1ChatReq, model_id: str) -> StreamingResponse:
+               audios: list[str], req: V1ChatReq, model_id: str,
+               created_temp: list[str] | None = None) -> StreamingResponse:
     """SSE 流式响应：逐段输出 chat.completion.chunk。"""
     def gen():
         try:
@@ -2668,6 +2699,12 @@ def _v1_stream(prompt: str, hist: list[dict[str, str]], images: list[str],
             yield f"data: {json.dumps({'error': {'message': f'推理失败：{e}', 'type': 'internal_error'}})}\n\n"
         finally:
             yield "data: [DONE]\n\n"
+            # N5：流式生成器在客户端断开 / 异常 / 正常结束时都会走到这里，
+            # 统一清理本请求临时落盘的媒体文件。
+            if created_temp:
+                for p in created_temp:
+                    with contextlib.suppress(OSError):
+                        os.unlink(p)
 
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
