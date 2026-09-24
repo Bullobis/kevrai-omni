@@ -121,6 +121,14 @@ class DownloadTask:
 DEFAULT_CHUNK = 1 << 20  # 1 MiB
 DEFAULT_TIMEOUT = httpx.Timeout(30.0, read=120.0, connect=10.0, write=10.0)
 
+#: HTTP statuses worth retrying on a fresh connection (mirrors hub.net).
+#: 4xx other than 429 are provably useless to retry.
+STREAM_RETRY_STATUSES: frozenset[int] = frozenset({429, 502, 503, 504})
+#: Default number of *extra* attempts after the first (i.e. 3 total tries).
+DEFAULT_STREAM_RETRIES = 3
+#: Exponential backoff base delays (seconds) between retry attempts.
+DEFAULT_STREAM_BACKOFF: tuple[float, ...] = (0.5, 1.0, 2.0)
+
 
 class Downloader:
     """Manages a set of resumable streaming downloads."""
@@ -133,6 +141,8 @@ class Downloader:
         extra_allowed_hosts: set[str] | None = None,
         client: httpx.AsyncClient | None = None,
         chunk_size: int = DEFAULT_CHUNK,
+        stream_retries: int = DEFAULT_STREAM_RETRIES,
+        stream_backoff: tuple[float, ...] = DEFAULT_STREAM_BACKOFF,
     ) -> None:
         self._sem = asyncio.Semaphore(max_concurrent)
         # v2.4.1 fix: exposed for main.put_settings concurrency compare —
@@ -140,6 +150,12 @@ class Downloader:
         self.max_concurrent = max_concurrent
         self._tasks: dict[str, DownloadTask] = {}
         self._tasks_lock = asyncio.Lock()
+        # Single-flight by resolved destination: a second `start()` for the same
+        # file while one is already in flight must not open a second writer onto
+        # the same `.partial` (the old check only looked at the *final* dest,
+        # which does not exist until the atomic rename, so two concurrent starts
+        # raced on the partial file and interleaved/corrupted it).
+        self._inflight_dests: dict[str, str] = {}
         base = allowed_hosts or DEFAULT_MODEL_HOSTS
         if extra_allowed_hosts:
             self._allowed_hosts = set(base) | set(extra_allowed_hosts)
@@ -153,6 +169,8 @@ class Downloader:
         # so `aclose` can simply test for None instead of `getattr`/`hasattr`.
         self._own_client: httpx.AsyncClient | None = None
         self._chunk_size = chunk_size
+        self._stream_retries = max(0, int(stream_retries))
+        self._stream_backoff = tuple(b for b in stream_backoff if b >= 0) or (0.5,)
 
     # --- public ---
 
@@ -188,7 +206,17 @@ class Downloader:
             extra_headers=dict(extra_headers or {}),
         )
         async with self._tasks_lock:
+            # Single-flight: if an earlier task is already downloading this exact
+            # destination (only the `.partial` exists so far), hand back its id
+            # instead of opening a second writer onto the same partial.
+            existing_id = self._inflight_dests.get(str(dest_path))
+            existing = self._tasks.get(existing_id) if existing_id else None
+            if existing is not None and existing.status not in {
+                DownloadStatus.DONE, DownloadStatus.FAILED, DownloadStatus.CANCELLED
+            }:
+                return existing.id
             self._tasks[task.id] = task
+            self._inflight_dests[str(dest_path)] = task.id
 
         # Run in background without awaiting — caller polls via `progress()` /
         # subscribes to `task.queue`.
@@ -259,63 +287,130 @@ class Downloader:
         resume_from = partial.stat().st_size if partial.exists() else 0
         task.downloaded_bytes = resume_from
 
-        async with self._sem:
+        try:
+            async with self._sem:
+                try:
+                    await self._emit(task, "started", extra={"resume_from": resume_from})
+                    await self._stream_with_retry(task, partial, resume_from)
+                except asyncio.CancelledError:  # noqa: PERF203
+                    task.status = DownloadStatus.CANCELLED
+                    task.finished_at = time.time()
+                    await self._emit(task, "cancelled")
+                    return
+                except DownloadRefused as e:
+                    task.status = DownloadStatus.FAILED
+                    task.error = str(e)
+                    task.finished_at = time.time()
+                    await self._emit(task, "failed", extra={"error": str(e)})
+                    return
+                except Exception as e:  # noqa: BLE001
+                    task.status = DownloadStatus.FAILED
+                    task.error = f"{type(e).__name__}: {e}"
+                    task.finished_at = time.time()
+                    await self._emit(task, "failed", extra={"error": task.error})
+                    return
+
+                # Verifying phase
+                task.status = DownloadStatus.VERIFYING
+                await self._emit(task, "verifying")
+                try:
+                    actual = await self._sha256_file(Path(partial))
+                except Exception as e:  # noqa: BLE001
+                    task.status = DownloadStatus.FAILED
+                    task.error = f"sha256 read error: {e}"
+                    task.finished_at = time.time()
+                    await self._emit(task, "failed", extra={"error": task.error})
+                    return
+
+                task.final_sha256 = actual
+                if task.expected_sha256 and actual.lower() != task.expected_sha256.lower():
+                    task.status = DownloadStatus.FAILED
+                    task.error = (
+                        f"sha256 mismatch: expected {task.expected_sha256}, got {actual}"
+                    )
+                    task.finished_at = time.time()
+                    # Don't rename — leave .partial so user can inspect
+                    await self._emit(task, "failed", extra={"error": task.error})
+                    return
+
+                try:
+                    _atomic_rename(partial, Path(task.dest_path))
+                except Exception as e:  # noqa: BLE001
+                    task.status = DownloadStatus.FAILED
+                    task.error = f"rename failed: {e}"
+                    task.finished_at = time.time()
+                    await self._emit(task, "failed", extra={"error": task.error})
+                    return
+
+                task.status = DownloadStatus.DONE
+                task.finished_at = time.time()
+                await self._emit(task, "done", extra={"sha256": actual})
+        finally:
+            # Release the single-flight slot for this destination so a later
+            # (genuinely new) download to the same path can start.
+            async with self._tasks_lock:
+                if self._inflight_dests.get(str(task.dest_path)) == task.id:
+                    self._inflight_dests.pop(str(task.dest_path), None)
+
+    async def _stream_with_retry(
+        self,
+        task: DownloadTask,
+        partial: Path,
+        resume_from: int,
+    ) -> None:
+        """Stream the body with bounded exponential-backoff retry.
+
+        A flaky mid-stream drop (read timeout / connection reset / transient
+        5xx) used to fail the whole task. Now we retry a bounded number of
+        times: every retry re-stats the ``.partial`` and issues a fresh
+        ``Range`` request from wherever the last attempt got to.
+
+        Only *retryable* failures are retried — transport errors (except a
+        local protocol bug, which is our own misuse) and 429/502/503/504.
+        Other 4xx, ``DownloadRefused`` and cancellation always propagate.
+        """
+        max_attempts = self._stream_retries + 1
+        attempt = 0
+        while True:
+            attempt += 1
+            # Re-stat on every attempt: a prior attempt may have grown the
+            # partial, and a server that ignores Range hands us the whole file
+            # from 0 (handled inside ``_stream``).
+            current_resume = partial.stat().st_size if partial.exists() else 0
             try:
-                await self._emit(task, "started", extra={"resume_from": resume_from})
-                await self._stream(task, partial, resume_from)
-            except asyncio.CancelledError:  # noqa: PERF203
-                task.status = DownloadStatus.CANCELLED
-                task.finished_at = time.time()
-                await self._emit(task, "cancelled")
+                await self._stream(task, partial, current_resume)
                 return
-            except DownloadRefused as e:
-                task.status = DownloadStatus.FAILED
-                task.error = str(e)
-                task.finished_at = time.time()
-                await self._emit(task, "failed", extra={"error": str(e)})
-                return
-            except Exception as e:  # noqa: BLE001
-                task.status = DownloadStatus.FAILED
-                task.error = f"{type(e).__name__}: {e}"
-                task.finished_at = time.time()
-                await self._emit(task, "failed", extra={"error": task.error})
-                return
+            except asyncio.CancelledError:
+                raise
+            except DownloadRefused:
+                raise
+            except httpx.HTTPStatusError as e:
+                status = e.response.status_code
+                if (
+                    status in STREAM_RETRY_STATUSES
+                    and attempt < max_attempts
+                    and not task.cancel_event.is_set()
+                ):
+                    await self._emit(task, "retry", extra={"attempt": attempt, "status": status})
+                    await asyncio.sleep(self._backoff_seconds(attempt))
+                    continue
+                raise
+            except httpx.TransportError as e:
+                # LocalProtocolError == our own misuse; retrying won't help.
+                if isinstance(e, httpx.LocalProtocolError):
+                    raise
+                if attempt < max_attempts and not task.cancel_event.is_set():
+                    await self._emit(
+                        task, "retry",
+                        extra={"attempt": attempt, "error": type(e).__name__},
+                    )
+                    await asyncio.sleep(self._backoff_seconds(attempt))
+                    continue
+                raise
 
-            # Verifying phase
-            task.status = DownloadStatus.VERIFYING
-            await self._emit(task, "verifying")
-            try:
-                actual = await self._sha256_file(Path(partial))
-            except Exception as e:  # noqa: BLE001
-                task.status = DownloadStatus.FAILED
-                task.error = f"sha256 read error: {e}"
-                task.finished_at = time.time()
-                await self._emit(task, "failed", extra={"error": task.error})
-                return
-
-            task.final_sha256 = actual
-            if task.expected_sha256 and actual.lower() != task.expected_sha256.lower():
-                task.status = DownloadStatus.FAILED
-                task.error = (
-                    f"sha256 mismatch: expected {task.expected_sha256}, got {actual}"
-                )
-                task.finished_at = time.time()
-                # Don't rename — leave .partial so user can inspect
-                await self._emit(task, "failed", extra={"error": task.error})
-                return
-
-            try:
-                _atomic_rename(partial, Path(task.dest_path))
-            except Exception as e:  # noqa: BLE001
-                task.status = DownloadStatus.FAILED
-                task.error = f"rename failed: {e}"
-                task.finished_at = time.time()
-                await self._emit(task, "failed", extra={"error": task.error})
-                return
-
-            task.status = DownloadStatus.DONE
-            task.finished_at = time.time()
-            await self._emit(task, "done", extra={"sha256": actual})
+    def _backoff_seconds(self, attempt: int) -> float:
+        idx = min(attempt - 1, len(self._stream_backoff) - 1)
+        return float(self._stream_backoff[idx])
 
     async def _stream(
         self,
@@ -341,6 +436,11 @@ class Downloader:
             # total_bytes by the stale resume offset (BUG-01).
             resumed = resume_from > 0 and r.status_code == 206
             mode = "wb" if not resumed else "ab"
+            # A fresh (overwrite) stream starts the byte counter at 0, otherwise
+            # it keeps the stale resume offset and progress races past 100% while
+            # the file on disk has already been truncated by mode="wb".
+            if not resumed:
+                task.downloaded_bytes = 0
 
             content_range = r.headers.get("Content-Range") or ""
             # When resuming, total = end + 1 from "bytes {start}-{end}/{total}"
