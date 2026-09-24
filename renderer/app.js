@@ -25,6 +25,7 @@ import { wireDownloads, showDownloads } from "./modules/downloads.js";
 import { wireDragDrop } from "./modules/dragdrop.js";
 import { wireOnboarding } from "./modules/onboarding.js";
 import { wireUpdate } from "./modules/update.js";
+import { initCommandPalette } from "./modules/command-palette.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -297,6 +298,7 @@ async function bootstrap() {
   wireDragDrop();
   wireGlobalUI();
   wireUpdate();
+  initCommandPalette();
   wireThemeListener();
   // 这两个此前只 import 未调用：
   //   - wireOnboarding  → #onboarding-overlay 一直显隐错乱（首启引导永不关闭）
