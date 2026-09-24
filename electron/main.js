@@ -575,6 +575,14 @@ function createWindow(bootstrapMode = false) {
   });
 
   mainWindow.on("closed", () => { mainWindow = null; });
+
+  // Notify a custom title bar when the maximize state flips so its button icon
+  // can switch between "maximize" and "restore". No-op if no listener.
+  const sendMax = (v) => {
+    try { mainWindow.webContents.send("window:maximize-change", v); } catch (_) {}
+  };
+  mainWindow.on("maximize", () => sendMax(true));
+  mainWindow.on("unmaximize", () => sendMax(false));
 }
 
 // ---------------------------------------------------------------------------
@@ -803,6 +811,20 @@ function registerIpc() {
     assert(u.protocol === "https:" || u.protocol === "http:", "url: only http(s) allowed");
     await shell.openExternal(u.toString());
   });
+
+  // --- Window controls (custom / frameless title bar support) -------------
+  // These let a future custom title bar (Kova-Aurora owns the HTML/CSS) drive
+  // the OS window without exposing the raw window API to the renderer. They are
+  // safe to register now — inert until the renderer calls them.
+  ipcMain.handle("window:minimize", () => { try { if (mainWindow) mainWindow.minimize(); } catch (_) {} });
+  ipcMain.handle("window:toggle-maximize", () => {
+    try {
+      if (!mainWindow) return;
+      if (mainWindow.isMaximized()) mainWindow.unmaximize(); else mainWindow.maximize();
+    } catch (_) {}
+  });
+  ipcMain.handle("window:close", () => { try { if (mainWindow) mainWindow.close(); } catch (_) {} });
+  ipcMain.handle("window:is-maximized", () => !!(mainWindow && mainWindow.isMaximized()));
 
   // --- New handlers -------------------------------------------------------
 
