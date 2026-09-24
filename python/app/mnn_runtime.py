@@ -29,6 +29,13 @@ from typing import Any
 
 log = logging.getLogger("kevrai.mnn")
 
+# Force the spawn start method for the MNN worker process. The sidecar parent
+# is multi-threaded; fork()-ing a multi-threaded process can deadlock inside the
+# child (the C++ engine holds locks fork never re-acquires) and emits
+# DeprecationWarnings. spawn starts a fresh interpreter on every platform and is
+# the Windows default, so behavior is consistent across OSes.
+_MP_CTX = multiprocessing.get_context("spawn")
+
 _LOCK = threading.Lock()
 
 # 流式生成轮询的墙钟上限。C++ 引擎一旦死锁/挂起，后台线程永远不会 set done 事件，
@@ -50,7 +57,64 @@ _LLM: Any = None  # MNN.llm.Llm instance (opaque)
 class MnnEngineMissing(RuntimeError):
     """Raised when the MNN pip package is not installed."""
 
+
+# Test-double injection channel (production off).
+#
+# Spawn children re-import this module in a fresh interpreter, so a fork-time
+# monkeypatch of ``_import_llm`` in the parent never reaches them. The process
+# environment IS inherited across the OS spawn boundary, so tests set this env
+# var to a behavior string ("normal" / "error" / "value_error" / "hang") and
+# the child resolves the fake below. No effect when the var is unset.
+_TEST_FAKE_ENV_VAR = "KEVRAI_MNN_TEST_FAKE"
+
+
+class _FakeLlmForTests:
+    """In-process stand-in for ``MNN.llm.Llm``; only active under
+    ``_TEST_FAKE_ENV_VAR``. Mirrors the surface the runtime drives."""
+
+    def __init__(self, cfg_path: str, behavior: str = "normal"):
+        self._behavior = behavior
+        self._cfg = cfg_path
+        self._prompt = ""
+
+    def load(self) -> None:
+        pass
+
+    def reset(self) -> None:
+        pass
+
+    def apply_chat_template(self, msg):
+        if isinstance(msg, dict):
+            return msg.get("content", "")
+        return str(msg)
+
+    def set_config(self, cfg) -> None:
+        pass
+
+    def response(self, prompt, stream):
+        if self._behavior == "error":
+            raise RuntimeError("fake boom")
+        if self._behavior == "value_error":
+            raise ValueError("fake bad input")
+        return "fake response: " + str(prompt)
+
+    def generate_init(self, prompt) -> None:
+        self._prompt = prompt
+
+    def get_context(self):
+        return {"generate_str": "partial"}
+
+    def generate(self) -> None:
+        if self._behavior == "hang":
+            threading.Event().wait()  # simulate C++ deadlock forever
+
+
 def _import_llm():
+    behavior = os.environ.get(_TEST_FAKE_ENV_VAR, "")
+    if behavior:
+        def _fake_create(cfg_path: str):
+            return _FakeLlmForTests(cfg_path, behavior=behavior)
+        return _fake_create
     try:
         from MNN.llm import create as _create
         return _create
@@ -601,8 +665,8 @@ class _MnnSubprocessClient:
     def _ensure_started(self) -> None:
         if self._proc is not None and self._proc.is_alive() and self._conn is not None:
             return
-        parent_conn, child_conn = multiprocessing.Pipe(duplex=True)
-        p = multiprocessing.Process(
+        parent_conn, child_conn = _MP_CTX.Pipe(duplex=True)
+        p = _MP_CTX.Process(
             target=_mnn_child_main, args=(child_conn,), daemon=True,
         )
         p.start()
