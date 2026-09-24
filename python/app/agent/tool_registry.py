@@ -164,10 +164,16 @@ def parse_tool_call(text: str) -> tuple[str, dict[str, Any]] | None:
 def extract_final_answer(text: str) -> str:
     """Extract the final answer from LLM output.
 
-    Looks for 'Final Answer:' marker; if not found, returns the text after
+    Looks for 'Final Answer:' marker; if not found, tries the Chinese markers
+    the system prompt also tells the model to emit (最终答案 / 最终回答, with
+    either full- or half-width colon). As a last resort returns the text after
     the last 'Thought:' or the whole text.
     """
     m = re.search(r"Final\s*Answer\s*:\s*(.+?)(?:\n\s*\n|\Z)", text, re.S | re.I)
+    if m:
+        return m.group(1).strip()
+    # Chinese markers (full-width or half-width colon).
+    m = re.search(r"(?:最终答案|最终回答)\s*[:：]\s*(.+?)(?:\n\s*\n|\Z)", text, re.S)
     if m:
         return m.group(1).strip()
     # Fallback: text after last Thought:
