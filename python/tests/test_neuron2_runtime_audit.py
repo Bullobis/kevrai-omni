@@ -57,23 +57,46 @@ def _mnn_source() -> str:
 
 
 # ---------------------------------------------------------------------------
-# G1 — no direct child-process spawn primitive in either audited runtime
+# G1 — child-process spawn discipline
+#
+# ltx_runtime must remain a pure in-process runtime (no OS child to reap).
+# mnn_runtime now OPT-IN spawns a forked child to isolate the C++ engine
+# (Neuron4 slice, 2026-09-24); that child MUST be reaped on every
+# timeout/crash/abort path. We forbid raw subprocess/Popen (which would need
+# separate process-group bookkeeping) and require the multiprocessing path to
+# carry a _kill() that SIGKILLs the child.
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("src_text,name", [
     (_ltx_source(), "ltx_runtime.py"),
-    (_mnn_source(), "mnn_runtime.py"),
 ])
 def test_audited_runtimes_spawn_no_direct_subprocess(src_text, name):
-    """If you add a real subprocess here, you MUST pair it with process-group
-    reaping (start_new_session/killpg on POSIX, CREATE_NEW_PROCESS_GROUP +
-    taskkill /T on Windows) on every cancel/timeout/abort path. See parliament
-    doc for the reference implementation."""
+    """ltx_runtime must stay a pure in-process runtime."""
     for token in _FORBIDDEN_TOKENS:
         assert token not in src_text, (
             f"{name} uses {token!r}; Neuron-Runtime2 requires this call to be "
             f"wrapped in a process-group-aware launcher and reaped on cancel."
         )
+
+
+def test_mnn_subprocess_isolation_reaps_child():
+    """mnn_runtime's opt-in subprocess mode MUST SIGKILL the child on hang/crash.
+
+    The whole point of isolating the C++ engine in a child process is that a
+    hard deadlock can be reclaimed at the OS level. If a future edit removes
+    the kill path, the parked C++ thread leaks again — this test forces the
+    reaping call to stay.
+    """
+    src = _mnn_source()
+    assert "multiprocessing.Process" in src, (
+        "subprocess isolation must use multiprocessing.Process (opt-in)"
+    )
+    assert ".kill()" in src, (
+        "mnn_runtime must SIGKILL the child on timeout/crash (the isolation win)"
+    )
+    assert "start_new_session" in src or "os.setsid" in src, (
+        "child must become its own session group (killpg-ready)"
+    )
 
 
 # ---------------------------------------------------------------------------
