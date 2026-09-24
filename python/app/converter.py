@@ -155,9 +155,15 @@ def active_task() -> dict[str, Any] | None:
         return _task_state(_ACTIVE) if _ACTIVE else None
 
 
+_LOG_LINES_CAP = 400  # 展示窗口为末尾 200 行，此处留余量并防止长转换日志无界增长
+
+
 def _append_log(t: ConvertTask, line: str) -> None:
     ts = time.strftime("%H:%M:%S")
     t.log_lines.append(f"[{ts}] {line}")
+    # 防止冗长转换输出（git 克隆/转换脚本刷屏）导致单任务内存无界增长。
+    if len(t.log_lines) > _LOG_LINES_CAP:
+        del t.log_lines[: len(t.log_lines) - _LOG_LINES_CAP]
     log.info("convert[%s]: %s", t.id, line)
 
 
@@ -563,6 +569,9 @@ def _worker_mnnconvert(t: ConvertTask) -> dict[str, Any]:
     dst = Path(t.dst)
     if not src.is_file():
         raise RuntimeError(f"源模型文件不存在：{src}")
+    # 与其他 worker 一致：提前创建输出目录（MNNConvert 不会自动建父目录），
+    # 否则嵌套输出路径会因目录缺失而误报"未生成 .mnn 文件"。
+    dst.parent.mkdir(parents=True, exist_ok=True)
 
     converter = t.options.get("converter")
     mnnc = converter or _find_mnnconvert()
