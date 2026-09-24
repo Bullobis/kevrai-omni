@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -68,6 +69,12 @@ class ToolRegistry:
     def register(self, tool: Tool) -> None:
         if not re.fullmatch(r"[a-z][a-z0-9_]{1,63}", tool.name):
             raise ValueError(f"invalid tool name: {tool.name!r}")
+        if tool.name in self._tools:
+            warnings.warn(
+                f"ToolRegistry: overwriting existing tool {tool.name!r}",
+                UserWarning,
+                stacklevel=2,
+            )
         self._tools[tool.name] = tool
 
     def get(self, name: str) -> Tool | None:

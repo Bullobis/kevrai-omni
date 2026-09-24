@@ -301,6 +301,36 @@ if _HAS_GZIP:
 
 
 # ---------------------------------------------------------------------------
+# Global uncaught-exception handler
+#
+# Without this, an endpoint that raises a plain (non-HTTPException) error
+# falls through to Starlette's default plain-text 500, which leaks a
+# traceback-ish body and breaks the frontend's assumption that every error
+# is JSON. We return a uniform JSON envelope and *never* echo exception
+# text, file paths, tokens, or stack frames back to the client.
+#
+# HTTPException keeps its default handler (FastAPI registers one for the
+# more-specific type, so it wins during MRO lookup); we additionally
+# re-raise HTTPException here as a belt-and-braces guard.
+# ---------------------------------------------------------------------------
+
+
+@app.exception_handler(Exception)
+async def _unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    # HTTPException has its own registered handler; let it through.
+    if isinstance(exc, HTTPException):
+        raise exc
+    log.exception("unhandled error on %s", request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error_type": "internal_error",
+            "error": "服务器内部错误，请稍后重试",
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
 # Request-ID middleware + access log
 # ---------------------------------------------------------------------------
 
@@ -1349,7 +1379,12 @@ async def hub_download(request: Request, body: HubDownloadReq) -> dict[str, Any]
         except Exception:  # pragma: no cover
             headers = {}
         try:
-            task_id = await dl.start(chosen, dest, sha256="", extra_headers=headers or None)
+            task_id = await dl.start(
+                chosen, dest,
+                sha256=info.get("sha256") or None,
+                candidates=candidates,
+                extra_headers=headers or None,
+            )
         except Exception as e:  # noqa: BLE001 — one file failing must not abort the job
             skipped.append({"path": rel, "reason": f"start_failed: {str(e)[:80]}"})
             continue
@@ -1529,6 +1564,7 @@ async def download_start(request: Request, body: DownloadStartReq) -> dict[str, 
     dl: Downloader = _get_downloader(request)
     try:
         task_id = await dl.start(chosen_url, dest, sha256=body.sha256,
+                                 candidates=candidates,
                                  extra_headers=extra_headers or None)
     except DownloadRefused as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
@@ -2592,6 +2628,32 @@ def _v1_stream(prompt: str, hist: list[dict[str, str]], images: list[str],
 _SORT_WHITELIST = {"relevance", "name_asc", "size_desc", "size_asc", "trending"}
 
 
+# ---------------------------------------------------------------------------
+# Search corpus cache
+#
+# ``CATALOG.models`` is a list of pydantic ModelEntry; ``.model_dump()`` is
+# called per-request below. We memoize the dumped list *and* the tokenized
+# Corpus keyed on ``CATALOG.version`` so that repeated searches (including
+# per-keystroke typeahead) reuse the same Corpus instead of rebuilding it
+# for all 121 models on every request. A version bump invalidates both.
+# ---------------------------------------------------------------------------
+
+_DUMPED_MODELS_CACHE: dict[str, list[dict[str, Any]]] = {}
+
+
+def _get_dumped_models() -> list[dict[str, Any]]:
+    v = CATALOG.version
+    cached = _DUMPED_MODELS_CACHE.get(v)
+    if cached is not None:
+        return cached
+    dumped = [m.model_dump() for m in CATALOG.models]
+    _DUMPED_MODELS_CACHE[v] = dumped
+    # bound the cache (we expect at most a handful of catalog versions)
+    if len(_DUMPED_MODELS_CACHE) > 4:
+        _DUMPED_MODELS_CACHE.pop(next(iter(_DUMPED_MODELS_CACHE)))
+    return dumped
+
+
 @app.get("/api/search")
 def api_search(
     q: str = "",
@@ -2616,8 +2678,8 @@ def api_search(
         page=max(1, int(page or 1)),
         page_size=max(1, min(int(page_size or 50), 200)),
     )
-    models = [m.model_dump() for m in CATALOG.models]
-    result = run_search(models, sq)
+    models = _get_dumped_models()
+    result = run_search(models, sq, cache_key=CATALOG.version)
     if q and q.strip():
         search_push_recent(q.strip())
     return result
