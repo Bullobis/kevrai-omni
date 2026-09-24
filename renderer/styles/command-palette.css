@@ -13,6 +13,12 @@
   backdrop-filter: blur(2px);
 }
 
+/* Hidden by default: the JS toggles overlay.hidden; author CSS would otherwise
+   override the UA [hidden]{display:none} rule and leave the palette stuck open. */
+.cmdpal-overlay[hidden] {
+  display: none;
+}
+
 .cmdpal-panel {
   width: min(640px, 90vw);
   background: var(--stack-3, #22242a);

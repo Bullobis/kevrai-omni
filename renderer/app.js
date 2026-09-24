@@ -25,6 +25,8 @@ import { wireDownloads, showDownloads } from "./modules/downloads.js";
 import { wireDragDrop } from "./modules/dragdrop.js";
 import { wireOnboarding } from "./modules/onboarding.js";
 import { wireUpdate } from "./modules/update.js";
+import { initI18n } from "./modules/i18n.js";
+import { initCommandPalette } from "./modules/command-palette.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -298,6 +300,11 @@ async function bootstrap() {
   wireGlobalUI();
   wireUpdate();
   wireThemeListener();
+  // i18n（中英文）与命令面板（Ctrl/⌘+K）— ADR-0004 接线
+  // 先加载语言包再初始化面板，避免动作标签/占位符显示为原始 i18n key；加载失败也保底初始化。
+  initI18n()
+    .catch((e) => toast("语言包加载失败：" + (e?.message || e), { kind: "err" }))
+    .finally(() => { initCommandPalette(document.body); });
   // 这两个此前只 import 未调用：
   //   - wireOnboarding  → #onboarding-overlay 一直显隐错乱（首启引导永不关闭）
   //   - wireEngineUpdates → #btn-engines-check-updates 点击无响应
