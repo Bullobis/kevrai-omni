@@ -348,9 +348,10 @@ async function bootstrap() {
   wireWindowControls();
   wireUpdate();
   wireThemeListener();
-  initI18n();
+  const i18nReady = initI18n();
   wirePaletteEvents();
-  initCommandPalette();
+  // 命令面板构建时会读取占位文案，须在字典加载完成后再初始化，避免占位符显示原始 key。
+  i18nReady.then(() => initCommandPalette());
   // 这两个此前只 import 未调用：
   //   - wireOnboarding  → #onboarding-overlay 一直显隐错乱（首启引导永不关闭）
   //   - wireEngineUpdates → #btn-engines-check-updates 点击无响应
