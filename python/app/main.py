@@ -1379,7 +1379,12 @@ async def hub_download(request: Request, body: HubDownloadReq) -> dict[str, Any]
         except Exception:  # pragma: no cover
             headers = {}
         try:
-            task_id = await dl.start(chosen, dest, sha256="", extra_headers=headers or None)
+            task_id = await dl.start(
+                chosen, dest,
+                sha256=info.get("sha256") or None,
+                candidates=candidates,
+                extra_headers=headers or None,
+            )
         except Exception as e:  # noqa: BLE001 — one file failing must not abort the job
             skipped.append({"path": rel, "reason": f"start_failed: {str(e)[:80]}"})
             continue
@@ -1559,6 +1564,7 @@ async def download_start(request: Request, body: DownloadStartReq) -> dict[str, 
     dl: Downloader = _get_downloader(request)
     try:
         task_id = await dl.start(chosen_url, dest, sha256=body.sha256,
+                                 candidates=candidates,
                                  extra_headers=extra_headers or None)
     except DownloadRefused as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
