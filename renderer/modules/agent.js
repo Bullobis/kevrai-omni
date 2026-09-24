@@ -31,6 +31,27 @@ export async function initAgent() {
   _loadSessionList();
 }
 
+function _renderEmptyState() {
+  const prompts = [
+    "我的硬件能跑什么模型？",
+    "搜索音乐生成模型",
+    "推荐适合 8GB 显存的图像模型",
+    "帮我写一部科幻微电影",
+  ];
+
+  return `
+    <div class="agent-empty">
+      <h3>从一个问题开始</h3>
+      <p class="hint">我可以帮你检索模型、检查硬件、规划下载，或使用技能完成创作。</p>
+      <div class="agent-suggestions">
+        ${prompts.map((prompt) => `
+          <button type="button" class="agent-suggestion" data-agent-prompt="${esc(prompt)}">${esc(prompt)}</button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
 function _renderShell() {
   return `
     <div class="agent-container">
@@ -83,7 +104,7 @@ function _renderShell() {
           </div>
         </div>
       </details>
-      <div id="agent-messages" class="agent-messages"></div>
+      <div id="agent-messages" class="agent-messages">${_renderEmptyState()}</div>
       <div class="agent-input-area">
         <textarea id="agent-input" class="agent-input" rows="2"
           placeholder="问我任何关于模型的问题，例如：&#10;• 我的硬件能跑什么模型？&#10;• 搜索音乐生成模型&#10;• 推荐适合8GB显存的图像模型&#10;• 帮我把「星际快递员」写成一部微电影短剧（短剧工坊技能）"
@@ -119,7 +140,7 @@ function _wireEvents(root) {
   sendBtn.addEventListener("click", _sendMessage);
   newBtn.addEventListener("click", () => {
     _sessionId = "sess_" + Date.now().toString(36);
-    $("#agent-messages", root).innerHTML = "";
+    $("#agent-messages", root).innerHTML = _renderEmptyState();
     input.value = "";
     sendBtn.disabled = true;
     _loadSessionList();
@@ -130,6 +151,14 @@ function _wireEvents(root) {
       _sessionId = sessionSelect.value;
       _loadSessionMessages();
     }
+  });
+  const messages = $("#agent-messages", root);
+  messages?.addEventListener("click", (e) => {
+    const suggestion = e.target.closest("[data-agent-prompt]");
+    if (!suggestion) return;
+    input.value = suggestion.dataset.agentPrompt || "";
+    sendBtn.disabled = !input.value.trim();
+    input.focus();
   });
 
   // 技能库：开关（事件委托）+ 恢复默认
@@ -384,9 +413,11 @@ async function _loadSessionMessages() {
   container.innerHTML = "";
   try {
     const res = unwrap(await api.agentSessionMessages(_sessionId, 100));
-    for (const msg of res.messages || []) {
+    const messages = res.messages || [];
+    for (const msg of messages) {
       _appendMessage(msg.role, msg.content, false);
     }
+    if (!messages.length) container.innerHTML = _renderEmptyState();
     container.scrollTop = container.scrollHeight;
   } catch (e) {
     console.warn("load messages failed:", e);
@@ -450,6 +481,8 @@ async function _sendMessage() {
 function _appendMessage(role, content, animate = false, tools = []) {
   const container = document.getElementById("agent-messages");
   if (!container) return;
+  const emptyState = $(".agent-empty", container);
+  emptyState?.remove();
   const div = document.createElement("div");
   div.className = `agent-msg agent-msg-${role}`;
   const label = role === "user" ? "你" : "Kevrai Agent";
