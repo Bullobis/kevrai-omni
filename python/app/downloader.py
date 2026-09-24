@@ -68,6 +68,29 @@ class DownloadStatus(str, Enum):
 class DownloadRefused(Exception):
     """Raised when URL fails validation (unsupported scheme, etc.)."""
 
+class Sha256MismatchError(Exception):
+    """Raised when the assembled ``.partial`` does not match the expected hash.
+
+    Raised only on the *last* candidate: earlier mismatches fall back to the
+    next mirror (which starts from a fresh, deleted partial) instead. The
+    ``.partial`` is removed by the pipeline before this escapes, so a corrupt
+    blob is never resumed onto a subsequent source.
+    """
+
+
+class DownloadAllCandidatesFailed(Exception):
+    """Raised when every candidate URL (mirror) has been tried and failed.
+
+    Carries the per-source error strings so the caller (and the task's
+    ``error`` field) gets an aggregate, human-readable summary instead of only
+    the last source's complaint.
+    """
+
+    def __init__(self, errors: list[str]) -> None:
+        self.errors: list[str] = list(errors)
+        super().__init__(" | ".join(self.errors) if self.errors else "all sources failed")
+
+
 def _check_url(url: str, *, enforce_allowlist: bool = False,
                has_auth_header: bool = False) -> None:
     """Validate a URL.
@@ -122,6 +145,15 @@ class DownloadTask:
     cancel_event: asyncio.Event = field(default_factory=asyncio.Event)
     speed_bps: float = 0.0
     final_sha256: str | None = None
+    # Ordered fallback chain of mirror URLs for the *same* file. ``url`` always
+    # equals ``candidates[0]``; when a source exhausts its in-URL retries the
+    # pipeline advances to the next entry, preserving the ``.partial`` bytes
+    # (Range resume). Empty list => single-source legacy behaviour.
+    candidates: list[str] = field(default_factory=list)
+    # Index into ``candidates`` currently being streamed (0-based).
+    source_index: int = 0
+    # How many times the pipeline has fallen back to a different mirror.
+    fallbacks: int = 0
     # Extra request headers (e.g. Authorization for gated HF repos).
     # Never serialized into snapshots — tokens must not leak to the UI/logs.
     extra_headers: dict[str, str] = field(default_factory=dict, repr=False)
@@ -141,6 +173,9 @@ class DownloadTask:
             "finished_at": self.finished_at,
             "expected_sha256": self.expected_sha256,
             "final_sha256": self.final_sha256,
+            "source_index": self.source_index,
+            "fallbacks": self.fallbacks,
+            "candidates": list(self.candidates),
         }
 
 
@@ -211,6 +246,7 @@ class Downloader:
         dest: str | os.PathLike[str],
         sha256: str | None = None,
         extra_headers: dict[str, str] | None = None,
+        candidates: list[str] | None = None,
     ) -> str:
         """Start a new download. Returns the task_id.
 
@@ -218,26 +254,38 @@ class Downloader:
         e.g. `Authorization: Bearer <hf_token>` on gated HuggingFace repos).
         Headers are never echoed into progress snapshots.
 
+        `candidates` is an *ordered* list of equivalent mirror URLs for the
+        **same file** (e.g. ``[huggingface.co/..., hf-mirror.com/..., ...]``).
+        The primary `url` is always tried first; after its in-URL retries are
+        exhausted the pipeline advances to the next candidate, keeping the
+        ``.partial`` bytes and resuming via ``Range``. Omitted/empty preserves
+        the legacy single-source behaviour.
+
         Raises `DownloadRefused` only for unsupported scheme / missing host.
         Raises `FileExistsError` if the destination already exists.
         """
         dest_path = Path(dest).expanduser().resolve()
         dest_path.parent.mkdir(parents=True, exist_ok=True)
+        # Build the ordered fallback chain: primary first, then deduped extras.
+        ordered = self._build_candidate_chain(url, candidates)
         # Validate url. When the task carries an Authorization credential
         # (gated HF Bearer), _check_url force-enables the host allowlist so the
         # token is never sent to an arbitrary host (P0-2).
         has_auth = any(str(k).lower() == "authorization" for k in (extra_headers or {}))
-        self._check_url(url, has_auth_header=has_auth)
+        # Validate every candidate up-front (fail fast on a bad mirror URL).
+        for u in ordered:
+            self._check_url(u, has_auth_header=has_auth)
         if dest_path.exists():
             raise FileExistsError(str(dest_path))
 
         task = DownloadTask(
             id=uuid.uuid4().hex,
-            url=url,
+            url=ordered[0],
             dest_path=str(dest_path),
             expected_sha256=sha256,
             started_at=time.time(),
             extra_headers=dict(extra_headers or {}),
+            candidates=ordered,
         )
         async with self._tasks_lock:
             # Single-flight: if an earlier task is already downloading this exact
@@ -312,6 +360,30 @@ class Downloader:
         if enforce and not is_host_allowed(url, self._allowed_hosts):
             raise DownloadRefused(f"host not in allowlist: {parsed.hostname}")
 
+    def _build_candidate_chain(
+        self, primary: str, candidates: list[str] | None,
+    ) -> list[str]:
+        """Ordered, de-duplicated fallback chain: ``primary`` first, then extras.
+
+        Empty / blank entries are dropped. The primary is always retained even
+        if it also appears in ``candidates`` (de-duped case-insensitively by
+        exact URL string).
+        """
+        chain: list[str] = []
+        seen: set[str] = set()
+        for u in [primary, *(candidates or [])]:
+            s = str(u or "").strip()
+            if not s:
+                continue
+            key = s.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            chain.append(s)
+        if not chain:
+            raise DownloadRefused("no candidate url provided")
+        return chain
+
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is not None:
             return self._client
@@ -323,15 +395,11 @@ class Downloader:
 
     async def _run(self, task: DownloadTask) -> None:
         partial = Path(task.dest_path + ".partial")
-        # If a previous partial exists from a crashed run, we resume from it.
-        resume_from = partial.stat().st_size if partial.exists() else 0
-        task.downloaded_bytes = resume_from
 
         try:
             async with self._sem:
                 try:
-                    await self._emit(task, "started", extra={"resume_from": resume_from})
-                    await self._stream_with_retry(task, partial, resume_from)
+                    await self._download_pipeline(task, partial)
                 except asyncio.CancelledError:  # noqa: PERF203
                     task.status = DownloadStatus.CANCELLED
                     task.finished_at = time.time()
@@ -349,48 +417,147 @@ class Downloader:
                     task.finished_at = time.time()
                     await self._emit(task, "failed", extra={"error": task.error})
                     return
-
-                # Verifying phase
-                task.status = DownloadStatus.VERIFYING
-                await self._emit(task, "verifying")
-                try:
-                    actual = await self._sha256_file(Path(partial))
-                except Exception as e:  # noqa: BLE001
-                    task.status = DownloadStatus.FAILED
-                    task.error = f"sha256 read error: {e}"
-                    task.finished_at = time.time()
-                    await self._emit(task, "failed", extra={"error": task.error})
-                    return
-
-                task.final_sha256 = actual
-                if task.expected_sha256 and actual.lower() != task.expected_sha256.lower():
-                    task.status = DownloadStatus.FAILED
-                    task.error = (
-                        f"sha256 mismatch: expected {task.expected_sha256}, got {actual}"
-                    )
-                    task.finished_at = time.time()
-                    # Don't rename — leave .partial so user can inspect
-                    await self._emit(task, "failed", extra={"error": task.error})
-                    return
-
-                try:
-                    _atomic_rename(partial, Path(task.dest_path))
-                except Exception as e:  # noqa: BLE001
-                    task.status = DownloadStatus.FAILED
-                    task.error = f"rename failed: {e}"
-                    task.finished_at = time.time()
-                    await self._emit(task, "failed", extra={"error": task.error})
-                    return
-
-                task.status = DownloadStatus.DONE
-                task.finished_at = time.time()
-                await self._emit(task, "done", extra={"sha256": actual})
         finally:
             # Release the single-flight slot for this destination so a later
             # (genuinely new) download to the same path can start.
             async with self._tasks_lock:
                 if self._inflight_dests.get(str(task.dest_path)) == task.id:
                     self._inflight_dests.pop(str(task.dest_path), None)
+
+    async def _download_pipeline(self, task: DownloadTask, partial: Path) -> None:
+        """Stream → verify → rename, with per-mirror fallback.
+
+        For each URL in ``task.candidates`` (the primary first) we run the
+        in-URL bounded-retry stream. When a source exhausts its retries we:
+
+        * keep the ``.partial`` bytes and resume via ``Range`` on the next
+          mirror (a transport drop / 5xx means the bytes we already have are
+          almost certainly good);
+        * but on a **sha256 mismatch** we *delete* the ``.partial`` (the
+          assembled bytes are untrustworthy — we cannot know where corruption
+          starts) and start the next mirror from byte 0.
+
+        Cancellation and ``DownloadRefused`` propagate immediately; the former
+        never triggers a fallback. After every candidate has failed we raise
+        :class:`DownloadAllCandidatesFailed` with an aggregated error list.
+        """
+        ordered = task.candidates or [task.url]
+        if not ordered:
+            raise DownloadRefused("no candidate url provided")
+
+        resume0 = partial.stat().st_size if partial.exists() else 0
+        task.downloaded_bytes = resume0
+        await self._emit(task, "started", extra={
+            "resume_from": resume0,
+            "candidates": list(ordered),
+        })
+
+        errors: list[str] = []
+        for idx, url in enumerate(ordered):
+            if task.cancel_event.is_set():
+                raise asyncio.CancelledError()
+            task.url = url
+            task.source_index = idx
+            is_last = idx == len(ordered) - 1
+
+            # --- stream this source (with its own in-URL backoff retries) ---
+            try:
+                await self._stream_with_retry(task, partial, 0)
+            except asyncio.CancelledError:
+                raise
+            except DownloadRefused as e:
+                errors.append(f"{url}: refused ({e})")
+                if is_last or task.cancel_event.is_set():
+                    raise DownloadAllCandidatesFailed(errors) from e
+                await self._fallback(task, url, ordered, idx, "refused", errors)
+                continue
+            except Exception as e:  # noqa: BLE001 — transport exhaustion / terminal 4xx
+                errors.append(f"{url}: {type(e).__name__}: {e}")
+                if is_last or task.cancel_event.is_set():
+                    # Every candidate exhausted: surface the full per-source
+                    # summary rather than only the last source's complaint.
+                    raise DownloadAllCandidatesFailed(errors) from e
+                # Partial bytes are presumed good → keep them and Range-resume
+                # onto the next mirror.
+                await self._fallback(task, url, ordered, idx, type(e).__name__, errors)
+                continue
+
+            # --- stream body complete → verify integrity ---
+            task.status = DownloadStatus.VERIFYING
+            await self._emit(task, "verifying")
+            try:
+                actual = await self._sha256_file(partial)
+            except Exception as e:  # noqa: BLE001
+                errors.append(f"{url}: sha256 read error: {e}")
+                if is_last or task.cancel_event.is_set():
+                    raise
+                # Unreadable/corrupt partial — drop before retrying fresh.
+                with contextlib.suppress(FileNotFoundError):
+                    partial.unlink()
+                task.final_sha256 = None
+                task.downloaded_bytes = 0
+                await self._fallback(task, url, ordered, idx, "sha256_read_error", errors)
+                continue
+
+            task.final_sha256 = actual
+            if task.expected_sha256 and actual.lower() != task.expected_sha256.lower():
+                errors.append(
+                    f"{url}: sha256 mismatch expected {task.expected_sha256}, got {actual}"
+                )
+                if is_last or task.cancel_event.is_set():
+                    # Last source: drop the corrupt partial and surface a
+                    # clear integrity error.
+                    with contextlib.suppress(FileNotFoundError):
+                        partial.unlink()
+                    task.final_sha256 = None
+                    raise Sha256MismatchError(errors[-1])
+                # Wrong/corrupt bytes from this source — start the next mirror
+                # from scratch (a stale partial would guarantee a bad file).
+                with contextlib.suppress(FileNotFoundError):
+                    partial.unlink()
+                task.final_sha256 = None
+                task.downloaded_bytes = 0
+                await self._fallback(task, url, ordered, idx, "sha256_mismatch", errors)
+                continue
+
+            # --- integrity OK → atomic rename, done ---
+            _atomic_rename(partial, Path(task.dest_path))
+            task.status = DownloadStatus.DONE
+            task.finished_at = time.time()
+            await self._emit(task, "done", extra={
+                "sha256": actual,
+                "url": url,
+                "source_index": idx,
+                "sources_tried": len(errors) + 1,
+            })
+            return
+
+        # Unreachable in practice (the loop returns on success or raises on the
+        # last failure), but keep a typed safety net.
+        raise DownloadAllCandidatesFailed(errors)
+
+    async def _fallback(
+        self,
+        task: DownloadTask,
+        from_url: str,
+        ordered: list[str],
+        idx: int,
+        reason: str,
+        errors: list[str],
+    ) -> None:
+        """Record a mirror switch and emit a ``fallback`` progress event."""
+        task.fallbacks += 1
+        next_url = ordered[idx + 1] if idx + 1 < len(ordered) else ""
+        await self._emit(task, "fallback", extra={
+            "reason": reason,
+            "from": from_url,
+            "to": next_url,
+            "source_index": idx,
+            "errors": list(errors),
+        })
+        # Small cooperative pause so a hard-down host doesn't get hammered
+        # instantly; tests pass zero-backoff to stay fast.
+        await asyncio.sleep(self._backoff_seconds(task.fallbacks))
 
     async def _stream_with_retry(
         self,
