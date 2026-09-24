@@ -150,6 +150,38 @@ for a in "${ARTIFACTS[@]}"; do
 done
 
 # ----------------------------------------------------------------------
+step "6b. Generate SHA256SUMS.txt for distributables"
+# ----------------------------------------------------------------------
+# Users verify installers out-of-band.  Auto-update metadata (latest*.yml +
+# blockmap) already carries electron-updater's own sha512, so this manifest
+# covers only the user-downloadable installers/archives.  Generated with the
+# standard `sha256sum` (fallback `shasum -a 256` on macOS) so the file is
+# directly verifiable with `sha256sum -c SHA256SUMS.txt`.
+SUMS_FILE="build/output/SHA256SUMS.txt"
+SUMS_ARTIFACTS=(
+  build/output/*.exe
+  build/output/*.zip
+  build/output/*.AppImage
+  build/output/*.deb
+  build/output/*.dmg
+)
+if [ "${#SUMS_ARTIFACTS[@]}" -eq 0 ]; then
+  fail "no distributable installers found to checksum"
+fi
+(
+  cd build/output
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "${SUMS_ARTIFACTS[@]#build/output/}" > SHA256SUMS.txt
+  else
+    shasum -a 256 "${SUMS_ARTIFACTS[@]#build/output/}" > SHA256SUMS.txt
+  fi
+)
+info "SHA256SUMS.txt:"
+sed 's/^/    /' "${SUMS_FILE}"
+# Upload the checksum manifest alongside the installers.
+ARTIFACTS+=("${SUMS_FILE}")
+
+# ----------------------------------------------------------------------
 step "7. Generate release notes"
 # ----------------------------------------------------------------------
 NOTES_FILE="build/output/RELEASE_NOTES.md"
@@ -182,6 +214,15 @@ the in-app updater can discover and verify this release.
 2. Launch from desktop shortcut (installer) or the unzipped folder (portable).
 3. Open "AI 引擎" tab → install \`llama.cpp\` (first time).
 4. Open "模型市场" → pick a model → download, or use GGUF 全量化.
+
+## Verify downloads (optional but recommended)
+A \`SHA256SUMS.txt\` is attached to this release. After downloading an
+installer, verify its integrity from the same folder:
+\`\`\`bash
+sha256sum -c SHA256SUMS.txt --ignore-missing
+\`\`\`
+On Windows, compare the printed SHA256 in \`SHA256SUMS.txt\` against
+\`Get-FileHash .\\Kevrai-Omni-${VERSION}-x64.exe -Algorithm SHA256\`.
 EOF
   info "generated fallback release notes (${PROJECT_NOTES} not found)"
 fi
