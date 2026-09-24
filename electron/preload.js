@@ -13,7 +13,7 @@
  * on, so the worst the renderer can do is call these names with bad args.
  */
 
-const { contextBridge, ipcRenderer } = require("electron");
+const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
 // ---------------------------------------------------------------------------
 // Internal helpers (not exported)
@@ -493,6 +493,14 @@ const api = {
   // ----- Dialogs / paths / errors / shell -----
   pickFolder:   () => invoke("dialog:pickFolder"),
   pickFile:     () => invoke("dialog:pickFile"),
+  // Resolve the absolute path of a dropped/selected File object. The nonstandard
+  // File.path was removed in Electron 32 (the app runs Electron 33); webUtils is
+  // the supported replacement and must be called from preload under context
+  // isolation. Returns "" for a JS-built File not backed by disk.
+  pathForFile:  (file) => {
+    try { return webUtils.getPathForFile(file); }
+    catch (_) { return ""; }
+  },
   openPath:     (p) => {
     assertString(p, "path", 4096);
     return invoke("kevrai:open-path", { path: p });
