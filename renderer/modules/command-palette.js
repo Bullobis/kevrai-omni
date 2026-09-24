@@ -1,178 +1,268 @@
-// renderer/modules/command-palette.js
-// Cherry-Studio-style command palette (Ctrl/Cmd+K): fuzzy jump to any pane or
-// run a global action. It reuses existing buttons/tabs by .click()-ing them, so
-// it needs no changes to the app's wiring. Also registers a few global
-// shortcuts (Ctrl+Digit, Ctrl+, Ctrl+D).
+// renderer/modules/command-palette.js — 命令面板（Ctrl/⌘+K）。
+//
+// 零依赖、纯 ES module、可独立 import。
+//   - openCommandPalette()   手动唤起
+//   - registerAction(id, label, handler, keywords?)  注册/覆盖动作
+//   - initCommandPalette(container?)  绑定全局快捷键并挂载 overlay
+//
+// 与 app.js 解耦：内置动作默认通过 window.dispatchEvent(CustomEvent) 发事件，
+// 不直接调用 app.js 内部函数。app.js 也可用 registerAction(id, ...) 覆盖 handler
+// 接入真实业务。
 "use strict";
 
-const clickTab = (tab) => {
-  const el = document.querySelector(`.sidebar .pane-tab[data-tab="${tab}"]`);
-  if (el) el.click();
-};
-const clickAction = (action) => {
-  const el = document.querySelector(`[data-action="${action}"]`);
-  if (el) el.click();
-};
+import { t, getLocale, setLocale } from "./i18n.js";
 
-const COMMANDS = [
-  { group: "导航", icon: "◇", label: "模型市场", keywords: "market model moxing shichang", run: () => clickTab("market") },
-  { group: "导航", icon: "⚡", label: "硬件推荐", keywords: "hardware gpu yingjian tui jian", run: () => clickTab("hardware") },
-  { group: "导航", icon: "⟁", label: "AI 引擎", keywords: "engines yinqing", run: () => clickTab("engines") },
-  { group: "导航", icon: "⬢", label: "MNN 引擎", keywords: "mnn", run: () => clickTab("mnn") },
-  { group: "导航", icon: "🤖", label: "AI Agent", keywords: "agent assistant zhushou", run: () => clickTab("agent") },
-  { group: "导航", icon: "🎥", label: "LTX-2.5 视频", keywords: "ltx video shipin", run: () => clickTab("ltx") },
-  { group: "导航", icon: "⛁", label: "本地模型", keywords: "local bendi", run: () => clickTab("local") },
-  { group: "导航", icon: "▤", label: "GGUF 仓库", keywords: "gguf cangku", run: () => clickTab("gguf") },
-  { group: "导航", icon: "⌛", label: "待官方开源", keywords: "pending kaiyuan", run: () => clickTab("pending") },
-  { group: "导航", icon: "⚙", label: "环境管理", keywords: "environments huanjing", run: () => clickTab("environments") },
-  { group: "动作", icon: "⟳", label: "刷新", keywords: "refresh shuaxin reload", run: () => clickAction("refresh") },
-  { group: "动作", icon: "⚙", label: "检测 GPU", keywords: "detect gpu jiance", run: () => clickAction("detect-gpu") },
-  { group: "动作", icon: "↻", label: "检查更新", keywords: "update gengxin", run: () => clickAction("check-updates") },
-  { group: "动作", icon: "⬇", label: "下载面板", keywords: "downloads xiazai", run: () => clickAction("open-downloads") },
-  { group: "动作", icon: "⚙", label: "设置", keywords: "settings shezhi", run: () => clickAction("open-settings") },
-];
+const hasDocument = typeof document !== "undefined";
+const hasWindow = typeof window !== "undefined";
 
-// Simple fuzzy: every query token appears as a contiguous substring of the
-// haystack (label + keywords), case-insensitive. Good enough and predictable.
-function matches(cmd, q) {
-  const hay = (cmd.label + " " + cmd.group + " " + cmd.keywords).toLowerCase();
-  return q.toLowerCase().split(/\s+/).filter(Boolean).every((t) => hay.includes(t));
+/** 动作表：id -> { id, label, keywords:[], handler } */
+const actions = new Map();
+let overlay = null;
+let inputEl = null;
+let listEl = null;
+let selectedIdx = 0;
+let rendered = []; // 当前过滤后的动作列表
+let inited = false;
+
+// ── 纯函数：模糊匹配（可在 Node 下单测）──────────────────────────────────────
+/**
+ * subsequenceMatch(query, target) — 子序列匹配：query 的每个字符按顺序出现在 target 中即命中。
+ * 同时对连续子串命中给更高分。大小写不敏感。
+ */
+export function subsequenceMatch(query, target) {
+  if (!query) return true;
+  const q = String(query).toLowerCase();
+  const s = String(target || "").toLowerCase();
+  // 子串命中直接通过
+  if (s.includes(q)) return { score: 100 - s.indexOf(q), hit: true };
+  // 子序列
+  let qi = 0;
+  for (let i = 0; i < s.length && qi < q.length; i++) {
+    if (s[i] === q[qi]) qi++;
+  }
+  return { score: qi === q.length ? 50 : 0, hit: qi === q.length };
 }
 
-export function initCommandPalette() {
-  if (document.getElementById("cmd-palette")) return;
-
-  const root = document.createElement("div");
-  root.id = "cmd-palette";
-  root.className = "cmd-overlay";
-  root.hidden = true;
-  root.innerHTML = `
-    <div class="cmd-card" role="dialog" aria-modal="true" aria-label="命令面板">
-      <div class="cmd-input-row">
-        <span class="cmd-search-ico">⌘</span>
-        <input class="cmd-input" type="text" autocomplete="off" spellcheck="false"
-               placeholder="搜索页面或动作…" aria-label="命令搜索" />
-      </div>
-      <div class="cmd-list" role="listbox"></div>
-      <div class="cmd-foot">
-        <span><kbd>↑↓</kbd> 选择</span>
-        <span><kbd>Enter</kbd> 执行</span>
-        <span><kbd>Esc</kbd> 关闭</span>
-      </div>
-    </div>`;
-  document.body.appendChild(root);
-
-  const input = root.querySelector(".cmd-input");
-  const listEl = root.querySelector(".cmd-list");
-  let selected = 0;
-  let visible = [];
-
-  const renderList = () => {
-    const q = input.value.trim();
-    visible = COMMANDS.filter((c) => (q ? matches(c, q) : true));
-    selected = 0;
-    if (!visible.length) {
-      listEl.innerHTML = `<div class="cmd-empty">没有匹配的命令</div>`;
-      return;
+/**
+ * filterActions(actionList, query) — 按 label + keywords 过滤并按分数排序。
+ * actionList: [{id,label,keywords}]
+ */
+export function filterActions(actionList, query) {
+  const q = (query || "").trim().toLowerCase();
+  if (!q) return actionList.slice();
+  const scored = [];
+  for (const a of actionList) {
+    const labelHit = subsequenceMatch(q, a.label);
+    let best = labelHit.score;
+    let hit = labelHit.hit;
+    for (const kw of a.keywords || []) {
+      const k = subsequenceMatch(q, kw);
+      if (k.score > best) best = k.score;
+      if (k.hit) hit = true;
     }
-    listEl.innerHTML = visible
-      .map(
-        (c, i) => `
-        <button class="cmd-item${i === 0 ? " active" : ""}" role="option"
-                aria-selected="${i === 0}" data-i="${i}">
-          <span class="cmd-ico">${c.icon}</span>
-          <span class="cmd-label">${c.label}</span>
-          <span class="cmd-group">${c.group}</span>
-        </button>`,
-      )
-      .join("");
-    listEl.querySelectorAll(".cmd-item").forEach((b) => {
-      b.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        selected = Number(b.dataset.i);
-        execute();
-      });
-      b.addEventListener("mouseenter", () => setSelected(Number(b.dataset.i)));
-    });
-  };
+    if (hit) scored.push({ a, best });
+  }
+  scored.sort((x, y) => y.best - x.best);
+  return scored.map((x) => x.a);
+}
 
-  const setSelected = (i) => {
-    selected = i;
-    listEl.querySelectorAll(".cmd-item").forEach((b, j) => {
-      const on = j === i;
-      b.classList.toggle("active", on);
-      b.setAttribute("aria-selected", on ? "true" : "false");
-      if (on) b.scrollIntoView({ block: "nearest" });
-    });
-  };
+// ── 动作注册 ──────────────────────────────────────────────────────────────────
+export function registerAction(id, label, handler, keywords) {
+  if (!id || typeof handler !== "function") return;
+  actions.set(id, {
+    id,
+    label: typeof label === "function" ? label : () => String(label ?? id),
+    keywords: Array.isArray(keywords) ? keywords : keywords ? [keywords] : [],
+    handler,
+  });
+}
 
-  const execute = () => {
-    const cmd = visible[selected];
-    close();
-    if (cmd) cmd.run();
-  };
+// ── 默认动作（事件解耦）───────────────────────────────────────────────────────
+function emit(name, detail) {
+  if (!hasWindow) return;
+  window.dispatchEvent(new CustomEvent(name, { detail: detail || {} }));
+}
 
-  const open = () => {
-    root.hidden = false;
-    input.value = "";
-    renderList();
-    // Focus after the element is shown.
-    requestAnimationFrame(() => input.focus());
-    document.addEventListener("keydown", onPanelKey, true);
-  };
+function registerDefaults() {
+  // 切 pane：dispatch kevrai:navigate { tab }
+  const panes = [
+    ["goMarket", "cmdpal.actions.goMarket", "market", ["models", "market", "模型", "模型市场", "home"]],
+    ["goHardware", "cmdpal.actions.goHardware", "hardware", ["hardware", "gpu", "硬件", "推荐"]],
+    ["goEngines", "cmdpal.actions.goEngines", "engines", ["engines", "engine", "引擎", "llama.cpp"]],
+    ["goMnn", "cmdpal.actions.goMnn", "mnn", ["mnn", "引擎"]],
+    ["goAgent", "cmdpal.actions.goAgent", "agent", ["agent", "assistant", "智能体", "助手"]],
+    ["goLtx", "cmdpal.actions.goLtx", "ltx", ["ltx", "video", "视频", "短剧"]],
+    ["goLocal", "cmdpal.actions.goLocal", "local", ["local", "本地", "import", "导入"]],
+    ["goGguf", "cmdpal.actions.goGguf", "gguf", ["gguf", "仓库"]],
+    ["goPending", "cmdpal.actions.goPending", "pending", ["pending", "待开源", "wait"]],
+    ["goEnvironments", "cmdpal.actions.goEnvironments", "environments", ["environments", "env", "环境"]],
+  ];
+  for (const [id, labelKey, tab, kws] of panes) {
+    registerAction(id, () => t(labelKey), () => emit("kevrai:navigate", { tab }), kws);
+  }
+  registerAction("openSettings", () => t("cmdpal.actions.openSettings"),
+    () => emit("kevrai:open-settings"), ["settings", "设置", "preferences", "偏好"]);
+  registerAction("openDownloads", () => t("cmdpal.actions.openDownloads"),
+    () => emit("kevrai:open-downloads"), ["downloads", "下载", "tasks", "任务"]);
+  registerAction("detectGpu", () => t("cmdpal.actions.detectGpu"),
+    () => emit("kevrai:detect-gpu"), ["gpu", "硬件", "detect", "检测"]);
+  registerAction("refreshModels", () => t("cmdpal.actions.refreshModels"),
+    () => emit("kevrai:refresh"), ["refresh", "reload", "刷新", "重载", "models"]);
+  registerAction("checkUpdates", () => t("cmdpal.actions.checkUpdates"),
+    () => emit("kevrai:check-updates"), ["update", "更新", "upgrade", "升级"]);
+  registerAction("switchLocale", () => t("cmdpal.actions.switchLocale"),
+    async () => {
+      const next = getLocale() === "zh-CN" ? "en-US" : "zh-CN";
+      await setLocale(next);
+      renderList();
+    }, ["locale", "language", "i18n", "语言", "en", "zh", "中文", "english"]);
+}
 
-  const close = () => {
-    root.hidden = true;
-    document.removeEventListener("keydown", onPanelKey, true);
-  };
+// ── DOM 构建（仅在浏览器环境执行）────────────────────────────────────────────
+function buildOverlay() {
+  if (!hasDocument) return null;
+  if (overlay) return overlay;
 
-  const onPanelKey = (e) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      close();
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (visible.length) setSelected((selected + 1) % visible.length);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      if (visible.length) setSelected((selected - 1 + visible.length) % visible.length);
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      execute();
-    }
-  };
+  overlay = document.createElement("div");
+  overlay.className = "cmdpal-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", t("cmdpal.title"));
+  overlay.hidden = true;
 
-  input.addEventListener("input", renderList);
-  root.addEventListener("mousedown", (e) => {
-    if (e.target === root) close();
+  const panel = document.createElement("div");
+  panel.className = "cmdpal-panel";
+
+  inputEl = document.createElement("input");
+  inputEl.className = "cmdpal-input";
+  inputEl.type = "text";
+  inputEl.setAttribute("autocomplete", "off");
+  inputEl.setAttribute("spellcheck", "false");
+  inputEl.placeholder = t("cmdpal.placeholder");
+  inputEl.addEventListener("input", () => renderList());
+  inputEl.addEventListener("keydown", onInputKey);
+
+  listEl = document.createElement("div");
+  listEl.className = "cmdpal-list";
+  listEl.setAttribute("role", "listbox");
+
+  panel.appendChild(inputEl);
+  panel.appendChild(listEl);
+  overlay.appendChild(panel);
+
+  overlay.addEventListener("mousedown", (e) => {
+    if (e.target === overlay) closeCommandPalette();
   });
 
-  document.addEventListener("keydown", (e) => {
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function currentActionList() {
+  return Array.from(actions.values()).map((a) => ({
+    id: a.id,
+    label: typeof a.label === "function" ? a.label() : String(a.label),
+    keywords: a.keywords,
+    handler: a.handler,
+  }));
+}
+
+function renderList() {
+  if (!listEl) return;
+  const q = inputEl ? inputEl.value : "";
+  rendered = filterActions(currentActionList(), q);
+  selectedIdx = 0;
+  listEl.replaceChildren();
+  if (!rendered.length) {
+    const empty = document.createElement("div");
+    empty.className = "cmdpal-empty";
+    empty.textContent = t("cmdpal.empty");
+    listEl.appendChild(empty);
+    return;
+  }
+  rendered.forEach((a, i) => {
+    const row = document.createElement("div");
+    row.className = "cmdpal-item" + (i === 0 ? " active" : "");
+    row.setAttribute("role", "option");
+    row.dataset.id = a.id;
+    const label = document.createElement("span");
+    label.className = "cmdpal-item-label";
+    label.textContent = a.label;
+    const hint = document.createElement("span");
+    hint.className = "cmdpal-item-hint";
+    hint.textContent = a.id;
+    row.appendChild(label);
+    row.appendChild(hint);
+    row.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      runSelected(i);
+    });
+    listEl.appendChild(row);
+  });
+}
+
+function moveActive(delta) {
+  if (!rendered.length || !listEl) return;
+  selectedIdx = (selectedIdx + delta + rendered.length) % rendered.length;
+  const rows = listEl.querySelectorAll(".cmdpal-item");
+  rows.forEach((r, i) => r.classList.toggle("active", i === selectedIdx));
+  const activeRow = rows[selectedIdx];
+  if (activeRow && activeRow.scrollIntoView) {
+    activeRow.scrollIntoView({ block: "nearest" });
+  }
+}
+
+function runSelected(i) {
+  const idx = (typeof i === "number") ? i : selectedIdx;
+  const a = rendered[idx];
+  if (!a) return;
+  closeCommandPalette();
+  try { a.handler(a); } catch (_) {}
+}
+
+function onInputKey(e) {
+  if (e.key === "ArrowDown") { e.preventDefault(); moveActive(1); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); moveActive(-1); }
+  else if (e.key === "Enter") { e.preventDefault(); runSelected(); }
+  else if (e.key === "Escape") { e.preventDefault(); closeCommandPalette(); }
+}
+
+// ── 公开打开/关闭 ────────────────────────────────────────────────────────────
+export function openCommandPalette() {
+  if (!hasDocument) return;
+  buildOverlay();
+  overlay.hidden = false;
+  if (inputEl) { inputEl.value = ""; }
+  renderList();
+  if (inputEl) inputEl.focus();
+}
+
+export function closeCommandPalette() {
+  if (!overlay) return;
+  overlay.hidden = true;
+}
+
+export function isOpen() {
+  return !!overlay && !overlay.hidden;
+}
+
+// ── init：绑定全局快捷键 ─────────────────────────────────────────────────────
+export function initCommandPalette(container) {
+  if (inited) return;
+  inited = true;
+  registerDefaults();
+  if (!hasWindow || !hasDocument) return;
+  buildOverlay();
+  // Ctrl+K / Meta+K 唤起；再按一次关闭
+  window.addEventListener("keydown", (e) => {
     const mod = e.ctrlKey || e.metaKey;
-    // Ctrl/Cmd+K toggles the palette (ignore when typing in a form field? no —
-    // palette should open from anywhere).
     if (mod && (e.key === "k" || e.key === "K")) {
       e.preventDefault();
-      root.hidden ? open() : close();
-      return;
-    }
-    if (root.hidden && mod && !e.shiftKey && !e.altKey) {
-      // Ctrl+1..0 → first ten panes in tab order.
-      const digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
-      const di = digits.indexOf(e.key);
-      const tabs = ["market", "hardware", "engines", "mnn", "agent", "ltx", "local", "gguf", "pending", "environments"];
-      if (di !== -1) {
-        e.preventDefault();
-        clickTab(tabs[di]);
-        return;
-      }
-      if (e.key === ",") {
-        e.preventDefault();
-        clickAction("open-settings");
-      } else if (e.key === "d" || e.key === "D") {
-        e.preventDefault();
-        clickAction("open-downloads");
-      }
+      if (isOpen()) closeCommandPalette();
+      else openCommandPalette();
     }
   });
 }
+
+// Node 环境下也注册默认动作（便于单测 filterActions / registerAction）
+registerDefaults();

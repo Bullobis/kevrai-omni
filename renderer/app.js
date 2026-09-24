@@ -26,6 +26,7 @@ import { wireDragDrop } from "./modules/dragdrop.js";
 import { wireOnboarding } from "./modules/onboarding.js";
 import { wireUpdate } from "./modules/update.js";
 import { initCommandPalette } from "./modules/command-palette.js";
+import { initI18n } from "./modules/i18n.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -317,6 +318,26 @@ function wireGlobalUI() {
   }, 15_000);
 }
 
+function wirePaletteEvents() {
+  // The i18n command palette (Ctrl/⌘+K) is decoupled and talks via window events.
+  window.addEventListener("kevrai:navigate", (e) => {
+    const tab = e.detail && e.detail.tab;
+    if (tab) switchView(tab);
+  });
+  window.addEventListener("kevrai:open-downloads", () => {
+    try { showDownloads(); } catch (_) {}
+  });
+  window.addEventListener("kevrai:detect-gpu", () => {
+    const b = document.querySelector("[data-action=detect-gpu]");
+    if (b) b.click();
+  });
+  window.addEventListener("kevrai:refresh", () => loadAll());
+  window.addEventListener("kevrai:check-updates", () => {
+    const b = document.querySelector("[data-action=check-updates]");
+    if (b) b.click();
+  });
+}
+
 async function bootstrap() {
   initModels();
   initSearch(getVgrid());
@@ -327,6 +348,8 @@ async function bootstrap() {
   wireWindowControls();
   wireUpdate();
   wireThemeListener();
+  initI18n();
+  wirePaletteEvents();
   initCommandPalette();
   // 这两个此前只 import 未调用：
   //   - wireOnboarding  → #onboarding-overlay 一直显隐错乱（首启引导永不关闭）
