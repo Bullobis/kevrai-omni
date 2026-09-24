@@ -493,6 +493,12 @@ const api = {
   // ----- Dialogs / paths / errors / shell -----
   pickFolder:   () => invoke("dialog:pickFolder"),
   pickFile:     () => invoke("dialog:pickFile"),
+  // Custom / frameless title bar controls (see main.js window:* handlers).
+  winMinimize:       () => invoke("window:minimize"),
+  winToggleMaximize: () => invoke("window:toggle-maximize"),
+  winClose:          () => invoke("window:close"),
+  winIsMaximized:    () => invoke("window:is-maximized"),
+  onWinMaxChange:    (cb) => listen("window:maximize-change", cb),
   openPath:     (p) => {
     assertString(p, "path", 4096);
     return invoke("kevrai:open-path", { path: p });
