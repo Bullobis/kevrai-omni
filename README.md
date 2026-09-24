@@ -192,6 +192,26 @@ GET  /api/ltx/outputs           # 已生成文件列表
 
 ---
 
+## 🎞️ Remotion 动画视频（宣传物料）
+
+仓库内置一个独立的 [Remotion](https://www.remotion.dev/) 工程（`remotion/`），
+用 React 代码化生成片头动画与版本海报（H.264 MP4），不依赖录制屏：
+
+- `remotion/src/components/GradientBg.tsx` / `ParticleField.tsx` —— 动态背景素材
+- 合成：`LogoIntro`（Logo 片头）、`VersionPoster`（版本发布海报）
+
+```bash
+cd remotion
+npm install
+npm run dev          # 打开 Remotion Studio 实时预览 / 调参
+npm run render:all   # 渲染全部合成到 remotion/out/*.mp4
+```
+
+生成的 MP4 可用于 GitHub Release 视频、官网首页或宣传物料；这与运行时的
+**LTX-2.5 视频生成**（用户在应用内文生/图生视频）相互独立。
+
+---
+
 ## 🔍 超级搜索
 
 模型市场顶部工具栏：
