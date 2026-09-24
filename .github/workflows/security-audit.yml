@@ -1,0 +1,81 @@
+name: security-audit
+
+# Weekly supply-chain + CVE audit, plus on every PR and manual dispatch.
+# This workflow is REPORT-ONLY: it uploads the audit findings and the SBOM as
+# artifacts and does not fail the build on a discovered vulnerability.  The
+# goal is visibility, not a gate (the gate is a human triaging the artifact).
+on:
+  schedule:
+    # 06:17 UTC every Monday (weekly).
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: pip + npm + SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pip-audit (Tencent mirror)
+        run: |
+          python -m pip install --upgrade pip -i https://mirrors.tencent.com/pypi/simple/
+          python -m pip install pip-audit -i https://mirrors.tencent.com/pypi/simple/
+          pip-audit --version
+
+      - name: pip dependency audit
+        continue-on-error: true
+        run: |
+          mkdir -p audit-out
+          python scripts/security/pip_audit.py \
+            --requirements python/requirements.txt \
+            --out audit-out/pip-audit-report.json
+          python scripts/security/summarize_audit.py --report audit-out/pip-audit-report.json || true
+
+      - name: npm dependency audit
+        continue-on-error: true
+        run: |
+          mkdir -p audit-out
+          npm audit --package-lock-only --json > audit-out/npm-audit-npm.json || true
+          python scripts/security/npm_audit.py \
+            --package-json package.json \
+            --lock package-lock.json \
+            --out audit-out/npm-audit-report.json
+          python scripts/security/summarize_audit.py --report audit-out/npm-audit-report.json || true
+
+      - name: Generate CycloneDX SBOM
+        run: |
+          mkdir -p audit-out
+          python scripts/security/generate_sbom.py \
+            --requirements python/requirements.txt \
+            --package-lock package-lock.json \
+            --out audit-out/sbom.json
+          python -c "import json; s=json.load(open('audit-out/sbom.json')); print('SBOM components:', len(s['components']))"
+
+      - name: Upload audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-${{ github.run_id }}
+          path: |
+            audit-out/pip-audit-report.json
+            audit-out/npm-audit-report.json
+            audit-out/npm-audit-npm.json
+            audit-out/sbom.json
+          if-no-files-found: warn
