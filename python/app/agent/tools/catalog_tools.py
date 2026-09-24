@@ -10,6 +10,26 @@ from typing import Any
 
 from ..tool_registry import Tool, ToolContext
 
+
+def _as_int(value: Any, default: int, lo: int, hi: int, field: str) -> int:
+    """Coerce an LLM-supplied integer parameter with safe clamping.
+
+    Accepts int, float (truncated) and numeric strings. Any other type (e.g.
+    a stray string or list a small local LLM may emit) raises a clean
+    ``ValueError`` — the registry turns it into ``{"ok": False, ...}`` with an
+    actionable message instead of leaking a bare ``int()`` traceback.
+    """
+    if value is None or value == "":
+        return default
+    if isinstance(value, bool):
+        raise ValueError(f"{field} must be an integer, got {value!r}")
+    try:
+        n = value if isinstance(value, int) else int(float(str(value).strip()))
+    except (ValueError, TypeError):
+        raise ValueError(f"{field} must be an integer, got {value!r}")
+    return max(lo, min(n, hi))
+
+
 # ---------------------------------------------------------------------------
 # search_models
 # ---------------------------------------------------------------------------
@@ -39,8 +59,7 @@ def _detect_category_from_query(query: str) -> str | None:
 def _search_models(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
     query = str(params.get("query") or "").strip()
     category = params.get("category")
-    limit = int(params.get("limit") or 10)
-    limit = max(1, min(limit, 50))
+    limit = _as_int(params.get("limit"), 10, 1, 50, "limit")
 
     if not query and not category:
         return {"results": [], "count": 0, "hint": "请提供搜索关键词或类别"}
@@ -181,8 +200,7 @@ model_info = Tool(
 # ---------------------------------------------------------------------------
 def _recommend_models(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
     category = params.get("category")
-    limit = int(params.get("limit") or 5)
-    limit = max(1, min(limit, 20))
+    limit = _as_int(params.get("limit"), 5, 1, 20, "limit")
 
     hw = ctx.hardware_info or {}
     if not hw:
