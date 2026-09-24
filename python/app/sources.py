@@ -214,7 +214,6 @@ HF_MIRROR_HOSTS: set[str] = {
     "cdn-lfs.huggingface.co",
     "hf-mirror.com",
     "hf-mirror.us",
-    "hf-cdn.sufy.com",
     "huggingface.dl.in.tel",
     "hf-cn-mirror.com",
 }
