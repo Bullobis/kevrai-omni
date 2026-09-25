@@ -380,6 +380,22 @@ button.full { width: 100%; }
   padding: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
   overflow-y: auto;
 }
+.settings-group {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--bord);
+  border-radius: var(--r-3);
+  background: var(--stack-2);
+}
+.settings-group-title {
+  margin: 0 0 2px;
+  color: var(--fg);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
 @media (max-width: 720px) {
   .overlay { padding: 0; }
   .overlay-card {

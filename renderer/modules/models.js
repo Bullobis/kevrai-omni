@@ -472,6 +472,7 @@ function renderDetail(m, gguf) {
         ${m.import_only ? `<span class="pill">仅下载/导入</span>` : ""}
         ${m.gated ? `<span class="pill warn">gated 受控访问</span>` : ""}
       </div>
+      <button class="ghost icon detail-close" type="button" data-action="close-detail" aria-label="关闭详情" title="关闭详情">×</button>
     </header>
     ${(m.description || chineseNameOf(m))
       ? `<p class="card-desc">${escapeHtml(m.description || chineseNameOf(m))}</p>` : ""}

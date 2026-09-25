@@ -71,7 +71,7 @@ const MS_LOGO_ORIGIN = "https://img.alicdn.com";
 const RENDERER_CSP = [
   "default-src 'self'",
   // Renderer talks ONLY to the sidecar (HTTP + WS upgrade). No third-party.
-  "connect-src 'self' http://127.0.0.1:17890 ws://127.0.0.1:17890",
+  `connect-src 'self' http://${SIDECAR_HOST}:${SIDECAR_PORT} ws://${SIDECAR_HOST}:${SIDECAR_PORT}`,
   // `img-src` additionally allows the one external image the UI needs (the
   // 魔搭 badge). Deliberately host-pinned rather than a wildcard.
   `img-src 'self' data: ${MS_LOGO_ORIGIN}`,
