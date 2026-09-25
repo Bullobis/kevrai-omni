@@ -23,7 +23,6 @@ import asyncio
 import threading
 import time
 
-import pytest
 
 from app.agent import Agent, AgentMemory, ToolContext
 from app.agent.tool_registry import Tool, ToolRegistry
@@ -193,7 +192,6 @@ def test_cancel_one_session_does_not_affect_the_other(tmp_path):
     class _SharingRouter(_GateRouter):
         def chat(self, prompt, system="", max_new_tokens=2048):
             with self._cond:
-                idx = self.calls
                 self.calls += 1
                 self._cond.notify_all()
             if not self._go.wait(timeout=10):

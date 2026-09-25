@@ -86,7 +86,6 @@ def test_ghost_slugs_absent(ghost_slug):
 def test_supir_marked_non_official():
     m, _ = _models()
     s = m["supir"]
-    blob = json.dumps(s, ensure_ascii=False)
     assert ("非官方" in s.get("description", "")
             or "非官方" in s.get("source_note", "")), \
         "camenduru/SUPIR must be labelled as a non-official community mirror"
