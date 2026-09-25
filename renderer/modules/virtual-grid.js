@@ -122,6 +122,9 @@ export class VirtualGrid {
   _render() {
     const cols = this.colsNow || 1;
     const rowH = this.itemHeight + this.gap;
+    // Batch-read all layout values up front. Reading clientWidth/clientHeight
+    // inside the per-card write loop forces a synchronous reflow after every
+    // style mutation (layout thrashing) — read once, write many.
     const top = this.viewport.scrollTop;
     const h = this.viewport.clientHeight;
 
@@ -129,14 +132,15 @@ export class VirtualGrid {
     if (this.items.length === 0 && this.loading) {
       const frag = document.createDocumentFragment();
       const skeletonCount = Math.min(8, cols * 2);
+      const skeletonInnerW = this.host.clientWidth - this.padding * 2;
       for (let i = 0; i < skeletonCount; i++) {
         const r = Math.floor(i / cols);
         const c = i % cols;
         const node = document.createElement("div");
         node.className = `${this.itemClass} skeleton`;
         node.style.position = "absolute";
-        node.style.left   = `${this.padding + c * (this.host.clientWidth - this.padding*2) / cols}px`;
-        node.style.width  = `${(this.host.clientWidth - this.padding*2) / cols - this.gap}px`;
+        node.style.left   = `${this.padding + c * skeletonInnerW / cols}px`;
+        node.style.width  = `${skeletonInnerW / cols - this.gap}px`;
         node.style.top    = `${this.padding + r * rowH}px`;
         node.style.height = `${this.itemHeight}px`;
         frag.appendChild(node);
@@ -153,6 +157,10 @@ export class VirtualGrid {
     );
 
     const frag = document.createDocumentFragment();
+    // Use the viewport inner width (excludes the vertical scrollbar). The old
+    // host.clientWidth included the scrollbar gutter, which pushed the rightmost
+    // column ~15px under the scrollbar and clipped its content.
+    const innerW = this.viewport.clientWidth - this.padding * 2;
     for (let r = firstRow; r < lastRow; r++) {
       for (let c = 0; c < cols; c++) {
         const idx = r * cols + c;
@@ -161,10 +169,6 @@ export class VirtualGrid {
         node.classList.add(this.itemClass);
         node.dataset.idx = String(idx);
         node.style.position = "absolute";
-        // Use the viewport inner width (excludes the vertical scrollbar). The
-        // old host.clientWidth included the scrollbar gutter, which pushed the
-        // rightmost column ~15px under the scrollbar and clipped its content.
-        const innerW = this.viewport.clientWidth - this.padding * 2;
         node.style.left   = `${this.padding + c * innerW / cols}px`;
         node.style.width  = `${innerW / cols - this.gap}px`;
         node.style.top    = `${this.padding + r * rowH}px`;

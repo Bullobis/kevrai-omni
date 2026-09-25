@@ -6,8 +6,13 @@
 import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
 
 const FLAG = "kevrai.onboarded.v1";
+// Idempotent: deferred to idle at startup; re-invocation must not re-trap focus
+// or stack duplicate close handlers.
+let onboardWired = false;
 
 export function wireOnboarding() {
+  if (onboardWired) return;
+  onboardWired = true;
   const overlay = document.getElementById("onboarding-overlay");
   if (!overlay) return;
   try {

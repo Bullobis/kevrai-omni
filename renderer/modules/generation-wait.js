@@ -78,8 +78,16 @@ function buildOverlay(options) {
     canvas.width = width;
     canvas.height = height;
   }
+  // Coalesce resize to one canvas resize per frame. Assigning canvas.width
+  // also clears the bitmap, so running it for every raw resize event janks
+  // window-drag; rAF gating matches virtual-grid.js.
+  let resizeRaf = 0;
+  const onResize = () => {
+    if (resizeRaf) return;
+    resizeRaf = requestAnimationFrame(() => { resizeRaf = 0; resize(); });
+  };
   resize();
-  window.addEventListener("resize", resize, { passive: true });
+  window.addEventListener("resize", onResize, { passive: true });
 
   const particleCount = Math.min(80, Math.floor((width * height) / 18000));
   for (let i = 0; i < particleCount; i++) {
@@ -190,8 +198,9 @@ function buildOverlay(options) {
     destroy() {
       running = false;
       if (rafId) cancelAnimationFrame(rafId);
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
       clearInterval(captionTimer);
-      window.removeEventListener("resize", resize);
+      window.removeEventListener("resize", onResize);
       if (root.parentNode) root.parentNode.removeChild(root);
       if (activeInstance === api) activeInstance = null;
     },

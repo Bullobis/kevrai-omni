@@ -13,8 +13,11 @@ import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-retur
 
 const $ = (s) => document.querySelector(s);
 
-// a11y — 打开更新面板前的触发元素，关闭时归还焦点。
 let savedTrigger = null;
+// Idempotent: wireUpdate runs once at startup (deferred to idle), but may be
+// re-invoked by the capture-phase ensure in app.js if the user clicks the
+// header "check updates" button before idle has run.
+let wired = false;
 
 function openOverlay() {
   const el = $("#update-overlay");
@@ -177,6 +180,8 @@ async function runInstall() {
 }
 
 export function wireUpdate() {
+  if (wired) return;
+  wired = true;
   const btn = $("[data-action=check-updates]");
   if (btn) {
     btn.addEventListener("click", (e) => { e.preventDefault(); runCheck(); });
