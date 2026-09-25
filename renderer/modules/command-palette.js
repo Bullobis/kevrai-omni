@@ -11,6 +11,7 @@
 "use strict";
 
 import { t, getLocale, setLocale } from "./i18n.js";
+import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
 
 const hasDocument = typeof document !== "undefined";
 const hasWindow = typeof window !== "undefined";
@@ -23,6 +24,10 @@ let listEl = null;
 let selectedIdx = 0;
 let rendered = []; // 当前过滤后的动作列表
 let inited = false;
+
+// a11y — 打开命令面板/快捷键面板前的焦点，关闭时归还。
+let savedPaletteTrigger = null;
+let savedHelpTrigger = null;
 
 // Recently-used commands (persisted; only read/written in the browser).
 const RECENT_KEY = "kevrai:cmd-recent";
@@ -283,6 +288,7 @@ function onInputKey(e) {
 // ── 公开打开/关闭 ────────────────────────────────────────────────────────────
 export function openCommandPalette() {
   if (!hasDocument) return;
+  savedPaletteTrigger = recordFocus();
   buildOverlay();
   overlay.hidden = false;
   if (inputEl) {
@@ -297,6 +303,8 @@ export function openCommandPalette() {
 export function closeCommandPalette() {
   if (!overlay) return;
   overlay.hidden = true;
+  restoreFocus(savedPaletteTrigger);
+  savedPaletteTrigger = null;
 }
 
 export function isOpen() {
@@ -364,11 +372,16 @@ function buildHelpOverlay() {
 }
 function openHelp() {
   if (!hasDocument) return;
+  savedHelpTrigger = recordFocus();
   buildHelpOverlay();
   helpOverlay.hidden = false;
+  trapFocus(helpOverlay);
 }
 function closeHelp() {
-  if (helpOverlay) helpOverlay.hidden = true;
+  if (!helpOverlay) return;
+  helpOverlay.hidden = true;
+  restoreFocus(savedHelpTrigger);
+  savedHelpTrigger = null;
 }
 function gotoNth(n) {
   const tabs = document.querySelectorAll(".sidebar .pane-tab");
@@ -407,9 +420,18 @@ export function initCommandPalette(container) {
       gotoNth(k === "0" ? 9 : Number(k) - 1);
     }
   });
-  // Esc closes the cheat-sheet (when its focus isn't inside an input).
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && helpOverlay && !helpOverlay.hidden) closeHelp();
+  // Esc 关闭纳入全局优先级栈（命令面板 100 > 快捷键速查 90 > 设置 80 …）。
+  registerEsc({
+    order: 100,
+    root: overlay,
+    isOpen: () => !!overlay && !overlay.hidden,
+    close: closeCommandPalette,
+  });
+  registerEsc({
+    order: 90,
+    root: helpOverlay,
+    isOpen: () => !!helpOverlay && !helpOverlay.hidden,
+    close: closeHelp,
   });
 }
 

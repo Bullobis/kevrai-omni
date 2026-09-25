@@ -5,6 +5,7 @@ import { toast } from "./toast.js";
 import { state, setState } from "./state.js";
 import { applyTheme } from "./theme.js";
 import { showGenerationWait, hideGenerationWait } from "./generation-wait.js";
+import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -17,9 +18,13 @@ function formatBytes(b) {
   return `${b.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
+// 打开设置前记录触发元素，关闭时归还焦点（a11y）。
+let savedTrigger = null;
+
 export async function openSettings() {
   const overlay = $("#settings-overlay");
   if (!overlay) return;
+  savedTrigger = recordFocus();
   overlay.removeAttribute("hidden");
   overlay.setAttribute("aria-hidden", "false");
 
@@ -42,6 +47,9 @@ export function closeSettings() {
   if (!overlay) return;
   overlay.setAttribute("hidden", "");
   overlay.setAttribute("aria-hidden", "true");
+  // 焦点归还给打开设置前的触发元素。
+  restoreFocus(savedTrigger);
+  savedTrigger = null;
 }
 
 // 设置中心左侧分类切换：高亮对应导航按钮，只显示对应内容分区。
@@ -68,26 +76,6 @@ function fillForm(s) {
     : "Advanced editing is disabled. Enable above to modify.";
   if ($("#set-hf-token")) $("#set-hf-token").value = s.hfToken || "";
   if ($("#set-ms-token")) $("#set-ms-token").value = s.msToken || "";
-}
-
-function trapFocus(root) {
-  const sel = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
-  // 隐藏的设置分区（.settings-section[hidden]）里的控件不应进入 Tab 顺序，
-  // 因此只收集「可见」的可聚焦元素。
-  const visibleFocusables = () =>
-    Array.from(root.querySelectorAll(sel)).filter((el) => !el.closest("[hidden]"));
-  const focusables = visibleFocusables();
-  if (focusables[0]) focusables[0].focus();
-  const handler = (e) => {
-    if (e.key !== "Tab") return;
-    const list = visibleFocusables();
-    if (!list.length) return;
-    const first = list[0], last = list[list.length - 1];
-    if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
-    else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
-  };
-  root._trapHandler = handler;
-  root.addEventListener("keydown", handler);
 }
 
 function readForm() {
@@ -197,8 +185,13 @@ export function wireSettings() {
     if (t) { e.preventDefault(); openSettings().catch(() => {}); }
   });
 
-  // Close on Escape
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !overlay.hasAttribute("hidden")) closeSettings();
+  // Close on Escape（纳入全局优先级栈：命令面板/快捷键面板 > 设置）。
+  // editableFirst：焦点在输入框时第一次 Esc 仅失焦，第二次才关设置。
+  registerEsc({
+    order: 80,
+    root: overlay,
+    isOpen: () => !overlay.hasAttribute("hidden"),
+    close: closeSettings,
+    editableFirst: true,
   });
 }
