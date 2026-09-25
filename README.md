@@ -15,9 +15,38 @@
 
 > 点击播放 [assets/media/promo.mp4](assets/media/promo.mp4)。全部画面取自 v2.8.1 真实运行界面（真实模型目录、真实硬件检测、真实 Agent 工具调用）：模型市场双源检索、硬件体检与模型推荐、Kevrai Agent 工具调用、短剧 Agent、LTX-2.5 视频生成、MNN 引擎。
 
+## ⏱️ 7 秒滚动演示（Remotion 程序化生成）
+
+[![Kevrai Omni 滚动演示](assets/media/logo.png)](assets/media/demo.mp4)
+
+> 点击播放 [assets/media/demo.mp4](assets/media/demo.mp4)。滚动演示由 `video/` 中的 Remotion 工程生成，GitHub Actions 每 6 小时刷新 `rolling-demo` Release 资产。
+
 ![License: Kevrai Omni Community License v2.1](https://img.shields.io/badge/License-Kevrai%20Community%20v2.1-orange)
-![Version](https://img.shields.io/badge/version-3.2.0-brightgreen)
-![Tests](https://img.shields.io/badge/tests-1079%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.3.0-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1085%20passed-brightgreen)
+
+---
+
+## ✨ v3.3.0 更新亮点（Nova UX 整合 + Remotion 滚动演示 + 发布加固）
+
+| 项目 | 说明 |
+|---|---|
+| 🧭 **设置与导航体验整合** | 标题栏设置齿轮、`Ctrl/Cmd + ,` 快捷键、设置三段分组、导航当前状态与悬停提示；详情栏支持关闭按钮，窄窗口下以右侧抽屉呈现 |
+| 🤖 **Agent 首次使用引导** | 空状态、建议问题卡片、点击自动填入输入框；未配置 LLM 时也能快速理解可执行任务 |
+| 🎬 **Remotion 滚动演示** | 独立 `video/` 工程生成 7 秒演示，GitHub Actions 每 6 小时刷新 `rolling-demo` Release 资产，视频工程与 Electron 运行时隔离 |
+| 🛡️ **Electron 安全与动态端口** | 权限请求默认拒绝；CSP 根据 sidecar host/port 动态生成；保留上下文隔离、预加载白名单和导航限制 |
+| 📦 **打包排除与发布加固** | Windows/Linux 打包排除测试、虚拟环境、缓存和构建产物；最终 zip/AppImage/deb 均执行独立完整性校验 |
+| 🧪 **测试与冒烟** | 合入 v3.2 主线整合与 Nova UX 回归；全量 **1085 passed**，Electron UI 冒烟和最终包校验通过 |
+
+---
+
+## ✨ v3.2.0 更新亮点（GGUF 性能 + 命令面板/主题/数据目录）
+
+| 项目 | 说明 |
+|---|---|
+| ⚡ **GGUF 枚举性能** | `/api/gguf-repos` 改为线程池并发枚举，增加 10 分钟 TTL 缓存；GGUF 详情移出首屏关键路径 |
+| 🧭 **命令面板与主题** | 修复命令面板浮层常驻和占位符未翻译；浅色/深色主题在首绘前初始化；数据目录可配置、侧边栏可折叠、最近使用排序 |
+| 🧪 **最终整合验证** | 最终整合分支完成 Linux AppImage 真实冒烟，sidecar、模型网格、GGUF 后台加载和主题渲染通过 |
 
 ---
 
@@ -40,7 +69,7 @@
 | 🧭 **数据事实核验** | 121 模型/32 引擎逐一多源核验，修正 14 处错误 slug（GLM-4.5→zai-org、TripoSR→stabilityai、Open-Sora→hpcai-tech 等），清洗广告软文，移除持续 403 的失效源 |
 | 🛡️ **可靠性加固** | 下载器指数退避重试与超时边界、Agent/工具调用异常隔离、hub 摘要 HTML 实体解码（含 XSS 防护）；pip/npm CVE 审计与 CycloneDX SBOM |
 | 🎬 **程序化宣传视频** | Remotion 工程可无人值守重渲染，`scripts/render_promo.sh` 仅在内容变化时更新，配合每日定时任务自动刷新 |
-| 🧪 **测试加固** | 全量 **940 passed**，`node --check` 全绿，`smoke.sh` 全绿 |
+| 🧪 **测试加固** | 全量 **990 passed**；37 个 JS 文件语法检查全绿，UI 冒烟通过 |
 
 ---
 

@@ -15,7 +15,11 @@ files:
 extraResources:
   - from: "catalog"
     to: "catalog"
-    filter: ["**/*"]
+    filter:
+      - "**/*"
+      - "!**/__pycache__/**"
+      - "!**/*.pyc"
+      - "!**/.DS_Store"
   - from: "python"
     to: "python"
     # Include only the runtime sidecar sources; exclude the test suite,
@@ -29,6 +33,7 @@ extraResources:
       - "**/*.toml"
       - "**/*.txt"
       - "!tests/**"
+      - "!**/.venv/**"
       - "!**/__pycache__/**"
       - "!**/*.pyc"
       - "!**/*.pyo"

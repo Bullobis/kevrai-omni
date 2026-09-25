@@ -19,6 +19,8 @@ import json
 import os
 import shutil
 import threading
+import time
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -464,6 +466,10 @@ _HF_API_MIRRORS: tuple[str, ...] = (
     "https://huggingface.co/api",
 )
 
+_GGUF_CACHE_LOCK = threading.RLock()
+_GGUF_CACHE: dict[tuple[str, str], tuple[float, list[dict[str, Any]]]] = {}
+_GGUF_CACHE_TTL_S = 300.0
+
 
 def list_gguf_files(repo: str, pattern: str = "*.gguf") -> list[dict[str, Any]]:
     """Enumerate files in a HF repo (paginated), filter by pattern.
@@ -477,6 +483,11 @@ def list_gguf_files(repo: str, pattern: str = "*.gguf") -> list[dict[str, Any]]:
 
     if not repo:
         return []
+    cache_key = (repo, pattern)
+    with _GGUF_CACHE_LOCK:
+        hit = _GGUF_CACHE.get(cache_key)
+        if hit is not None and time.monotonic() - hit[0] < _GGUF_CACHE_TTL_S:
+            return deepcopy(hit[1])
     last_err: Exception | None = None
     for base in _HF_API_MIRRORS:
         url = f"{base}/models/{repo}/tree/main?recursive=true"
@@ -496,7 +507,9 @@ def list_gguf_files(repo: str, pattern: str = "*.gguf") -> list[dict[str, Any]]:
                     next_cursor = r.headers.get("x-next-cursor") or None
                     if not next_cursor:
                         break
-            return out
+            with _GGUF_CACHE_LOCK:
+                _GGUF_CACHE[cache_key] = (time.monotonic(), deepcopy(out))
+            return deepcopy(out)
         except Exception as e:  # noqa: BLE001 — try next mirror
             last_err = e
             continue

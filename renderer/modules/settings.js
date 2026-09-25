@@ -33,6 +33,10 @@ export async function openSettings() {
 export function closeSettings() {
   const overlay = $("#settings-overlay");
   if (!overlay) return;
+  if (typeof overlay._trapHandler === "function") {
+    overlay.removeEventListener("keydown", overlay._trapHandler);
+    overlay._trapHandler = null;
+  }
   overlay.setAttribute("hidden", "");
   overlay.setAttribute("aria-hidden", "true");
 }
@@ -171,8 +175,12 @@ export function wireSettings() {
     if (t) { e.preventDefault(); openSettings().catch(() => {}); }
   });
 
-  // Close on Escape
   document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "," && overlay.hasAttribute("hidden")) {
+      e.preventDefault();
+      openSettings().catch(() => {});
+      return;
+    }
     if (e.key === "Escape" && !overlay.hasAttribute("hidden")) closeSettings();
   });
 }

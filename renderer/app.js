@@ -50,17 +50,18 @@ let healthTimer = null;
 export async function loadAll() {
   try {
     const [settings, cats, ms, ens, locs, h] = await Promise.all([
-      api.getSettings(),
-      api.categories(),
-      api.models({}),
-      api.engines(),
-      api.localModels(),
+      api.getSettings().catch(() => ({})),
+      api.categories().catch(() => ({ body: { categories: [] } })),
+      api.models({}).catch(() => ({ body: { models: [], gguf_repos: [] } })),
+      api.engines().catch(() => ({ body: { engines: [] } })),
+      api.localModels().catch(() => ({ body: { local: [] } })),
       api.health().catch(() => ({ body: { version: "?", app_root: "unreachable" } })),
     ]);
     setState({
-      settings: settings || {},
+      settings: settings?.body || settings || {},
       categories: cats?.body?.categories || cats?.categories || [],
       models:     ms?.body?.models     || ms?.models     || [],
+      ggufRepos:  ms?.body?.gguf_repos || ms?.gguf_repos || [],
       engines:    ens?.body?.engines   || ens?.engines   || [],
       local:      locs?.body?.local    || locs?.local    || [],
     });
@@ -75,7 +76,9 @@ export async function loadAll() {
     renderGGUF();
     applyTheme();
     setHealthOk(`sidecar v${h?.body?.version || "?"}`);
-    // v2.4.0 — drive the market grid through the super search (facets, sort).
+    // Show local curated results immediately, then merge online results without
+    // leaving the user waiting on a cold network.
+    await runSearch({ resetPage: true, sources: ["curated"] });
     runSearch({ resetPage: true }).catch(() => {});
   } catch (e) {
     setHealthErr(String(e?.message || e));
@@ -165,7 +168,12 @@ function renderLocal() {
 }
 
 function switchView(name) {
-  $$(".pane-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
+  $$(".pane-tab").forEach((b) => {
+    const active = b.dataset.tab === name;
+    b.classList.toggle("active", active);
+    if (active) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
+  });
   $$(".pane").forEach((s) => s.classList.toggle("active", s.id === "pane-" + name));
   // Lazy-render the environments page the first time it's opened.
   if (name === "environments") {
@@ -248,6 +256,16 @@ function wireGlobalUI() {
     // open downloads overlay (anywhere)
     const dl = e.target.closest("[data-action=open-downloads]");
     if (dl) { e.preventDefault(); showDownloads(); }
+    const closeDetailBtn = e.target.closest("[data-action=close-detail]");
+    if (closeDetailBtn) {
+      e.preventDefault();
+      const panel = $("#detail-panel");
+      if (panel) {
+        panel.className = "detail-empty";
+        panel.innerHTML = `<p class="mut">← 选择一个模型查看详情。</p>`;
+      }
+      $("#main")?.focus();
+    }
     // reveal a local model in the OS file manager (restored from v1)
     const reveal = e.target.closest("[data-action=reveal-local]");
     if (reveal) {

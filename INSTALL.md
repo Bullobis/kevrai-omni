@@ -54,6 +54,14 @@ cd python && pip install -e ".[dev]" && python -m pytest -q tests/ && cd ..
 npm run build:win        # 产出 NSIS 安装包（需 Windows；Linux 下可用 wine，见 scripts/build_linux.sh）
 ```
 
+## 高级：并行实例
+
+默认 sidecar 端口为 `17890`。如需同时运行多个实例，可指定其他端口：
+
+```bash
+KEVRAI_PORT=17891 ./Kevrai-Omni-3.0.0-x86_64.AppImage
+```
+
 ## 卸载
 
 Windows 通过「设置 → 应用」卸载；默认保留 `AppData/KevraiOmni/` 中已下载的引擎与模型

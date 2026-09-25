@@ -25,7 +25,7 @@ import threading
 import time
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 log = logging.getLogger("kevrai.mnn")
 
@@ -672,7 +672,7 @@ class _MnnSubprocessClient:
         p.start()
         child_conn.close()
         self._conn = parent_conn
-        self._proc = p
+        self._proc = cast("multiprocessing.Process", p)
         self._killed_by_us = False
         self._state["error"] = ""
         if not parent_conn.poll(_CHILD_READY_TIMEOUT_S):

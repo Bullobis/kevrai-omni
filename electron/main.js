@@ -32,8 +32,12 @@ const { URL } = require("node:url");
 // Constants
 // ---------------------------------------------------------------------------
 
-const SIDECAR_PORT = 17890;
-const SIDECAR_HOST = "127.0.0.1";
+function readSidecarPort() {
+  const value = Number.parseInt(process.env.KEVRAI_PORT || "17890", 10);
+  return Number.isInteger(value) && value >= 1024 && value <= 65535 ? value : 17890;
+}
+const SIDECAR_PORT = readSidecarPort();
+const SIDECAR_HOST = process.env.KEVRAI_HOST || "127.0.0.1";
 const SIDECAR_HEALTH_TIMEOUT_MS = 30_000;
 const SIDECAR_HEALTH_INTERVAL_MS = 2_000;
 const SHUTDOWN_TIMEOUT_MS = 5_000;
@@ -67,7 +71,7 @@ const MS_LOGO_ORIGIN = "https://img.alicdn.com";
 const RENDERER_CSP = [
   "default-src 'self'",
   // Renderer talks ONLY to the sidecar (HTTP + WS upgrade). No third-party.
-  "connect-src 'self' http://127.0.0.1:17890 ws://127.0.0.1:17890",
+  `connect-src 'self' http://${SIDECAR_HOST}:${SIDECAR_PORT} ws://${SIDECAR_HOST}:${SIDECAR_PORT}`,
   // `img-src` additionally allows the one external image the UI needs (the
   // 魔搭 badge). Deliberately host-pinned rather than a wildcard.
   `img-src 'self' data: ${MS_LOGO_ORIGIN}`,
@@ -781,7 +785,8 @@ function registerIpc() {
     assert(isString(id, 128), "id: invalid");
     return sidecarFetch(`/api/models/${encodeURIComponent(id)}/gguf-files`);
   });
-  ipcMain.handle("api:gguf-repos",    async () => sidecarFetch("/api/gguf-repos"));
+  ipcMain.handle("api:gguf-repos", async () =>
+    sidecarFetch("/api/gguf-repos", { timeoutMs: 120_000 }));
   ipcMain.handle("api:engines",       async () => sidecarFetch("/api/engines"));
   ipcMain.handle("api:engines:install", async (_e, engine_id) => {
     assert(isString(engine_id, 128), "engine_id: invalid");
@@ -1565,8 +1570,18 @@ async function bootstrap() {
 
   registerIpc();
 
-  // webSecurity default is true; explicit here for clarity.
-  try { session.defaultSession.webRequest.onBeforeRequest((_d, cb) => cb({ cancel: false })); } catch (_) {}
+  // webSecurity default is true; explicit here for clarity. The application
+  // does not use camera, microphone, geolocation, notifications, or other
+  // Chromium permission-gated features, so permission checks default deny.
+  try {
+    const defaultSession = session.defaultSession;
+    defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
+    defaultSession.setPermissionCheckHandler(() => false);
+    if (typeof defaultSession.setDevicePermissionHandler === "function") {
+      defaultSession.setDevicePermissionHandler(() => false);
+    }
+    defaultSession.webRequest.onBeforeRequest((_d, cb) => cb({ cancel: false }));
+  } catch (_) {}
 
   // Deny every Chromium permission by default (camera, microphone, geolocation,
   // notifications, clipboard-read, media keys, etc.). The app does not request
