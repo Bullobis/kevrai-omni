@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -102,6 +103,12 @@ class AgentResult:
     llm_used: bool = True
     model_name: str = ""
     duration_ms: int = 0
+    # True when the run was stopped by a cooperative cancellation request
+    # (session disconnect / explicit cancel). Distinct from a normal failure:
+    # success=False but error is the literal "cancelled" (no exception trace),
+    # and the answer explicitly says so. Callers can branch on this to show a
+    # "stopped" UI state instead of an error.
+    cancelled: bool = False
 
 
 @dataclass
@@ -142,6 +149,69 @@ class Agent:
         self.ctx = ctx or ToolContext()
         self.ctx.memory = memory
         self._step_callback: Callable[[AgentStep], None] | None = None
+
+        # --- Cooperative cancellation (K-Cortex neuron-12) -----------------
+        # One threading.Event per in-flight run, keyed by session_id. The Agent
+        # is a singleton that may concurrently serve many sessions, so the token
+        # must be per-session: cancelling session A must not touch session B.
+        #
+        # Boundary: this is *cooperative* cancellation. The ReAct body is
+        # synchronous (router.chat / registry.execute block), so an Event can
+        # only be observed at the explicit checkpoints we sprinkle through the
+        # loop. A single in-flight blocking call (a hung LLM inference, an MNN
+        # subprocess) CANNOT be interrupted mid-call; cancellation takes effect
+        # at the next checkpoint after that call returns.
+        self._cancel_lock = threading.Lock()
+        self._cancel_events: dict[str, threading.Event] = {}
+
+    # ------------------------------------------------------------------
+    # Cooperative cancellation tokens
+    # ------------------------------------------------------------------
+    def _begin_cancel_token(self, session_id: str) -> threading.Event:
+        """Reserve a fresh, *unset* cancellation token for this run.
+
+        The token lives only for the duration of one ``run()``: it is created
+        unset here and dropped in ``_end_cancel_token`` (finally). A fresh
+        Event is created on every run so a cancel signal from a *previous* run
+        can never leak into the next run on the same session.
+        """
+        ev = threading.Event()
+        with self._cancel_lock:
+            # Drop any stale entry defensively (e.g. a previous run that raised
+            # before its finally ran). The fresh token always wins.
+            self._cancel_events[session_id] = ev
+        return ev
+
+    def _end_cancel_token(self, session_id: str) -> None:
+        """Remove this run's cancellation token (called from run()'s finally)."""
+        with self._cancel_lock:
+            self._cancel_events.pop(session_id, None)
+
+    def _is_cancelled(self, session_id: str) -> bool:
+        """Check whether the in-flight run for ``session_id`` was cancelled."""
+        with self._cancel_lock:
+            ev = self._cancel_events.get(session_id)
+        return bool(ev and ev.is_set())
+
+    def cancel(self, session_id: str) -> bool:
+        """Cooperatively cancel the in-flight run for ``session_id``.
+
+        Sets the per-session cancellation token. The running ReAct loop observes
+        it at the next checkpoint (loop top, before/after a tool call, after an
+        LLM call) and returns a cancelled AgentResult (success=False,
+        error="cancelled", cancelled=True).
+
+        Returns True iff a run was actually in progress (a token existed and we
+        signalled it). Returns False (a no-op) when no run is in flight for the
+        session — e.g. cancel arrived after the run finished. Idempotent:
+        calling it twice is harmless.
+        """
+        with self._cancel_lock:
+            ev = self._cancel_events.get(session_id)
+            if ev is None:
+                return False
+            ev.set()
+        return True
 
     def reload_skills(self) -> None:
         """Rebuild the active tool registry after skills are toggled."""
@@ -408,8 +478,14 @@ class Agent:
     # Main run loop
     # ------------------------------------------------------------------
     async def run(self, message: str, session_id: str = "default") -> AgentResult:
-        """Process one user message through the ReAct loop."""
-        t0 = time.time()
+        """Process one user message through the ReAct loop.
+
+        Cooperative cancellation (K-Cortex neuron-12): a fresh per-session
+        threading.Event is reserved for this run and removed in ``finally``, so
+        a cancel signal can never leak into the next run on the same session.
+        The inner loop body checks the token at each ReAct checkpoint and
+        short-circuits into a cancelled AgentResult.
+        """
         message = (message or "").strip()[:5000]
         if not message:
             return AgentResult(
@@ -419,6 +495,16 @@ class Agent:
                 error="empty message",
                 duration_ms=0,
             )
+
+        self._begin_cancel_token(session_id)
+        try:
+            return await self._run(message, session_id)
+        finally:
+            self._end_cancel_token(session_id)
+
+    async def _run(self, message: str, session_id: str = "default") -> AgentResult:
+        """Inner ReAct loop body; this run's cancel token is already reserved."""
+        t0 = time.time()
 
         # Ensure hardware info is populated (lazy, cached in ctx)
         if not self.ctx.hardware_info or hasattr(self.ctx.hardware_info, "send"):
@@ -468,8 +554,15 @@ class Agent:
         scratchpad = ""  # accumulates Thought/Action/Observation for the LLM
         final_answer = ""
         error_msg = ""
+        cancelled = False  # set at a checkpoint when cancel() was requested
 
         for iteration in range(1, MAX_ITERATIONS + 1):
+            # Checkpoint 1: loop top — stop before doing any new work if a
+            # cancel arrived (e.g. while the previous tool/LLM call was running).
+            if self._is_cancelled(session_id):
+                cancelled = True
+                break
+
             # Build prompt for this iteration
             prompt_parts = [system_prompt]
             if history_block:
@@ -482,6 +575,13 @@ class Agent:
 
             # Call LLM
             llm_res = self.router.chat(prompt, system="", max_new_tokens=1500)
+            # Checkpoint (after LLM call): a cancel may have landed while this
+            # blocking inference was running. We cannot interrupt the call
+            # itself, but as soon as it returns we honour the request instead
+            # of parsing/acting on its output.
+            if self._is_cancelled(session_id):
+                cancelled = True
+                break
             # A misbehaving router may return a non-dict (None, raised, ...) or a
             # dict without "ok"/"text". Degrade gracefully instead of letting an
             # AttributeError/TypeError crash the whole ReAct run.
@@ -538,6 +638,10 @@ class Agent:
                 step.thought = thought_match.group(1).strip()[:500]
 
             # Execute tool
+            # Checkpoint 2: don't fire off a tool we no longer need.
+            if self._is_cancelled(session_id):
+                cancelled = True
+                break
             log.info("agent tool call: %s(%s)", tool_name, json.dumps(tool_params, ensure_ascii=False)[:200])
             obs = self.registry.execute(tool_name, tool_params, self.ctx)
             step.observation = obs
@@ -557,12 +661,41 @@ class Agent:
             if self._step_callback:
                 self._step_callback(step)
 
+            # Checkpoint 3: tool done — stop before looping back into another
+            # LLM call if a cancel arrived mid-tool-execution.
+            if self._is_cancelled(session_id):
+                cancelled = True
+                break
+
             # Reflection: if tool failed, note it and let the LLM decide next
             if obs.get("ok") is False:
                 log.info("agent tool %s failed: %s", tool_name, obs.get("error", ""))
                 # The LLM will see the error in Observation and can adapt
 
         # If loop exhausted without final answer
+        if cancelled:
+            # Cooperative cancellation: do NOT pretend this is a normal finish
+            # and do NOT lump it in with a FAILED run. success=False but the
+            # error string is the literal "cancelled" (no exception trace), and
+            # the answer explicitly tells the user it was stopped.
+            result = AgentResult(
+                session_id=session_id,
+                answer="（已取消）",
+                steps=steps,
+                tools_used=tools_used,
+                success=False,
+                error="cancelled",
+                llm_used=True,
+                model_name=model_name,
+                duration_ms=int((time.time() - t0) * 1000),
+                cancelled=True,
+            )
+            # Best-effort: still record the turn as a cancelled task so the
+            # session history reflects what happened.
+            self._remember_result(session_id, message, result.answer,
+                                  tools_used, success=False)
+            return result
+
         if not final_answer and not error_msg:
             error_msg = f"达到最大迭代次数 ({MAX_ITERATIONS})，未能生成最终答案。"
             final_answer = "抱歉，处理过程中达到了最大步骤限制。请尝试简化你的问题，或分步骤提问。"

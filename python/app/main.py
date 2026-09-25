@@ -3350,6 +3350,27 @@ def agent_set_preference(req: AgentPreferenceReq, request: Request) -> dict[str,
     return {"ok": True, "key": req.key, "value": req.value}
 
 
+class AgentCancelReq(BaseModel):
+    session_id: str = Field(min_length=1, max_length=128)
+
+
+@app.post("/api/agent/cancel")
+def agent_cancel(req: AgentCancelReq, request: Request) -> dict[str, Any]:
+    """Cooperatively cancel the in-flight agent run for a session.
+
+    Sets the per-session cancellation token; the running ReAct loop observes it
+    at the next checkpoint (loop top, before/after a tool call, after an LLM
+    call) and returns a cancelled AgentResult. This endpoint is protected by the
+    same Bearer-secret middleware as every other /api/* route.
+
+    Returns ``cancelled=true`` only when a run was actually in progress; a no-op
+    (``cancelled=false``) when no run is running for the session. Idempotent.
+    """
+    agent = _get_agent(request)
+    cancelled = agent.cancel(req.session_id)
+    return {"cancelled": cancelled, "session_id": req.session_id}
+
+
 @app.websocket("/ws/agent/{session_id}")
 async def ws_agent(websocket: WebSocket, session_id: str) -> None:
     """Stream agent reasoning steps in real-time.
@@ -3377,7 +3398,14 @@ async def ws_agent(websocket: WebSocket, session_id: str) -> None:
     try:
         while True:
             data = await websocket.receive_json()
-            message = str(data.get("message") or "").strip()
+            # Idle-state control frame: an explicit cancel (e.g. the user hit
+            # "stop" while no run is in flight, or racing with the start of one).
+            # agent.cancel is a no-op when nothing is running.
+            if isinstance(data, dict) and data.get("event") == "cancel":
+                agent.cancel(session_id)
+                await websocket.send_json({"event": "cancelled", "session_id": session_id})
+                continue
+            message = str(data.get("message") or "").strip() if isinstance(data, dict) else ""
             if not message:
                 await websocket.send_json({"event": "error", "message": "empty message"})
                 continue
@@ -3415,27 +3443,78 @@ async def ws_agent(websocket: WebSocket, session_id: str) -> None:
                     loop_.call_soon_threadsafe(_emit)
 
             agent.set_step_callback(_on_step)
+
+            # Run agent.run() on a worker thread. The ReAct body is synchronous
+            # (router.chat / registry.execute block), so awaiting it inline would
+            # freeze this event loop: the client could neither send a
+            # {"event": "cancel"} frame nor disconnect cleanly until inference
+            # finished. Offloading keeps the loop responsive; the per-session
+            # threading.Event (agent.cancel) is the cooperative hand-off.
+            # Boundary: a single blocking chat() call is NOT interruptible —
+            # cancellation takes effect at the next ReAct checkpoint after that
+            # call returns.
+            async def _run_offloaded():
+                return await _ws_loop.run_in_executor(
+                    None, lambda: asyncio.run(agent.run(message, session_id=session_id))
+                )
+
+            run_task: asyncio.Task = asyncio.ensure_future(_run_offloaded())
+            # Concurrently watch for a client cancel frame / disconnect so we
+            # can signal the in-flight run.
+            recv_task: asyncio.Task = asyncio.ensure_future(websocket.receive_json())
+
             try:
-                result = await agent.run(message, session_id=session_id)
-                await websocket.send_json({
-                    "event": "final",
-                    "answer": result.answer,
-                    "tools_used": result.tools_used,
-                    "llm_used": result.llm_used,
-                    "model_name": result.model_name,
-                    "duration_ms": result.duration_ms,
-                    "success": result.success,
-                    "error": result.error or "",
-                })
-            except Exception as e:
+                while True:
+                    done, _pending = await asyncio.wait(
+                        {run_task, recv_task}, return_when=asyncio.FIRST_COMPLETED
+                    )
+                    if recv_task in done:
+                        try:
+                            ctrl = recv_task.result()
+                        except WebSocketDisconnect:
+                            # Client dropped the socket mid-run: signal the run
+                            # to stop, then drain it (bounded) so we never leak
+                            # a worker thread.
+                            agent.cancel(session_id)
+                            with contextlib.suppress(Exception):
+                                await asyncio.wait_for(asyncio.shield(run_task), timeout=30)
+                            raise
+                        if isinstance(ctrl, dict) and ctrl.get("event") == "cancel":
+                            agent.cancel(session_id)
+                            with contextlib.suppress(Exception):
+                                await websocket.send_json({
+                                    "event": "cancelled", "session_id": session_id,
+                                })
+                        # Any other control frame while a run is in flight is
+                        # ignored; re-arm the reader.
+                        recv_task = asyncio.ensure_future(websocket.receive_json())
+                    if run_task in done:
+                        # Stop the idle reader now that the run finished.
+                        recv_task.cancel()
+                        with contextlib.suppress(asyncio.CancelledError, Exception):
+                            await recv_task
+                        result = run_task.result()
+                        with contextlib.suppress(Exception):
+                            await websocket.send_json({
+                                "event": "final",
+                                "answer": result.answer,
+                                "tools_used": result.tools_used,
+                                "llm_used": result.llm_used,
+                                "model_name": result.model_name,
+                                "duration_ms": result.duration_ms,
+                                "success": result.success,
+                                "cancelled": result.cancelled,
+                                "error": result.error or "",
+                            })
+                        break
+            except Exception as e:  # noqa: BLE001 - mirror legacy behaviour
                 log.exception("agent websocket run failed")
-                # The client may already have disconnected mid-run (agent.run
-                # has no cooperative cancellation — see neuron-11 parliament
-                # note), so this secondary send can itself raise. Suppress it:
-                # an error frame nobody will read must not turn into an
-                # unhandled task exception on the server.
-                with contextlib.suppress(Exception):
-                    await websocket.send_json({"event": "error", "message": str(e)})
+                # The client may already have disconnected mid-run; this secondary
+                # send can itself raise. Suppress it: an error frame nobody will
+                # read must not become an unhandled task exception on the server.
+                if not isinstance(e, WebSocketDisconnect):
+                    with contextlib.suppress(Exception):
+                        await websocket.send_json({"event": "error", "message": str(e)})
             finally:
                 agent.set_step_callback(None)
     except WebSocketDisconnect:
