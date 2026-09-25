@@ -729,5 +729,33 @@
     "notTested": "尚未测速。",
     "detecting": "正在检测…",
     "detectFailed": "检测失败：{err}"
+  },
+  "compare": {
+    "title": "模型对比",
+    "toolbar": "对比",
+    "add": "加入对比",
+    "remove": "移除对比",
+    "added": "已加入对比",
+    "removed": "已从对比移除",
+    "maxReached": "最多对比 4 个模型",
+    "clear": "清空对比",
+    "cleared": "已清空对比",
+    "empty": "尚未选择对比模型",
+    "emptyHint": "在模型卡片上点击对比按钮添加",
+    "close": "关闭",
+    "count": "{n} / 4",
+    "missing": "—",
+    "dimensions": {
+      "name": "名称",
+      "category": "分类/任务",
+      "size": "文件大小",
+      "license": "许可证",
+      "engine": "引擎/格式",
+      "vram": "显存需求",
+      "repo": "仓库/来源",
+      "description": "描述",
+      "trending": "热门",
+      "tags": "标签"
+    }
   }
 }

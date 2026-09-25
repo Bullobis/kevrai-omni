@@ -7,6 +7,9 @@ import { VirtualGrid } from "./virtual-grid.js";
 import { highlight as highlightText } from "./search.js";
 import { escapeHtml } from "./net.js";
 import { toggleFavorite, isFavorite, bumpRecent } from "./favorites.js";
+import {
+  toggleCompare, isInCompare, registerModel,
+} from "./compare.js";
 import { t } from "./i18n.js";
 
 const $  = (s) => document.querySelector(s);
@@ -152,10 +155,42 @@ function paintFavButton(btn, active, name) {
   btn.setAttribute("aria-label", `${verb} ${name || ""}`.trim());
   btn.title = verb;
   btn.innerHTML = starSvg(active);
+  btn.closest(".model-card")?.classList.toggle("is-favorite", active);
+}
+
+// lucide "columns" (side-by-side panes) — reads as "compare side by side".
+const COLUMNS_SVG =
+  '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/>';
+function columnsSvg(active) {
+  return `<svg viewBox="0 0 24 24" fill="${active ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2"`
+    + ` stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${COLUMNS_SVG}</svg>`;
+}
+
+// Build the add-to-compare button for a card, sitting right beside the star.
+// isInCompare() is read fresh so virtual-window re-renders stay in sync.
+function compareButtonHtml(m) {
+  const active = m.id ? isInCompare(m.id) : false;
+  const name = m.name || m.id || "";
+  const verb = active ? t("compare.remove") : t("compare.add");
+  const label = `${verb} ${name}`.trim();
+  return `<button type="button" class="compare-btn${active ? " active" : ""}" data-action="compare"`
+    + ` aria-label="${escapeHtml(label)}" title="${escapeHtml(t("compare.title"))}">${columnsSvg(active)}</button>`;
+}
+
+// Repaint an already-mounted compare button after a toggle.
+function paintCompareButton(btn, active, name) {
+  if (!btn) return;
+  btn.classList.toggle("active", active);
+  const verb = active ? t("compare.remove") : t("compare.add");
+  btn.setAttribute("aria-label", `${verb} ${name || ""}`.trim());
+  btn.innerHTML = columnsSvg(active);
 }
 
 function renderCard(m) {
   const root = document.createElement("div");
+  // Register the full model object so the compare modal can resolve it even when
+  // the card scrolls out of the virtual window later.
+  registerModel(m);
   root.className = "card model-card";
   root.setAttribute("tabindex", "0");
   root.setAttribute("role", "button");
@@ -200,6 +235,7 @@ function renderCard(m) {
   const heatPill = heatParts.length
     ? `<span class="pill heat" title="${t("market.heatTitle")}">${heatParts.join(" · ")}</span>` : "";
   const favBtn = favButtonHtml(m);
+  const compareBtn = compareButtonHtml(m);
   if (isRemote && !m.description) {
     // Cards for remote models have no upstream prose — show the repo instead of
     // leaving an empty paragraph, so the card never looks broken.
@@ -219,7 +255,7 @@ function renderCard(m) {
           ${scoreTag}
         </div>
       </div>
-      ${favBtn}
+      <div class="card-actions">${favBtn}${compareBtn}</div>
     </div>
     <div class="card-body">
       <p class="card-desc mut mono-repo">${escapeHtml(m.repo || "")}</p>
@@ -248,7 +284,7 @@ function renderCard(m) {
           ${scoreTag}
         </div>
       </div>
-      ${favBtn}
+      <div class="card-actions">${favBtn}${compareBtn}</div>
     </div>
     <div class="card-body">
       <p class="card-desc">${descHtml}</p>
@@ -296,7 +332,16 @@ function onCardClick(idx, item, e) {
     if (!item.id) return;
     const nowFav = toggleFavorite(item.id);
     paintFavButton(favBtn, nowFav, item.name || item.id);
-    favBtn.closest(".model-card")?.classList.toggle("is-favorite", nowFav);
+    return;
+  }
+  // Compare button: never open the detail panel, just toggle + repaint + toast.
+  const cmpBtn = e.target.closest && e.target.closest(".compare-btn");
+  if (cmpBtn) {
+    e.stopPropagation();
+    if (!item.id) return;
+    const nowIn = toggleCompare(item);
+    paintCompareButton(cmpBtn, nowIn, item.name || item.id);
+    try { toast(t(nowIn ? "compare.added" : "compare.removed"), { kind: nowIn ? "ok" : "info" }); } catch (_) {}
     return;
   }
   setState({ selectedId: item.id || null });

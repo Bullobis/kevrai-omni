@@ -1,0 +1,135 @@
+/* renderer/styles/compare.css — model compare: card button, toolbar entry,
+ * and the side-by-side compare modal. All colors come from design tokens so
+ * dark/light themes stay in sync automatically. */
+
+/* card-head action cluster: star + compare button sit together at the far right */
+.card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+/* compare button mirrors .fav-btn (same size, hover, focus treatment) */
+.compare-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  margin: 0;
+  color: var(--mut);
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  transition: color .15s ease, transform .15s ease, background-color .15s ease;
+}
+.compare-btn svg { width: 16px; height: 16px; display: block; }
+.compare-btn:hover { color: var(--acc2); transform: scale(1.1); }
+.compare-btn:focus-visible { outline: none; box-shadow: var(--focus); }
+.compare-btn.active { color: var(--acc2); }
+.compare-btn.active svg { fill: var(--acc2); }
+
+/* toolbar entry + count badge */
+.compare-entry {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.compare-entry .ic { width: 16px; height: 16px; }
+.compare-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--acc);
+  color: #0b1020;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+.compare-entry.has-count { border-color: var(--bord-strong); }
+
+/* compare modal — widen the card for the side-by-side table */
+.compare-card { width: min(960px, 96vw); }
+.compare-body {
+  overflow: auto;
+  padding: 0;
+}
+.compare-scroll {
+  overflow-x: auto;
+  max-height: 66vh;
+}
+
+.compare-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+  min-width: 480px;
+}
+.compare-table th, .compare-table td {
+  border-bottom: 1px solid var(--bord);
+  border-right: 1px solid var(--bord);
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+.compare-table th:last-child, .compare-table td:last-child { border-right: none; }
+.compare-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-2);
+  z-index: 1;
+}
+.compare-corner { width: 130px; }
+.compare-dim {
+  position: sticky;
+  left: 0;
+  background: var(--bg-1);
+  color: var(--mut);
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 1;
+}
+.compare-col { min-width: 160px; max-width: 260px; }
+.compare-model-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.compare-model-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.compare-remove {
+  background: transparent;
+  border: none;
+  color: var(--mut);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  flex: 0 0 auto;
+}
+.compare-remove:hover { color: var(--err, #e05830); background: var(--hot-soft); }
+
+/* rows where the models disagree get a soft accent highlight */
+.compare-table tr.compare-diff td,
+.compare-table tr.compare-diff th.compare-dim {
+  background: color-mix(in srgb, var(--acc) 12%, transparent);
+}
+
+.compare-empty {
+  padding: 40px 20px;
+  text-align: center;
+}
+.compare-empty-title { margin: 0 0 6px; font-size: 14px; }
+.compare-empty-hint { margin: 0; font-size: 12px; }

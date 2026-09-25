@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="styles/empty-states.css" />
   <link rel="stylesheet" href="styles/settings-center.css" />
   <link rel="stylesheet" href="styles/favorites.css" />
+  <link rel="stylesheet" href="styles/compare.css" />
   <link rel="stylesheet" href="styles/transitions.css" />
   <link rel="stylesheet" href="styles/error-banner.css" />
 </head>
@@ -132,6 +133,13 @@
                    data-i18n-placeholder="market.searchPlaceholder" data-i18n-aria-label="market.searchLabel" />
           </div>
           <span class="counter" id="models-count" aria-live="polite">0 条</span>
+          <button class="secondary compare-entry" id="btn-open-compare" data-action="open-compare"
+                  type="button" aria-label="模型对比" title="模型对比"
+                  data-i18n-aria-label="compare.title" data-i18n-title="compare.title">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>
+            <span data-i18n="compare.toolbar">对比</span>
+            <span class="compare-badge" id="compare-badge" hidden>0</span>
+          </button>
         </div>
         <div id="models-grid" class="vgrid is-loading" role="listbox" aria-label="模型列表"></div>
         <div id="models-skeleton" class="skeleton-grid" role="status" aria-live="polite" aria-label="正在加载模型" data-i18n-aria-label="market.loadingModels"></div>
@@ -486,6 +494,23 @@
         <span class="spacer"></span>
         <button id="btn-settings-cancel" class="secondary" data-i18n="settings.cancel">取消</button>
         <button id="btn-settings-save" class="primary" data-i18n="settings.save">保存</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Model compare overlay -->
+  <div id="compare-overlay" class="overlay" role="dialog" aria-modal="true"
+       aria-labelledby="compare-title" hidden aria-hidden="true">
+    <div class="overlay-card compare-card" role="document">
+      <header>
+        <h2 id="compare-title"><span data-i18n="compare.title">模型对比</span> <span id="compare-count" class="mut"></span></h2>
+        <button class="ghost icon" data-action="close-compare" aria-label="关闭" data-i18n-aria-label="compare.close">×</button>
+      </header>
+      <div id="compare-body" class="compare-body"></div>
+      <footer class="overlay-foot">
+        <button id="btn-compare-clear" class="ghost danger" data-i18n="compare.clear">清空对比</button>
+        <span class="spacer"></span>
+        <button id="btn-compare-close" class="primary" data-i18n="compare.close">关闭</button>
       </footer>
     </div>
   </div>
