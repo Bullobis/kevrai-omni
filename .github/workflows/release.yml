@@ -2,9 +2,9 @@ name: release
 
 # 跨平台构建并发布到 GitHub Releases。
 #   - 打 tag（v*）push 后自动运行；
-#   - 也可在 Actions 页手动 workflow_dispatch，指定已有 tag 重新打包发布。
-# Windows 的 NSIS 安装程序（.exe）由 windows-latest 自动构建，
-# 弥补本地 Linux 无 Wine 无法交叉构建 Windows 安装包的缺口。
+#   - 也可在 Actions 页手动 workflow_dispatch，指定 tag 重新打包发布。
+# 三平台在各自 runner 构建（弥补本地无法交叉构建 Windows/macOS 的缺口），
+# 先 --publish never 收集产物，再统一发布并生成 SHA256SUMS。
 on:
   push:
     tags:
@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -33,11 +34,11 @@ jobs:
             os: windows-latest
             target: "--win nsis zip"
             archflags: "--x64"
+          # dmg for manual install + zip for Squirrel.Mac auto-update.
           - name: mac
             os: macos-latest
-            target: "--mac dmg"
+            target: "--mac dmg zip"
             archflags: ""
-    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -60,11 +61,27 @@ jobs:
           ELECTRON_MIRROR: https://registry.npmmirror.com/-/binary/electron/
           ELECTRON_BUILDER_BINARIES_MIRROR: https://registry.npmmirror.com/-/binary/electron-builder-binaries/
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Freeze the sidecar (PyInstaller onedir) so users need no Python install.
+      # PyInstaller is not a cross-compiler, hence this runs on each OS.
+      - name: Freeze sidecar (PyInstaller onedir)
+        shell: bash
+        run: |
+          python -m pip install -i https://mirrors.tencent.com/pypi/simple/ --upgrade pip
+          python -m pip install -i https://mirrors.tencent.com/pypi/simple/ -r python/requirements.txt pyinstaller
+          cd python
+          python -m PyInstaller sidecar.spec --noconfirm --clean
+
       - name: Build with electron-builder
         shell: bash
         run: >-
           npx --yes electron-builder ${{ matrix.target }} ${{ matrix.archflags }}
           --publish never --config.npmRebuild=false
+          --config.extraMetadata.main=electron/main.js
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
@@ -99,7 +116,7 @@ jobs:
                -o -name "*.zip" -o -name "*.dmg" -o -name "*.yml" \
                -o -name "*.blockmap" \) \
             -exec cp {} release-files/ \;
-          # 仅对安装包/归档生成 SHA256SUMS（不含元数据/差分文件）
+          # Checksum only installers/archives (not update metadata/blockmaps).
           ( cd release-files \
             && sha256sum $(ls | grep -vE '^(latest|.*\.blockmap$)') > SHA256SUMS.txt ) || true
           ls -la release-files
@@ -114,10 +131,18 @@ jobs:
             echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Stage release notes (if present)
+        shell: bash
+        run: |
+          VER="${{ steps.rtag.outputs.tag }}"; VER="${VER#v}"
+          NOTES="RELEASE_NOTES_${VER}.md"
+          if [ -f "$NOTES" ]; then cp "$NOTES" /tmp/notes.md; echo "found $NOTES"; fi
+
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.rtag.outputs.tag }}
           name: Kevrai Omni ${{ steps.rtag.outputs.tag }}
           generate_release_notes: true
+          body_path: /tmp/notes.md
           files: release-files/*
