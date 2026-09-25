@@ -7,6 +7,7 @@ import { toast } from "./toast.js";
 import { state, setState } from "./state.js";
 import { debounce } from "./debounce.js";
 import { escapeHtml } from "./net.js";
+import { emptyStateIconSvg } from "./empty-state.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -527,15 +528,23 @@ function renderNoResults() {
         `<button class="link-btn" data-suggest="${escapeAttr(s)}">${escapeHtml(s)}</button>`).join(" ")}</p>`
     : "";
   host.innerHTML = `
-    <div class="no-results-icon">🔍</div>
-    <p>没有找到与 "<strong>${escapeHtml(searchState.q)}</strong>" 相关的模型</p>
+    <div class="no-results-icon">${emptyStateIconSvg("search")}</div>
+    <h3 class="empty-state-title">没有找到相关模型</h3>
+    <p>没有找到与 “<strong>${escapeHtml(searchState.q)}</strong>” 相关的模型</p>
     ${sug}
-    <p class="mut tiny">建议：检查拼写、减少关键词、或清除筛选条件</p>`;
+    <p class="mut tiny">建议：检查拼写、减少关键词、或清除筛选条件</p>
+    <button type="button" class="secondary small es-clear-search">清除搜索</button>`;
   host.querySelectorAll("[data-suggest]").forEach((b) => b.addEventListener("click", () => {
     $("#search").value = b.getAttribute("data-suggest");
     searchState.q = b.getAttribute("data-suggest");
     runSearch({ resetPage: true });
   }));
+  host.querySelector(".es-clear-search")?.addEventListener("click", () => {
+    const box = $("#search");
+    if (box) box.value = "";
+    searchState.q = "";
+    runSearch({ resetPage: true });
+  });
 }
 
 // Highlight helper used by the card renderer.

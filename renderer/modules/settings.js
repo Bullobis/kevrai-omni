@@ -23,6 +23,13 @@ export async function openSettings() {
   overlay.removeAttribute("hidden");
   overlay.setAttribute("aria-hidden", "false");
 
+  // 每次打开都回到「通用」分类，避免停留在上次关闭时的非可见分类。
+  switchSettingsSection("general");
+  // 同步关于页版本号（侧栏版本行由 health 轮询写入）。
+  const ver = $("#version-line");
+  const aboutVer = $("#settings-version");
+  if (ver && aboutVer && ver.textContent) aboutVer.textContent = ver.textContent;
+
   // Pull fresh settings (in case another instance edited them).
   const fresh = await api.getSettings();
   setState({ settings: fresh });
@@ -35,6 +42,16 @@ export function closeSettings() {
   if (!overlay) return;
   overlay.setAttribute("hidden", "");
   overlay.setAttribute("aria-hidden", "true");
+}
+
+// 设置中心左侧分类切换：高亮对应导航按钮，只显示对应内容分区。
+// 其它分区保持 hidden，焦点陷阱与 readForm/fillForm 均按 ID 工作，不受影响。
+export function switchSettingsSection(name) {
+  const navBtns = $$(".settings-nav-btn");
+  const sections = $$(".settings-section");
+  if (!navBtns.length || !sections.length) return;
+  navBtns.forEach((b) => b.classList.toggle("active", b.dataset.section === name));
+  sections.forEach((s) => { s.hidden = s.dataset.section !== name; });
 }
 
 function fillForm(s) {
@@ -55,11 +72,15 @@ function fillForm(s) {
 
 function trapFocus(root) {
   const sel = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
-  const focusables = Array.from(root.querySelectorAll(sel));
+  // 隐藏的设置分区（.settings-section[hidden]）里的控件不应进入 Tab 顺序，
+  // 因此只收集「可见」的可聚焦元素。
+  const visibleFocusables = () =>
+    Array.from(root.querySelectorAll(sel)).filter((el) => !el.closest("[hidden]"));
+  const focusables = visibleFocusables();
   if (focusables[0]) focusables[0].focus();
   const handler = (e) => {
     if (e.key !== "Tab") return;
-    const list = Array.from(root.querySelectorAll(sel));
+    const list = visibleFocusables();
     if (!list.length) return;
     const first = list[0], last = list[list.length - 1];
     if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
@@ -96,6 +117,11 @@ export function wireSettings() {
 
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) closeSettings();
+  });
+
+  // 左侧分类导航：点击切换右侧内容分区。
+  overlay.querySelectorAll(".settings-nav-btn").forEach((btn) => {
+    btn.addEventListener("click", () => switchSettingsSection(btn.dataset.section));
   });
 
   $("#set-allowlist-advanced").addEventListener("change", (e) => {

@@ -1,0 +1,136 @@
+/* renderer/styles/settings-center.css — 设置中心：左侧分类导航 + 右侧内容。
+ *
+ * 对标 Cherry Studio：把原来 .settings-grid 的两列平铺改成
+ *   .settings-center
+ *     .settings-nav    （左侧窄边栏 ~180px，分类导航，当前分类高亮）
+ *     .settings-content （右侧，只显示当前分类的字段）
+ *
+ * 颜色全部走设计 token，深色 / 浅色主题自动协调。
+ */
+
+.overlay-card > .settings-center {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 720px) {
+  .overlay-card > .settings-center { grid-template-columns: 1fr; }
+  .settings-nav {
+    flex-direction: row !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--bord) !important;
+    overflow-x: auto;
+  }
+}
+
+/* ---- 左侧分类导航 ---- */
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 10px;
+  border-right: 1px solid var(--bord);
+  background: var(--stack-1, var(--bg-1));
+  overflow-y: auto;
+}
+
+.settings-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-2, 8px);
+  color: var(--mut, #9aa0a6);
+  font-size: var(--fs-sm, 13px);
+  text-align: left;
+}
+.settings-nav-btn:hover {
+  background: var(--card, rgba(255, 255, 255, 0.04));
+  color: var(--fg, #e8eaed);
+}
+.settings-nav-btn.active {
+  background: var(--stack-3, #22242a);
+  color: var(--fg, #e8eaed);
+  border-color: var(--bord, rgba(255, 255, 255, 0.09));
+}
+.settings-nav-btn .ic {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+/* ---- 右侧内容区 ---- */
+.settings-content {
+  padding: 18px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.settings-section[hidden] { display: none; }
+
+.settings-section > .settings-group-title {
+  margin: 0 0 14px;
+  font-size: var(--fs-md, 16px);
+  font-weight: 500;
+}
+
+.settings-section .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  margin-bottom: 14px;
+  max-width: 460px;
+}
+.settings-section .field.inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.settings-section .field > span:first-child {
+  color: var(--mut, #9aa0a6);
+  font-size: 12px;
+}
+.settings-section .field input,
+.settings-section .field select {
+  background: var(--card, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--bord, rgba(255, 255, 255, 0.09));
+  border-radius: 10px;
+  color: var(--fg, #e8eaed);
+  padding: 8px 10px;
+  font-size: 13px;
+  outline: none;
+}
+.settings-section .field input:focus,
+.settings-section .field select:focus {
+  box-shadow: var(--focus);
+  border-color: var(--acc, #4ca97a);
+}
+.settings-section .field .row {
+  padding: 0;
+  border: none;
+  background: none;
+  display: flex;
+  gap: 8px;
+}
+.settings-section .field .row input { flex: 1; }
+
+/* 令牌可见性切换小按钮（沿用现有 .token-toggle） */
+.token-field-wrap { display: flex; gap: 6px; align-items: center; }
+.token-field-wrap input { flex: 1; }
+.token-toggle { padding: 6px 10px; }
+
+/* 关于页：版本号 + 链接 */
+.settings-about { display: flex; flex-direction: column; gap: 10px; }
+.settings-about .about-version {
+  font-size: var(--fs-lg, 18px);
+  font-weight: 600;
+}
+.settings-about a { color: var(--acc, #4ca97a); }
