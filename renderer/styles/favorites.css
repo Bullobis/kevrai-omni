@@ -1,0 +1,42 @@
+/* renderer/styles/favorites.css — model favorite star button, card marker,
+ * and the toolbar favorites/recent filter. Colors all come from design tokens
+ * so dark/light themes stay in sync automatically. */
+
+/* card-head now wraps title+pills in .card-head-main so the star can sit at
+ * the far right without disturbing the existing title-left / pills-right layout. */
+.card-head-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.fav-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  margin: 0;
+  color: var(--mut);
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  transition: color .15s ease, transform .15s ease, background-color .15s ease;
+}
+.fav-btn svg { width: 16px; height: 16px; display: block; }
+.fav-btn:hover { color: var(--acc); transform: scale(1.1); }
+.fav-btn:focus-visible { outline: none; box-shadow: var(--focus); }
+.fav-btn.active { color: var(--acc); }
+.fav-btn.active svg { fill: var(--acc); }
+
+/* Subtle marker on favorited cards: a slightly stronger border. Kept subtle so
+ * it never fights the .selected accent bar. */
+.model-card.is-favorite { border-color: var(--bord-strong); }
+
+/* #fav-filter reuses the global .toolbar select styling (background/border/
+ * radius/focus all inherited); this just reserves space so it never crowds. */
+#fav-filter { flex: 0 0 auto; }
