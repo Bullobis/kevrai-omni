@@ -57,8 +57,8 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3-32B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3-32B-GGUF/",
-        "https://modelscope.cn/models/Qwen/Qwen3-32B/resolve/master/",
-        "https://modelscope.cn/models/unsloth/Qwen3-32B-GGUF/resolve/master/"
+        "https://modelscope.cn/models/Qwen/Qwen3-32B/",
+        "https://modelscope.cn/models/unsloth/Qwen3-32B-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3-32B-GGUF/",
       "hardware": {
@@ -94,7 +94,7 @@
       "name": "Qwen3 235B A22B (MoE)",
       "repo": "Qwen/Qwen3-235B-A22B",
       "gguf_repo": "unsloth/Qwen3-235B-A22B-GGUF",
-      "size_gb": 140,
+      "size_gb": 438,
       "engine": [
         "llama.cpp",
         "vllm"
@@ -105,15 +105,15 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3-235B-A22B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3-235B-A22B-GGUF/",
-        "https://modelscope.cn/models/Qwen/Qwen3-235B-A22B/resolve/master/",
-        "https://modelscope.cn/models/unsloth/Qwen3-235B-A22B-GGUF/resolve/master/"
+        "https://modelscope.cn/models/Qwen/Qwen3-235B-A22B/",
+        "https://modelscope.cn/models/unsloth/Qwen3-235B-A22B-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3-235B-A22B-GGUF/",
       "hardware": {
-        "vram_gb": 160,
+        "vram_gb": 256,
         "min_vram_gb": 80,
-        "ram_gb": 256,
-        "disk_gb": 140,
+        "ram_gb": 512,
+        "disk_gb": 438,
         "notes": "MoE 激活 22B；多卡或大内存 offload"
       },
       "modality": {
@@ -153,8 +153,8 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3-VL-32B-Instruct-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3-VL-32B-Instruct-GGUF/",
-        "https://modelscope.cn/models/Qwen/Qwen3-VL-32B-Instruct/resolve/master/",
-        "https://modelscope.cn/models/unsloth/Qwen3-VL-32B-Instruct-GGUF/resolve/master/"
+        "https://modelscope.cn/models/Qwen/Qwen3-VL-32B-Instruct/",
+        "https://modelscope.cn/models/unsloth/Qwen3-VL-32B-Instruct-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3-VL-32B-Instruct-GGUF/",
       "hardware": {
@@ -198,13 +198,13 @@
         "transformers",
         "vllm"
       ],
-      "license": "Apache-2.0",
+      "license": "其他（other）",
       "trending": true,
       "description": "阿里原生端到端全模态（文本/图像/音频/视频）Omni 模型，Thinker-Talker MoE 架构。",
       "sources": [
         "https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Instruct/",
         "https://hf-mirror.com/Qwen/Qwen3-Omni-30B-A3B-Instruct/",
-        "https://modelscope.cn/models/Qwen/Qwen3-Omni-30B-A3B-Instruct/resolve/master/"
+        "https://modelscope.cn/models/Qwen/Qwen3-Omni-30B-A3B-Instruct/"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Instruct/",
       "hardware": {
@@ -246,7 +246,7 @@
       "name": "DeepSeek-R1",
       "repo": "deepseek-ai/DeepSeek-R1",
       "gguf_repo": "unsloth/DeepSeek-R1-GGUF",
-      "size_gb": 400,
+      "size_gb": 641,
       "engine": [
         "llama.cpp"
       ],
@@ -256,15 +256,15 @@
       "sources": [
         "https://huggingface.co/unsloth/DeepSeek-R1-GGUF/",
         "https://hf-mirror.com/unsloth/DeepSeek-R1-GGUF/",
-        "https://modelscope.cn/models/deepseek-ai/DeepSeek-R1/resolve/master/",
-        "https://modelscope.cn/models/unsloth/DeepSeek-R1-GGUF/resolve/master/"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-R1/",
+        "https://modelscope.cn/models/unsloth/DeepSeek-R1-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/DeepSeek-R1-GGUF/",
       "hardware": {
-        "vram_gb": 512,
+        "vram_gb": 384,
         "min_vram_gb": 256,
         "ram_gb": 768,
-        "disk_gb": 400,
+        "disk_gb": 641,
         "notes": "671B MoE；服务器级部署；蒸馏小版本另见 GGUF 仓库"
       },
       "modality": {
@@ -293,7 +293,7 @@
       "name": "GLM-4.5 (355B-A32B MoE)",
       "repo": "zai-org/GLM-4.5",
       "gguf_repo": "",
-      "size_gb": 700,
+      "size_gb": 668,
       "engine": [
         "llama.cpp",
         "vllm"
@@ -309,8 +309,8 @@
       "hardware": {
         "vram_gb": 80,
         "min_vram_gb": 24,
-        "ram_gb": 128,
-        "disk_gb": 700,
+        "ram_gb": 768,
+        "disk_gb": 668,
         "notes": "BF16 需多卡（8×80G）；Q4_K_M GGUF 约 200GB，单 48GB 卡可跑量化"
       },
       "modality": {
@@ -340,7 +340,7 @@
       "name": "Mistral Small 24B",
       "repo": "mistralai/Mistral-Small-24B-Base-2501",
       "gguf_repo": "bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF",
-      "size_gb": 48,
+      "size_gb": 88,
       "engine": [
         "llama.cpp"
       ],
@@ -350,15 +350,15 @@
       "sources": [
         "https://huggingface.co/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/",
         "https://hf-mirror.com/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/",
-        "https://modelscope.cn/models/mistralai/Mistral-Small-24B-Base-2501/resolve/master/",
-        "https://modelscope.cn/models/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/resolve/master/"
+        "https://modelscope.cn/models/mistralai/Mistral-Small-24B-Base-2501/",
+        "https://modelscope.cn/models/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/"
       ],
       "primary_url": "https://huggingface.co/bartowski/mistralai_Mistral-Small-24B-Base-2501-GGUF/",
       "hardware": {
         "vram_gb": 18,
         "min_vram_gb": 12,
-        "ram_gb": 32,
-        "disk_gb": 48,
+        "ram_gb": 105,
+        "disk_gb": 88,
         "notes": "Q4 约 14GB"
       },
       "modality": {
@@ -397,8 +397,8 @@
       "sources": [
         "https://huggingface.co/unsloth/gemma-3-27b-it-GGUF/",
         "https://hf-mirror.com/unsloth/gemma-3-27b-it-GGUF/",
-        "https://modelscope.cn/models/google/gemma-3-27b-it/resolve/master/",
-        "https://modelscope.cn/models/unsloth/gemma-3-27b-it-GGUF/resolve/master/"
+        "https://modelscope.cn/models/google/gemma-3-27b-it/",
+        "https://modelscope.cn/models/unsloth/gemma-3-27b-it-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/gemma-3-27b-it-GGUF/",
       "hardware": {
@@ -446,8 +446,8 @@
       "sources": [
         "https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3-30B-A3B-GGUF/",
-        "https://modelscope.cn/models/Qwen/Qwen3-30B-A3B/resolve/master/",
-        "https://modelscope.cn/models/unsloth/Qwen3-30B-A3B-GGUF/resolve/master/"
+        "https://modelscope.cn/models/Qwen/Qwen3-30B-A3B/",
+        "https://modelscope.cn/models/unsloth/Qwen3-30B-A3B-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF/",
       "hardware": {
@@ -483,7 +483,7 @@
       "name": "Qwen-Image",
       "repo": "Qwen/Qwen-Image",
       "gguf_repo": "",
-      "size_gb": 20,
+      "size_gb": 54,
       "engine": [
         "diffusers"
       ],
@@ -493,14 +493,14 @@
       "sources": [
         "https://huggingface.co/Qwen/Qwen-Image/",
         "https://hf-mirror.com/Qwen/Qwen-Image/",
-        "https://modelscope.cn/models/Qwen/Qwen-Image/resolve/master/"
+        "https://modelscope.cn/models/Qwen/Qwen-Image/"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen-Image/",
       "hardware": {
         "vram_gb": 24,
         "min_vram_gb": 16,
-        "ram_gb": 48,
-        "disk_gb": 42,
+        "ram_gb": 64,
+        "disk_gb": 54,
         "notes": "20B MMDiT；16GB 需量化"
       },
       "tags": [
@@ -521,7 +521,7 @@
       "name": "CosyVoice 2 (0.5B)",
       "repo": "FunAudioLLM/CosyVoice2-0.5B",
       "gguf_repo": "",
-      "size_gb": 1.2,
+      "size_gb": 5,
       "engine": [
         "cosyvoice"
       ],
@@ -536,8 +536,8 @@
       "hardware": {
         "vram_gb": 6,
         "min_vram_gb": 2,
-        "ram_gb": 8,
-        "disk_gb": 9,
+        "ram_gb": 13,
+        "disk_gb": 5,
         "notes": "0.5B；2GB 显存即可"
       },
       "tags": [
@@ -603,7 +603,7 @@
       "sources": [
         "https://huggingface.co/fishaudio/fish-speech-1.5/",
         "https://hf-mirror.com/fishaudio/fish-speech-1.5/",
-        "https://modelscope.cn/models/fishaudio/fish-speech-1.5/resolve/master/"
+        "https://modelscope.cn/models/fishaudio/fish-speech-1.5/"
       ],
       "primary_url": "https://huggingface.co/fishaudio/fish-speech-1.5/",
       "hardware": {
@@ -630,11 +630,11 @@
       "name": "F5-TTS",
       "repo": "SWivid/F5-TTS",
       "gguf_repo": "",
-      "size_gb": 1.2,
+      "size_gb": 6,
       "engine": [
         "f5-tts"
       ],
-      "license": "MIT",
+      "license": "CC-BY-NC-4.0",
       "trending": true,
       "description": "上海交大流式 TTS，零样本克隆。",
       "sources": [
@@ -645,8 +645,8 @@
       "hardware": {
         "vram_gb": 4,
         "min_vram_gb": 2,
-        "ram_gb": 8,
-        "disk_gb": 5,
+        "ram_gb": 14,
+        "disk_gb": 6,
         "notes": "2GB 显存即可"
       },
       "tags": [
@@ -666,24 +666,24 @@
       "name": "Spark-TTS 0.5B",
       "repo": "SparkAudio/Spark-TTS-0.5B",
       "gguf_repo": "",
-      "size_gb": 1.2,
+      "size_gb": 4,
       "engine": [
         "spark-tts"
       ],
-      "license": "Apache-2.0",
+      "license": "CC-BY-NC-SA-4.0",
       "trending": true,
       "description": "SparkAudio 轻量 TTS，BiCodec + LLM 流式。",
       "sources": [
         "https://huggingface.co/SparkAudio/Spark-TTS-0.5B/",
         "https://hf-mirror.com/SparkAudio/Spark-TTS-0.5B/",
-        "https://modelscope.cn/models/SparkAudio/Spark-TTS-0.5B/resolve/master/"
+        "https://modelscope.cn/models/SparkAudio/Spark-TTS-0.5B/"
       ],
       "primary_url": "https://huggingface.co/SparkAudio/Spark-TTS-0.5B/",
       "hardware": {
         "vram_gb": 4,
         "min_vram_gb": 2,
-        "ram_gb": 8,
-        "disk_gb": 5,
+        "ram_gb": 12,
+        "disk_gb": 4,
         "notes": "0.5B"
       },
       "tags": [
@@ -713,7 +713,7 @@
       "sources": [
         "https://huggingface.co/hexgrad/Kokoro-82M/",
         "https://hf-mirror.com/hexgrad/Kokoro-82M/",
-        "https://modelscope.cn/models/hexgrad/Kokoro-82M/resolve/master/"
+        "https://modelscope.cn/models/hexgrad/Kokoro-82M/"
       ],
       "primary_url": "https://huggingface.co/hexgrad/Kokoro-82M/",
       "hardware": {
@@ -740,24 +740,24 @@
       "name": "Chatterbox TTS",
       "repo": "ResembleAI/chatterbox",
       "gguf_repo": "",
-      "size_gb": 1.5,
+      "size_gb": 13,
       "engine": [
         "chatterbox"
       ],
-      "license": "Apache-2.0",
+      "license": "MIT",
       "trending": true,
       "description": "Resemble AI 开源 TTS，情感/语音克隆。",
       "sources": [
         "https://huggingface.co/ResembleAI/chatterbox/",
         "https://hf-mirror.com/ResembleAI/chatterbox/",
-        "https://modelscope.cn/models/ResembleAI/chatterbox/resolve/master/"
+        "https://modelscope.cn/models/ResembleAI/chatterbox/"
       ],
       "primary_url": "https://huggingface.co/ResembleAI/chatterbox/",
       "hardware": {
         "vram_gb": 4,
         "min_vram_gb": 2,
-        "ram_gb": 8,
-        "disk_gb": 4,
+        "ram_gb": 21,
+        "disk_gb": 13,
         "notes": "0.5B；CPU 可跑"
       },
       "tags": [
@@ -777,7 +777,7 @@
       "name": "IndexTTS",
       "repo": "IndexTeam/IndexTTS-2",
       "gguf_repo": "",
-      "size_gb": 1.5,
+      "size_gb": 6,
       "engine": [
         "indextts"
       ],
@@ -787,13 +787,13 @@
       "sources": [
         "https://huggingface.co/IndexTeam/IndexTTS-2/",
         "https://hf-mirror.com/IndexTeam/IndexTTS-2/",
-        "https://modelscope.cn/models/IndexTeam/IndexTTS-2/resolve/master/"
+        "https://modelscope.cn/models/IndexTeam/IndexTTS-2/"
       ],
       "primary_url": "https://huggingface.co/IndexTeam/IndexTTS-2/",
       "hardware": {
         "vram_gb": 4,
         "min_vram_gb": 2,
-        "ram_gb": 8,
+        "ram_gb": 14,
         "disk_gb": 6,
         "notes": "1.5B"
       },
@@ -814,7 +814,7 @@
       "name": "GPT-SoVITS",
       "repo": "lj1995/GPT-SoVITS",
       "gguf_repo": "",
-      "size_gb": 1.5,
+      "size_gb": 5,
       "engine": [
         "gpt-sovits"
       ],
@@ -829,7 +829,7 @@
       "hardware": {
         "vram_gb": 4,
         "min_vram_gb": 2,
-        "ram_gb": 8,
+        "ram_gb": 13,
         "disk_gb": 5,
         "notes": "少样本 TTS"
       },
@@ -848,7 +848,7 @@
       "name": "MOSS-TTS v1.5 (OpenMOSS)",
       "repo": "OpenMOSS-Team/MOSS-TTS-v1.5",
       "gguf_repo": "",
-      "size_gb": 8.5,
+      "size_gb": 16,
       "engine": [
         "transformers"
       ],
@@ -863,8 +863,8 @@
       "hardware": {
         "vram_gb": 8,
         "min_vram_gb": 4,
-        "ram_gb": 16,
-        "disk_gb": 17,
+        "ram_gb": 24,
+        "disk_gb": 16,
         "notes": "权重约 8.5GB，CPU 可跑"
       },
       "modality": {
@@ -897,7 +897,7 @@
       "name": "dots.tts-soar (MeanFlow 加速)",
       "repo": "dots-studio/dots.tts-soar",
       "gguf_repo": "",
-      "size_gb": 2.2,
+      "size_gb": 5,
       "engine": [
         "transformers"
       ],
@@ -907,14 +907,14 @@
       "sources": [
         "https://huggingface.co/dots-studio/dots.tts-soar/",
         "https://hf-mirror.com/dots-studio/dots.tts-soar/",
-        "https://modelscope.cn/models/dots-studio/dots.tts-soar/resolve/master/"
+        "https://modelscope.cn/models/dots-studio/dots.tts-soar/"
       ],
       "primary_url": "https://huggingface.co/dots-studio/dots.tts-soar/",
       "hardware": {
         "vram_gb": 4,
         "min_vram_gb": 2,
-        "ram_gb": 8,
-        "disk_gb": 24,
+        "ram_gb": 13,
+        "disk_gb": 5,
         "notes": "权重约 2.2GB；仓库含多个检查点"
       },
       "modality": {
@@ -946,7 +946,7 @@
       "name": "Wan 2.2 T2V A14B",
       "repo": "Wan-AI/Wan2.2-T2V-A14B-Diffusers",
       "gguf_repo": "",
-      "size_gb": 55,
+      "size_gb": 118,
       "engine": [
         "diffusers"
       ],
@@ -956,14 +956,14 @@
       "sources": [
         "https://huggingface.co/Wan-AI/Wan2.2-T2V-A14B-Diffusers/",
         "https://hf-mirror.com/Wan-AI/Wan2.2-T2V-A14B-Diffusers/",
-        "https://modelscope.cn/models/Wan-AI/Wan2.2-T2V-A14B-Diffusers/resolve/master/"
+        "https://modelscope.cn/models/Wan-AI/Wan2.2-T2V-A14B-Diffusers/"
       ],
       "primary_url": "https://huggingface.co/Wan-AI/Wan2.2-T2V-A14B-Diffusers/",
       "hardware": {
-        "vram_gb": 24,
+        "vram_gb": 48,
         "min_vram_gb": 12,
-        "ram_gb": 48,
-        "disk_gb": 80,
+        "ram_gb": 128,
+        "disk_gb": 118,
         "notes": "14B 版本原生 24GB 显存，量化后可降"
       },
       "modality": {
@@ -992,7 +992,7 @@
       "name": "Wan 2.2 I2V A14B",
       "repo": "Wan-AI/Wan2.2-I2V-A14B-Diffusers",
       "gguf_repo": "",
-      "size_gb": 55,
+      "size_gb": 118,
       "engine": [
         "diffusers"
       ],
@@ -1002,14 +1002,14 @@
       "sources": [
         "https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B-Diffusers/",
         "https://hf-mirror.com/Wan-AI/Wan2.2-I2V-A14B-Diffusers/",
-        "https://modelscope.cn/models/Wan-AI/Wan2.2-I2V-A14B-Diffusers/resolve/master/"
+        "https://modelscope.cn/models/Wan-AI/Wan2.2-I2V-A14B-Diffusers/"
       ],
       "primary_url": "https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B-Diffusers/",
       "hardware": {
-        "vram_gb": 24,
+        "vram_gb": 48,
         "min_vram_gb": 12,
-        "ram_gb": 48,
-        "disk_gb": 80,
+        "ram_gb": 128,
+        "disk_gb": 118,
         "notes": "图生视频；MoE 5B 版消费级显卡可跑"
       },
       "modality": {
@@ -1084,7 +1084,7 @@
       "name": "LTX-Video",
       "repo": "Lightricks/LTX-Video",
       "gguf_repo": "",
-      "size_gb": 12,
+      "size_gb": 237,
       "engine": [
         "diffusers"
       ],
@@ -1094,14 +1094,14 @@
       "sources": [
         "https://huggingface.co/Lightricks/LTX-Video/",
         "https://hf-mirror.com/Lightricks/LTX-Video/",
-        "https://modelscope.cn/models/Lightricks/LTX-Video/resolve/master/"
+        "https://modelscope.cn/models/Lightricks/LTX-Video/"
       ],
       "primary_url": "https://huggingface.co/Lightricks/LTX-Video/",
       "hardware": {
-        "vram_gb": 12,
+        "vram_gb": 82,
         "min_vram_gb": 8,
-        "ram_gb": 24,
-        "disk_gb": 30,
+        "ram_gb": 284,
+        "disk_gb": 237,
         "notes": "13B 蒸馏版 8GB 显存实时生成"
       },
       "modality": {
@@ -1130,7 +1130,7 @@
       "name": "Open-Sora 2.0",
       "repo": "hpcai-tech/Open-Sora",
       "gguf_repo": "",
-      "size_gb": 20,
+      "size_gb": 9,
       "engine": [
         "diffusers"
       ],
@@ -1145,8 +1145,8 @@
       "hardware": {
         "vram_gb": 24,
         "min_vram_gb": 12,
-        "ram_gb": 48,
-        "disk_gb": 60,
+        "ram_gb": 17,
+        "disk_gb": 9,
         "notes": "11B"
       },
       "modality": {
@@ -1175,7 +1175,7 @@
       "name": "FLUX.1 [dev]",
       "repo": "black-forest-labs/FLUX.1-dev",
       "gguf_repo": "city96/FLUX.1-dev-gguf",
-      "size_gb": 24,
+      "size_gb": 54,
       "engine": [
         "diffusers",
         "mnn"
@@ -1186,15 +1186,15 @@
       "sources": [
         "https://huggingface.co/city96/FLUX.1-dev-gguf/",
         "https://hf-mirror.com/city96/FLUX.1-dev-gguf/",
-        "https://modelscope.cn/models/black-forest-labs/FLUX.1-dev/resolve/master/",
-        "https://modelscope.cn/models/city96/FLUX.1-dev-gguf/resolve/master/"
+        "https://modelscope.cn/models/black-forest-labs/FLUX.1-dev/",
+        "https://modelscope.cn/models/city96/FLUX.1-dev-gguf/"
       ],
       "primary_url": "https://huggingface.co/city96/FLUX.1-dev-gguf/",
       "hardware": {
         "vram_gb": 24,
         "min_vram_gb": 12,
-        "ram_gb": 48,
-        "disk_gb": 23,
+        "ram_gb": 64,
+        "disk_gb": 54,
         "notes": "12B；FP8 16GB 可跑"
       },
       "tags": [
@@ -1216,7 +1216,7 @@
       "name": "FLUX.1 [schnell]",
       "repo": "black-forest-labs/FLUX.1-schnell",
       "gguf_repo": "city96/FLUX.1-schnell-gguf",
-      "size_gb": 24,
+      "size_gb": 54,
       "engine": [
         "diffusers",
         "mnn"
@@ -1227,15 +1227,15 @@
       "sources": [
         "https://huggingface.co/city96/FLUX.1-schnell-gguf/",
         "https://hf-mirror.com/city96/FLUX.1-schnell-gguf/",
-        "https://modelscope.cn/models/black-forest-labs/FLUX.1-schnell/resolve/master/",
-        "https://modelscope.cn/models/city96/FLUX.1-schnell-gguf/resolve/master/"
+        "https://modelscope.cn/models/black-forest-labs/FLUX.1-schnell/",
+        "https://modelscope.cn/models/city96/FLUX.1-schnell-gguf/"
       ],
       "primary_url": "https://huggingface.co/city96/FLUX.1-schnell-gguf/",
       "hardware": {
         "vram_gb": 16,
         "min_vram_gb": 8,
-        "ram_gb": 32,
-        "disk_gb": 23,
+        "ram_gb": 64,
+        "disk_gb": 54,
         "notes": "4 步蒸馏；8GB 可跑（offload）"
       },
       "tags": [
@@ -1257,7 +1257,7 @@
       "name": "Stable Diffusion 3.5 Large",
       "repo": "stabilityai/stable-diffusion-3.5-large",
       "gguf_repo": "",
-      "size_gb": 10,
+      "size_gb": 67,
       "engine": [
         "diffusers"
       ],
@@ -1267,14 +1267,14 @@
       "sources": [
         "https://huggingface.co/stabilityai/stable-diffusion-3.5-large/",
         "https://hf-mirror.com/stabilityai/stable-diffusion-3.5-large/",
-        "https://modelscope.cn/models/stabilityai/stable-diffusion-3.5-large/resolve/master/"
+        "https://modelscope.cn/models/stabilityai/stable-diffusion-3.5-large/"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-diffusion-3.5-large/",
       "hardware": {
         "vram_gb": 18,
         "min_vram_gb": 10,
-        "ram_gb": 32,
-        "disk_gb": 20,
+        "ram_gb": 80,
+        "disk_gb": 67,
         "notes": "8B；10GB 显存可跑"
       },
       "tags": [
@@ -1295,7 +1295,7 @@
       "name": "Kwai Kolors",
       "repo": "Kwai-Kolors/Kolors",
       "gguf_repo": "",
-      "size_gb": 7,
+      "size_gb": 27,
       "engine": [
         "diffusers"
       ],
@@ -1305,14 +1305,14 @@
       "sources": [
         "https://huggingface.co/Kwai-Kolors/Kolors/",
         "https://hf-mirror.com/Kwai-Kolors/Kolors/",
-        "https://modelscope.cn/models/Kwai-Kolors/Kolors/resolve/master/"
+        "https://modelscope.cn/models/Kwai-Kolors/Kolors/"
       ],
       "primary_url": "https://huggingface.co/Kwai-Kolors/Kolors/",
       "hardware": {
         "vram_gb": 16,
         "min_vram_gb": 8,
-        "ram_gb": 32,
-        "disk_gb": 20,
+        "ram_gb": 35,
+        "disk_gb": 27,
         "notes": "快手 Kolors"
       },
       "tags": [
@@ -1333,7 +1333,7 @@
       "name": "HunyuanImage 3.0",
       "repo": "tencent/HunyuanImage-3.0",
       "gguf_repo": "",
-      "size_gb": 83,
+      "size_gb": 157,
       "engine": [
         "diffusers"
       ],
@@ -1349,7 +1349,7 @@
         "vram_gb": 40,
         "min_vram_gb": 24,
         "ram_gb": 64,
-        "disk_gb": 169,
+        "disk_gb": 157,
         "notes": "80B 总参 / 13B 激活 MoE；FP8/量化可降低门槛"
       },
       "tags": [
@@ -1370,7 +1370,7 @@
       "name": "ControlNet (SD1.5 Canny)",
       "repo": "lllyasviel/control_v11p_sd15_canny",
       "gguf_repo": "",
-      "size_gb": 1.5,
+      "size_gb": 4,
       "engine": [
         "diffusers"
       ],
@@ -1380,14 +1380,14 @@
       "sources": [
         "https://huggingface.co/lllyasviel/control_v11p_sd15_canny/",
         "https://hf-mirror.com/lllyasviel/control_v11p_sd15_canny/",
-        "https://modelscope.cn/models/lllyasviel/control_v11p_sd15_canny/resolve/master/"
+        "https://modelscope.cn/models/lllyasviel/control_v11p_sd15_canny/"
       ],
       "primary_url": "https://huggingface.co/lllyasviel/control_v11p_sd15_canny/",
       "hardware": {
         "vram_gb": 10,
         "min_vram_gb": 6,
-        "ram_gb": 16,
-        "disk_gb": 5,
+        "ram_gb": 12,
+        "disk_gb": 4,
         "notes": "SDXL ControlNet 附属模型"
       },
       "tags": [
@@ -1482,7 +1482,7 @@
       "name": "SUPIR",
       "repo": "camenduru/SUPIR",
       "gguf_repo": "",
-      "size_gb": 3.5,
+      "size_gb": 60,
       "engine": [
         "diffusers"
       ],
@@ -1497,8 +1497,8 @@
       "hardware": {
         "vram_gb": 16,
         "min_vram_gb": 8,
-        "ram_gb": 32,
-        "disk_gb": 20,
+        "ram_gb": 72,
+        "disk_gb": 60,
         "notes": "扩散超分"
       },
       "tags": [
@@ -1557,7 +1557,7 @@
       "name": "SeedVR2",
       "repo": "ByteDance-Seed/SeedVR2-3B",
       "gguf_repo": "",
-      "size_gb": 6,
+      "size_gb": 14,
       "engine": [
         "diffusers"
       ],
@@ -1572,8 +1572,8 @@
       "hardware": {
         "vram_gb": 12,
         "min_vram_gb": 6,
-        "ram_gb": 24,
-        "disk_gb": 29,
+        "ram_gb": 22,
+        "disk_gb": 14,
         "notes": "默认 3B；另有 7B（ByteDance-Seed/SeedVR2-7B），仓库含多种精度"
       },
       "tags": [
@@ -1594,7 +1594,7 @@
       "name": "Stable Audio Open 1.0",
       "repo": "stabilityai/stable-audio-open-1.0",
       "gguf_repo": "",
-      "size_gb": 3,
+      "size_gb": 15,
       "engine": [
         "diffusers"
       ],
@@ -1604,14 +1604,14 @@
       "sources": [
         "https://huggingface.co/stabilityai/stable-audio-open-1.0/",
         "https://hf-mirror.com/stabilityai/stable-audio-open-1.0/",
-        "https://modelscope.cn/models/stabilityai/stable-audio-open-1.0/resolve/master/"
+        "https://modelscope.cn/models/stabilityai/stable-audio-open-1.0/"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-audio-open-1.0/",
       "hardware": {
         "vram_gb": 8,
         "min_vram_gb": 4,
-        "ram_gb": 16,
-        "disk_gb": 7,
+        "ram_gb": 23,
+        "disk_gb": 15,
         "notes": "1B"
       },
       "tags": [
@@ -1632,7 +1632,7 @@
       "name": "MusicGen Large",
       "repo": "facebook/musicgen-large",
       "gguf_repo": "",
-      "size_gb": 3.5,
+      "size_gb": 19,
       "engine": [
         "transformers"
       ],
@@ -1642,14 +1642,14 @@
       "sources": [
         "https://huggingface.co/facebook/musicgen-large/",
         "https://hf-mirror.com/facebook/musicgen-large/",
-        "https://modelscope.cn/models/facebook/musicgen-large/resolve/master/"
+        "https://modelscope.cn/models/facebook/musicgen-large/"
       ],
       "primary_url": "https://huggingface.co/facebook/musicgen-large/",
       "hardware": {
         "vram_gb": 10,
         "min_vram_gb": 4,
-        "ram_gb": 16,
-        "disk_gb": 12,
+        "ram_gb": 27,
+        "disk_gb": 19,
         "notes": "3B"
       },
       "tags": [
@@ -1680,7 +1680,7 @@
       "sources": [
         "https://huggingface.co/facebook/musicgen-stereo-large/",
         "https://hf-mirror.com/facebook/musicgen-stereo-large/",
-        "https://modelscope.cn/models/facebook/musicgen-stereo-large/resolve/master/"
+        "https://modelscope.cn/models/facebook/musicgen-stereo-large/"
       ],
       "primary_url": "https://huggingface.co/facebook/musicgen-stereo-large/",
       "hardware": {
@@ -1706,11 +1706,11 @@
       "name": "AudioLDM 2",
       "repo": "haoheliu/audioldm2-full",
       "gguf_repo": "",
-      "size_gb": 1.5,
+      "size_gb": 8,
       "engine": [
         "diffusers"
       ],
-      "license": "Apache-2.0",
+      "license": "CC-BY-NC-ND-4.0",
       "trending": false,
       "description": "AudioLDM 2，音效/语音/音乐统一生成。",
       "sources": [
@@ -1721,7 +1721,7 @@
       "hardware": {
         "vram_gb": 6,
         "min_vram_gb": 2,
-        "ram_gb": 8,
+        "ram_gb": 16,
         "disk_gb": 8,
         "notes": "轻量音频"
       },
@@ -1814,7 +1814,7 @@
       "name": "TRELLIS-image (Large)",
       "repo": "microsoft/TRELLIS-image-large",
       "gguf_repo": "",
-      "size_gb": 8,
+      "size_gb": 3,
       "engine": [
         "trellis"
       ],
@@ -1824,14 +1824,14 @@
       "sources": [
         "https://huggingface.co/microsoft/TRELLIS-image-large/",
         "https://hf-mirror.com/microsoft/TRELLIS-image-large/",
-        "https://modelscope.cn/models/microsoft/TRELLIS-image-large/resolve/master/"
+        "https://modelscope.cn/models/microsoft/TRELLIS-image-large/"
       ],
       "primary_url": "https://huggingface.co/microsoft/TRELLIS-image-large/",
       "hardware": {
         "vram_gb": 12,
         "min_vram_gb": 6,
-        "ram_gb": 24,
-        "disk_gb": 18,
+        "ram_gb": 11,
+        "disk_gb": 3,
         "notes": "微软 TRELLIS"
       },
       "tags": [
@@ -1861,7 +1861,7 @@
       "sources": [
         "https://huggingface.co/stabilityai/TripoSR/",
         "https://hf-mirror.com/stabilityai/TripoSR/",
-        "https://modelscope.cn/models/stabilityai/TripoSR/resolve/master/"
+        "https://modelscope.cn/models/stabilityai/TripoSR/"
       ],
       "primary_url": "https://huggingface.co/stabilityai/TripoSR/",
       "hardware": {
@@ -1960,7 +1960,7 @@
       "name": "Trellis 2",
       "repo": "microsoft/TRELLIS.2-4B",
       "gguf_repo": "",
-      "size_gb": 8,
+      "size_gb": 15,
       "engine": [
         "trellis"
       ],
@@ -1970,14 +1970,14 @@
       "sources": [
         "https://huggingface.co/microsoft/TRELLIS.2-4B/",
         "https://hf-mirror.com/microsoft/TRELLIS.2-4B/",
-        "https://modelscope.cn/models/microsoft/TRELLIS.2-4B/resolve/master/"
+        "https://modelscope.cn/models/microsoft/TRELLIS.2-4B/"
       ],
       "primary_url": "https://huggingface.co/microsoft/TRELLIS.2-4B/",
       "hardware": {
         "vram_gb": 12,
         "min_vram_gb": 6,
-        "ram_gb": 24,
-        "disk_gb": 17,
+        "ram_gb": 23,
+        "disk_gb": 15,
         "notes": "TRELLIS.2-4B，512³–1536³ 分辨率，输出 GLB/OBJ/PLY"
       },
       "tags": [
@@ -1997,7 +1997,7 @@
       "name": "TripoSG",
       "repo": "VAST-AI/TripoSG",
       "gguf_repo": "",
-      "size_gb": 3,
+      "size_gb": 7,
       "engine": [
         "triposg"
       ],
@@ -2012,8 +2012,8 @@
       "hardware": {
         "vram_gb": 10,
         "min_vram_gb": 6,
-        "ram_gb": 16,
-        "disk_gb": 12,
+        "ram_gb": 15,
+        "disk_gb": 7,
         "notes": ""
       },
       "tags": [
@@ -2033,7 +2033,7 @@
       "name": "CLIP ViT-L/14",
       "repo": "openai/clip-vit-large-patch14",
       "gguf_repo": "",
-      "size_gb": 1.0,
+      "size_gb": 6,
       "engine": [
         "transformers",
         "mnn"
@@ -2049,8 +2049,8 @@
       "hardware": {
         "vram_gb": 2,
         "min_vram_gb": 0,
-        "ram_gb": 4,
-        "disk_gb": 2,
+        "ram_gb": 14,
+        "disk_gb": 6,
         "notes": "视觉编码器；CPU 可跑"
       },
       "tags": [
@@ -2115,7 +2115,7 @@
       "sources": [
         "https://huggingface.co/onnx-community/YOLOv10/",
         "https://hf-mirror.com/onnx-community/YOLOv10/",
-        "https://modelscope.cn/models/onnx-community/YOLOv10/resolve/master/"
+        "https://modelscope.cn/models/onnx-community/YOLOv10/"
       ],
       "primary_url": "https://huggingface.co/onnx-community/YOLOv10/",
       "hardware": {
@@ -2174,7 +2174,7 @@
       "category": "llm",
       "name": "Qwen3.8-27B（官方稠密多模态）",
       "repo": "Qwen/Qwen3.8-27B",
-      "size_gb": 28,
+      "size_gb": 52,
       "engine": [
         "vllm",
         "sglang",
@@ -2187,14 +2187,14 @@
       "hardware": {
         "vram_gb": 32,
         "min_vram_gb": 16,
-        "ram_gb": 64,
-        "disk_gb": 56,
+        "ram_gb": 62,
+        "disk_gb": 52,
         "notes": "BF16 约 56GB，量化版 16GB 起；单卡 A100/4090 可跑量化"
       },
       "sources": [
         "https://huggingface.co/Qwen/Qwen3.8-27B/",
         "https://hf-mirror.com/Qwen/Qwen3.8-27B/",
-        "https://modelscope.cn/models/Qwen/Qwen3.8-27B/resolve/master/"
+        "https://modelscope.cn/models/Qwen/Qwen3.8-27B/"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen3.8-27B/",
       "gguf_repo": "JonathanColetti/Qwen3.8-27B-Uncensored-GGUF",
@@ -2231,7 +2231,7 @@
       "category": "llm",
       "name": "Qwen3.5 27B",
       "repo": "Qwen/Qwen3.5-27B",
-      "size_gb": 17.0,
+      "size_gb": 52,
       "engine": [
         "llama.cpp",
         "mnn"
@@ -2242,16 +2242,16 @@
       "hardware": {
         "vram_gb": 18,
         "min_vram_gb": 12,
-        "ram_gb": 32,
-        "disk_gb": 17,
+        "ram_gb": 62,
+        "disk_gb": 52,
         "notes": "UD-Q4_K_XL 约 17GB；官方建议 24GB 显卡全速，18GB 起可用"
       },
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.5-27B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.5-27B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.5-27B-GGUF/",
-        "https://modelscope.cn/models/Qwen/Qwen3.5-27B/resolve/master/",
-        "https://modelscope.cn/models/unsloth/Qwen3.5-27B-GGUF/resolve/master/"
+        "https://modelscope.cn/models/Qwen/Qwen3.5-27B/",
+        "https://modelscope.cn/models/unsloth/Qwen3.5-27B-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3.5-27B-GGUF/",
       "gguf_repo": "unsloth/Qwen3.5-27B-GGUF",
@@ -2282,7 +2282,7 @@
       "category": "llm",
       "name": "Qwen3.5 9B",
       "repo": "Qwen/Qwen3.5-9B",
-      "size_gb": 6.2,
+      "size_gb": 18,
       "engine": [
         "llama.cpp",
         "mnn"
@@ -2293,16 +2293,16 @@
       "hardware": {
         "vram_gb": 10,
         "min_vram_gb": 6,
-        "ram_gb": 16,
-        "disk_gb": 7,
+        "ram_gb": 26,
+        "disk_gb": 18,
         "notes": "Q4 约 6GB；8GB 显存即可流畅"
       },
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.5-9B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.5-9B-GGUF/",
-        "https://modelscope.cn/models/Qwen/Qwen3.5-9B/resolve/master/",
-        "https://modelscope.cn/models/unsloth/Qwen3.5-9B-GGUF/resolve/master/"
+        "https://modelscope.cn/models/Qwen/Qwen3.5-9B/",
+        "https://modelscope.cn/models/unsloth/Qwen3.5-9B-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3.5-9B-GGUF/",
       "gguf_repo": "unsloth/Qwen3.5-9B-GGUF",
@@ -2331,7 +2331,7 @@
       "category": "llm",
       "name": "Qwen3.5 397B A17B (MoE)",
       "repo": "Qwen/Qwen3.5-397B-A17B",
-      "size_gb": 240,
+      "size_gb": 751,
       "engine": [
         "llama.cpp",
         "vllm"
@@ -2340,18 +2340,18 @@
       "trending": true,
       "description": "2026 阿里开源旗舰 MoE：397B 总参 / 17B 激活，多项基准对标 GPT-5.2；配合 Unsloth Dynamic 2.0 量化 + 稀疏激活，多卡工作站可跑。",
       "hardware": {
-        "vram_gb": 256,
+        "vram_gb": 512,
         "min_vram_gb": 128,
-        "ram_gb": 384,
-        "disk_gb": 240,
+        "ram_gb": 1024,
+        "disk_gb": 751,
         "notes": "Q4 量化约 240GB；建议 2×RTX 6000 Ada / 4×4090 起步；CPU+大内存也可 offload 运行"
       },
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.5-397B-A17B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.5-397B-A17B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.5-397B-A17B-GGUF/",
-        "https://modelscope.cn/models/Qwen/Qwen3.5-397B-A17B/resolve/master/",
-        "https://modelscope.cn/models/unsloth/Qwen3.5-397B-A17B-GGUF/resolve/master/"
+        "https://modelscope.cn/models/Qwen/Qwen3.5-397B-A17B/",
+        "https://modelscope.cn/models/unsloth/Qwen3.5-397B-A17B-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3.5-397B-A17B-GGUF/",
       "gguf_repo": "unsloth/Qwen3.5-397B-A17B-GGUF",
@@ -2381,7 +2381,7 @@
       "category": "llm",
       "name": "Qwen3.6 27B",
       "repo": "Qwen/Qwen3.6-27B",
-      "size_gb": 17.2,
+      "size_gb": 52,
       "engine": [
         "llama.cpp",
         "mnn"
@@ -2392,16 +2392,16 @@
       "hardware": {
         "vram_gb": 18,
         "min_vram_gb": 12,
-        "ram_gb": 32,
-        "disk_gb": 18,
+        "ram_gb": 62,
+        "disk_gb": 52,
         "notes": "Q4 约 17GB；18GB 显存流畅；MNN 版可在 16GB 内存纯 CPU 跑"
       },
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.6-27B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.6-27B-GGUF/",
-        "https://modelscope.cn/models/Qwen/Qwen3.6-27B/resolve/master/",
-        "https://modelscope.cn/models/unsloth/Qwen3.6-27B-GGUF/resolve/master/"
+        "https://modelscope.cn/models/Qwen/Qwen3.6-27B/",
+        "https://modelscope.cn/models/unsloth/Qwen3.6-27B-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/",
       "gguf_repo": "unsloth/Qwen3.6-27B-GGUF",
@@ -2430,7 +2430,7 @@
       "category": "llm",
       "name": "Qwen3.6 35B A3B (MoE)",
       "repo": "Qwen/Qwen3.6-35B-A3B",
-      "size_gb": 20.0,
+      "size_gb": 67,
       "engine": [
         "llama.cpp",
         "mnn"
@@ -2439,18 +2439,18 @@
       "trending": false,
       "description": "Qwen3.6 高性价比 MoE：35B 总参 / 3B 激活，速度极快；官方 MNN 预转换版主打手机/轻薄本端侧部署。",
       "hardware": {
-        "vram_gb": 12,
+        "vram_gb": 23,
         "min_vram_gb": 8,
-        "ram_gb": 24,
-        "disk_gb": 20,
+        "ram_gb": 80,
+        "disk_gb": 67,
         "notes": "Q4 约 20GB，但激活仅 3B：12GB 显存即可高吞吐；MNN 端侧实测极快"
       },
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.6-35B-A3B-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen3.6-35B-A3B-GGUF/",
-        "https://modelscope.cn/models/Qwen/Qwen3.6-35B-A3B/resolve/master/",
-        "https://modelscope.cn/models/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/master/"
+        "https://modelscope.cn/models/Qwen/Qwen3.6-35B-A3B/",
+        "https://modelscope.cn/models/unsloth/Qwen3.6-35B-A3B-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/",
       "gguf_repo": "unsloth/Qwen3.6-35B-A3B-GGUF",
@@ -2479,7 +2479,7 @@
       "category": "llm",
       "name": "DeepSeek V4 Flash (744B MoE)",
       "repo": "deepseek-ai/DeepSeek-V4-Flash",
-      "size_gb": 420,
+      "size_gb": 149,
       "engine": [
         "llama.cpp",
         "vllm"
@@ -2488,18 +2488,18 @@
       "trending": true,
       "description": "2026-04-24 MIT 协议开源：744B MoE 架构，主打高吞吐低延迟，定位轻量版 V4。",
       "hardware": {
-        "vram_gb": 512,
+        "vram_gb": 192,
         "min_vram_gb": 256,
-        "ram_gb": 768,
-        "disk_gb": 420,
+        "ram_gb": 256,
+        "disk_gb": 149,
         "notes": "Q4 量化约 420GB；建议 8×H100/8×A100 服务器或多卡 4090 阵列"
       },
       "sources": [
         "https://huggingface.co/unsloth/DeepSeek-V4-Flash-GGUF/",
         "https://hf-mirror.com/unsloth/DeepSeek-V4-Flash-GGUF/",
         "https://hf-mirror.com/unsloth/DeepSeek-V4-Flash-GGUF/",
-        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Flash/resolve/master/",
-        "https://modelscope.cn/models/unsloth/DeepSeek-V4-Flash-GGUF/resolve/master/"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Flash/",
+        "https://modelscope.cn/models/unsloth/DeepSeek-V4-Flash-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-GGUF/",
       "gguf_repo": "unsloth/DeepSeek-V4-Flash-GGUF",
@@ -2529,7 +2529,7 @@
       "category": "llm",
       "name": "DeepSeek V4 Pro (1.6T MoE)",
       "repo": "deepseek-ai/DeepSeek-V4-Pro",
-      "size_gb": 1599,
+      "size_gb": 805,
       "engine": [
         "vllm",
         "sglang"
@@ -2538,16 +2538,16 @@
       "trending": true,
       "description": "DeepSeek 2026 旗舰：1.6T 总参 / 49B 激活 MoE，1M 上下文，MIT 协议开源可商用。0813 为后续更新版，已另列。",
       "hardware": {
-        "vram_gb": 1024,
+        "vram_gb": 512,
         "min_vram_gb": 512,
-        "ram_gb": 2048,
-        "disk_gb": 1599,
+        "ram_gb": 1024,
+        "disk_gb": 805,
         "notes": "FP4+FP8 混合权重约 1.6TB；需服务器级多卡集群（16×H100 起），vLLM/SGLang 部署"
       },
       "sources": [
         "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/",
         "https://hf-mirror.com/deepseek-ai/DeepSeek-V4-Pro/",
-        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Pro/resolve/master/"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Pro/"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/",
       "modality": {
@@ -2576,7 +2576,7 @@
       "category": "llm",
       "name": "GLM-5 (智谱)",
       "repo": "zai-org/GLM-5",
-      "size_gb": 22,
+      "size_gb": 1404,
       "engine": [
         "llama.cpp",
         "vllm"
@@ -2585,17 +2585,17 @@
       "trending": true,
       "description": "智谱 2026 开源旗舰：复杂编码 / 长程任务强化，开源权重 + MIT 协议，社区 GGUF 生态完善，单卡 24GB 可跑量化版。",
       "hardware": {
-        "vram_gb": 24,
+        "vram_gb": 491,
         "min_vram_gb": 16,
-        "ram_gb": 48,
-        "disk_gb": 22,
+        "ram_gb": 1684,
+        "disk_gb": 1404,
         "notes": "Q4 量化约 22GB；24GB 显卡（4090/3090）推荐；16GB 需进一步量化"
       },
       "sources": [
         "https://huggingface.co/unsloth/GLM-5-GGUF/",
         "https://hf-mirror.com/unsloth/GLM-5-GGUF/",
         "https://hf-mirror.com/unsloth/GLM-5-GGUF/",
-        "https://modelscope.cn/models/unsloth/GLM-5-GGUF/resolve/master/"
+        "https://modelscope.cn/models/unsloth/GLM-5-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/GLM-5-GGUF/",
       "gguf_repo": "unsloth/GLM-5-GGUF",
@@ -2625,27 +2625,27 @@
       "category": "llm",
       "name": "Kimi K2.6 (多模态智能体)",
       "repo": "moonshotai/Kimi-K2.6",
-      "size_gb": 620,
+      "size_gb": 554,
       "engine": [
         "vllm",
         "llama.cpp"
       ],
-      "license": "Modified-MIT",
+      "license": "其他（other）",
       "trending": true,
       "description": "2026-04-20 开源：1T 参数 MoE / 激活 32B，原生多模态（MoonViT 视觉编码器），256K 上下文，编程与 Agent 能力较强。",
       "hardware": {
         "vram_gb": 640,
         "min_vram_gb": 320,
         "ram_gb": 896,
-        "disk_gb": 620,
+        "disk_gb": 554,
         "notes": "Q4 约 620GB；多卡服务器起步；MLX 量化版可在 M3 Ultra 512GB 上运行"
       },
       "sources": [
         "https://huggingface.co/unsloth/Kimi-K2.6-GGUF/",
         "https://hf-mirror.com/unsloth/Kimi-K2.6-GGUF/",
         "https://hf-mirror.com/unsloth/Kimi-K2.6-GGUF/",
-        "https://modelscope.cn/models/moonshotai/Kimi-K2.6/resolve/master/",
-        "https://modelscope.cn/models/unsloth/Kimi-K2.6-GGUF/resolve/master/"
+        "https://modelscope.cn/models/moonshotai/Kimi-K2.6/",
+        "https://modelscope.cn/models/unsloth/Kimi-K2.6-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/Kimi-K2.6-GGUF/",
       "gguf_repo": "unsloth/Kimi-K2.6-GGUF",
@@ -2678,26 +2678,26 @@
       "category": "llm",
       "name": "MiniMax M2.7",
       "repo": "MiniMaxAI/MiniMax-M2.7",
-      "size_gb": 230,
+      "size_gb": 214,
       "engine": [
         "llama.cpp",
         "vllm"
       ],
-      "license": "Apache-2.0",
+      "license": "其他（other）",
       "trending": false,
       "description": "2026-06 发布：Lightning Attention 长程任务低成本高分，AAI 50 分黑马；230B MoE，量化后多卡工作站可部署。",
       "hardware": {
         "vram_gb": 256,
         "min_vram_gb": 128,
         "ram_gb": 384,
-        "disk_gb": 230,
+        "disk_gb": 214,
         "notes": "Q4 约 230GB；4×4090 或 2×A100 起步"
       },
       "sources": [
         "https://huggingface.co/unsloth/MiniMax-M2.7-GGUF/",
         "https://hf-mirror.com/unsloth/MiniMax-M2.7-GGUF/",
         "https://hf-mirror.com/unsloth/MiniMax-M2.7-GGUF/",
-        "https://modelscope.cn/models/unsloth/MiniMax-M2.7-GGUF/resolve/master/"
+        "https://modelscope.cn/models/unsloth/MiniMax-M2.7-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/MiniMax-M2.7-GGUF/",
       "gguf_repo": "unsloth/MiniMax-M2.7-GGUF",
@@ -2725,7 +2725,7 @@
       "category": "llm",
       "name": "GPT-OSS 120B (OpenAI)",
       "repo": "openai/gpt-oss-120b",
-      "size_gb": 63,
+      "size_gb": 182,
       "engine": [
         "llama.cpp",
         "vllm"
@@ -2734,17 +2734,17 @@
       "trending": true,
       "description": "OpenAI 首个开源权重模型：117B MoE / 激活 5.1B，原生 GGUF 发布（MXFP4 量化 63GB），可调谐推理强度，llama.cpp 一行命令直接跑。",
       "hardware": {
-        "vram_gb": 64,
+        "vram_gb": 128,
         "min_vram_gb": 32,
-        "ram_gb": 96,
-        "disk_gb": 63,
+        "ram_gb": 256,
+        "disk_gb": 182,
         "notes": "原生 MXFP4 63GB：单张 64GB 显卡全显存；32GB 显存可跑（部分 offload）；128GB 内存纯 CPU 也能跑"
       },
       "sources": [
         "https://huggingface.co/ggml-org/gpt-oss-120b-GGUF/",
         "https://hf-mirror.com/ggml-org/gpt-oss-120b-GGUF/",
         "https://hf-mirror.com/ggml-org/gpt-oss-120b-GGUF/",
-        "https://modelscope.cn/models/ggml-org/gpt-oss-120b-GGUF/resolve/master/"
+        "https://modelscope.cn/models/ggml-org/gpt-oss-120b-GGUF/"
       ],
       "primary_url": "https://huggingface.co/ggml-org/gpt-oss-120b-GGUF/",
       "gguf_repo": "ggml-org/gpt-oss-120b-GGUF",
@@ -2774,7 +2774,7 @@
       "category": "llm",
       "name": "GPT-OSS 20B (OpenAI)",
       "repo": "openai/gpt-oss-20b",
-      "size_gb": 13,
+      "size_gb": 38,
       "engine": [
         "llama.cpp",
         "vllm"
@@ -2785,15 +2785,15 @@
       "hardware": {
         "vram_gb": 16,
         "min_vram_gb": 8,
-        "ram_gb": 32,
-        "disk_gb": 13,
+        "ram_gb": 46,
+        "disk_gb": 38,
         "notes": "13GB 单文件：16GB 显存全速；8GB 显存 + 内存 offload 可用"
       },
       "sources": [
         "https://huggingface.co/ggml-org/gpt-oss-20b-GGUF/",
         "https://hf-mirror.com/ggml-org/gpt-oss-20b-GGUF/",
         "https://hf-mirror.com/ggml-org/gpt-oss-20b-GGUF/",
-        "https://modelscope.cn/models/ggml-org/gpt-oss-20b-GGUF/resolve/master/"
+        "https://modelscope.cn/models/ggml-org/gpt-oss-20b-GGUF/"
       ],
       "primary_url": "https://huggingface.co/ggml-org/gpt-oss-20b-GGUF/",
       "gguf_repo": "ggml-org/gpt-oss-20b-GGUF",
@@ -2823,7 +2823,7 @@
       "category": "llm",
       "name": "LFM2.5 8B A1B (Liquid AI)",
       "repo": "LiquidAI/LFM2.5-8B-A1B",
-      "size_gb": 5.5,
+      "size_gb": 16,
       "engine": [
         "llama.cpp",
         "mnn"
@@ -2834,16 +2834,16 @@
       "hardware": {
         "vram_gb": 8,
         "min_vram_gb": 4,
-        "ram_gb": 12,
-        "disk_gb": 6,
+        "ram_gb": 24,
+        "disk_gb": 16,
         "notes": "Q4 约 5.5GB；8GB 显存或 12GB 内存即可，MNN 端侧速度优秀"
       },
       "sources": [
         "https://huggingface.co/unsloth/LFM2.5-8B-A1B-GGUF/",
         "https://hf-mirror.com/unsloth/LFM2.5-8B-A1B-GGUF/",
         "https://hf-mirror.com/unsloth/LFM2.5-8B-A1B-GGUF/",
-        "https://modelscope.cn/models/LiquidAI/LFM2.5-8B-A1B/resolve/master/",
-        "https://modelscope.cn/models/unsloth/LFM2.5-8B-A1B-GGUF/resolve/master/"
+        "https://modelscope.cn/models/LiquidAI/LFM2.5-8B-A1B/",
+        "https://modelscope.cn/models/unsloth/LFM2.5-8B-A1B-GGUF/"
       ],
       "primary_url": "https://huggingface.co/unsloth/LFM2.5-8B-A1B-GGUF/",
       "gguf_repo": "unsloth/LFM2.5-8B-A1B-GGUF",
@@ -2872,7 +2872,7 @@
       "category": "video",
       "name": "LTX-2.3 (音画同步视频)",
       "repo": "Lightricks/LTX-2.3",
-      "size_gb": 90,
+      "size_gb": 145,
       "engine": [
         "diffusers",
         "comfyui"
@@ -2881,16 +2881,16 @@
       "trending": true,
       "description": "Lightricks 2026-03-09 开源：22B 参数，业界少数原生音画同步（同步生成音频）视频模型，重建 VAE 细节锐度提升、I2V 运镜大幅优化，支持竖屏原生输出。",
       "hardware": {
-        "vram_gb": 24,
+        "vram_gb": 48,
         "min_vram_gb": 16,
-        "ram_gb": 48,
-        "disk_gb": 90,
+        "ram_gb": 192,
+        "disk_gb": 145,
         "notes": "官方 distill 蒸馏版可在 12-16GB 显存运行；完整版建议 24GB（4090）"
       },
       "sources": [
         "https://huggingface.co/Lightricks/LTX-2.3/",
         "https://hf-mirror.com/Lightricks/LTX-2.3/",
-        "https://modelscope.cn/models/Lightricks/LTX-2.3/resolve/master/"
+        "https://modelscope.cn/models/Lightricks/LTX-2.3/"
       ],
       "primary_url": "https://huggingface.co/Lightricks/LTX-2.3/",
       "modality": {
@@ -2923,7 +2923,7 @@
       "category": "video",
       "name": "LTX-2.5 (最新一代)",
       "repo": "Lightricks/LTX-2.5",
-      "size_gb": 95,
+      "size_gb": 187,
       "engine": [
         "diffusers",
         "comfyui"
@@ -2932,16 +2932,16 @@
       "trending": true,
       "description": "LTX 最新一代世界模型（2026-08-11 开放权重）：22B 参数，原生多镜头生成、音画同步、4K HDR、最高 50fps / 20 秒，ComfyUI 原生 Day-0 支持，LoRA 微调生态（Relight、Foley 音效、Clean Plate 等）。注意：① 官方最低显存要求 16GB；② HF 仓库为 gated（受控访问）——须先在 HuggingFace 仓库页面接受许可协议，并在本软件「设置」中填入你的 HF Token 才能下载。",
       "hardware": {
-        "vram_gb": 24,
+        "vram_gb": 64,
         "min_vram_gb": 16,
-        "ram_gb": 32,
-        "disk_gb": 95,
+        "ram_gb": 256,
+        "disk_gb": 187,
         "notes": "官方最低 16GB 显存；蒸馏量化变体显存占用更低但非官方最低保证"
       },
       "sources": [
         "https://huggingface.co/Lightricks/LTX-2.5/",
         "https://hf-mirror.com/Lightricks/LTX-2.5/",
-        "https://modelscope.cn/models/Lightricks/LTX-2.5/resolve/master/"
+        "https://modelscope.cn/models/Lightricks/LTX-2.5/"
       ],
       "primary_url": "https://huggingface.co/Lightricks/LTX-2.5/",
       "modality": {
@@ -2988,7 +2988,7 @@
       "category": "image",
       "name": "FLUX.2 [dev]",
       "repo": "black-forest-labs/FLUX.2-dev",
-      "size_gb": 32,
+      "size_gb": 165,
       "engine": [
         "diffusers",
         "comfyui"
@@ -2997,17 +2997,17 @@
       "trending": true,
       "description": "Black Forest Labs 新一代图像旗舰：32B 参数，多参考图一致性生成 + 文字渲染显著增强，官方仓库与微调生态稳定。",
       "hardware": {
-        "vram_gb": 24,
+        "vram_gb": 48,
         "min_vram_gb": 12,
-        "ram_gb": 48,
-        "disk_gb": 32,
+        "ram_gb": 192,
+        "disk_gb": 165,
         "notes": "FP8 量化 24GB 显存可跑；12GB 需 GGUF 量化版 + offload"
       },
       "sources": [
         "https://huggingface.co/black-forest-labs/FLUX.2-dev/",
         "https://hf-mirror.com/black-forest-labs/FLUX.2-dev/",
         "https://hf-mirror.com/black-forest-labs/FLUX.2-dev/",
-        "https://modelscope.cn/models/black-forest-labs/FLUX.2-dev/resolve/master/"
+        "https://modelscope.cn/models/black-forest-labs/FLUX.2-dev/"
       ],
       "primary_url": "https://huggingface.co/black-forest-labs/FLUX.2-dev/",
       "tags": [
@@ -3029,7 +3029,7 @@
       "name": "Krea 2 Turbo",
       "repo": "krea/Krea-2-Turbo",
       "gguf_repo": "",
-      "size_gb": 13,
+      "size_gb": 58,
       "engine": [
         "diffusers",
         "comfyui"
@@ -3040,14 +3040,14 @@
       "sources": [
         "https://huggingface.co/krea/Krea-2-Turbo/",
         "https://hf-mirror.com/krea/Krea-2-Turbo/",
-        "https://modelscope.cn/models/krea/Krea-2-Turbo/resolve/master/"
+        "https://modelscope.cn/models/krea/Krea-2-Turbo/"
       ],
       "primary_url": "https://huggingface.co/krea/Krea-2-Turbo/",
       "hardware": {
         "vram_gb": 16,
         "min_vram_gb": 8,
         "ram_gb": 32,
-        "disk_gb": 63,
+        "disk_gb": 58,
         "notes": "权重约 13GB，仓库含多精度共约 63GB；gated"
       },
       "modality": {
@@ -3084,25 +3084,25 @@
       "name": "Kimi K3 (2.8T)",
       "repo": "moonshotai/Kimi-K3",
       "gguf_repo": "",
-      "size_gb": 1680,
+      "size_gb": 1454,
       "engine": [
         "vllm",
         "sglang"
       ],
-      "license": "自定义（月之暗面）",
+      "license": "其他（other）",
       "trending": true,
       "description": "月之暗面 Kimi K3，2.8T 参数旗舰，官方提供 vLLM/SGLang 专属 Docker 镜像，支持 PD 分离部署。",
       "sources": [
         "https://huggingface.co/moonshotai/Kimi-K3/",
         "https://hf-mirror.com/moonshotai/Kimi-K3/",
-        "https://modelscope.cn/models/moonshotai/Kimi-K3/resolve/master/"
+        "https://modelscope.cn/models/moonshotai/Kimi-K3/"
       ],
       "primary_url": "https://huggingface.co/moonshotai/Kimi-K3/",
       "hardware": {
         "vram_gb": 640,
         "min_vram_gb": 320,
         "ram_gb": 2048,
-        "disk_gb": 1680,
+        "disk_gb": 1454,
         "notes": "多卡集群（官方推荐 8×B300 级）；消费级硬件不可行"
       },
       "modality": {
@@ -3134,7 +3134,7 @@
       "name": "Qwen3.8-Max (MoE)",
       "repo": "Qwen/Qwen3.8-2.4T-A95B",
       "gguf_repo": "",
-      "size_gb": 2446,
+      "size_gb": 4556,
       "engine": [
         "vllm",
         "sglang"
@@ -3145,14 +3145,14 @@
       "sources": [
         "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/",
         "https://hf-mirror.com/Qwen/Qwen3.8-2.4T-A95B/",
-        "https://modelscope.cn/models/Qwen/Qwen3.8-2.4T-A95B/resolve/master/"
+        "https://modelscope.cn/models/Qwen/Qwen3.8-2.4T-A95B/"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/",
       "hardware": {
         "vram_gb": 1024,
         "min_vram_gb": 512,
         "ram_gb": 3072,
-        "disk_gb": 4892,
+        "disk_gb": 4556,
         "notes": "FP8 约 2.4TB、BF16 约 4.9TB；多卡集群部署，兼容 vLLM/SGLang"
       },
       "modality": {
@@ -3182,24 +3182,24 @@
       "name": "dots3-note preview (MoE)",
       "repo": "dots-studio/dots3-note-prev",
       "gguf_repo": "",
-      "size_gb": 288,
+      "size_gb": 537,
       "engine": [
         "vllm"
       ],
-      "license": "自定义（小红书）",
+      "license": "Apache-2.0",
       "trending": false,
       "description": "小红书 dots-studio dots3-note 预览版（2026-08）：280B 总参/16B 激活 MoE，文本+视觉+语音多模态理解。权重仓库 dots-studio/dots3-note-prev。",
       "sources": [
         "https://huggingface.co/dots-studio/dots3-note-prev/",
         "https://hf-mirror.com/dots-studio/dots3-note-prev/",
-        "https://modelscope.cn/models/dots-studio/dots3-note-prev/resolve/master/"
+        "https://modelscope.cn/models/dots-studio/dots3-note-prev/"
       ],
       "primary_url": "https://huggingface.co/dots-studio/dots3-note-prev/",
       "hardware": {
         "vram_gb": 64,
         "min_vram_gb": 32,
-        "ram_gb": 128,
-        "disk_gb": 577,
+        "ram_gb": 768,
+        "disk_gb": 537,
         "notes": "280B 总参/16B 激活 MoE，FP8 权重约 288GB"
       },
       "modality": {
@@ -3251,7 +3251,7 @@
       "name": "MiniMax H3（ComfyUI 官方重打包）",
       "repo": "Comfy-Org/MiniMax-H3",
       "gguf_repo": "",
-      "size_gb": 60,
+      "size_gb": 459,
       "engine": [
         "comfyui",
         "diffusers",
@@ -3264,14 +3264,14 @@
       "sources": [
         "https://huggingface.co/Comfy-Org/MiniMax-H3/",
         "https://hf-mirror.com/Comfy-Org/MiniMax-H3/",
-        "https://modelscope.cn/models/Comfy-Org/MiniMax-H3/resolve/master/"
+        "https://modelscope.cn/models/Comfy-Org/MiniMax-H3/"
       ],
       "primary_url": "https://huggingface.co/Comfy-Org/MiniMax-H3/",
       "hardware": {
-        "vram_gb": 24,
+        "vram_gb": 256,
         "min_vram_gb": 12,
-        "ram_gb": 48,
-        "disk_gb": 60,
+        "ram_gb": 512,
+        "disk_gb": 459,
         "notes": "int8 convrot 量化 + 动态显存卸载可大幅降低门槛；本地输出上限 768p"
       },
       "modality": {
@@ -3303,7 +3303,7 @@
       "name": "MAGI-2 Preview",
       "repo": "sand-ai/MAGI-2-preview",
       "gguf_repo": "",
-      "size_gb": 200,
+      "size_gb": 286,
       "engine": [
         "comfyui"
       ],
@@ -3313,14 +3313,14 @@
       "sources": [
         "https://huggingface.co/sand-ai/MAGI-2-preview/",
         "https://hf-mirror.com/sand-ai/MAGI-2-preview/",
-        "https://modelscope.cn/models/sand-ai/MAGI-2-preview/resolve/master/"
+        "https://modelscope.cn/models/sand-ai/MAGI-2-preview/"
       ],
       "primary_url": "https://huggingface.co/sand-ai/MAGI-2-preview/",
       "hardware": {
-        "vram_gb": 640,
+        "vram_gb": 320,
         "min_vram_gb": 320,
-        "ram_gb": 1024,
-        "disk_gb": 200,
+        "ram_gb": 512,
+        "disk_gb": 286,
         "notes": "8×H100；官方仓库待确认"
       },
       "modality": {
@@ -3347,7 +3347,7 @@
       "name": "LingBot-Video 1.3B",
       "repo": "robbyant/lingbot-video-dense-1.3b",
       "gguf_repo": "",
-      "size_gb": 5,
+      "size_gb": 11,
       "engine": [
         "diffusers",
         "sglang"
@@ -3358,14 +3358,14 @@
       "sources": [
         "https://huggingface.co/robbyant/lingbot-video-dense-1.3b/",
         "https://hf-mirror.com/robbyant/lingbot-video-dense-1.3b/",
-        "https://modelscope.cn/models/robbyant/lingbot-video-dense-1.3b/resolve/master/"
+        "https://modelscope.cn/models/robbyant/lingbot-video-dense-1.3b/"
       ],
       "primary_url": "https://huggingface.co/robbyant/lingbot-video-dense-1.3b/",
       "hardware": {
         "vram_gb": 24,
         "min_vram_gb": 12,
-        "ram_gb": 16,
-        "disk_gb": 5,
+        "ram_gb": 19,
+        "disk_gb": 11,
         "notes": "1.3B 版 24GB 显存可跑；官方仓库待确认"
       },
       "modality": {
@@ -3468,7 +3468,7 @@
       "name": "ACE-Step 1.5",
       "repo": "ACE-Step/Ace-Step1.5",
       "gguf_repo": "",
-      "size_gb": 3,
+      "size_gb": 9,
       "engine": [
         "comfyui"
       ],
@@ -3478,14 +3478,14 @@
       "sources": [
         "https://huggingface.co/ACE-Step/Ace-Step1.5/",
         "https://hf-mirror.com/ACE-Step/Ace-Step1.5/",
-        "https://modelscope.cn/models/ACE-Step/Ace-Step1.5/resolve/master/"
+        "https://modelscope.cn/models/ACE-Step/Ace-Step1.5/"
       ],
       "primary_url": "https://huggingface.co/ACE-Step/Ace-Step1.5/",
       "hardware": {
         "vram_gb": 4,
         "min_vram_gb": 4,
-        "ram_gb": 8,
-        "disk_gb": 3,
+        "ram_gb": 17,
+        "disk_gb": 9,
         "notes": "4GB 即可跑；官方仓库待确认"
       },
       "tags": [
@@ -3548,7 +3548,7 @@
       "sources": [
         "https://huggingface.co/Comfy-Org/MiniMax-Music-3",
         "https://hf-mirror.com/Comfy-Org/MiniMax-Music-3",
-        "https://modelscope.cn/models/Comfy-Org/MiniMax-Music-3/resolve/master/"
+        "https://modelscope.cn/models/Comfy-Org/MiniMax-Music-3/"
       ],
       "primary_url": "https://huggingface.co/Comfy-Org/MiniMax-Music-3",
       "hardware": {
@@ -3586,11 +3586,11 @@
       "name": "MiniMax-Music3（GGUF 量化）",
       "repo": "Serveurperso/MiniMax-Music3-GGUF",
       "gguf_repo": "",
-      "size_gb": 59,
+      "size_gb": 55,
       "engine": [
         "comfyui"
       ],
-      "license": "未标注",
+      "license": "其他（other）",
       "trending": true,
       "description": "社区 GGUF 量化版（HF 下载量 38 万+），含多档位量化文件按需下载；配合 ComfyUI GGUF 加载节点使用，显著降低显存需求。",
       "sources": [
@@ -3602,7 +3602,7 @@
         "vram_gb": 16,
         "min_vram_gb": 8,
         "ram_gb": 24,
-        "disk_gb": 62,
+        "disk_gb": 55,
         "notes": "总仓为全档位量化集合，按需下载单档即可"
       },
       "tags": [
@@ -3831,7 +3831,7 @@
       "sources": [
         "https://huggingface.co/mlx-community/MiniMax-Music3-mxfp8",
         "https://hf-mirror.com/mlx-community/MiniMax-Music3-mxfp8",
-        "https://modelscope.cn/models/mlx-community/MiniMax-Music3-mxfp8/resolve/master/"
+        "https://modelscope.cn/models/mlx-community/MiniMax-Music3-mxfp8/"
       ],
       "primary_url": "https://huggingface.co/mlx-community/MiniMax-Music3-mxfp8",
       "hardware": {
@@ -3869,7 +3869,7 @@
       "name": "Stable Audio 3 Medium",
       "repo": "stabilityai/stable-audio-3-medium",
       "gguf_repo": "",
-      "size_gb": 2.3,
+      "size_gb": 10,
       "engine": [
         "diffusers",
         "comfyui"
@@ -3880,14 +3880,14 @@
       "sources": [
         "https://huggingface.co/stabilityai/stable-audio-3-medium/",
         "https://hf-mirror.com/stabilityai/stable-audio-3-medium/",
-        "https://modelscope.cn/models/stabilityai/stable-audio-3-medium/resolve/master/"
+        "https://modelscope.cn/models/stabilityai/stable-audio-3-medium/"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-audio-3-medium/",
       "hardware": {
         "vram_gb": 8,
         "min_vram_gb": 4,
-        "ram_gb": 16,
-        "disk_gb": 11,
+        "ram_gb": 18,
+        "disk_gb": 10,
         "notes": "权重约 2.3GB；gated 需 HF Token"
       },
       "modality": {
@@ -3931,7 +3931,7 @@
       "sources": [
         "https://huggingface.co/google/magenta-realtime-2/",
         "https://hf-mirror.com/google/magenta-realtime-2/",
-        "https://modelscope.cn/models/google/magenta-realtime-2/resolve/master/"
+        "https://modelscope.cn/models/google/magenta-realtime-2/"
       ],
       "primary_url": "https://huggingface.co/google/magenta-realtime-2/",
       "hardware": {
@@ -3973,7 +3973,7 @@
       "name": "MOSS-SoundEffect v2.0 (OpenMOSS)",
       "repo": "OpenMOSS-Team/MOSS-SoundEffect-v2.0",
       "gguf_repo": "",
-      "size_gb": 1.4,
+      "size_gb": 10,
       "engine": [
         "diffusers",
         "transformers"
@@ -3989,8 +3989,8 @@
       "hardware": {
         "vram_gb": 4,
         "min_vram_gb": 2,
-        "ram_gb": 8,
-        "disk_gb": 12,
+        "ram_gb": 18,
+        "disk_gb": 10,
         "notes": "权重约 1.4GB，轻量"
       },
       "modality": {
@@ -4215,7 +4215,7 @@
       "sources": [
         "https://huggingface.co/microsoft/TRELLIS-text-xlarge",
         "https://hf-mirror.com/microsoft/TRELLIS-text-xlarge",
-        "https://modelscope.cn/models/microsoft/TRELLIS-text-xlarge/resolve/master/"
+        "https://modelscope.cn/models/microsoft/TRELLIS-text-xlarge/"
       ],
       "primary_url": "https://huggingface.co/microsoft/TRELLIS-text-xlarge",
       "hardware": {
@@ -4252,7 +4252,7 @@
       "sources": [
         "https://huggingface.co/facebook/sam-3d-objects",
         "https://hf-mirror.com/facebook/sam-3d-objects",
-        "https://modelscope.cn/models/facebook/sam-3d-objects/resolve/master/"
+        "https://modelscope.cn/models/facebook/sam-3d-objects/"
       ],
       "primary_url": "https://huggingface.co/facebook/sam-3d-objects",
       "hardware": {
@@ -4289,7 +4289,7 @@
       "sources": [
         "https://huggingface.co/facebook/sam-3d-body-dinov3",
         "https://hf-mirror.com/facebook/sam-3d-body-dinov3",
-        "https://modelscope.cn/models/facebook/sam-3d-body-dinov3/resolve/master/"
+        "https://modelscope.cn/models/facebook/sam-3d-body-dinov3/"
       ],
       "primary_url": "https://huggingface.co/facebook/sam-3d-body-dinov3",
       "hardware": {
@@ -4316,7 +4316,7 @@
       "name": "Pixal3D",
       "repo": "TencentARC/Pixal3D",
       "gguf_repo": "",
-      "size_gb": 24,
+      "size_gb": 43,
       "engine": [
         "pixal3d"
       ],
@@ -4326,14 +4326,14 @@
       "sources": [
         "https://huggingface.co/TencentARC/Pixal3D",
         "https://hf-mirror.com/TencentARC/Pixal3D",
-        "https://modelscope.cn/models/TencentARC/Pixal3D/resolve/master/"
+        "https://modelscope.cn/models/TencentARC/Pixal3D/"
       ],
       "primary_url": "https://huggingface.co/TencentARC/Pixal3D",
       "hardware": {
-        "vram_gb": 16,
+        "vram_gb": 24,
         "min_vram_gb": 8,
-        "ram_gb": 32,
-        "disk_gb": 26,
+        "ram_gb": 64,
+        "disk_gb": 43,
         "notes": "官方 MIT 全量 24GB；GGUF 社区版约 9-10GB 更省显存"
       },
       "tags": [
@@ -4353,7 +4353,7 @@
       "name": "4DAnyone（4D 动态数字人）",
       "repo": "AntResearch/4DAnyone",
       "gguf_repo": "",
-      "size_gb": 32,
+      "size_gb": 20,
       "engine": [
         "4danyone"
       ],
@@ -4363,14 +4363,14 @@
       "sources": [
         "https://huggingface.co/AntResearch/4DAnyone",
         "https://hf-mirror.com/AntResearch/4DAnyone",
-        "https://modelscope.cn/models/AntResearch/4DAnyone/resolve/master/"
+        "https://modelscope.cn/models/AntResearch/4DAnyone/"
       ],
       "primary_url": "https://huggingface.co/AntResearch/4DAnyone",
       "hardware": {
-        "vram_gb": 24,
+        "vram_gb": 16,
         "min_vram_gb": 16,
-        "ram_gb": 48,
-        "disk_gb": 34,
+        "ram_gb": 32,
+        "disk_gb": 20,
         "notes": "多视角视频生成算力需求较高，需分批生成"
       },
       "tags": [
@@ -4390,7 +4390,7 @@
       "name": "Hunyuan Hy3 (295B A21B)",
       "repo": "tencent/Hy3",
       "gguf_repo": "",
-      "size_gb": 165,
+      "size_gb": 557,
       "engine": [
         "vllm",
         "sglang",
@@ -4405,10 +4405,10 @@
       ],
       "primary_url": "https://huggingface.co/tencent/Hy3/",
       "hardware": {
-        "vram_gb": 48,
+        "vram_gb": 256,
         "min_vram_gb": 24,
-        "ram_gb": 96,
-        "disk_gb": 165,
+        "ram_gb": 768,
+        "disk_gb": 557,
         "notes": "估算：Q4 量化约 100GB，建议多卡"
       },
       "modality": {
@@ -4439,7 +4439,7 @@
       "name": "GLM-5.2 (智谱)",
       "repo": "zai-org/GLM-5.2",
       "gguf_repo": "unsloth/GLM-5.2-GGUF",
-      "size_gb": 420,
+      "size_gb": 1403,
       "engine": [
         "vllm",
         "sglang",
@@ -4451,14 +4451,14 @@
       "sources": [
         "https://huggingface.co/zai-org/GLM-5.2/",
         "https://hf-mirror.com/zai-org/GLM-5.2/",
-        "https://modelscope.cn/models/unsloth/GLM-5.2-GGUF/resolve/master/"
+        "https://modelscope.cn/models/unsloth/GLM-5.2-GGUF/"
       ],
       "primary_url": "https://huggingface.co/zai-org/GLM-5.2/",
       "hardware": {
-        "vram_gb": 96,
+        "vram_gb": 512,
         "min_vram_gb": 48,
-        "ram_gb": 256,
-        "disk_gb": 420,
+        "ram_gb": 1536,
+        "disk_gb": 1403,
         "notes": "估算：FP8 约 220GB，多卡部署"
       },
       "modality": {
@@ -4489,7 +4489,7 @@
       "name": "Inkling (975B A41B)",
       "repo": "thinkingmachines/Inkling",
       "gguf_repo": "",
-      "size_gb": 550,
+      "size_gb": 1774,
       "engine": [
         "vllm",
         "sglang"
@@ -4500,14 +4500,14 @@
       "sources": [
         "https://huggingface.co/thinkingmachines/Inkling/",
         "https://hf-mirror.com/thinkingmachines/Inkling/",
-        "https://modelscope.cn/models/thinkingmachines/Inkling/resolve/master/"
+        "https://modelscope.cn/models/thinkingmachines/Inkling/"
       ],
       "primary_url": "https://huggingface.co/thinkingmachines/Inkling/",
       "hardware": {
-        "vram_gb": 160,
+        "vram_gb": 1024,
         "min_vram_gb": 80,
-        "ram_gb": 512,
-        "disk_gb": 550,
+        "ram_gb": 2048,
+        "disk_gb": 1774,
         "notes": "估算：多卡集群"
       },
       "modality": {
@@ -4540,7 +4540,7 @@
       "name": "Bonsai 27B (1-bit 端侧)",
       "repo": "prism-ml/Bonsai-27B-gguf",
       "gguf_repo": "prism-ml/Bonsai-27B-gguf",
-      "size_gb": 4,
+      "size_gb": 64,
       "engine": [
         "llama.cpp"
       ],
@@ -4550,14 +4550,14 @@
       "sources": [
         "https://huggingface.co/prism-ml/Bonsai-27B-gguf/",
         "https://hf-mirror.com/prism-ml/Bonsai-27B-gguf/",
-        "https://modelscope.cn/models/prism-ml/Bonsai-27B-gguf/resolve/master/"
+        "https://modelscope.cn/models/prism-ml/Bonsai-27B-gguf/"
       ],
       "primary_url": "https://huggingface.co/prism-ml/Bonsai-27B-gguf/",
       "hardware": {
-        "vram_gb": 2,
+        "vram_gb": 22,
         "min_vram_gb": 0,
-        "ram_gb": 6,
-        "disk_gb": 4,
+        "ram_gb": 76,
+        "disk_gb": 64,
         "notes": "1-bit 量化后极小，纯 CPU 可跑"
       },
       "modality": {
@@ -4598,8 +4598,8 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/",
         "https://hf-mirror.com/deepseek-ai/DeepSeek-V4-Flash-0731/",
-        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Flash-0731/resolve/master/",
-        "https://modelscope.cn/models/unsloth/DeepSeek-V4-Flash-0731-GGUF/resolve/master/"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Flash-0731/",
+        "https://modelscope.cn/models/unsloth/DeepSeek-V4-Flash-0731-GGUF/"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/",
       "hardware": {
@@ -4648,7 +4648,7 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813/",
         "https://hf-mirror.com/deepseek-ai/DeepSeek-V4-Pro-0813/",
-        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Pro-0813/resolve/master/"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Pro-0813/"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813/",
       "hardware": {
@@ -4685,7 +4685,7 @@
       "name": "Keye-VL-2.0 30B A3B (快手)",
       "repo": "Kwai-Keye/Keye-VL-2.0-30B-A3B",
       "gguf_repo": "Kwai-Keye/Keye-VL-2.0-30B-A3B-GGUF",
-      "size_gb": 18,
+      "size_gb": 58,
       "engine": [
         "llama.cpp",
         "vllm",
@@ -4697,15 +4697,15 @@
       "sources": [
         "https://huggingface.co/Kwai-Keye/Keye-VL-2.0-30B-A3B/",
         "https://hf-mirror.com/Kwai-Keye/Keye-VL-2.0-30B-A3B/",
-        "https://modelscope.cn/models/Kwai-Keye/Keye-VL-2.0-30B-A3B/resolve/master/",
-        "https://modelscope.cn/models/Kwai-Keye/Keye-VL-2.0-30B-A3B-GGUF/resolve/master/"
+        "https://modelscope.cn/models/Kwai-Keye/Keye-VL-2.0-30B-A3B/",
+        "https://modelscope.cn/models/Kwai-Keye/Keye-VL-2.0-30B-A3B-GGUF/"
       ],
       "primary_url": "https://huggingface.co/Kwai-Keye/Keye-VL-2.0-30B-A3B/",
       "hardware": {
         "vram_gb": 12,
         "min_vram_gb": 8,
-        "ram_gb": 24,
-        "disk_gb": 18,
+        "ram_gb": 69,
+        "disk_gb": 58,
         "notes": "MoE 激活 3B，消费级显卡可跑"
       },
       "modality": {
@@ -4739,7 +4739,7 @@
       "name": "VisionPsy-Nano 460M (端侧VLM)",
       "repo": "qvac/VisionPsy-Nano-460M",
       "gguf_repo": "qvac/VisionPsy-Nano-460M-GGUFs",
-      "size_gb": 0.5,
+      "size_gb": 2,
       "engine": [
         "llama.cpp"
       ],
@@ -4754,8 +4754,8 @@
       "hardware": {
         "vram_gb": 1,
         "min_vram_gb": 0,
-        "ram_gb": 2,
-        "disk_gb": 1,
+        "ram_gb": 10,
+        "disk_gb": 2,
         "notes": "极轻量，手机/树莓派可跑"
       },
       "modality": {
@@ -4786,7 +4786,7 @@
       "name": "Zamba2-VL 7B",
       "repo": "Zyphra/Zamba2-VL-7B",
       "gguf_repo": "",
-      "size_gb": 8,
+      "size_gb": 15,
       "engine": [
         "llama.cpp"
       ],
@@ -4796,14 +4796,14 @@
       "sources": [
         "https://huggingface.co/Zyphra/Zamba2-VL-7B/",
         "https://hf-mirror.com/Zyphra/Zamba2-VL-7B/",
-        "https://modelscope.cn/models/Zyphra/Zamba2-VL-7B/resolve/master/"
+        "https://modelscope.cn/models/Zyphra/Zamba2-VL-7B/"
       ],
       "primary_url": "https://huggingface.co/Zyphra/Zamba2-VL-7B/",
       "hardware": {
         "vram_gb": 8,
         "min_vram_gb": 6,
-        "ram_gb": 16,
-        "disk_gb": 8,
+        "ram_gb": 23,
+        "disk_gb": 15,
         "notes": "估算"
       },
       "modality": {
@@ -4832,7 +4832,7 @@
       "name": "Zamba2-VL 2.7B",
       "repo": "Zyphra/Zamba2-VL-2.7B",
       "gguf_repo": "",
-      "size_gb": 3,
+      "size_gb": 6,
       "engine": [
         "llama.cpp"
       ],
@@ -4842,14 +4842,14 @@
       "sources": [
         "https://huggingface.co/Zyphra/Zamba2-VL-2.7B/",
         "https://hf-mirror.com/Zyphra/Zamba2-VL-2.7B/",
-        "https://modelscope.cn/models/Zyphra/Zamba2-VL-2.7B/resolve/master/"
+        "https://modelscope.cn/models/Zyphra/Zamba2-VL-2.7B/"
       ],
       "primary_url": "https://huggingface.co/Zyphra/Zamba2-VL-2.7B/",
       "hardware": {
         "vram_gb": 3,
         "min_vram_gb": 2,
-        "ram_gb": 8,
-        "disk_gb": 3,
+        "ram_gb": 14,
+        "disk_gb": 6,
         "notes": "估算"
       },
       "modality": {
@@ -4878,7 +4878,7 @@
       "name": "Zamba2-VL 1.2B",
       "repo": "Zyphra/Zamba2-VL-1.2B",
       "gguf_repo": "",
-      "size_gb": 1.5,
+      "size_gb": 4,
       "engine": [
         "llama.cpp"
       ],
@@ -4888,14 +4888,14 @@
       "sources": [
         "https://huggingface.co/Zyphra/Zamba2-VL-1.2B/",
         "https://hf-mirror.com/Zyphra/Zamba2-VL-1.2B/",
-        "https://modelscope.cn/models/Zyphra/Zamba2-VL-1.2B/resolve/master/"
+        "https://modelscope.cn/models/Zyphra/Zamba2-VL-1.2B/"
       ],
       "primary_url": "https://huggingface.co/Zyphra/Zamba2-VL-1.2B/",
       "hardware": {
         "vram_gb": 2,
         "min_vram_gb": 0,
-        "ram_gb": 4,
-        "disk_gb": 2,
+        "ram_gb": 12,
+        "disk_gb": 4,
         "notes": "估算"
       },
       "modality": {
@@ -4924,7 +4924,7 @@
       "name": "Granite 4.2 8B (IBM)",
       "repo": "ibm-granite/granite-4.2-8b",
       "gguf_repo": "",
-      "size_gb": 9,
+      "size_gb": 16,
       "engine": [
         "transformers",
         "llama.cpp",
@@ -4936,14 +4936,14 @@
       "sources": [
         "https://huggingface.co/ibm-granite/granite-4.2-8b/",
         "https://hf-mirror.com/ibm-granite/granite-4.2-8b/",
-        "https://modelscope.cn/models/ibm-granite/granite-4.2-8b/resolve/master/"
+        "https://modelscope.cn/models/ibm-granite/granite-4.2-8b/"
       ],
       "primary_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/",
       "hardware": {
         "vram_gb": 16,
         "min_vram_gb": 8,
-        "ram_gb": 32,
-        "disk_gb": 18,
+        "ram_gb": 24,
+        "disk_gb": 16,
         "notes": "BF16 约 18GB，Q4 量化 8GB 起"
       },
       "modality": {
@@ -4975,7 +4975,7 @@
       "name": "Granite 4.2 30B (IBM)",
       "repo": "ibm-granite/granite-4.2-30b",
       "gguf_repo": "",
-      "size_gb": 29,
+      "size_gb": 55,
       "engine": [
         "transformers",
         "llama.cpp",
@@ -4987,14 +4987,14 @@
       "sources": [
         "https://huggingface.co/ibm-granite/granite-4.2-30b/",
         "https://hf-mirror.com/ibm-granite/granite-4.2-30b/",
-        "https://modelscope.cn/models/ibm-granite/granite-4.2-30b/resolve/master/"
+        "https://modelscope.cn/models/ibm-granite/granite-4.2-30b/"
       ],
       "primary_url": "https://huggingface.co/ibm-granite/granite-4.2-30b/",
       "hardware": {
         "vram_gb": 48,
         "min_vram_gb": 20,
-        "ram_gb": 96,
-        "disk_gb": 59,
+        "ram_gb": 66,
+        "disk_gb": 55,
         "notes": "BF16 约 59GB，Q4 量化约 20GB"
       },
       "modality": {
@@ -5026,7 +5026,7 @@
       "name": "MiniMax M3 (428B MoE 多模态)",
       "repo": "MiniMaxAI/MiniMax-M3",
       "gguf_repo": "",
-      "size_gb": 427,
+      "size_gb": 796,
       "engine": [
         "vllm",
         "sglang",
@@ -5044,7 +5044,7 @@
         "vram_gb": 512,
         "min_vram_gb": 128,
         "ram_gb": 1024,
-        "disk_gb": 1708,
+        "disk_gb": 796,
         "notes": "FP8 权重约 427GB，仓库含多精度共约 1.7TB；多卡部署，量化后门槛下降"
       },
       "modality": {
@@ -5079,7 +5079,7 @@
       "name": "Muse Glimmer 30B (Meta)",
       "repo": "meta-models/Muse-Glimmer-30B",
       "gguf_repo": "",
-      "size_gb": 30,
+      "size_gb": 56,
       "engine": [
         "transformers",
         "llama.cpp",
@@ -5091,14 +5091,14 @@
       "sources": [
         "https://huggingface.co/meta-models/Muse-Glimmer-30B/",
         "https://hf-mirror.com/meta-models/Muse-Glimmer-30B/",
-        "https://modelscope.cn/models/meta-models/Muse-Glimmer-30B/resolve/master/"
+        "https://modelscope.cn/models/meta-models/Muse-Glimmer-30B/"
       ],
       "primary_url": "https://huggingface.co/meta-models/Muse-Glimmer-30B/",
       "hardware": {
         "vram_gb": 32,
         "min_vram_gb": 16,
         "ram_gb": 64,
-        "disk_gb": 60,
+        "disk_gb": 56,
         "notes": "BF16 约 30GB，Q4 量化 16GB 起；另有官方/社区 GGUF"
       },
       "modality": {
@@ -5134,7 +5134,7 @@
       "name": "DeepSeek-V4-Flash-Vision-Exp (多模态)",
       "repo": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
       "gguf_repo": "",
-      "size_gb": 305,
+      "size_gb": 156,
       "engine": [
         "vllm",
         "sglang",
@@ -5146,14 +5146,14 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/",
         "https://hf-mirror.com/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/",
-        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/resolve/master/"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp/",
       "hardware": {
-        "vram_gb": 384,
+        "vram_gb": 192,
         "min_vram_gb": 160,
-        "ram_gb": 768,
-        "disk_gb": 305,
+        "ram_gb": 256,
+        "disk_gb": 156,
         "notes": "实验版(Exp)；FP8 权重约 305GB，多卡部署"
       },
       "modality": {
@@ -5189,7 +5189,7 @@
       "name": "GLM-5.3 (智谱)",
       "repo": "zai-org/GLM-5.3",
       "gguf_repo": "",
-      "size_gb": 753,
+      "size_gb": 704,
       "engine": [
         "vllm",
         "sglang",
@@ -5207,7 +5207,7 @@
         "vram_gb": 512,
         "min_vram_gb": 48,
         "ram_gb": 1024,
-        "disk_gb": 756,
+        "disk_gb": 704,
         "notes": "权重约 753GB；量化版可在大显存单卡/多卡运行"
       },
       "modality": {
@@ -5242,7 +5242,7 @@
       "name": "LFM2.5-VL-3B (Liquid·端侧 VLM)",
       "repo": "LiquidAI/LFM2.5-VL-3B",
       "gguf_repo": "",
-      "size_gb": 3.1,
+      "size_gb": 6,
       "engine": [
         "transformers",
         "llama.cpp",
@@ -5254,14 +5254,14 @@
       "sources": [
         "https://huggingface.co/LiquidAI/LFM2.5-VL-3B/",
         "https://hf-mirror.com/LiquidAI/LFM2.5-VL-3B/",
-        "https://modelscope.cn/models/LiquidAI/LFM2.5-VL-3B/resolve/master/"
+        "https://modelscope.cn/models/LiquidAI/LFM2.5-VL-3B/"
       ],
       "primary_url": "https://huggingface.co/LiquidAI/LFM2.5-VL-3B/",
       "hardware": {
         "vram_gb": 6,
         "min_vram_gb": 4,
-        "ram_gb": 16,
-        "disk_gb": 7,
+        "ram_gb": 14,
+        "disk_gb": 6,
         "notes": "端侧/边缘部署，支持 WebGPU"
       },
       "modality": {
@@ -5299,7 +5299,7 @@
       "name": "MiniMax H3 (全模态视频)",
       "repo": "MiniMaxAI/MiniMax-H3",
       "gguf_repo": "",
-      "size_gb": 70,
+      "size_gb": 464,
       "engine": [
         "sglang",
         "diffusers"
@@ -5314,10 +5314,10 @@
       ],
       "primary_url": "https://huggingface.co/MiniMaxAI/MiniMax-H3/",
       "hardware": {
-        "vram_gb": 48,
+        "vram_gb": 256,
         "min_vram_gb": 24,
-        "ram_gb": 64,
-        "disk_gb": 70,
+        "ram_gb": 512,
+        "disk_gb": 464,
         "notes": "BF16 完整权重约 120GB+；量化与权重卸载后门槛可显著降低；本地输出上限 768p"
       },
       "modality": {
