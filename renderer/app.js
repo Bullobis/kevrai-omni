@@ -49,11 +49,10 @@ let healthTimer = null;
 
 export async function loadAll() {
   try {
-    const [settings, cats, ms, gg, ens, locs, h] = await Promise.all([
+    const [settings, cats, ms, ens, locs, h] = await Promise.all([
       api.getSettings(),
       api.categories(),
       api.models({}),
-      api.ggufRepos(),
       api.engines(),
       api.localModels(),
       api.health().catch(() => ({ body: { version: "?", app_root: "unreachable" } })),
@@ -62,10 +61,13 @@ export async function loadAll() {
       settings: settings || {},
       categories: cats?.body?.categories || cats?.categories || [],
       models:     ms?.body?.models     || ms?.models     || [],
-      ggufRepos:  gg?.body?.repos      || gg?.repos      || [],
       engines:    ens?.body?.engines   || ens?.engines   || [],
       local:      locs?.body?.local    || locs?.local    || [],
     });
+    // GGUF 枚举需要触网，不阻塞首屏：后台加载，就绪后单独渲染。
+    api.ggufRepos()
+      .then((r) => { setState({ ggufRepos: r?.body?.repos || r?.repos || [] }); renderGGUF(); })
+      .catch(() => {});
     populateCategoryFilter();
     renderModelGrid();
     renderEngines();
@@ -97,7 +99,7 @@ function renderGGUF() {
   const el = $("#gguf-repos");
   if (!el) return;
   const repos = state.ggufRepos || [];
-  if (!repos.length) { el.innerHTML = `<div class="hint">GGUF 仓库列表为空（sidecar 未返回数据）。</div>`; return; }
+  if (!repos.length) { el.innerHTML = `<div class="hint">GGUF 仓库列表加载中…</div>`; return; }
   el.innerHTML = repos.map((r) => {
     if (r.error) {
       return `
