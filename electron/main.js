@@ -19,7 +19,7 @@
  *     declares a matching meta CSP).
  */
 
-const { app, BrowserWindow, ipcMain, shell, dialog, session, Menu, nativeTheme } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog, session, Menu, nativeTheme, screen } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 const fsp = require("node:fs/promises");
@@ -27,6 +27,7 @@ const crypto = require("node:crypto");
 const { spawn } = require("node:child_process");
 const http = require("node:http");
 const { URL } = require("node:url");
+const windowState = require("./window-state");
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -536,9 +537,20 @@ function resolveBackgroundColor() {
 }
 
 function createWindow(bootstrapMode = false) {
+  // Restore last window size/position (clamped onto a visible display). No
+  // saved/valid state → these are empty and the defaults below apply.
+  const savedWindow = windowState.load();
   mainWindow = new BrowserWindow({
     width: 1380,
     height: 900,
+    ...(savedWindow.rect
+      ? {
+          x: savedWindow.rect.x,
+          y: savedWindow.rect.y,
+          width: savedWindow.rect.width,
+          height: savedWindow.rect.height,
+        }
+      : {}),
     minWidth: 1024,
     minHeight: 700,
     title: "Kevrai Omni",
@@ -594,6 +606,13 @@ function createWindow(bootstrapMode = false) {
   });
 
   mainWindow.on("closed", () => { mainWindow = null; });
+
+  // Persist size/position/maximized for the next launch.
+  windowState.attach(mainWindow);
+  if (savedWindow.maximized && !mainWindow.isMaximized()) {
+    // Defer one tick so the restored bounds are applied before maximizing.
+    mainWindow.maximize();
+  }
 
   // Notify a custom title bar when the maximize state flips so its button icon
   // can switch between "maximize" and "restore". No-op if no listener.
