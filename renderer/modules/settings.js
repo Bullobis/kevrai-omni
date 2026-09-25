@@ -33,6 +33,12 @@ export async function openSettings() {
 export function closeSettings() {
   const overlay = $("#settings-overlay");
   if (!overlay) return;
+  // Remove the focus-trap keydown handler added in trapFocus(); otherwise each
+  // open/close cycle leaves another (still-live) listener attached.
+  if (overlay._trapHandler) {
+    overlay.removeEventListener("keydown", overlay._trapHandler);
+    overlay._trapHandler = null;
+  }
   overlay.setAttribute("hidden", "");
   overlay.setAttribute("aria-hidden", "true");
 }

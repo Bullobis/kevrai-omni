@@ -23,9 +23,10 @@ export function renderEngines() {
         if (e) e.installed = true;
         toast(`${id} 安装完成`, { kind: "ok" });
         renderEngines();
-      } catch (_) { /* toast shown */ }
+      } catch (_) {
+        b.textContent = "安装"; // failed: restore original CTA instead of "重装"
+      }
       b.disabled = false;
-      b.textContent = "重装";
     })
   );
   el.querySelectorAll("button[data-action=uninstall]").forEach((b) =>
