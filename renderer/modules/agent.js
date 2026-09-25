@@ -5,6 +5,7 @@
 import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { unwrap } from "./net.js";
+import { t } from "./i18n.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -37,48 +38,45 @@ function _renderShell() {
       <div class="agent-header">
         <div>
           <h2 class="section">🤖 Kevrai Agent</h2>
-          <p class="hint">用自然语言管理本地 AI 模型：搜索、推荐、硬件检测、下载规划。
-            短剧创作已并入本面板（内置技能「短剧创作工坊」）。
-            <span id="agent-mode-badge" class="agent-badge">加载中…</span>
+          <p class="hint">${t("agent.hint")}
+            <span id="agent-mode-badge" class="agent-badge">${t("agent.loading")}</span>
           </p>
         </div>
         <div class="agent-actions">
-          <button id="agent-new-btn" class="btn btn-sm" title="新建会话">＋ 新会话</button>
-          <select id="agent-session-select" class="agent-session-select" title="历史会话"></select>
+          <button id="agent-new-btn" class="btn btn-sm" title="${t("agent.newSessionTitle")}">${t("agent.newSession")}</button>
+          <select id="agent-session-select" class="agent-session-select" title="${t("agent.historyTitle")}"></select>
         </div>
       </div>
       <details class="agent-skills-panel" id="agent-skills-panel">
         <summary>
-          🧩 技能库
-          <span class="agent-skills-summary" id="agent-skills-summary">加载中…</span>
+          🧩 ${t("agent.skillsLibrary")}
+          <span class="agent-skills-summary" id="agent-skills-summary">${t("agent.loading")}</span>
         </summary>
         <div class="agent-skills-body">
           <div class="agent-skills-toolbar">
-            <span class="hint">勾选即可为 Agent 添加技能（核心技能不可关闭），设置会自动保存。</span>
-            <button id="agent-skills-reset" class="btn btn-sm" type="button">恢复默认</button>
+            <span class="hint">${t("agent.skillsHint")}</span>
+            <button id="agent-skills-reset" class="btn btn-sm" type="button">${t("agent.resetDefault")}</button>
           </div>
-          <div id="agent-skills-list" class="agent-skills-list">加载中…</div>
+          <div id="agent-skills-list" class="agent-skills-list">${t("agent.loading")}</div>
           <div class="agent-skillhub">
             <div class="agent-skillhub-head">
-              <span class="agent-skillhub-title">📥 导入外部技能（SKILL.md）</span>
-              <button id="agent-skillhub-toggle" class="btn btn-sm" type="button">展开</button>
+              <span class="agent-skillhub-title">${t("agent.importSkillTitle")}</span>
+              <button id="agent-skillhub-toggle" class="btn btn-sm" type="button">${t("agent.expand")}</button>
             </div>
             <div id="agent-skillhub-body" class="agent-skillhub-body" hidden>
-              <p class="hint">支持三种来源：本地目录 / .zip 压缩包 / git 仓库（含
-                <code>.claude-plugin/marketplace.json</code> 的插件市场）。导入的技能
-                <strong>不会覆盖或删除内置技能</strong>。</p>
+              <p class="hint">${t("agent.skillhubHint")}</p>
               <div class="agent-skillhub-inputs">
                 <input id="agent-skillhub-path" class="agent-skillhub-input" type="text"
-                  placeholder="本地目录路径，或 .zip 文件路径" maxlength="4096">
-                <button id="agent-skillhub-import-dir" class="btn btn-sm" type="button">导入目录</button>
-                <button id="agent-skillhub-import-zip" class="btn btn-sm" type="button">导入 zip</button>
+                  placeholder="${t("agent.dirPlaceholder")}" maxlength="4096">
+                <button id="agent-skillhub-import-dir" class="btn btn-sm" type="button">${t("agent.importDir")}</button>
+                <button id="agent-skillhub-import-zip" class="btn btn-sm" type="button">${t("agent.importZip")}</button>
               </div>
               <div class="agent-skillhub-inputs">
                 <input id="agent-skillhub-git" class="agent-skillhub-input" type="text"
-                  placeholder="git 仓库地址，例如 https://github.com/owner/skills" maxlength="2048">
-                <button id="agent-skillhub-import-git" class="btn btn-sm" type="button">从仓库导入</button>
+                  placeholder="${t("agent.gitPlaceholder")}" maxlength="2048">
+                <button id="agent-skillhub-import-git" class="btn btn-sm" type="button">${t("agent.importFromRepo")}</button>
               </div>
-              <div id="agent-skillhub-list" class="agent-skillhub-list">尚未加载</div>
+              <div id="agent-skillhub-list" class="agent-skillhub-list">${t("agent.notLoaded")}</div>
             </div>
           </div>
         </div>
@@ -86,13 +84,13 @@ function _renderShell() {
       <div id="agent-messages" class="agent-messages"></div>
       <div class="agent-input-area">
         <textarea id="agent-input" class="agent-input" rows="2"
-          placeholder="问我任何关于模型的问题，例如：&#10;• 我的硬件能跑什么模型？&#10;• 搜索音乐生成模型&#10;• 推荐适合8GB显存的图像模型&#10;• 帮我把「星际快递员」写成一部微电影短剧（短剧工坊技能）"
+          placeholder="${t("agent.inputPlaceholder")}"
           maxlength="5000"></textarea>
-        <button id="agent-send-btn" class="btn btn-primary agent-send-btn" disabled>发送</button>
+        <button id="agent-send-btn" class="btn btn-primary agent-send-btn" disabled>${t("agent.send")}</button>
       </div>
       <div id="agent-thinking" class="agent-thinking" style="display:none;">
         <span class="agent-spinner"></span>
-        <span id="agent-thinking-text">思考中…</span>
+        <span id="agent-thinking-text">${t("agent.thinking")}</span>
       </div>
     </div>
   `;
@@ -123,7 +121,7 @@ function _wireEvents(root) {
     input.value = "";
     sendBtn.disabled = true;
     _loadSessionList();
-    toast("已新建会话", { kind: "info" });
+    toast(t("agent.sessionCreated"), { kind: "info" });
   });
   sessionSelect.addEventListener("change", () => {
     if (sessionSelect.value) {
@@ -142,11 +140,11 @@ function _wireEvents(root) {
       cb.disabled = true;
       try {
         await api.agentToggleSkill(id, cb.checked);
-        toast(cb.checked ? `已添加技能：${id}` : `已关闭技能：${id}`, { kind: "ok" });
+        toast(cb.checked ? t("agent.skillAdded", { id }) : t("agent.skillDisabled", { id }), { kind: "ok" });
         await Promise.all([_loadSkills(), _refreshStatus()]);
       } catch (err) {
         cb.checked = !cb.checked; // 回滚 UI
-        toast(`切换失败：${err.message || err}`, { kind: "err" });
+        toast(t("agent.toggleFailed", { err: err.message || err }), { kind: "err" });
       } finally {
         cb.disabled = false;
       }
@@ -158,10 +156,10 @@ function _wireEvents(root) {
       resetBtn.disabled = true;
       try {
         await api.agentResetSkills();
-        toast("已恢复默认技能", { kind: "ok" });
+        toast(t("agent.skillsReset"), { kind: "ok" });
         await Promise.all([_loadSkills(), _refreshStatus()]);
       } catch (err) {
-        toast(`恢复失败：${err.message || err}`, { kind: "err" });
+        toast(t("agent.resetFailed", { err: err.message || err }), { kind: "err" });
       } finally {
         resetBtn.disabled = false;
       }
@@ -181,7 +179,7 @@ function _wireSkillHub(root) {
 
   toggle.addEventListener("click", () => {
     box.hidden = !box.hidden;
-    toggle.textContent = box.hidden ? "展开" : "收起";
+    toggle.textContent = box.hidden ? t("agent.expand") : t("agent.collapse");
     if (!box.hidden) _loadSkillHub();
   });
 
@@ -193,11 +191,11 @@ function _wireSkillHub(root) {
     btn.disabled = true;
     try {
       await fn(raw);
-      toast(`${label}成功`, { kind: "ok" });
+      toast(t("agent.importOk", { label }), { kind: "ok" });
       if (pathInput) pathInput.value = "";
       await Promise.all([_loadSkillHub(), _loadSkills(), _refreshStatus()]);
     } catch (err) {
-      toast(`${label}失败：${err.message || err}`, { kind: "err" });
+      toast(t("agent.importFailed", { label, err: err.message || err }), { kind: "err" });
     } finally {
       btn.disabled = false;
     }
@@ -207,7 +205,7 @@ function _wireSkillHub(root) {
   if (dirBtn) {
     dirBtn.addEventListener("click", () => {
       const raw = (pathInput && pathInput.value || "").trim();
-      if (!raw) { toast("请先填写本地目录路径", { kind: "err" }); return; }
+      if (!raw) { toast(t("agent.needDirPath"), { kind: "err" }); return; }
       runImport(dirBtn, (p) => api.skillHubImportDir(p), "导入目录");
     });
   }
@@ -215,7 +213,7 @@ function _wireSkillHub(root) {
   if (zipBtn) {
     zipBtn.addEventListener("click", () => {
       const raw = (pathInput && pathInput.value || "").trim();
-      if (!raw) { toast("请先填写 .zip 文件路径", { kind: "err" }); return; }
+      if (!raw) { toast(t("agent.needZipPath"), { kind: "err" }); return; }
       runImport(zipBtn, (p) => api.skillHubImportZip(p), "导入 zip");
     });
   }
@@ -223,15 +221,15 @@ function _wireSkillHub(root) {
   if (gitBtn) {
     gitBtn.addEventListener("click", async () => {
       const url = (gitInput && gitInput.value || "").trim();
-      if (!url) { toast("请先填写 git 仓库地址", { kind: "err" }); return; }
+      if (!url) { toast(t("agent.needGitUrl"), { kind: "err" }); return; }
       gitBtn.disabled = true;
       try {
         await api.skillHubImportGit(url);
-        toast("从仓库导入成功", { kind: "ok" });
+        toast(t("agent.gitImportOk"), { kind: "ok" });
         if (gitInput) gitInput.value = "";
         await Promise.all([_loadSkillHub(), _loadSkills(), _refreshStatus()]);
       } catch (err) {
-        toast(`从仓库导入失败：${err.message || err}`, { kind: "err" });
+        toast(t("agent.gitImportFailed", { err: err.message || err }), { kind: "err" });
       } finally {
         gitBtn.disabled = false;
       }
@@ -248,10 +246,10 @@ function _wireSkillHub(root) {
       btn.disabled = true;
       try {
         await api.skillHubRemove(id);
-        toast(`已删除导入技能：${id}`, { kind: "ok" });
+        toast(t("agent.skillRemoved", { id }), { kind: "ok" });
         await Promise.all([_loadSkillHub(), _loadSkills(), _refreshStatus()]);
       } catch (err) {
-        toast(`删除失败：${err.message || err}`, { kind: "err" });
+        toast(t("agent.removeFailed", { err: err.message || err }), { kind: "err" });
         btn.disabled = false;
       }
     });
@@ -265,12 +263,12 @@ async function _loadSkillHub() {
     const res = unwrap(await api.skillHubList());
     const items = res.skills || [];
     if (!items.length) {
-      list.innerHTML = '<span class="hint">尚未导入任何外部技能。</span>';
+      list.innerHTML = `<span class="hint">${t("agent.noImportedSkills")}</span>`;
       return;
     }
     list.innerHTML = items.map(_renderHubRow).join("");
   } catch (e) {
-    list.innerHTML = `<span class="hint">技能库加载失败：${esc(e.message || e)}</span>`;
+    list.innerHTML = `<span class="hint">${t("agent.skillLoadFailed", { err: esc(e.message || e) })}</span>`;
   }
 }
 
@@ -304,10 +302,10 @@ async function _refreshStatus() {
     const badge = document.getElementById("agent-mode-badge");
     if (badge) {
       if (res.llm_ready) {
-        badge.textContent = `LLM 已就绪 (${esc(res.model_name || "")})`;
+        badge.textContent = t("agent.llmReady", { model: esc(res.model_name || "") });
         badge.className = "agent-badge agent-badge-ready";
       } else {
-        badge.textContent = "规则模式（未加载 LLM，基础工具可用）";
+        badge.textContent = t("agent.ruleMode");
         badge.className = "agent-badge agent-badge-fallback";
       }
     }
@@ -328,12 +326,12 @@ async function _loadSkills() {
     const skills = res.skills || [];
     const active = res.active_count ?? skills.filter((s) => s.enabled).length;
     if (summary) {
-      summary.textContent = `${active}/${res.count ?? skills.length} 启用 · ${res.active_tool_count ?? ""} 个工具`;
+      summary.textContent = t("agent.skillsSummary", { active, total: res.count ?? skills.length, tools: res.active_tool_count ?? "" });
     }
-    list.innerHTML = skills.map(_renderSkillRow).join("") || '<span class="hint">暂无技能</span>';
+    list.innerHTML = skills.map(_renderSkillRow).join("") || `<span class="hint">${t("agent.noSkills")}</span>`;
   } catch (e) {
-    list.innerHTML = `<span class="hint">技能库加载失败：${esc(e.message || e)}</span>`;
-    if (summary) summary.textContent = "加载失败";
+    list.innerHTML = `<span class="hint">${t("agent.skillLoadFailed", { err: esc(e.message || e) })}</span>`;
+    if (summary) summary.textContent = t("agent.loadFailed");
   }
 }
 
@@ -365,11 +363,11 @@ async function _loadSessionList() {
   if (!select) return;
   try {
     const res = unwrap(await api.agentSessions(20));
-    select.innerHTML = '<option value="">— 历史会话 —</option>';
+    select.innerHTML = `<option value="">${t("agent.historyPlaceholder")}</option>`;
     for (const s of res.sessions || []) {
       const opt = document.createElement("option");
       opt.value = s.id;
-      opt.textContent = `${s.id} (${s.message_count || 0} 条)`;
+      opt.textContent = t("agent.sessionLabel", { id: s.id, n: s.message_count || 0 });
       if (s.id === _sessionId) opt.selected = true;
       select.appendChild(opt);
     }

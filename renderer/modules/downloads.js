@@ -6,6 +6,7 @@ import { unwrap, escapeHtml } from "./net.js";
 import { state, setState } from "./state.js";
 import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
 import { overlayOpen, overlayClose } from "./overlay-fx.js";
+import { t as translate } from "./i18n.js";
 
 function fmtBytes(n) {
   if (n == null || isNaN(n)) return "?";
@@ -60,19 +61,19 @@ function ensureOverlay() {
   el.setAttribute("aria-labelledby", "download-overlay-title");
   el.innerHTML = `
     <div class="overlay-card" role="document">
-      <header><h2 id="download-overlay-title">下载任务</h2>
-        <button class="ghost" data-action="close-overlay" aria-label="关闭下载面板">×</button></header>
+      <header><h2 id="download-overlay-title">${translate("downloads.title")}</h2>
+        <button class="ghost" data-action="close-overlay" aria-label="${translate("downloads.closePanel")}">×</button></header>
       <section class="src-test" aria-labelledby="src-test-title">
         <div class="src-test-head">
-          <h3 id="src-test-title">源测速</h3>
-          <button class="ghost" data-action="remeasure-sources">一键重新测速</button>
+          <h3 id="src-test-title">${translate("downloads.sourceTest")}</h3>
+          <button class="ghost" data-action="remeasure-sources">${translate("downloads.remeasure")}</button>
         </div>
         <div id="source-list" class="src-list" aria-live="polite">
-          <div class="hint">点击「一键重新测速」以比较各下载源的延迟与速度。</div>
+          <div class="hint">${translate("downloads.sourceTestHint")}</div>
         </div>
       </section>
       <div id="download-list" class="list" aria-live="polite"></div>
-      <p class="hint" style="margin-top:12px">仅展示活跃和最近任务；完成后将保留 1 小时。</p>
+      <p class="hint" style="margin-top:12px">${translate("downloads.activeNote")}</p>
     </div>
   `;
   el.addEventListener("click", (e) => {
@@ -105,7 +106,7 @@ function renderSources() {
   const box = overlayEl.querySelector("#source-list");
   if (!box) return;
   if (!lastRanking.length) {
-    box.innerHTML = `<div class="hint">暂无测速数据。点击「一键重新测速」开始。</div>`;
+    box.innerHTML = `<div class="hint">${translate("downloads.noSourceData")}</div>`;
     return;
   }
   const maxLat = Math.max(
@@ -119,7 +120,7 @@ function renderSources() {
     const spd = (r && r.speed_mbps) || 0;
     const latPct = Math.min(100, (lat / maxLat) * 100);
     const spdPct = Math.min(100, (spd / maxSpd) * 100);
-    const tag = cooling ? "冷却中" : (ok ? "可用" : "不可用");
+    const tag = cooling ? translate("downloads.cooling") : (ok ? translate("downloads.available") : translate("downloads.unavailable"));
     const color = srcColor(ok, cooling);
     return `
     <div class="src-row" data-sid="${escapeHtml(r.source_id || r.host || "")}">
@@ -127,28 +128,28 @@ function renderSources() {
         ${escapeHtml(r.source_type || r.host || "源")} · ${escapeHtml(tag)}
       </div>
       <div class="src-bars">
-        <div class="src-bar-wrap"><span class="src-lab">延迟</span>
+        <div class="src-bar-wrap"><span class="src-lab">${translate("downloads.latency")}</span>
           <div class="src-bar"><i style="width:${latPct.toFixed(1)}%;background:${color}"></i></div>
           <span class="src-val">${lat.toFixed(0)} ms</span></div>
-        <div class="src-bar-wrap"><span class="src-lab">速度</span>
+        <div class="src-bar-wrap"><span class="src-lab">${translate("downloads.speed")}</span>
           <div class="src-bar"><i style="width:${spdPct.toFixed(1)}%;background:${color}"></i></div>
           <span class="src-val">${spd.toFixed(1)} MB/s</span></div>
       </div>
       <div class="src-actions">
-        <button class="ghost" data-action="lock-source" data-sid="${escapeHtml(r.source_id || "")}">锁定</button>
+        <button class="ghost" data-action="lock-source" data-sid="${escapeHtml(r.source_id || "")}">${translate("downloads.lock")}</button>
       </div>
     </div>`;
   }).join("");
   if (lastSkipped.length) {
     box.insertAdjacentHTML("beforeend",
-      `<p class="hint">已在冷却期跳过 ${lastSkipped.length} 个源。</p>`);
+      `<p class="hint">${translate("downloads.skippedCooling", { n: lastSkipped.length })}</p>`);
   }
 }
 
 async function remeasureSources() {
   if (!overlayEl) return;
   const box = overlayEl.querySelector("#source-list");
-  if (box) box.innerHTML = `<div class="hint">测速中…</div>`;
+  if (box) box.innerHTML = `<div class="hint">${translate("downloads.measuring")}</div>`;
   try {
     const reg = unwrap(await api.getSourceRegistry());
     const urls = [];
@@ -158,7 +159,7 @@ async function remeasureSources() {
       }
     }
     if (!urls.length) {
-      if (box) box.innerHTML = `<div class="hint">没有已启用的源可测速。</div>`;
+      if (box) box.innerHTML = `<div class="hint">${translate("downloads.noEnabledSource")}</div>`;
       return;
     }
     const r = unwrap(await api.measureSources({ urls, force: true }));
@@ -166,14 +167,14 @@ async function remeasureSources() {
     lastSkipped = (r && r.skipped) || [];
     renderSources();
   } catch (_) {
-    if (box) box.innerHTML = `<div class="hint">测速失败，请稍后重试。</div>`;
+    if (box) box.innerHTML = `<div class="hint">${translate("downloads.measureFailed")}</div>`;
   }
 }
 
 async function lockSource(sourceId) {
   try {
     await api.lockSource(sourceId || "");
-    toast(sourceId ? `已锁定源：${sourceId}` : "已取消源锁定", { kind: "ok" });
+    toast(sourceId ? translate("downloads.locked", { id: sourceId }) : translate("downloads.unlocked"), { kind: "ok" });
   } catch (_) { /* toast already shown */ }
 }
 
@@ -200,27 +201,27 @@ function renderOverlay() {
     .sort((a, b) => (b.taskId || "").localeCompare(a.taskId || ""));
 
   if (tasks.length === 0) {
-    list.innerHTML = `<div class="hint">当前没有下载任务。</div>`;
+    list.innerHTML = `<div class="hint">${translate("downloads.noTasks")}</div>`;
     return;
   }
 
-  list.innerHTML = tasks.map((t) => {
-    const pct = (t.total > 0) ? Math.min(100, (t.downloaded / t.total) * 100) : 0;
-    const filt = (t.filename || t.taskId || "任务");
-    const status = t.status || "active";
+  list.innerHTML = tasks.map((task) => {
+    const pct = (task.total > 0) ? Math.min(100, (task.downloaded / task.total) * 100) : 0;
+    const filt = (task.filename || task.taskId || translate("downloads.taskFallback"));
+    const status = task.status || "active";
     const isDone = status === "completed" || status === "failed" || status === "cancelled";
     return `
-    <div class="dl-row" data-tid="${t.taskId}">
+    <div class="dl-row" data-tid="${task.taskId}">
       <div class="dl-name" title="${escapeHtml(filt)}">${escapeHtml(filt)}</div>
       <div class="dl-progress"><div class="dl-bar" style="width:${pct.toFixed(1)}%"></div></div>
       <div class="dl-meta">
-        <span>${fmtBytes(t.downloaded)} / ${fmtBytes(t.total)}</span>
-        <span aria-label="状态">${escapeHtml(status)}</span>
+        <span>${fmtBytes(task.downloaded)} / ${fmtBytes(task.total)}</span>
+        <span aria-label="${translate("downloads.statusAria")}">${escapeHtml(status)}</span>
       </div>
       <div class="dl-actions">
         ${!isDone
-          ? `<button class="danger" data-action="cancel" data-tid="${t.taskId}">取消</button>`
-          : `<button class="ghost" data-action="dismiss" data-tid="${t.taskId}">移除</button>`}
+          ? `<button class="danger" data-action="cancel" data-tid="${task.taskId}">${translate("downloads.cancel")}</button>`
+          : `<button class="ghost" data-action="dismiss" data-tid="${task.taskId}">${translate("downloads.dismiss")}</button>`}
       </div>
     </div>`;
   }).join("");
@@ -230,7 +231,7 @@ function renderOverlay() {
       const tid = b.dataset.tid;
       try {
         await api.cancelDownload(tid);
-        toast("已请求取消任务 " + tid, { kind: "ok" });
+        toast(translate("downloads.cancelRequested", { id: tid }), { kind: "ok" });
       } catch (_) { /* toast already shown */ }
     })
   );
@@ -262,7 +263,7 @@ export async function startDownloadFromUrl(url, opts) {
     if (taskId) {
       state.downloads[taskId] = { taskId, filename: dest, downloaded: 0, total: 0, status: "queued" };
       setState({ downloads: { ...state.downloads } });
-      toast(`下载已开始：${dest}`, { kind: "ok" });
+      toast(translate("downloads.downloadStarted", { file: dest }), { kind: "ok" });
       showDownloads();
     }
   } catch (_) { throw new Error("startDownload failed"); }
