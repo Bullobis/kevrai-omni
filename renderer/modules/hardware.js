@@ -2,6 +2,7 @@
 "use strict";
 import { api } from "./api.js";
 import { toast } from "./toast.js";
+import { t } from "./i18n.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -12,10 +13,10 @@ function esc(s) {
 }
 
 const FIT_LABEL = {
-  perfect: "完美匹配",
-  good: "可运行",
-  tight: "勉强可跑",
-  no: "不可行",
+  perfect: "hardware.fitPerfect",
+  good: "hardware.fitGood",
+  tight: "hardware.fitTight",
+  no: "hardware.fitNo",
 };
 const FIT_CLASS = {
   perfect: "ok",
@@ -30,20 +31,19 @@ export async function renderHardwarePage(root) {
   root.innerHTML = `
     <div class="hw-toolbar">
       <div>
-        <h2 class="hw-title">⚡ 硬件体检与模型推荐</h2>
-        <p class="hint">自动读取本机 CPU / 内存 / 显卡 / 磁盘 / 网络带宽，
-          对照每个模型的官方建议配置，推荐你的机器真正跑得动的模型。</p>
+        <h2 class="hw-title">${t("hardware.title")}</h2>
+        <p class="hint">${t("hardware.hint")}</p>
       </div>
       <div class="hw-toolbar-actions">
-        <select id="hw-cat" aria-label="分类筛选">
-          <option value="">全部分类</option>
+        <select id="hw-cat" aria-label="${t("hardware.catFilter")}">
+          <option value="">${t("market.allCategories")}</option>
         </select>
-        <button class="secondary" id="hw-refresh">重新检测</button>
+        <button class="secondary" id="hw-refresh">${t("hardware.rescan")}</button>
       </div>
     </div>
-    <div id="hw-snapshot" class="hw-snapshot"><p class="mut">正在检测硬件…（带宽探测约需数秒）</p></div>
-    <h3 class="section" id="hw-rec-title">为你推荐的模型</h3>
-    <div id="hw-recs" class="list"><p class="mut">分析中…</p></div>
+    <div id="hw-snapshot" class="hw-snapshot"><p class="mut">${t("hardware.detecting")}</p></div>
+    <h3 class="section" id="hw-rec-title">${t("hardware.recTitle")}</h3>
+    <div id="hw-recs" class="list"><p class="mut">${t("hardware.analyzing")}</p></div>
   `;
 
   $("#hw-refresh", root).addEventListener("click", () => load(root, true));
@@ -73,7 +73,7 @@ async function load(root, refresh) {
     }
     renderRecs(root);
   } catch (e) {
-    snapEl.innerHTML = `<p class="hint">硬件检测失败：${esc(e?.message || e)}</p>`;
+    snapEl.innerHTML = `<p class="hint">${t("hardware.detectFailed", { err: esc(e?.message || e) })}</p>`;
     recEl.innerHTML = "";
   }
 }
@@ -84,37 +84,37 @@ function renderSnapshot(el, hw) {
   const disk = hw.disk || {};
   const score = Number(hw.score || 0);
   const scoreLabel =
-    score >= 80 ? "服务器级" : score >= 55 ? "高性能" : score >= 35 ? "主流" : "轻量设备";
+    score >= 80 ? t("hardware.gradeServer") : score >= 55 ? t("hardware.gradeHighend") : score >= 35 ? t("hardware.gradeMainstream") : t("hardware.gradeLight");
 
   const gpuRows = gpus.map((g) => `
     <div class="hw-kv">
-      <span class="hw-k">${esc(g.vendor === "cpu" ? "处理器" : "显卡")}</span>
-      <span class="hw-v">${esc(g.name || "未知")}
-        ${g.vram_mb ? `<span class="pill">${(g.vram_mb / 1024).toFixed(0)} GB 显存</span>` : ""}</span>
+      <span class="hw-k">${esc(g.vendor === "cpu" ? t("hardware.cpu") : t("hardware.gpu"))}</span>
+      <span class="hw-v">${esc(g.name || t("hardware.unknown"))}
+        ${g.vram_mb ? `<span class="pill">${(g.vram_mb / 1024).toFixed(0)} GB ${t("hardware.vram")}</span>` : ""}</span>
     </div>`).join("");
 
   el.innerHTML = `
     <div class="hw-grid">
       <div class="hw-card">
-        <div class="hw-card-head"><span class="hw-ico">🧠</span> 处理器</div>
-        <div class="hw-kv"><span class="hw-k">型号</span><span class="hw-v">${esc(cpu.name || "未知")}</span></div>
-        <div class="hw-kv"><span class="hw-k">物理核心</span><span class="hw-v">${esc(cpu.physical_cores || "?")} 核</span></div>
-        <div class="hw-kv"><span class="hw-k">指令集</span><span class="hw-v">${
-          cpu.avx512 ? "AVX-512（推理最优）" : cpu.avx2 ? "AVX2" : "基础"
+        <div class="hw-card-head"><span class="hw-ico">🧠</span> ${t("hardware.cpu")}</div>
+        <div class="hw-kv"><span class="hw-k">${t("hardware.model")}</span><span class="hw-v">${esc(cpu.name || t("hardware.unknown"))}</span></div>
+        <div class="hw-kv"><span class="hw-k">${t("hardware.physCores")}</span><span class="hw-v">${esc(cpu.physical_cores || "?")} ${t("hardware.coresUnit")}</span></div>
+        <div class="hw-kv"><span class="hw-k">${t("hardware.isa")}</span><span class="hw-v">${
+          cpu.avx512 ? t("hardware.avx512") : cpu.avx2 ? "AVX2" : t("hardware.basic")
         }</span></div>
       </div>
       <div class="hw-card">
-        <div class="hw-card-head"><span class="hw-ico">💽</span> 内存与存储</div>
-        <div class="hw-kv"><span class="hw-k">内存</span><span class="hw-v">${esc(hw.ram_total_gb || "?")} GB</span></div>
-        <div class="hw-kv"><span class="hw-k">磁盘剩余</span><span class="hw-v">${esc(disk.free_gb || "?")} / ${esc(disk.total_gb || "?")} GB</span></div>
-        <div class="hw-kv"><span class="hw-k">平台</span><span class="hw-v">${esc(hw.platform || "")}</span></div>
+        <div class="hw-card-head"><span class="hw-ico">💽</span> ${t("hardware.memStorage")}</div>
+        <div class="hw-kv"><span class="hw-k">${t("hardware.ram")}</span><span class="hw-v">${esc(hw.ram_total_gb || "?")} GB</span></div>
+        <div class="hw-kv"><span class="hw-k">${t("hardware.diskFree")}</span><span class="hw-v">${esc(disk.free_gb || "?")} / ${esc(disk.total_gb || "?")} GB</span></div>
+        <div class="hw-kv"><span class="hw-k">${t("hardware.platform")}</span><span class="hw-v">${esc(hw.platform || "")}</span></div>
       </div>
       <div class="hw-card">
-        <div class="hw-card-head"><span class="hw-ico">🎮</span> 图形设备</div>
-        ${gpuRows || '<div class="hw-kv"><span class="hw-v mut">未检测到独立显卡</span></div>'}
+        <div class="hw-card-head"><span class="hw-ico">🎮</span> ${t("hardware.graphics")}</div>
+        ${gpuRows || `<div class="hw-kv"><span class="hw-v mut">${t("hardware.noDgpu")}</span></div>`}
       </div>
       <div class="hw-card">
-        <div class="hw-card-head"><span class="hw-ico">🌐</span> 网络带宽</div>
+        <div class="hw-card-head"><span class="hw-ico">🌐</span> ${t("hardware.bandwidth")}</div>
         <div class="hw-kv"><span class="hw-k">下行测速</span>
           <span class="hw-v">${hw.bandwidth_mbps ? `${esc(hw.bandwidth_mbps)} Mbps` : "未测出"}
             <span class="pill ${hw.bandwidth_tier === "fast" ? "ok" : hw.bandwidth_tier === "medium" ? "warn" : ""}">${
@@ -164,9 +164,9 @@ function renderRecs(root) {
         ${(m.hardware || {}).notes ? `<div class="hw-reason">💡 ${esc(m.hardware.notes)}</div>` : ""}
       </div>
       <div class="hw-rec-side">
-        <span class="pill ${FIT_CLASS[rec.fit] || ""}">${esc(FIT_LABEL[rec.fit] || rec.fit || "")}</span>
+        <span class="pill ${FIT_CLASS[rec.fit] || ""}">${esc(FIT_LABEL[rec.fit] ? t(FIT_LABEL[rec.fit]) : (rec.fit || ""))}</span>
         <span class="mut tiny">${esc((m.engine || []).join(" / "))}</span>
-        <button class="primary small" data-action="hw-install" data-id="${esc(m.id)}">安装</button>
+        <button class="primary small" data-action="hw-install" data-id="${esc(m.id)}">${t("market.install")}</button>
       </div>
     </div>`;
   }).join("");

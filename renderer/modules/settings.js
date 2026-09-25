@@ -10,6 +10,7 @@ import { overlayOpen, overlayClose } from "./overlay-fx.js";
 import {
   downloadExport, parseImport, importData, applyImportedPreferences,
 } from "./data-portability.js";
+import { t, getLocale, setLocale } from "./i18n.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -74,8 +75,10 @@ function fillForm(s) {
   $("#set-allowlist").value       = (s.allowlist || []).join(", ");
   $("#set-allowlist").disabled    = !s.allowlistAdvanced;
   $("#set-allowlist-hint").textContent = s.allowlistAdvanced
-    ? "Editing host allowlist affects future downloads."
-    : "Advanced editing is disabled. Enable above to modify.";
+    ? t("settings.allowlistEnabledHint")
+    : t("settings.allowlistDisabledHint");
+  const localeEl = $("#set-locale");
+  if (localeEl) localeEl.value = getLocale();
   if ($("#set-hf-token")) $("#set-hf-token").value = s.hfToken || "";
   if ($("#set-ms-token")) $("#set-ms-token").value = s.msToken || "";
 }
@@ -117,8 +120,13 @@ export function wireSettings() {
   $("#set-allowlist-advanced").addEventListener("change", (e) => {
     $("#set-allowlist").disabled = !e.target.checked;
     $("#set-allowlist-hint").textContent = e.target.checked
-      ? "Editing host allowlist affects future downloads."
-      : "Advanced editing is disabled. Enable above to modify.";
+      ? t("settings.allowlistEnabledHint")
+      : t("settings.allowlistDisabledHint");
+  });
+
+  // 语言切换：立即应用（setLocale 会重新 bindI18n 并派发事件）。
+  $("#set-locale")?.addEventListener("change", (e) => {
+    setLocale(e.target.value);
   });
 
   $("#btn-pick-model-dir").addEventListener("click", async () => {
@@ -137,7 +145,7 @@ export function wireSettings() {
       const saved = await api.putSettings(next);
       setState({ settings: saved });
       applyTheme();
-      toast("设置已保存", { kind: "ok" });
+      toast(t("settings.saved"), { kind: "ok" });
       closeSettings();
     } catch (_) { /* toast already shown */ }
   });
@@ -151,7 +159,7 @@ export function wireSettings() {
       setState({ settings: saved });
       fillForm(saved);
       applyTheme();
-      toast("设置已重置", { kind: "ok" });
+      toast(t("settings.resetDone"), { kind: "ok" });
     } catch (_) {}
   });
 
@@ -170,8 +178,8 @@ export function wireSettings() {
 
   $("#btn-export-data")?.addEventListener("click", async () => {
     const ok = await downloadExport();
-    if (ok) toast("数据已导出", { kind: "ok" });
-    else toast("导出失败：浏览器不支持文件下载", { kind: "err" });
+    if (ok) toast(t("settings.exportOk"), { kind: "ok" });
+    else toast(t("settings.exportFailed"), { kind: "err" });
   });
 
   $("#btn-import-data")?.addEventListener("click", () => {
@@ -186,14 +194,16 @@ export function wireSettings() {
       pendingParsed = parseImport(text);
       const d = pendingParsed.data;
       if (importConfirmText) {
-        importConfirmText.textContent =
-          `已选择「${file.name}」（收藏 ${(d.favorites || []).length} 个、`
-          + `最近使用 ${(d.recent || []).length} 条）。请选择导入方式：`;
+        importConfirmText.textContent = t("settings.importConfirmText", {
+          file: file.name,
+          favs: (d.favorites || []).length,
+          recents: (d.recent || []).length,
+        });
       }
       if (importConfirm) importConfirm.hidden = false;
     } catch (err) {
       pendingParsed = null;
-      toast(err.message || "导入失败", { kind: "err" });
+      toast(err.message || t("settings.importFailed"), { kind: "err" });
       importFileInput.value = "";
     }
   });
@@ -203,10 +213,10 @@ export function wireSettings() {
     try {
       const stats = await importData(pendingParsed, mode);
       applyImportedPreferences(pendingParsed);
-      toast(`已导入 ${stats.favorites} 个收藏、${stats.recent} 条最近使用`, { kind: "ok" });
+      toast(t("settings.importOk", { favs: stats.favorites, recents: stats.recent }), { kind: "ok" });
       hideImportConfirm();
     } catch (err) {
-      toast(err.message || "导入失败", { kind: "err" });
+      toast(err.message || t("settings.importFailed"), { kind: "err" });
     }
   };
 
@@ -218,12 +228,16 @@ export function wireSettings() {
   $("#btn-preview-genwait")?.addEventListener("click", () => {
     closeSettings();
     const wait = showGenerationWait({
-      title: "正在生成",
-      captions: ["构思中…", "调用引擎…", "采样像素…", "优化细节…", "即将完成…"],
+      title: t("settings.genWaitTitle"),
+      captions: [
+        t("settings.genWaitCaption1"), t("settings.genWaitCaption2"),
+        t("settings.genWaitCaption3"), t("settings.genWaitCaption4"),
+        t("settings.genWaitCaption5"),
+      ],
       showProgress: true,
       showCancel: true,
       indeterminate: false,
-      onCancel: () => toast("生成已取消", { kind: "warn" }),
+      onCancel: () => toast(t("settings.genWaitCanceled"), { kind: "warn" }),
     });
     // Demo progress: 0 → 100 over 8 s, then auto-hide
     let p = 0;
@@ -231,7 +245,7 @@ export function wireSettings() {
       p += Math.random() * 9 + 2;
       if (p >= 100) {
         p = 100;
-        wait.setProgress(p, "演示完成");
+        wait.setProgress(p, t("settings.genWaitDone"));
         clearInterval(timer);
         setTimeout(hideGenerationWait, 600);
       } else {

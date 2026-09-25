@@ -11,6 +11,7 @@ import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
 import { overlayOpen, overlayClose } from "./overlay-fx.js";
+import { t } from "./i18n.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -79,32 +80,32 @@ async function runCheck() {
   showInfo(false);
   setDownloadButton(false);
   setInstallButton(false);
-  setStatus("正在检查更新…");
+  setStatus(t("update.checking"));
 
   let r;
   try {
     r = await api.checkUpdates();
   } catch (e) {
-    setStatus("检查失败");
-    toast("检查更新失败：" + (e?.message || e), { kind: "err" });
+    setStatus(t("update.checkFailed"));
+    toast(t("update.checkErrToast", { err: e?.message || e }), { kind: "err" });
     return;
   }
 
   if (r?.dev) {
-    setStatus("开发模式下不检查更新（打包后可用）");
+    setStatus(t("update.devMode"));
     return;
   }
   if (r?.busy) {
-    setStatus("正在检查，请稍候…");
+    setStatus(t("update.busy"));
     return;
   }
   if (r?.error) {
-    setStatus("检查失败");
-    toast("检查更新失败：" + r.error, { kind: "err" });
+    setStatus(t("update.checkFailed"));
+    toast(t("update.checkErrToast", { err: r.error }), { kind: "err" });
     return;
   }
   if (r?.updateAvailable) {
-    setStatus("发现新版本");
+    setStatus(t("update.found"));
     showInfo(true);
     const cur = $("#update-current");
     const lat = $("#update-latest");
@@ -120,7 +121,7 @@ async function runCheck() {
     }
     setDownloadButton(true);
   } else {
-    setStatus(`已是最新版本 (v${r?.currentVersion || "?"})`);
+    setStatus(t("update.upToDate", { v: r?.currentVersion || "?" }));
   }
 }
 
@@ -128,7 +129,7 @@ async function runDownload() {
   setDownloadButton(false);
   showProgress(true);
   setProgress(0, 0, 0);
-  setStatus("正在下载更新…");
+  setStatus(t("update.downloading"));
 
   // Progress + downloaded + error events are pushed by the main process.
   const offProgress = api.onUpdateProgress((p) => {
@@ -139,15 +140,15 @@ async function runDownload() {
     offDownloaded();
     offError();
     setProgress(100, 1, 1);
-    setStatus("更新已下载，重启后安装");
+    setStatus(t("update.downloadDone"));
     setInstallButton(true);
   });
   const offError = api.onUpdateError((e) => {
     offProgress();
     offDownloaded();
     offError();
-    setStatus("下载失败");
-    toast("下载更新失败：" + (e?.message || "未知错误"), { kind: "err" });
+    setStatus(t("update.downloadFailed"));
+    toast(t("update.downloadErrToast", { err: e?.message || "未知错误" }), { kind: "err" });
     setDownloadButton(true);
   });
 
@@ -155,8 +156,8 @@ async function runDownload() {
     const r = await api.downloadUpdate();
     if (r && r.ok === false) {
       offProgress(); offDownloaded(); offError();
-      setStatus("下载失败");
-      toast("下载更新失败：" + (r.error || "未知错误"), { kind: "err" });
+      setStatus(t("update.downloadFailed"));
+      toast(t("update.downloadErrToast", { err: r.error || "未知错误" }), { kind: "err" });
       setDownloadButton(true);
     }
     // On success the "update-downloaded" event will flip the UI; if for some
@@ -164,8 +165,8 @@ async function runDownload() {
     // design; user can close and retry).
   } catch (e) {
     offProgress(); offDownloaded(); offError();
-    setStatus("下载失败");
-    toast("下载更新失败：" + (e?.message || e), { kind: "err" });
+    setStatus(t("update.downloadFailed"));
+    toast(t("update.downloadErrToast", { err: e?.message || e }), { kind: "err" });
     setDownloadButton(true);
   }
 }
@@ -174,9 +175,9 @@ async function runInstall() {
   try {
     await api.installUpdate();
     // quitAndInstall closes the app; if we're still here, show a note.
-    setStatus("正在重启安装…");
+    setStatus(t("update.installing"));
   } catch (e) {
-    toast("安装更新失败：" + (e?.message || e), { kind: "err" });
+    toast(t("update.installErrToast", { err: e?.message || e }), { kind: "err" });
   }
 }
 
