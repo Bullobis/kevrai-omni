@@ -5,6 +5,7 @@
 import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { unwrap } from "./net.js";
+import { t } from "./i18n.js";
 
 const KNOWN_PIP_MIRRORS = [
   { id: "pypi-official",   label: "PyPI 官方",          url: "https://pypi.org/simple/" },
@@ -58,25 +59,23 @@ let state = {
 export async function renderEnvironmentsPage(root) {
   root.innerHTML = "";
   const page = el("section", { class: "page page-env" });
-  page.appendChild(el("h1", {}, "环境管理 / Environments"));
-  page.appendChild(el("p", { class: "page-sub" },
-    "在这里检测、安装、更新 Python 依赖、推理引擎、模型。所有依赖都可以在软件里下载，无需手动配置环境。"));
+  page.appendChild(el("h1", {}, t("envs.title")));
+  page.appendChild(el("p", { class: "page-sub" }, t("envs.subtitle")));
 
   // Mirror manager
   const mirrorCard = el("div", { class: "card" });
-  mirrorCard.appendChild(el("h2", {}, "下载源 / Download Sources"));
-  mirrorCard.appendChild(el("p", { class: "muted" },
-    "勾选想要使用的镜像。下载时会自动测速，挑最快可达的源。"));
+  mirrorCard.appendChild(el("h2", {}, t("envs.downloadSources")));
+  mirrorCard.appendChild(el("p", { class: "muted" }, t("envs.mirrorHint")));
 
   const pipMirrorGroup = el("div", { class: "mirror-group" });
-  pipMirrorGroup.appendChild(el("h3", {}, "Python pip 镜像"));
+  pipMirrorGroup.appendChild(el("h3", {}, t("envs.pipMirrors")));
   for (const m of KNOWN_PIP_MIRRORS) {
     pipMirrorGroup.appendChild(makeMirrorRow(m, "pip", state.selectedPipMirrors));
   }
   mirrorCard.appendChild(pipMirrorGroup);
 
   const modelMirrorGroup = el("div", { class: "mirror-group" });
-  modelMirrorGroup.appendChild(el("h3", {}, "模型/引擎 镜像"));
+  modelMirrorGroup.appendChild(el("h3", {}, t("envs.modelMirrors")));
   for (const m of KNOWN_MODEL_MIRRORS) {
     modelMirrorGroup.appendChild(makeMirrorRow(m, "model", state.selectedModelMirrors));
   }
@@ -84,7 +83,7 @@ export async function renderEnvironmentsPage(root) {
 
   // Speed test button
   const testBtn = el("button", { class: "btn", onclick: () => testAllSources() },
-    "测速全部镜像");
+    t("envs.testAll"));
   mirrorCard.appendChild(testBtn);
 
   const speedBox = el("div", { class: "speed-results" });
@@ -94,14 +93,14 @@ export async function renderEnvironmentsPage(root) {
 
   // Status card
   const statusCard = el("div", { class: "card" });
-  statusCard.appendChild(el("h2", {}, "系统状态 / System Status"));
-  const refreshBtn = el("button", { class: "btn", onclick: () => loadStatus(statusCard) }, "刷新检测");
+  statusCard.appendChild(el("h2", {}, t("envs.systemStatus")));
+  const refreshBtn = el("button", { class: "btn", onclick: () => loadStatus(statusCard) }, t("envs.refresh"));
   statusCard.appendChild(refreshBtn);
   page.appendChild(statusCard);
 
   // Engines card
   const engCard = el("div", { class: "card" });
-  engCard.appendChild(el("h2", {}, "推理引擎 / Engines"));
+  engCard.appendChild(el("h2", {}, t("envs.engines")));
   page.appendChild(engCard);
 
   root.appendChild(page);
@@ -128,8 +127,8 @@ async function testAllSources() {
     ...[...state.selectedPipMirrors].map(id => KNOWN_PIP_MIRRORS.find(m => m.id === id)?.url).filter(Boolean),
     ...[...state.selectedModelMirrors].map(id => KNOWN_MODEL_MIRRORS.find(m => m.id === id)?.url).filter(Boolean),
   ];
-  if (!all.length) { toast("请先勾选至少一个镜像", { kind: "warn" }); return; }
-  toast(`测速 ${all.length} 个镜像…`);
+  if (!all.length) { toast(t("envs.needMirror"), { kind: "warn" }); return; }
+  toast(t("envs.testingN", { n: all.length }));
   const res = unwrap(await api.measureSources(all));
   state.speedResults = res.ranking || [];
   renderSpeedResults();
@@ -140,7 +139,7 @@ function renderSpeedResults() {
   if (!box) return;
   box.innerHTML = "";
   if (!state.speedResults || !state.speedResults.length) {
-    box.appendChild(el("p", { class: "muted" }, "尚未测速。"));
+    box.appendChild(el("p", { class: "muted" }, t("envs.notTested")));
     return;
   }
   const ul = el("ol", { class: "speed-list" });
@@ -159,21 +158,21 @@ function renderSpeedResults() {
 
 async function loadStatus(card) {
   card.innerHTML = "";
-  card.appendChild(el("h2", {}, "系统状态 / System Status"));
-  card.appendChild(el("p", { class: "muted" }, "正在检测…"));
+  card.appendChild(el("h2", {}, t("envs.systemStatus")));
+  card.appendChild(el("p", { class: "muted" }, t("envs.detecting")));
   let s;
   try {
     s = unwrap(await api.envStatus());
   } catch (e) {
     card.innerHTML = "";
-    card.appendChild(el("h2", {}, "系统状态 / System Status"));
-    card.appendChild(el("p", { class: "err" }, "检测失败：" + e.message));
+    card.appendChild(el("h2", {}, t("envs.systemStatus")));
+    card.appendChild(el("p", { class: "err" }, t("envs.detectFailed", { err: e.message })));
     return;
   }
   state.status = s;
   card.innerHTML = "";
-  card.appendChild(el("h2", {}, "系统状态 / System Status"));
-  card.appendChild(el("button", { class: "btn", onclick: () => loadStatus(card) }, "刷新检测"));
+  card.appendChild(el("h2", {}, t("envs.systemStatus")));
+  card.appendChild(el("button", { class: "btn", onclick: () => loadStatus(card) }, t("envs.refresh")));
 
   // Issues banner
   if (s.issues && s.issues.length) {

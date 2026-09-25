@@ -9,6 +9,7 @@ import { debounce } from "./debounce.js";
 import { escapeHtml } from "./net.js";
 import { emptyStateIconSvg } from "./empty-state.js";
 import { isFavorite, getRecent } from "./favorites.js";
+import { t } from "./i18n.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -72,8 +73,8 @@ async function probeSources() {
   if (!searchState.sources.length) searchState.sources = ["curated"];
   const dropped = before.filter((s) => !searchState.sources.includes(s));
   if (dropped.length) {
-    const names = dropped.map((s) => (s === "hf" ? "HuggingFace" : "魔搭 ModelScope"));
-    toast(`网络无法访问 ${names.join(" / ")}，已隐藏该来源`, { kind: "warn" });
+    const names = dropped.map((s) => (s === "hf" ? "Hugging Face" : "ModelScope"));
+    toast(t("market.sourceUnreachable", { names: names.join(" / ") }), { kind: "warn" });
   }
   return body;
 }
@@ -180,13 +181,13 @@ function toggleRecentDropdown(show) {
   const q = searchState.q.trim().toLowerCase();
   let html = "";
   if (!q && searchState.recent.length) {
-    html = `<div class="search-dd-label">最近搜索</div>` +
+    html = `<div class="search-dd-label">${t("market.recentSearches")}</div>` +
       searchState.recent.slice(0, 6).map((rq) =>
         `<div class="search-dd-item" data-search-q="${escapeAttr(rq)}" role="option">🕘 ${escapeHtml(rq)}</div>`
       ).join("") +
-      `<div class="search-dd-item search-dd-clear" data-action="clear-recent">✕ 清除搜索历史</div>`;
+      `<div class="search-dd-item search-dd-clear" data-action="clear-recent">${t("market.clearSearchHistory")}</div>`;
   } else if (q && searchState.suggestions && searchState.suggestions.length) {
-    html = `<div class="search-dd-label">你是不是要找</div>` +
+    html = `<div class="search-dd-label">${t("market.didYouMean")}</div>` +
       searchState.suggestions.map((s) =>
         `<div class="search-dd-item" data-search-q="${escapeAttr(s)}" role="option">💡 ${escapeHtml(s)}</div>`
       ).join("");
@@ -210,7 +211,7 @@ function toggleRecentDropdown(show) {
     api.searchClearRecent().then(() => {
       searchState.recent = [];
       toggleRecentDropdown(false);
-      toast("已清除搜索历史", { kind: "ok" });
+      toast(t("market.searchHistoryCleared"), { kind: "ok" });
     }).catch(() => {});
   });
 }
@@ -279,7 +280,7 @@ export async function runSearch(opts = {}) {
   const mySeq = ++searchState.reqSeq;   // H5: generation guard
   searchState.loading = true;
   searchState.lastError = null;
-  updateCount("搜索中…");
+  updateCount(t("market.searching"));
   clearLoadMoreBar();
   // v3.0.0 — show skeleton cards in the grid while searching
   if (vgrid && typeof vgrid.setLoading === "function") vgrid.setLoading(true);
@@ -301,7 +302,7 @@ export async function runSearch(opts = {}) {
     if (mySeq !== searchState.reqSeq) return;   // stale — discard
     searchState.loading = false;
     searchState.lastError = String(e && e.message || e);
-    updateCount("搜索失败");
+    updateCount(t("market.searchFailed"));
     if (vgrid && typeof vgrid.setLoading === "function") vgrid.setLoading(false);
     renderLoadError();
     return;
@@ -407,9 +408,9 @@ export async function loadMore() {
 
 function formatCount() {
   const n = searchState.items.length;
-  const base = `${searchState.count || n} 条`;
-  const online = searchState.usingHub ? " · 在线" : "";
-  const more = searchState.hasMore ? " · 滚动加载更多" : "";
+  const base = t("market.count", { n: searchState.count || n });
+  const online = searchState.usingHub ? t("market.online") : "";
+  const more = searchState.hasMore ? t("market.loadMore") : "";
   return `${base}${online} · ${searchState.elapsedMs}ms${more}`;
 }
 
@@ -431,7 +432,7 @@ function updateLoadMoreBar() {
   }
   if (searchState.loadingMore) {
     bar.hidden = false;
-    bar.innerHTML = `<span class="mut tiny">正在加载更多…</span>`;
+    bar.innerHTML = `<span class="mut tiny">${t("market.loadingMore")}</span>`;
     return;
   }
   if (searchState.hasMore) {
@@ -442,7 +443,7 @@ function updateLoadMoreBar() {
   // Exhausted: show a friendly bottom marker (only if we actually have rows).
   if (searchState.items.length > 0) {
     bar.hidden = false;
-    bar.innerHTML = `<span class="mut tiny">已到底部 · 共 ${searchState.items.length} 条</span>`;
+    bar.innerHTML = `<span class="mut tiny">${t("market.bottomReached", { n: searchState.items.length })}</span>`;
   } else {
     bar.hidden = true;
     bar.innerHTML = "";
@@ -460,7 +461,7 @@ function renderLoadError() {
     else return;
   }
   bar.hidden = false;
-  bar.innerHTML = `<span class="mut tiny">加载失败 · <button class="link-btn" id="loadmore-retry">重试</button></span>`;
+  bar.innerHTML = `<span class="mut tiny">${t("market.loadError")}<button class="link-btn" id="loadmore-retry">${t("market.retry")}</button></span>`;
   const btn = bar.querySelector("#loadmore-retry");
   if (btn) btn.addEventListener("click", () => runSearch({ resetPage: true }));
 }
@@ -483,9 +484,9 @@ function renderDegradedBanner() {
     else return;
   }
   const labels = searchState.warnings
-    .map((w) => `${w.hub || "远程"}（${w.code || "失败"}）`).join("、");
-  host.innerHTML = `在线检索暂不可用（${escapeHtml(labels)}），当前仅显示本地精选结果。
-    <button class="link-btn" id="hub-degraded-retry">重试</button>`;
+    .map((w) => `${w.hub || "remote"}（${w.code || "err"}）`).join("、");
+  host.innerHTML = `${t("market.degradedBanner", { labels: escapeHtml(labels) })}
+    <button class="link-btn" id="hub-degraded-retry">${t("market.retry")}</button>`;
   const btn = host.querySelector("#hub-degraded-retry");
   if (btn) btn.addEventListener("click", () => runSearch({ resetPage: true }));
 }
@@ -507,9 +508,9 @@ function renderFacets() {
   const f = searchState.facets;
   if (!f) { host.innerHTML = ""; return; }
   const chips = [];
-  if (searchState.engine) chips.push({ label: `引擎: ${searchState.engine}`, clear: () => { searchState.engine = ""; } });
-  if (searchState.license) chips.push({ label: `许可: ${searchState.license}`, clear: () => { searchState.license = ""; } });
-  if (searchState.sizeBucket) chips.push({ label: `大小: ${searchState.sizeBucket}`, clear: () => { searchState.sizeBucket = ""; } });
+  if (searchState.engine) chips.push({ label: t("market.engineChip", { name: searchState.engine }), clear: () => { searchState.engine = ""; } });
+  if (searchState.license) chips.push({ label: t("market.licenseChip", { name: searchState.license }), clear: () => { searchState.license = ""; } });
+  if (searchState.sizeBucket) chips.push({ label: t("market.sizeChip", { name: searchState.sizeBucket }), clear: () => { searchState.sizeBucket = ""; } });
 
   const engineTop = (f.engines || []).slice(0, 8);
   const sizeTop = (f.sizes || []).filter((s) => s.count > 0);
@@ -517,13 +518,13 @@ function renderFacets() {
     ${chips.length ? `<div class="facet-chips">${chips.map((c, i) =>
       `<button class="facet-chip active" data-clear="${i}">${escapeHtml(c.label)} ✕</button>`).join("")}</div>` : ""}
     <div class="facet-row">
-      <span class="facet-label">引擎</span>
+      <span class="facet-label">${t("market.facetEngine")}</span>
       ${engineTop.map((e) =>
         `<button class="facet-chip ${searchState.engine === e.value ? "active" : ""}" data-engine="${escapeAttr(e.value)}">${escapeHtml(e.value)} <span class="facet-n">${e.count}</span></button>`
       ).join("")}
     </div>
     <div class="facet-row">
-      <span class="facet-label">大小</span>
+      <span class="facet-label">${t("market.facetSize")}</span>
       ${sizeTop.map((s) =>
         `<button class="facet-chip ${searchState.sizeBucket === s.value ? "active" : ""}" data-size="${escapeAttr(s.value)}">${escapeHtml(s.value)} <span class="facet-n">${s.count}</span></button>`
       ).join("")}
@@ -556,16 +557,16 @@ function renderNoResults() {
     grid.parentNode.insertBefore(host, grid.nextSibling);
   }
   const sug = searchState.suggestions.length
-    ? `<p>你是不是要找：${searchState.suggestions.slice(0, 3).map((s) =>
+    ? `<p>${t("market.didYouMean")}：${searchState.suggestions.slice(0, 3).map((s) =>
         `<button class="link-btn" data-suggest="${escapeAttr(s)}">${escapeHtml(s)}</button>`).join(" ")}</p>`
     : "";
   host.innerHTML = `
     <div class="no-results-icon">${emptyStateIconSvg("search")}</div>
-    <h3 class="empty-state-title">没有找到相关模型</h3>
-    <p>没有找到与 “<strong>${escapeHtml(searchState.q)}</strong>” 相关的模型</p>
+    <h3 class="empty-state-title">${t("market.noResults")}</h3>
+    <p>${t("market.noResultsBody", { q: `<strong>${escapeHtml(searchState.q)}</strong>` })}</p>
     ${sug}
-    <p class="mut tiny">建议：检查拼写、减少关键词、或清除筛选条件</p>
-    <button type="button" class="secondary small es-clear-search">清除搜索</button>`;
+    <p class="mut tiny">${t("market.suggestionHint")}</p>
+    <button type="button" class="secondary small es-clear-search">${t("market.clearSearch")}</button>`;
   host.querySelectorAll("[data-suggest]").forEach((b) => b.addEventListener("click", () => {
     $("#search").value = b.getAttribute("data-suggest");
     searchState.q = b.getAttribute("data-suggest");
