@@ -256,6 +256,11 @@ function switchView(name) {
       initAgent().catch((e) => toast("Agent 页加载失败：" + e.message, { kind: "err" }));
     }
   }
+  // R4 — 统一派发视图切换事件。后台轮询型模块（LTX / MNN）通过
+  // modules/view-visibility.js 订阅，在自己的视图隐藏时暂停网络请求，
+  // 切回时恢复并立即刷新一次。放在所有 lazy-render 之后，确保订阅者
+  // 回调触发时 DOM / 模块状态已就绪。
+  window.dispatchEvent(new CustomEvent("kevrai:view-change", { detail: { view: name } }));
 }
 
 // ---------------------------------------------------------------------------
