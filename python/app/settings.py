@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 import os
 import sys
 import tempfile
@@ -14,6 +15,8 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
+
+logger = logging.getLogger(__name__)
 
 ThemeMode = Literal["light", "dark", "system"]
 HardwareAccel = Literal["auto", "nvidia", "amd", "apple", "ascend", "cpu"]
@@ -194,9 +197,11 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
         return _defaults()
     try:
         data = json.loads(fp.read_text(encoding="utf-8") or "{}")
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError) as e:
+        logger.warning("settings file %r unreadable/corrupt (%s); falling back to defaults", fp, e)
         return _defaults()
     if not isinstance(data, dict):
+        logger.warning("settings file %r is not a JSON object; falling back to defaults", fp)
         return _defaults()
     try:
         # Pop non-schema keys into "extra"
@@ -206,8 +211,9 @@ def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
         if extras:
             data_clean["extra"] = extras
         return Settings.model_validate(data_clean)
-    except Exception:
+    except Exception as e:
         # Schema mismatch — fall back to defaults but write back on next save
+        logger.warning("settings file %r failed schema validation (%s); falling back to defaults", fp, e)
         return _defaults()
 
 
