@@ -43,6 +43,7 @@ htmlcov/
 .nox/
 
 # Python 打包/构建产物
+python/build/
 *.pyo
 *.pyd
 *.whl

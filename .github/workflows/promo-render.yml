@@ -1,0 +1,70 @@
+name: promo-video
+
+# Periodically re-render the programmatic promo (built with Remotion from the
+# promo/ project) and commit the refreshed assets/media/promo.mp4 so the video
+# shown on GitHub stays current without manual screen recording. Also runs on
+# demand. The short clips in remotion/ are handled by remotion-render.yml.
+on:
+  schedule:
+    - cron: "0 0 1 * *"        # 1st of every month, 00:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    name: render & refresh promo
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install headless Chrome deps & CJK fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            fonts-noto-cjk \
+            libnss3 libatk-bridge2.0-0 libgbm1 libgtk-3-0 \
+            libasound2 libxss1 libxtst6
+      - name: Install Remotion deps
+        working-directory: promo
+        run: npm ci
+
+      - name: Prepare data
+        working-directory: promo
+        run: node prepare-data.mjs
+
+      - name: Render Promo (1080p)
+        working-directory: promo
+        run: >
+          npx remotion render src/index.js Promo
+          ../assets/media/promo.mp4
+          --codec=h264 --crf=20 --pixel-format=yuv420p
+          --concurrency=50%
+
+      - name: Commit refreshed video
+        run: |
+          git config user.name "k-forge-bot"
+          git config user.email "k-forge@local"
+          if git diff --quiet -- assets/media/promo.mp4; then
+            echo "promo video unchanged; nothing to commit"
+          else
+            git add assets/media/promo.mp4
+            git commit -m "chore(promo): refresh programmatic promo video [skip ci]"
+            git push
+            echo "promo video refreshed and pushed"
+          fi
+
+      - name: Upload rendered video artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: promo-mp4
+          path: assets/media/promo.mp4
+          if-no-files-found: error
