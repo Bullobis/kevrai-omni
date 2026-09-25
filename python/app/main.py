@@ -1772,6 +1772,14 @@ async def ws_download(websocket: WebSocket, task_id: str) -> None:
     try:
         await websocket.send_json(task.snapshot())
         terminal = {"done", "failed", "cancelled"}
+        # The task may already have reached a terminal state before we
+        # subscribed (e.g. a late reconnect after a page refresh). The
+        # terminal event was emitted once and likely already drained from the
+        # queue, so blocking on ``queue.get()`` below would hang forever
+        # (heartbeats only) instead of closing. Detect the terminal snapshot
+        # and close promptly.
+        if task.status.value in terminal:
+            return
         while True:
             try:
                 evt = await asyncio.wait_for(task.queue.get(), timeout=60.0)
