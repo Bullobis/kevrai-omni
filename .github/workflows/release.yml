@@ -1,0 +1,123 @@
+name: release
+
+# 跨平台构建并发布到 GitHub Releases。
+#   - 打 tag（v*）push 后自动运行；
+#   - 也可在 Actions 页手动 workflow_dispatch，指定已有 tag 重新打包发布。
+# Windows 的 NSIS 安装程序（.exe）由 windows-latest 自动构建，
+# 弥补本地 Linux 无 Wine 无法交叉构建 Windows 安装包的缺口。
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "要发布的 tag（手动运行时使用）"
+        required: true
+        default: "v3.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux
+            os: ubuntu-latest
+            target: "--linux AppImage deb"
+            archflags: "--x64"
+          - name: windows
+            os: windows-latest
+            target: "--win nsis zip"
+            archflags: "--x64"
+          - name: mac
+            os: macos-latest
+            target: "--mac dmg"
+            archflags: ""
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Cache electron / electron-builder binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: eb-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: npm ci
+        shell: bash
+        run: npm ci --no-audit --no-fund
+        env:
+          ELECTRON_MIRROR: https://registry.npmmirror.com/-/binary/electron/
+          ELECTRON_BUILDER_BINARIES_MIRROR: https://registry.npmmirror.com/-/binary/electron-builder-binaries/
+
+      - name: Build with electron-builder
+        shell: bash
+        run: >-
+          npx --yes electron-builder ${{ matrix.target }} ${{ matrix.archflags }}
+          --publish never --config.npmRebuild=false
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: List build output
+        shell: bash
+        run: ls -la build/output || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.name }}
+          path: build/output/
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Collect release files
+        shell: bash
+        run: |
+          mkdir -p release-files
+          find dist -type f \
+            \( -name "*.AppImage" -o -name "*.deb" -o -name "*.exe" \
+               -o -name "*.zip" -o -name "*.dmg" -o -name "*.yml" \
+               -o -name "*.blockmap" \) \
+            -exec cp {} release-files/ \;
+          # 仅对安装包/归档生成 SHA256SUMS（不含元数据/差分文件）
+          ( cd release-files \
+            && sha256sum $(ls | grep -vE '^(latest|.*\.blockmap$)') > SHA256SUMS.txt ) || true
+          ls -la release-files
+
+      - name: Resolve tag
+        id: rtag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.rtag.outputs.tag }}
+          name: Kevrai Omni ${{ steps.rtag.outputs.tag }}
+          generate_release_notes: true
+          files: release-files/*
