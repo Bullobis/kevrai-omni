@@ -42,7 +42,13 @@ except ImportError:  # pragma: no cover
 
 # Hosts that are only meaningful with a signed query string; a bare path here
 # is never a usable browse/download source.
-SIGNED_ONLY_HOSTS = {"objects.githubusercontent.com", "github-releases.githubusercontent.com"}
+SIGNED_ONLY_HOSTS = {
+    "objects.githubusercontent.com",
+    "github-releases.githubusercontent.com",
+    # Current GitHub release-asset host (signed redirect target; a bare path
+    # is meaningless, but a signed redirect here is a healthy download).
+    "release-assets.githubusercontent.com",
+}
 # Hosts the project historically treated as leaked / non-canonical; verify.
 WATCH_HOSTS = {"hf-cdn.sufy.com", "hf-cn-mirror.com", "hf-mirror.us"}
 # Well-known, expected mirrors / hosts.
@@ -51,7 +57,7 @@ KNOWN_GOOD_HOSTS = {
     "pypi.org", "pypi.tuna.tsinghua.edu.cn", "mirrors.aliyun.com",
     "mirrors.cloud.tencent.com", "mirrors.tuna.tsinghua.edu.cn",
     "mirrors.huaweicloud.com", "gitcode.com", "sgl-project.github.io",
-    "www.minimax.io",
+    "www.minimax.io", "ollama.com",
 }
 
 FILE_EXT_RE = re.compile(r"\.(gguf|zip|exe|dmg|AppImage|deb|rpm|safetensors|tar\.[a-z0-9]+|whl|bin|pt|pth|onnx|mnn|ms|apk|7z|gz)$", re.I)
