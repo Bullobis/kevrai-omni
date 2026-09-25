@@ -212,6 +212,9 @@ npm run test:python
 # JS 语法冒烟（对 electron/*.js、renderer/*.js、renderer/modules/*.js 逐个 node --check）
 npm run test:js
 
+# 渲染层单元测试（node --test，跑 renderer/__tests__/*.test.js；部分模块用 jsdom 在 Node 下测 DOM 逻辑）
+npm run test:renderer
+
 # 端到端冒烟脚本（拉起 sidecar、打关键健康/目录接口）
 npm run smoke
 # 等价于：bash scripts/smoke.sh
