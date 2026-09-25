@@ -5,6 +5,7 @@ import { toast } from "./toast.js";
 import { unwrap, escapeHtml } from "./net.js";
 import { state, setState } from "./state.js";
 import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
+import { overlayOpen, overlayClose } from "./overlay-fx.js";
 
 function fmtBytes(n) {
   if (n == null || isNaN(n)) return "?";
@@ -179,16 +180,16 @@ async function lockSource(sourceId) {
 export function showDownloads() {
   if (!overlayEl) overlayEl = ensureOverlay();
   savedTrigger = recordFocus();
-  overlayEl.removeAttribute("hidden");
+  overlayOpen(overlayEl);
   renderOverlay();
   trapFocus(overlayEl);
 }
 
 export function closeDownloads() {
   if (!overlayEl) return;
-  overlayEl.setAttribute("hidden", "");
-  restoreFocus(savedTrigger);
+  restoreFocus(savedTrigger);   // 焦点立即归还
   savedTrigger = null;
+  overlayClose(overlayEl);
 }
 
 function renderOverlay() {

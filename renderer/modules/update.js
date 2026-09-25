@@ -10,6 +10,7 @@
 import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
+import { overlayOpen, overlayClose } from "./overlay-fx.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -20,15 +21,15 @@ function openOverlay() {
   const el = $("#update-overlay");
   if (!el) return;
   savedTrigger = recordFocus();
-  el.removeAttribute("hidden");
+  overlayOpen(el);
   trapFocus(el);
 }
 function closeOverlay() {
   const el = $("#update-overlay");
   if (!el) return;
-  el.setAttribute("hidden", "");
-  restoreFocus(savedTrigger);
+  restoreFocus(savedTrigger);   // 焦点立即归还
   savedTrigger = null;
+  overlayClose(el);
 }
 
 function setStatus(text) {
