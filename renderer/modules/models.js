@@ -122,6 +122,10 @@ function renderCard(m) {
   root.setAttribute("role", "button");
   root.setAttribute("aria-label", `选择模型 ${m.name}`);
   root.dataset.id = m.id || "";
+  // Highlight the card whose detail panel is currently open. The grid re-renders
+  // its window on scroll, so reading state here keeps the class in sync; clicks
+  // also call syncSelectedCards() to update already-mounted cards immediately.
+  if (state.selectedId && m.id && m.id === state.selectedId) root.classList.add("selected");
   const hw = m.hardware || {};
   const engineList = Array.isArray(m.engine) ? m.engine : (m.engine ? [m.engine] : []);
   const highlights = m._highlights || [];
@@ -238,7 +242,17 @@ function onCardClick(idx, item, e) {
     return;
   }
   setState({ selectedId: item.id || null });
+  syncSelectedCards();
   showDetail(item);
+}
+
+// Toggle the .selected ring/left-bar on the currently mounted cards after a
+// selection change (off-screen cards get it on their next window render).
+function syncSelectedCards() {
+  $$("#models-grid .vgrid-item").forEach((n) => {
+    n.classList.toggle("selected",
+      !!state.selectedId && n.dataset.id === state.selectedId);
+  });
 }
 
 async function installItem(item) {

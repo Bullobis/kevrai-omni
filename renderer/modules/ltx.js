@@ -2,6 +2,7 @@
 "use strict";
 import { api } from "./api.js";
 import { toast } from "./toast.js";
+import { createEmptyState } from "./empty-state.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -228,7 +229,15 @@ function renderActive(active) {
 
 function renderTaskList(tasks) {
   const host = document.getElementById("ltx-task-list");
-  if (!tasks.length) { host.innerHTML = `<p class="mut tiny">暂无任务</p>`; return; }
+  if (!host) return;
+  if (!tasks.length) {
+    host.replaceChildren(createEmptyState({
+      icon: "film",
+      title: "暂无任务",
+      hint: "生成过的任务会按时间显示在这里。",
+    }));
+    return;
+  }
   host.innerHTML = tasks.slice(0, 10).map((t) => `
     <div class="ltx-task-row state-${t.state}">
       <span class="ltx-task-id">${t.id}</span>
@@ -245,14 +254,25 @@ async function loadOutputs() {
     renderOutputs(body?.outputs || []);
   } catch (e) {
     const host = document.getElementById("ltx-gallery");
-    if (host) host.innerHTML = `<p class="mut tiny">暂无生成视频</p>`;
+    if (host) host.replaceChildren(createEmptyState({
+      icon: "image",
+      title: "暂无生成结果",
+      hint: "完成一次文生视频 / 图生视频后，结果会显示在这里。",
+    }));
   }
 }
 
 function renderOutputs(outputs) {
   const host = document.getElementById("ltx-gallery");
+  if (!host) return;
   if (!outputs.length) {
-    host.innerHTML = `<p class="mut tiny">暂无生成视频，完成一次生成后将显示在这里</p>`;
+    host.replaceChildren(createEmptyState({
+      icon: "image",
+      title: "暂无生成结果",
+      hint: "完成一次生成后，视频 / 动图会显示在这里。",
+      actionLabel: "刷新",
+    }));
+    host.querySelector(".es-action")?.addEventListener("click", () => loadOutputs());
     return;
   }
   host.innerHTML = outputs.map((o) => {
