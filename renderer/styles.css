@@ -1033,3 +1033,12 @@ html[data-theme="light"] .skeleton-card::after {
 @media (prefers-reduced-motion: reduce) {
   .skeleton-card::after { animation: none; }
 }
+
+/* Data portability (设置中心 · 数据管理) */
+.data-portability-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+.import-confirm {
+  margin-top: 12px; padding: 12px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--card);
+}
+.import-confirm-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.import-confirm[hidden] { display: none; }
