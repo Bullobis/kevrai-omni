@@ -52,31 +52,58 @@
 .cmdpal-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 9px 12px;
+  gap: 8px;
+  padding: 8px 12px;
   border-radius: var(--r-2, 8px);
   cursor: pointer;
   color: var(--fg, #e8eaed);
   font-size: var(--fs-base, 14px);
 }
+.cmdpal-item:hover { background: var(--card-hover, rgba(255, 255, 255, 0.06)); }
 .cmdpal-item.active {
-  background: var(--card-hover, rgba(255, 255, 255, 0.07));
+  background: var(--card-hover, rgba(255, 255, 255, 0.09));
   box-shadow: inset 2px 0 0 var(--acc, #4ca97a);
 }
+.cmdpal-item-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--mut, #9aa0a6);
+}
+.cmdpal-item.active .cmdpal-item-icon { color: var(--acc, #4ca97a); }
+.cmdpal-item-icon svg { width: 16px; height: 16px; }
 .cmdpal-item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cmdpal-item-hint {
   font-family: var(--mono, ui-monospace, monospace);
   font-size: var(--fs-xs, 12px);
   color: var(--mut, #9aa0a6);
+  white-space: nowrap;
+}
+
+/* 分组标题（空查询时：最近使用 / 导航 / 操作 / 主题 / 系统） */
+.cmdpal-group-header {
+  padding: 10px 12px 4px;
+  font-size: var(--fs-xs, 12px);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mut, #9aa0a6);
+  user-select: none;
 }
 
 .cmdpal-empty {
-  padding: 18px 12px;
+  padding: 22px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   text-align: center;
   color: var(--mut, #9aa0a6);
   font-size: var(--fs-sm, 13px);
 }
+.cmdpal-empty-emoji { font-size: 22px; opacity: 0.7; }
 
 /* ── Keyboard-shortcuts cheat-sheet (reuses the overlay/panel tokens) ─────── */
 .cmdpal-help {
@@ -84,13 +111,35 @@
   padding: 4px 8px 12px;
   max-height: 70vh;
   overflow-y: auto;
+  outline: none;
+}
+.cmdpal-help-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 10px 6px;
 }
 .cmdpal-help-title {
-  padding: 12px 10px 6px;
   font-size: var(--fs-md, 16px);
   font-weight: 600;
   color: var(--fg, #e8eaed);
 }
+.cmdpal-help-close {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-2, 8px);
+  border: 1px solid var(--bord, rgba(255, 255, 255, 0.1));
+  background: transparent;
+  color: var(--mut, #9aa0a6);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.cmdpal-help-close:hover { background: var(--card-hover, rgba(255, 255, 255, 0.07)); color: var(--fg, #e8eaed); }
+.cmdpal-help-close:focus-visible { box-shadow: var(--focus, 0 0 0 2px rgba(76, 169, 122, 0.85)); }
 .cmdpal-help-group {
   margin: 10px 8px 4px;
   font-size: var(--fs-xs, 12px);
@@ -111,15 +160,16 @@
 .cmdpal-help-row:hover { background: var(--card-hover, rgba(255, 255, 255, 0.06)); }
 .cmdpal-help-desc { flex: 1; }
 .cmdpal-help-row kbd {
-  font-family: var(--mono, ui-monospace, monospace);
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Consolas, monospace);
   font-size: var(--fs-xs, 12px);
   color: var(--fg, #e8eaed);
   background: var(--stack-2, #1a1c21);
-  border: 1px solid var(--bord, rgba(255, 255, 255, 0.1));
+  border: 1px solid var(--bord, rgba(255, 255, 255, 0.12));
   border-bottom-width: 2px;
   border-radius: 6px;
   padding: 2px 7px;
   white-space: nowrap;
+  line-height: 1.4;
 }
 @media (prefers-reduced-motion: reduce) {
   .cmdpal-overlay { backdrop-filter: none; }
