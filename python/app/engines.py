@@ -61,6 +61,17 @@ _HTTP_TIMEOUT = httpx.Timeout(connect=15.0, read=60.0, write=60.0, pool=15.0)
 # needs parallel installs (Neuron3-Engines audit).
 _INSTALL_LOCK = threading.Lock()
 
+# Guards the read-modify-write of ``installed.json``. ``install()``/
+# ``install_pip()`` already hold ``_INSTALL_LOCK``, but ``uninstall()``,
+# ``verify_installed()``'s state flip, and ``check_engine_updates``'s/
+# ``apply_engine_update``'s ``_upsert()`` do NOT. Without this lock an install
+# progress update (which re-reads + rewrites the whole manifest every chunk)
+# can read a snapshot, pause mid-write, and then clobber a concurrent
+# ``_upsert``'s freshly-added record. RLock because ``_set_state`` may be
+# re-entered and ``install`` already holds ``_INSTALL_LOCK`` (outer), never the
+# reverse, so there is no cycle.
+_MANIFEST_LOCK = threading.RLock()
+
 
 def _serialized_install(fn: Any) -> Any:
     """Run an install entry point under the global install mutex.
@@ -335,58 +346,60 @@ class EngineManager:
         _write_manifest(self.root, records)
 
     def _upsert(self, rec: EngineRecord) -> None:
-        recs = self._read()
-        for i, r in enumerate(recs):
-            if r.id == rec.id:
-                recs[i] = rec
-                self._write(recs)
-                return
-        recs.append(rec)
-        self._write(recs)
+        with _MANIFEST_LOCK:
+            recs = self._read()
+            for i, r in enumerate(recs):
+                if r.id == rec.id:
+                    recs[i] = rec
+                    self._write(recs)
+                    return
+            recs.append(rec)
+            self._write(recs)
 
     def _set_state(self, engine_id: str, state: EngineState, **kw: Any) -> EngineRecord | None:
-        recs = self._read()
-        for i, r in enumerate(recs):
-            if r.id == engine_id:
-                rr = EngineRecord(
-                    id=r.id,
-                    version=kw.get("version", r.version),
-                    install_path=kw.get("install_path", r.install_path),
-                    sha256=kw.get("sha256", r.sha256),
-                    size_bytes=kw.get("size_bytes", r.size_bytes),
-                    installed_at=kw.get("installed_at", r.installed_at),
-                    state=state,
-                    last_error=kw.get("last_error", r.last_error),
-                    source_url=kw.get("source_url", r.source_url),
-                    install_mode=kw.get("install_mode", r.install_mode),
-                    progress=kw.get("progress", r.progress),
-                    downloaded_bytes=kw.get("downloaded_bytes", r.downloaded_bytes),
-                    total_bytes=kw.get("total_bytes", r.total_bytes),
-                    active_url=kw.get("active_url", r.active_url),
-                )
-                recs[i] = rr
-                self._write(recs)
-                return rr
-        # Not in manifest yet — create a fresh record.
-        rr = EngineRecord(
-            id=engine_id,
-            state=state,
-            version=kw.get("version", ""),
-            install_path=kw.get("install_path", ""),
-            sha256=kw.get("sha256", ""),
-            size_bytes=kw.get("size_bytes", 0),
-            installed_at=kw.get("installed_at", ""),
-            last_error=kw.get("last_error", ""),
-            source_url=kw.get("source_url", ""),
-            install_mode=kw.get("install_mode", "binary"),
-            progress=kw.get("progress", 0.0),
-            downloaded_bytes=kw.get("downloaded_bytes", 0),
-            total_bytes=kw.get("total_bytes", 0),
-            active_url=kw.get("active_url", ""),
-        )
-        recs.append(rr)
-        self._write(recs)
-        return rr
+        with _MANIFEST_LOCK:
+            recs = self._read()
+            for i, r in enumerate(recs):
+                if r.id == engine_id:
+                    rr = EngineRecord(
+                        id=r.id,
+                        version=kw.get("version", r.version),
+                        install_path=kw.get("install_path", r.install_path),
+                        sha256=kw.get("sha256", r.sha256),
+                        size_bytes=kw.get("size_bytes", r.size_bytes),
+                        installed_at=kw.get("installed_at", r.installed_at),
+                        state=state,
+                        last_error=kw.get("last_error", r.last_error),
+                        source_url=kw.get("source_url", r.source_url),
+                        install_mode=kw.get("install_mode", r.install_mode),
+                        progress=kw.get("progress", r.progress),
+                        downloaded_bytes=kw.get("downloaded_bytes", r.downloaded_bytes),
+                        total_bytes=kw.get("total_bytes", r.total_bytes),
+                        active_url=kw.get("active_url", r.active_url),
+                    )
+                    recs[i] = rr
+                    self._write(recs)
+                    return rr
+            # Not in manifest yet — create a fresh record.
+            rr = EngineRecord(
+                id=engine_id,
+                state=state,
+                version=kw.get("version", ""),
+                install_path=kw.get("install_path", ""),
+                sha256=kw.get("sha256", ""),
+                size_bytes=kw.get("size_bytes", 0),
+                installed_at=kw.get("installed_at", ""),
+                last_error=kw.get("last_error", ""),
+                source_url=kw.get("source_url", ""),
+                install_mode=kw.get("install_mode", "binary"),
+                progress=kw.get("progress", 0.0),
+                downloaded_bytes=kw.get("downloaded_bytes", 0),
+                total_bytes=kw.get("total_bytes", 0),
+                active_url=kw.get("active_url", ""),
+            )
+            recs.append(rr)
+            self._write(recs)
+            return rr
 
     # --- mutations ---
 
@@ -588,10 +601,12 @@ class EngineManager:
                         with contextlib.suppress(OSError):
                             p.unlink()
             self._set_state(engine_id, EngineState.NOT_INSTALLED)
-            # Remove the manifest entry entirely
-            recs = self._read()
-            recs = [r for r in recs if r.id != engine_id]
-            self._write(recs)
+            # Remove the manifest entry entirely (locked RMW — a concurrent
+            # install progress write must not re-add the entry we just dropped).
+            with _MANIFEST_LOCK:
+                recs = self._read()
+                recs = [r for r in recs if r.id != engine_id]
+                self._write(recs)
             return True
         except Exception:
             return False
