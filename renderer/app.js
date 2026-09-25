@@ -22,11 +22,12 @@ import { initSearch, runSearch } from "./modules/search.js";
 import { initLtx } from "./modules/ltx.js";
 import { renderEngines, wireEngineUpdates } from "./modules/engines.js";
 import { wireSettings, openSettings, closeSettings } from "./modules/settings.js";
+import { wireCompare, openCompare } from "./modules/compare.js";
 import { wireDownloads, showDownloads } from "./modules/downloads.js";
 import { wireDragDrop } from "./modules/dragdrop.js";
 import { wireOnboarding } from "./modules/onboarding.js";
 import { wireUpdate } from "./modules/update.js";
-import { initCommandPalette } from "./modules/command-palette.js";
+import { initCommandPalette, registerAction } from "./modules/command-palette.js";
 import { initI18n, t } from "./modules/i18n.js";
 import { createEmptyState } from "./modules/empty-state.js";
 import { whenIdle } from "./modules/idle.js";
@@ -441,6 +442,7 @@ async function bootstrap() {
   initModels();
   initSearch(getVgrid());
   wireSettings();
+  wireCompare();
   wireDownloads();
   wireDragDrop();
   wireGlobalUI();
@@ -449,7 +451,12 @@ async function bootstrap() {
   const i18nReady = initI18n();
   wirePaletteEvents();
   // 命令面板构建时会读取占位文案，须在字典加载完成后再初始化，避免占位符显示原始 key。
-  i18nReady.then(() => initCommandPalette());
+  i18nReady.then(() => {
+    initCommandPalette();
+    registerAction("openCompare", () => t("compare.title"),
+      () => { try { openCompare(); } catch (_) {} },
+      ["compare", "对比", "比较", "models"], "columns", "操作");
+  });
   // logo / 头像的加载失败降级（替代此前被 CSP 拦截的内联 onerror）
   wireLogoFallbacks();
 
