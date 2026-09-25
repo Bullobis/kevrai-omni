@@ -8,6 +8,7 @@
 
 import { api } from "./modules/api.js";
 import { toast } from "./modules/toast.js";
+import { initErrorHandler } from "./modules/error-handler.js";
 import { escapeHtml } from "./modules/net.js";
 import { renderEnvironmentsPage } from "./modules/environments.js";
 import { renderHardwarePage } from "./modules/hardware.js";
@@ -433,6 +434,10 @@ function wirePaletteEvents() {
 }
 
 async function bootstrap() {
+  // R6: arm the global error net FIRST, so any error thrown by the module
+  // initializers below (and any later runtime/async failure) has a window
+  // listener already in place. Additive — it never swallows or wraps calls.
+  initErrorHandler();
   initModels();
   initSearch(getVgrid());
   wireSettings();
