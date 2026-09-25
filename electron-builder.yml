@@ -101,6 +101,10 @@ mac:
   target:
     - target: dmg
       arch: [x64, arm64]
+    # Squirrel.Mac (electron-updater) downloads only the .zip, never the .dmg.
+    # Without a zip target no latest-mac.yml is produced and auto-update fails.
+    - target: zip
+      arch: [x64, arm64]
   category: public.app-category.developer-tools
   icon: assets/icons/icon-1024.png
 
