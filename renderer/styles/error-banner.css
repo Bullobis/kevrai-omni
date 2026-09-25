@@ -1,0 +1,30 @@
+/* ---------- Global error fallback banner — styles/error-banner.css ----------
+   Shown by modules/error-handler.js when a script/module fails to load and the
+   page is at risk of looking broken. Sits at the very top of the viewport,
+   BELOW the toasts (toast z-index: 998 → banner 997) and above modals.
+   Uses theme tokens so it coordinates with both dark and light themes. */
+.global-error-banner {
+  position: fixed; top: 0; left: 0; right: 0; width: 100%;
+  z-index: 997;
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 10px 16px;
+  background: var(--stack-3);
+  border-bottom: 1px solid rgba(224, 108, 117, 0.45);
+  box-shadow: var(--shadow);
+  color: var(--fg); font-size: 13px; line-height: 1.4;
+  transform: translateY(-100%);            /* off-screen until .gerr-in slides it down */
+  transition: transform .28s cubic-bezier(.21, 1.02, .73, 1);
+}
+.global-error-banner.gerr-in  { transform: translateY(0); }
+.global-error-banner.gerr-out { transform: translateY(-100%); }
+
+.gerr-msg { flex: 1 1 auto; min-width: 0; word-break: break-word; }
+.gerr-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+.gerr-actions button { padding: 5px 12px; font-size: 12px; }
+.gerr-reload { color: var(--err); }
+.gerr-close   { font-size: 13px; line-height: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .global-error-banner { transition: none; transform: none; }
+  .global-error-banner.gerr-out { transform: none; }
+}
