@@ -29,7 +29,7 @@
   --bg2: var(--stack-2);
   /* ── 文本 ── */
   --fg:   #e8eaed;
-  --mut:  #9aa0a6;            /* AA on stack-1/2 */
+  --mut:  #a8adb3;            /* a11y: 8.1:1 on stack-1，11px 小字留足 AA 余量 */
   /* ── 语义色（唯一强调色 + 状态色）── */
   --acc:  #4ca97a;            /* 品牌绿，对应 Cherry 的 oklch(0.77 0.208 146) */
   --acc2: #6fb2d2;
@@ -103,7 +103,7 @@ html[data-theme="light"] {
   --bg-2: #eef0f4;
   --bg2: var(--bg-2);
   --fg:   #1f2328;
-  --mut:  #5c6470;
+  --mut:  #4a515c;            /* a11y: 8.0:1 on white，11px 小字留足 AA 余量 */
   --acc:  #2f7d55;
   --acc2: #2b6b8f;
   --hot:      #c44a1f;            /* 稍暗的橙，保证白底对比度 */
