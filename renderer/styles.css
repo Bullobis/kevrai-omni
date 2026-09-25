@@ -943,3 +943,57 @@ body.is-mac .win-ctl { display: none; }
 .titlebar button, .titlebar input, .titlebar .status, .titlebar .win-ctl {
   -webkit-app-region: no-drag;
 }
+
+/* ── First-load skeleton grid (model market) ──────────────────────────────── */
+#models-grid.is-loading { display: none; }
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  padding: 16px;
+}
+.skeleton-grid[hidden] { display: none; }
+.skeleton-card {
+  height: 168px;
+  box-sizing: border-box;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: var(--r-3, 12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #1a1c21;
+  position: relative;
+  overflow: hidden;
+}
+.sk-line { height: 12px; border-radius: 6px; background: #26282e; }
+.sk-w55 { width: 55%; height: 16px; }
+.sk-w90 { width: 90%; }
+.sk-w70 { width: 70%; }
+.sk-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; }
+.sk-pill { width: 64px; height: 20px; border-radius: 999px; background: #26282e; }
+.sk-btn { width: 72px; height: 30px; border-radius: 8px; background: #26282e; }
+/* One shimmer sweep over the whole card. */
+.skeleton-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+  animation: kevrai-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes kevrai-shimmer { 100% { transform: translateX(100%); } }
+/* Light theme: neutral gray placeholders + dark shimmer. */
+html[data-theme="light"] .skeleton-card {
+  background: #eef0f3;
+  border-color: rgba(0, 0, 0, 0.06);
+}
+html[data-theme="light"] .sk-line,
+html[data-theme="light"] .sk-pill,
+html[data-theme="light"] .sk-btn { background: #e0e3e8; }
+html[data-theme="light"] .skeleton-card::after {
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.06), transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-card::after { animation: none; }
+}
