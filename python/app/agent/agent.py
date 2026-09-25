@@ -442,13 +442,11 @@ class Agent:
             except Exception:
                 self.ctx.hardware_info = {}
 
-        # Record user message
-        self._remember_user(session_id, message)
-
         # Check if LLM is ready
         llm_ready, model_name = self.router.is_ready()
         if not llm_ready:
             log.info("agent running in rule-based mode (no LLM loaded)")
+            self._remember_user(session_id, message)
             result = self._rule_based_response(message, session_id)
             result.duration_ms = int((time.time() - t0) * 1000)
             self._remember_result(session_id, message, result.answer,
@@ -456,8 +454,14 @@ class Agent:
             return result
 
         # --- LLM-driven ReAct loop ---
-        system_prompt = self._build_system_prompt()
+        # Build the prior-turn history BEFORE persisting the current user turn.
+        # The current message is already emitted separately under
+        # "## 当前用户请求"; recording it first used to make it show up a second
+        # time inside the history block (duplicating ~500 chars and confusing
+        # the model on every first turn).
         history_block = self._build_history_block(session_id, n=10)
+        system_prompt = self._build_system_prompt()
+        self._remember_user(session_id, message)
 
         steps: list[AgentStep] = []
         tools_used: list[str] = []

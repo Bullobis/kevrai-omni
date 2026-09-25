@@ -3429,7 +3429,13 @@ async def ws_agent(websocket: WebSocket, session_id: str) -> None:
                 })
             except Exception as e:
                 log.exception("agent websocket run failed")
-                await websocket.send_json({"event": "error", "message": str(e)})
+                # The client may already have disconnected mid-run (agent.run
+                # has no cooperative cancellation — see neuron-11 parliament
+                # note), so this secondary send can itself raise. Suppress it:
+                # an error frame nobody will read must not turn into an
+                # unhandled task exception on the server.
+                with contextlib.suppress(Exception):
+                    await websocket.send_json({"event": "error", "message": str(e)})
             finally:
                 agent.set_step_callback(None)
     except WebSocketDisconnect:
