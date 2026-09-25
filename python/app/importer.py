@@ -460,7 +460,6 @@ HF_RESOLVE = "https://huggingface.co"
 # many CN networks, so we probe mirrors first (each with a short timeout)
 # before falling back to the official host.
 _HF_API_MIRRORS: tuple[str, ...] = (
-    "https://hf-cdn.sufy.com/api",
     "https://hf-mirror.com/api",
     "https://huggingface.co/api",
 )

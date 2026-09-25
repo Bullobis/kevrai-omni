@@ -790,22 +790,46 @@ def model_gguf_files(model_id: str) -> dict[str, Any]:
     raise HTTPException(status_code=404, detail=f"model {model_id} not found")
 
 
+#: TTL cache for the live GGUF enumeration (it hits the network for every repo).
+_GGUF_CACHE: dict[str, Any] = {"ts": 0.0, "repos": None}
+_GGUF_TTL_SECONDS: float = 600.0
+
+
 @app.get("/api/gguf-repos")
-def gguf_repos() -> dict[str, Any]:
-    """List all GGUF repos and their files (enumerated live from HF)."""
-    # Two entry shapes (success carries `files` + `count`, failure carries
-    # `error`), so the element type must be declared — otherwise mypy unifies
-    # the list on whichever dict literal it sees first and rejects the other.
-    out: list[dict[str, Any]] = []
-    for g in CATALOG.gguf_repos:
+def gguf_repos(force: bool = False) -> dict[str, Any]:
+    """List all GGUF repos and their files (enumerated live from HF).
+
+    Repos are enumerated concurrently (the per-repo call is blocking) and the
+    result is held in a short TTL cache so repeated requests do not re-hit the
+    network. ``?force=true`` bypasses the cache.
+    """
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+
+    now = time.monotonic()
+    if (
+        not force
+        and _GGUF_CACHE["repos"] is not None
+        and (now - _GGUF_CACHE["ts"]) < _GGUF_TTL_SECONDS
+    ):
+        return {"repos": _GGUF_CACHE["repos"], "cached": True}
+
+    def one(g: Any) -> dict[str, Any]:
         try:
             files = list_gguf_files(g.owner_repo, g.filter)
-        except Exception as e:
-            files = []
-            out.append({"id": g.id, "name": g.name, "owner_repo": g.owner_repo, "error": str(e)})
-            continue
-        out.append({"id": g.id, "name": g.name, "owner_repo": g.owner_repo, "files": files, "count": len(files)})
-    return {"repos": out}
+        except Exception as e:  # noqa: BLE001 — keep per-repo failure isolated
+            return {"id": g.id, "name": g.name, "owner_repo": g.owner_repo, "error": str(e)}
+        return {"id": g.id, "name": g.name, "owner_repo": g.owner_repo,
+                "files": files, "count": len(files)}
+
+    targets = list(CATALOG.gguf_repos)
+    workers = min(12, max(4, len(targets)))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        out = list(pool.map(one, targets))
+
+    _GGUF_CACHE["ts"] = now
+    _GGUF_CACHE["repos"] = out
+    return {"repos": out, "cached": False}
 
 
 #: Extensions that may be imported as a model file or archive (P0-3).
