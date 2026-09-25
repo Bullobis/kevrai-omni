@@ -36,7 +36,7 @@ jobs:
           - name: mac
             os: macos-latest
             target: "--mac dmg"
-            archflags: ""
+            archflags: "--x64 --arm64"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -94,12 +94,13 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-files
+          # 只收集品牌最终产物（Kevrai-Omni-*）与更新元数据（latest*.yml），
+          # 排除 win-unpacked/ 内的 raw exe（Kevrai.Omni.exe）、elevate.exe、
+          # builder-debug.yml、app-update.yml 等 electron-builder 中间文件。
           find dist -type f \
-            \( -name "*.AppImage" -o -name "*.deb" -o -name "*.exe" \
-               -o -name "*.zip" -o -name "*.dmg" -o -name "*.yml" \
-               -o -name "*.blockmap" \) \
+            \( -name "Kevrai-Omni-*" -o -name "latest*.yml" \) \
             -exec cp {} release-files/ \;
-          # 仅对安装包/归档生成 SHA256SUMS（不含元数据/差分文件）
+          # 对安装包/归档生成 SHA256SUMS（不含 latest*.yml 与 blockmap）
           ( cd release-files \
             && sha256sum $(ls | grep -vE '^(latest|.*\.blockmap$)') > SHA256SUMS.txt ) || true
           ls -la release-files
