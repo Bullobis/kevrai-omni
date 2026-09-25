@@ -158,6 +158,8 @@ function registerDefaults() {
       const b = hasDocument ? document.getElementById("sidebar-toggle") : null;
       if (b) b.click();
     }, ["sidebar", "侧边栏", "collapse", "折叠", "menu"]);
+  registerAction("showShortcuts", () => "键盘快捷键",
+    () => openHelp(), ["shortcuts", "hotkeys", "快捷键", "键盘", "help", "帮助"]);
 }
 
 // ── DOM 构建（仅在浏览器环境执行）────────────────────────────────────────────
@@ -301,6 +303,79 @@ export function isOpen() {
   return !!overlay && !overlay.hidden;
 }
 
+// ── Keyboard shortcuts cheat-sheet (Ctrl/⌘+/) ────────────────────────────────
+const SHORTCUTS = [
+  { group: "全局", items: [
+    ["Ctrl/Cmd K", "打开命令面板"],
+    ["Ctrl/Cmd /", "键盘快捷键速查"],
+    ["Ctrl/Cmd ,", "打开设置"],
+    ["Ctrl/Cmd D", "打开下载面板"],
+  ] },
+  { group: "导航", items: [
+    ["Ctrl/Cmd 1…9 / 0", "切换到第 N 个页面"],
+    ["Esc", "关闭弹窗 / 面板"],
+  ] },
+  { group: "命令面板", items: [
+    ["↑ ↓", "选择命令"],
+    ["Enter", "执行命令"],
+  ] },
+];
+
+let helpOverlay = null;
+function buildHelpOverlay() {
+  if (helpOverlay) return helpOverlay;
+  helpOverlay = document.createElement("div");
+  helpOverlay.className = "cmdpal-overlay";
+  helpOverlay.setAttribute("role", "dialog");
+  helpOverlay.setAttribute("aria-modal", "true");
+  helpOverlay.setAttribute("aria-label", "键盘快捷键");
+  helpOverlay.hidden = true;
+
+  const panel = document.createElement("div");
+  panel.className = "cmdpal-panel cmdpal-help";
+  const title = document.createElement("div");
+  title.className = "cmdpal-help-title";
+  title.textContent = "键盘快捷键";
+  panel.appendChild(title);
+  for (const g of SHORTCUTS) {
+    const gh = document.createElement("div");
+    gh.className = "cmdpal-help-group";
+    gh.textContent = g.group;
+    panel.appendChild(gh);
+    for (const [keys, desc] of g.items) {
+      const row = document.createElement("div");
+      row.className = "cmdpal-help-row";
+      const d = document.createElement("span");
+      d.className = "cmdpal-help-desc";
+      d.textContent = desc;
+      const kbd = document.createElement("kbd");
+      kbd.textContent = keys;
+      row.appendChild(d);
+      row.appendChild(kbd);
+      panel.appendChild(row);
+    }
+  }
+  helpOverlay.appendChild(panel);
+  helpOverlay.addEventListener("mousedown", (e) => {
+    if (e.target === helpOverlay) closeHelp();
+  });
+  document.body.appendChild(helpOverlay);
+  return helpOverlay;
+}
+function openHelp() {
+  if (!hasDocument) return;
+  buildHelpOverlay();
+  helpOverlay.hidden = false;
+}
+function closeHelp() {
+  if (helpOverlay) helpOverlay.hidden = true;
+}
+function gotoNth(n) {
+  const tabs = document.querySelectorAll(".sidebar .pane-tab");
+  const el = tabs[n];
+  if (el) el.click();
+}
+
 // ── init：绑定全局快捷键 ─────────────────────────────────────────────────────
 export function initCommandPalette(container) {
   if (inited) return;
@@ -308,14 +383,33 @@ export function initCommandPalette(container) {
   registerDefaults();
   if (!hasWindow || !hasDocument) return;
   buildOverlay();
-  // Ctrl+K / Meta+K 唤起；再按一次关闭
+  // Global shortcuts. Every one requires Ctrl/⌘, so it never interferes
+  // with normal typing in inputs.
   window.addEventListener("keydown", (e) => {
     const mod = e.ctrlKey || e.metaKey;
-    if (mod && (e.key === "k" || e.key === "K")) {
+    if (!mod) return;
+    const k = e.key;
+    if (k === "k" || k === "K") {
       e.preventDefault();
       if (isOpen()) closeCommandPalette();
       else openCommandPalette();
+    } else if (k === "/") {
+      e.preventDefault();
+      openHelp();
+    } else if (k === ",") {
+      e.preventDefault();
+      emit("kevrai:open-settings");
+    } else if (k === "d" || k === "D") {
+      e.preventDefault();
+      emit("kevrai:open-downloads");
+    } else if (/^[0-9]$/.test(k)) {
+      e.preventDefault();
+      gotoNth(k === "0" ? 9 : Number(k) - 1);
     }
+  });
+  // Esc closes the cheat-sheet (when its focus isn't inside an input).
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && helpOverlay && !helpOverlay.hidden) closeHelp();
   });
 }
 

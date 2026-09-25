@@ -171,6 +171,7 @@
 > 完整的本地开发环境搭建（Windows / Linux / macOS）、测试与打包细节见
 > **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**；sidecar REST/WebSocket 接口见
 > **[docs/API.md](docs/API.md)**；常见问题排查见 **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)**。
+> 本地部署 / 无头 sidecar / GPU 选型 / 离线内网见 **[LOCAL_DEPLOYMENT.md](LOCAL_DEPLOYMENT.md)**。
 
 ```bash
 git clone https://github.com/Bullobis/kevrai-omni.git

@@ -1048,7 +1048,7 @@
       "sources": [
         "https://huggingface.co/tencent/HunyuanVideo/",
         "https://hf-mirror.com/tencent/HunyuanVideo/",
-        "https://modelscope.cn/models/tencent/HunyuanVideo/resolve/master/"
+        "https://modelscope.cn/models/tencent/HunyuanVideo"
       ],
       "primary_url": "https://huggingface.co/tencent/HunyuanVideo/",
       "hardware": {

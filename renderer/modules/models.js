@@ -20,6 +20,32 @@ export function initModels() {
     renderItem: renderCard,
     onItemClick: onCardClick,
   });
+  buildGridSkeleton();
+}
+
+// First-load skeleton: 8 placeholder cards that mirror the real grid layout.
+function buildGridSkeleton() {
+  const host = document.getElementById("models-skeleton");
+  if (!host || host.childElementCount) return;
+  const card = () => {
+    const c = document.createElement("div");
+    c.className = "skeleton-card";
+    c.innerHTML =
+      '<div class="sk-line sk-w55"></div>' +
+      '<div class="sk-line sk-w90"></div>' +
+      '<div class="sk-line sk-w70"></div>' +
+      '<div class="sk-foot"><span class="sk-pill"></span><span class="sk-btn"></span></div>';
+    return c;
+  };
+  for (let i = 0; i < 8; i++) host.appendChild(card());
+}
+
+// Reveal the real grid and retire the skeleton (called once data arrives).
+export function hideGridSkeleton() {
+  const grid = document.getElementById("models-grid");
+  const sk = document.getElementById("models-skeleton");
+  if (grid) grid.classList.remove("is-loading");
+  if (sk) sk.hidden = true;
 }
 
 export function renderModelGrid() {
@@ -27,6 +53,7 @@ export function renderModelGrid() {
   const items = (state.models || []).slice();
   $("#models-count").textContent = `${items.length} 条`;
   vgrid.setItems(items);
+  hideGridSkeleton();
 }
 
 // v2.9.0 — source logo badge. HF ships no logo API, so the 🤗 emoji stands in;

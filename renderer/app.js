@@ -16,7 +16,7 @@ import { initAgent } from "./modules/agent.js";
 import { state, setState } from "./modules/state.js";
 import { applyTheme, wireThemeListener } from "./modules/theme.js";
 import { initModels, renderModelGrid, populateCategoryFilter,
-         wireLogoFallbacks, getVgrid } from "./modules/models.js";
+         wireLogoFallbacks, getVgrid, hideGridSkeleton } from "./modules/models.js";
 import { initSearch, runSearch } from "./modules/search.js";
 import { initLtx } from "./modules/ltx.js";
 import { renderEngines, wireEngineUpdates } from "./modules/engines.js";
@@ -81,6 +81,8 @@ export async function loadAll() {
     runSearch({ resetPage: true }).catch(() => {});
   } catch (e) {
     setHealthErr(String(e?.message || e));
+    // Don't leave the market stuck on the skeleton if loading failed.
+    hideGridSkeleton();
   }
 }
 

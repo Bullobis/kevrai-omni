@@ -153,6 +153,37 @@ class Agent:
         self._step_callback = cb
 
     # ------------------------------------------------------------------
+    # Best-effort memory persistence
+    # ------------------------------------------------------------------
+    # Memory (SQLite) writes are a side-effect: a locked/corrupt DB or a full
+    # disk must never discard an answer the loop already computed, nor crash the
+    # request. Each call is isolated so one failing write does not skip the
+    # other.
+    def _remember_user(self, session_id: str, message: str) -> None:
+        if not self.memory:
+            return
+        try:
+            self.memory.add_message(session_id, "user", message)
+        except Exception as e:  # noqa: BLE001 - best-effort persistence
+            log.warning("agent: persist user message failed: %s", e)
+
+    def _remember_result(
+        self,
+        session_id: str,
+        message: str,
+        answer: str,
+        tools_used: list[str],
+        success: bool,
+    ) -> None:
+        if not self.memory:
+            return
+        try:
+            self.memory.add_message(session_id, "assistant", answer)
+            self.memory.record_task(session_id, message[:200], tools_used, success=success)
+        except Exception as e:  # noqa: BLE001 - best-effort persistence
+            log.warning("agent: persist assistant result failed: %s", e)
+
+    # ------------------------------------------------------------------
     # Context building
     # ------------------------------------------------------------------
     def _build_system_prompt(self) -> str:
@@ -412,8 +443,7 @@ class Agent:
                 self.ctx.hardware_info = {}
 
         # Record user message
-        if self.memory:
-            self.memory.add_message(session_id, "user", message)
+        self._remember_user(session_id, message)
 
         # Check if LLM is ready
         llm_ready, model_name = self.router.is_ready()
@@ -421,9 +451,8 @@ class Agent:
             log.info("agent running in rule-based mode (no LLM loaded)")
             result = self._rule_based_response(message, session_id)
             result.duration_ms = int((time.time() - t0) * 1000)
-            if self.memory:
-                self.memory.add_message(session_id, "assistant", result.answer)
-                self.memory.record_task(session_id, message[:200], result.tools_used, success=True)
+            self._remember_result(session_id, message, result.answer,
+                                  result.tools_used, success=True)
             return result
 
         # --- LLM-driven ReAct loop ---
@@ -549,10 +578,9 @@ class Agent:
             duration_ms=int((time.time() - t0) * 1000),
         )
 
-        # Persist
-        if self.memory:
-            self.memory.add_message(session_id, "assistant", final_answer)
-            self.memory.record_task(session_id, message[:200], tools_used, success=not error_msg)
+        # Persist (best-effort — a memory failure must not discard the answer).
+        self._remember_result(session_id, message, final_answer,
+                              tools_used, success=not error_msg)
 
         return result
 
