@@ -22,6 +22,7 @@ import logging
 import os
 import re
 import sys
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -1404,8 +1405,16 @@ async def hub_download(request: Request, body: HubDownloadReq) -> dict[str, Any]
     extra_mirrors = getattr(settings, "extra_model_mirrors", []) or []
     also_on = listing.get("also_on") or []
     dl: Downloader = _get_downloader(request)
-    jobs: dict[str, Any] = getattr(request.app.state, "hub_jobs", None) or {}
-    request.app.state.hub_jobs = jobs
+    # Fetch the shared job table. Do NOT use ``getattr(...) or {}``: an empty
+    # dict is falsy, so that would allocate a *fresh* dict on every concurrent
+    # request while the table is still empty, assign it to app.state.hub_jobs,
+    # and then lose the job the other coroutine registered on its own copy —
+    # the UI would 404 on the second job immediately. Only allocate when the
+    # attribute is genuinely absent (e.g. lifespan not entered).
+    jobs: dict[str, Any] | None = getattr(request.app.state, "hub_jobs", None)
+    if jobs is None:
+        jobs = {}
+        request.app.state.hub_jobs = jobs
     job_id = uuid.uuid4().hex
     tasks_out: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
@@ -2947,47 +2956,58 @@ def ltx_outputs(request: Request) -> dict[str, Any]:
 # OpenClaw call Kevrai's local models).
 
 _AGENT_SINGLETON: dict[str, Any] = {}
+# Guards the lazy first-time build of the agent singleton. The sync /api/agent/*
+# endpoints run in the FastAPI thread-pool; two concurrent first-callers used to
+# both miss the cache and each build an Agent (opening a second sqlite
+# memory connection + skill manager), the loser's object orphaned — a resource
+# leak and inconsistent in-memory state. Double-checked locking keeps the fast
+# path lock-free.
+_AGENT_INIT_LOCK = threading.Lock()
 
 
 def _get_agent(request: Request):
     """Lazily build and cache the agent singleton for this sidecar instance."""
     if "agent" in _AGENT_SINGLETON:
         return _AGENT_SINGLETON["agent"]
-    from .agent import Agent, AgentMemory, ModelRouter, ToolContext, skill_hub
-    from .agent.tools import build_skill_manager
+    with _AGENT_INIT_LOCK:
+        # Re-check under the lock: another thread may have built it already.
+        if "agent" in _AGENT_SINGLETON:
+            return _AGENT_SINGLETON["agent"]
+        from .agent import Agent, AgentMemory, ModelRouter, ToolContext, skill_hub
+        from .agent.tools import build_skill_manager
 
-    db_path = APP_ROOT / "agent" / "memory.sqlite3"
-    memory = AgentMemory(db_path)
-    router = ModelRouter()
-    # v2.8.0: pluggable skills; enable/disable state persists next to memory.
-    skill_state = APP_ROOT / "agent" / "skills.json"
-    # v2.9.0: skills imported through the skill hub are layered on top of the
-    # built-in set via ``extra_skills`` — they never mutate BUILTIN_SKILLS.
-    try:
-        imported = skill_hub.load_imported(skill_hub.default_library_root(APP_ROOT))
-    except Exception as exc:  # pragma: no cover - defensive
-        log.warning("skill hub load failed: %s", exc)
-        imported = []
-    skill_manager = build_skill_manager(skill_state, extra_skills=imported)
+        db_path = APP_ROOT / "agent" / "memory.sqlite3"
+        memory = AgentMemory(db_path)
+        router = ModelRouter()
+        # v2.8.0: pluggable skills; enable/disable state persists next to memory.
+        skill_state = APP_ROOT / "agent" / "skills.json"
+        # v2.9.0: skills imported through the skill hub are layered on top of the
+        # built-in set via ``extra_skills`` — they never mutate BUILTIN_SKILLS.
+        try:
+            imported = skill_hub.load_imported(skill_hub.default_library_root(APP_ROOT))
+        except Exception as exc:  # pragma: no cover - defensive
+            log.warning("skill hub load failed: %s", exc)
+            imported = []
+        skill_manager = build_skill_manager(skill_state, extra_skills=imported)
 
-    hw = _HW_CACHE["data"] or {}
-    # NOTE: detect_hardware is async; we must not call it here in this sync
-    # helper without awaiting (would store a coroutine instead of a dict).
-    # If the cache is empty, the check_hardware tool will detect on first
-    # use using a worker thread. The /api/hardware endpoint populates this
-    # cache when called by the UI.
-    ctx = ToolContext(
-        catalog=CATALOG,
-        engines_catalog=ENGINES,
-        hardware_info=hw,
-        memory=memory,
-        settings=getattr(request.app.state, "settings", None),
-        models_dir=MODELS_DIR,
-        app_root=APP_ROOT,
-    )
-    agent = Agent(memory=memory, router=router, ctx=ctx, skill_manager=skill_manager)
-    _AGENT_SINGLETON["agent"] = agent
-    return agent
+        hw = _HW_CACHE["data"] or {}
+        # NOTE: detect_hardware is async; we must not call it here in this sync
+        # helper without awaiting (would store a coroutine instead of a dict).
+        # If the cache is empty, the check_hardware tool will detect on first
+        # use using a worker thread. The /api/hardware endpoint populates this
+        # cache when called by the UI.
+        ctx = ToolContext(
+            catalog=CATALOG,
+            engines_catalog=ENGINES,
+            hardware_info=hw,
+            memory=memory,
+            settings=getattr(request.app.state, "settings", None),
+            models_dir=MODELS_DIR,
+            app_root=APP_ROOT,
+        )
+        agent = Agent(memory=memory, router=router, ctx=ctx, skill_manager=skill_manager)
+        _AGENT_SINGLETON["agent"] = agent
+        return agent
 
 
 class AgentChatReq(BaseModel):

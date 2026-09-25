@@ -524,6 +524,12 @@ _CHAT_TIMEOUT_S = 600.0
 _SUBPROCESS_STREAM_TIMEOUT_S = _STREAM_GENERATION_TIMEOUT_S
 
 _CLIENT: _MnnSubprocessClient | None = None
+# Guards the lazy first-time construction of the subprocess client. Without it,
+# two concurrent threadpool callers (e.g. two simultaneous /api/mnn/load +
+# /api/mnn/chat) both see _CLIENT is None, each build a client, and each
+# _ensure_started() spawns its own MNN child process — the orphaned client's
+# child leaks until process exit.
+_CLIENT_INIT_LOCK = threading.Lock()
 
 
 def _subprocess_mode() -> bool:
@@ -540,7 +546,10 @@ def _subprocess_mode() -> bool:
 def _get_client() -> _MnnSubprocessClient:
     global _CLIENT
     if _CLIENT is None:
-        _CLIENT = _MnnSubprocessClient()
+        with _CLIENT_INIT_LOCK:
+            # Double-checked: another thread may have built it while we waited.
+            if _CLIENT is None:
+                _CLIENT = _MnnSubprocessClient()
     return _CLIENT
 
 
