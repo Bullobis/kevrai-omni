@@ -1,0 +1,54 @@
+/* ---------- Toasts (top-right) — styles/toast.css ----------
+   Migrated from styles.css (was lines 424-440). Uses theme tokens so it
+   coordinates with both dark and light themes (no hard-coded panel colors). */
+.toast-stack {
+  position: fixed; top: 64px; right: 22px; z-index: 998;
+  display: flex; flex-direction: column; gap: 8px; width: 320px;
+}
+.toast-item {
+  position: relative; overflow: hidden;
+  display: flex; align-items: flex-start; gap: 9px;
+  background: var(--stack-3); border: 1px solid var(--bord);
+  padding: 11px 13px; border-radius: var(--r-3); box-shadow: var(--shadow);
+  color: var(--fg); font-size: 13px; line-height: 1.4;
+  cursor: pointer; word-break: break-word;
+  animation: toast-in .22s cubic-bezier(.21, 1.02, .73, 1) both;
+  transition: border-color .15s ease;
+}
+.toast-item:hover { border-color: var(--bord-strong); }
+
+.toast-icon {
+  flex: 0 0 auto; width: 16px; height: 16px; margin-top: 2px;
+  color: var(--mut);
+}
+.toast-content { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.toast-title { font-weight: 600; font-size: 13px; line-height: 1.3; }
+.toast-msg { color: var(--fg); opacity: 0.92; }
+
+/* Kind accents: tint the border + icon, keep body text readable. */
+.toast-item.ok  { border-color: rgba(93, 211, 158, 0.40); }
+.toast-item.ok  .toast-icon, .toast-item.ok  .toast-title { color: var(--ok); }
+.toast-item.warn{ border-color: rgba(246, 193, 119, 0.42); }
+.toast-item.warn .toast-icon, .toast-item.warn .toast-title { color: var(--warn); }
+.toast-item.err { border-color: rgba(255, 107, 138, 0.42); }
+.toast-item.err .toast-icon, .toast-item.err .toast-title { color: var(--err); }
+.toast-item.info{ border-color: var(--bord-strong); }
+.toast-item.info .toast-icon { color: var(--acc2); }
+
+/* Bottom progress bar (auto-dismiss countdown). Hidden for sticky toasts. */
+.toast-progress {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+  background: var(--bord);
+}
+.toast-progress > i {
+  display: block; height: 100%; width: 100%;
+  transform-origin: left center; background: var(--acc);
+  animation-name: toast-shrink; animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+.toast-item.paused .toast-progress > i { animation-play-state: paused; }
+
+.toast-leave { animation: toast-out .24s cubic-bezier(.55, 0, .55, .2) forwards; }
+@keyframes toast-in  { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes toast-out { to   { opacity: 0; transform: translateX(24px); } }
+@keyframes toast-shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
