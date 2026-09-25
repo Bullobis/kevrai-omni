@@ -8,6 +8,7 @@ import { state, setState } from "./state.js";
 import { debounce } from "./debounce.js";
 import { escapeHtml } from "./net.js";
 import { emptyStateIconSvg } from "./empty-state.js";
+import { isFavorite, getRecent } from "./favorites.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -82,6 +83,7 @@ function wireToolbar() {
   const cat = $("#cat-filter");
   const sort = $("#sort-filter");
   const trending = $("#trending-filter");
+  const fav = $("#fav-filter");
 
   const run = debounce(() => runSearch({ resetPage: true }), 180);
 
@@ -124,6 +126,10 @@ function wireToolbar() {
   });
   trending.addEventListener("change", () => {
     searchState.trendingOnly = trending.checked;
+    runSearch({ resetPage: true });
+  });
+  if (fav) fav.addEventListener("change", () => {
+    setState({ favFilter: fav.value });
     runSearch({ resetPage: true });
   });
 
@@ -214,6 +220,25 @@ function keyOf(m) {
   return `${m.hub || "curated"}:${(m.repo || m.id || "").toLowerCase()}`;
 }
 
+// Client-side overlay on top of the server result set, driven by state.favFilter.
+//   "favorites" → keep only favorited cards
+//   "recent"    → keep recently-used cards, re-ordered by recency (newest first)
+//   ""          → no-op (server results pass through untouched)
+function applyFavFilter(items) {
+  const f = state.favFilter || "";
+  if (!f || !Array.isArray(items)) return items || [];
+  if (f === "favorites") {
+    return items.filter((m) => m && m.id && isFavorite(m.id));
+  }
+  if (f === "recent") {
+    const order = new Map(getRecent().map((id, i) => [id, i]));
+    return items
+      .filter((m) => m && m.id && order.has(m.id))
+      .sort((a, b) => order.get(a.id) - order.get(b.id));
+  }
+  return items;
+}
+
 // v2.8.0 — three-fold backward-compat bridge (§3.5):
 //   1) old preload without hubSearch  → fall back to api.search()
 //   2) sidecar without /api/hub/*      → fall back to api.search()
@@ -290,11 +315,16 @@ export async function runSearch(opts = {}) {
   const isHub = !r.fallback;
   searchState.usingHub = isHub;
 
-  searchState.items = body.items || [];
+  // Client-side favorites/recent overlay sits on top of whatever the server
+  // returned (the server has no knowledge of local favorites).
+  searchState.items = applyFavFilter(body.items || []);
   searchState.facets = body.facets || null;
   searchState.suggestions = body.suggestions || [];
-  searchState.count = body.count != null ? body.count
-    : (body.items ? body.items.length : 0);
+  // When the local overlay is active, #models-count must reflect the filtered
+  // (displayed) length rather than the server's total match count.
+  searchState.count = state.favFilter
+    ? searchState.items.length
+    : (body.count != null ? body.count : (body.items ? body.items.length : 0));
   searchState.elapsedMs = body.elapsed_ms || 0;
   searchState.cursor = body.next_cursor || "";
   searchState.hasMore = !!body.has_more;
@@ -338,12 +368,14 @@ export async function loadMore() {
     });
     if (mySeq !== searchState.reqSeq) return;   // query changed mid-flight
     const body = r?.body || r || {};
-    const fresh = (body.items || []).filter((m) => {
+    const freshRaw = (body.items || []).filter((m) => {
       const k = keyOf(m);
       if (searchState.seenKeys.has(k)) return false;
       searchState.seenKeys.add(k);
       return true;
     });
+    // Overlay the favorites/recent filter on the appended page too.
+    const fresh = applyFavFilter(freshRaw);
     searchState.items = searchState.items.concat(fresh);
     searchState.cursor = body.next_cursor || "";
     searchState.hasMore = !!body.has_more;
