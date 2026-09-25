@@ -218,23 +218,38 @@ body {
 .vgrid-item {
   background: var(--card); border: 1px solid var(--bord);
   border-radius: var(--radius); padding: 14px;
-  transition: transform .15s ease, border-color .15s ease, background .15s ease;
+  transition: transform .18s cubic-bezier(.22,1,.36,1), border-color .18s ease,
+              background .18s ease, box-shadow .18s ease;
   display: flex; flex-direction: column; gap: 8px;
 }
-.vgrid-item:hover { transform: translateY(-2px); border-color: var(--bord-strong); }
+.vgrid-item:hover {
+  transform: translateY(-3px);
+  border-color: var(--bord-strong);
+  background: var(--card-hover);
+  box-shadow: var(--shadow);
+}
+.vgrid-item:hover .card-title { color: var(--fg); opacity: 1; }
+.vgrid-item .card-title { opacity: .92; transition: color .18s ease, opacity .18s ease; }
 .vgrid-item:focus { outline: none; box-shadow: var(--focus); border-color: var(--acc); }
+.vgrid-item:focus-visible { transform: scale(1.01); }
+/* Selected (open in the detail panel) — left accent bar + ring, no layout shift. */
+.vgrid-item.selected {
+  border-color: var(--acc);
+  background: var(--card-hover);
+  box-shadow: inset 3px 0 0 var(--acc), var(--shadow);
+}
 
 /* ---------- Cards ---------- */
 .model-card .card-head, .engine-card .card-head {
   display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
 }
-.card-title { font-weight: 500; font-size: var(--fs-sm); line-height: 1.25; }
+.card-title { font-weight: 600; font-size: var(--fs-sm); line-height: 1.3; letter-spacing: .01px; }
 .card-desc {
-  color: var(--fg); opacity: 0.88; font-size: var(--fs-xs); line-height: 1.55;
+  color: var(--fg); opacity: 0.88; font-size: var(--fs-xs); line-height: 1.6;
   margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.card-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+.card-pills { display: flex; flex-wrap: wrap; gap: 5px; }
 .card-pills .pill { font-size: 10px; padding: 2px 7px; }
 .card-foot { display: flex; justify-content: space-between; align-items: center; }
 .card-foot .mut { font-size: 11px; }
@@ -421,23 +436,7 @@ button.full { width: 100%; }
 .src-actions { grid-column: 2 / 3; grid-row: 1 / 3; display: flex; }
 .src-actions .ghost { padding: 5px 10px; font-size: 12px; }
 
-/* ---------- Toasts (top-right) ---------- */
-.toast-stack {
-  position: fixed; top: 64px; right: 22px; z-index: 998;
-  display: flex; flex-direction: column; gap: 8px; width: 320px;
-}
-.toast-item {
-  background: rgba(18, 24, 53, 0.95); border: 1px solid var(--bord);
-  padding: 10px 12px; border-radius: 10px; box-shadow: var(--shadow);
-  color: var(--fg); font-size: 13px; animation: toast-in .2s ease;
-  cursor: pointer; word-break: break-word;
-}
-.toast-item.ok  { border-color: rgba(93, 211, 158, 0.4); color: var(--ok); }
-.toast-item.warn{ border-color: rgba(246, 193, 119, 0.4); color: var(--warn); }
-.toast-item.err { border-color: rgba(255, 107, 138, 0.4); color: var(--err); }
-.toast-leave { animation: toast-out .24s ease forwards; }
-@keyframes toast-in  { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
-@keyframes toast-out { to   { opacity: 0; transform: translateX(20px); } }
+/* ---------- Toasts (top-right) → moved to styles/toast.css ---------- */
 
 /* ---------- Drag-drop mask ---------- */
 .drop-mask {
