@@ -130,7 +130,10 @@ async function testAllSources() {
   ];
   if (!all.length) { toast("请先勾选至少一个镜像", { kind: "warn" }); return; }
   toast(`测速 ${all.length} 个镜像…`);
-  const res = unwrap(await api.measureSources(all));
+  // The IPC handler expects a body of the form { urls: [...], force?: bool }
+  // (see electron/main.js kevrai:measure-sources). Passing the raw array made
+  // body.urls undefined, which failed the assert and broke this button.
+  const res = unwrap(await api.measureSources({ urls: all, force: true }));
   state.speedResults = res.ranking || [];
   renderSpeedResults();
 }
