@@ -1,0 +1,88 @@
+/* renderer/styles/transitions.css — Kova R4 视觉精修：
+ *   1) 视图（.pane）切换淡入
+ *   2) 模态（.overlay）打开/关闭过渡统一
+ *   3) 骨架屏/空状态平滑显现
+ *   4) CLS 减少（scrollbar-gutter / 固定卡片高度 / 模态滚动锁）
+ *
+ * 性能约束：只动 transform / opacity（合成层，不触发 layout/paint）。
+ * 两主题协调：颜色全部走设计 token；reduced-motion 下由 styles.css 全局
+ * transition-duration:0.01ms 兜底禁用，这里不重复写。
+ */
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * 1) 视图切换（.pane）
+ *
+ * 说明：.main 内 pane 高度来源不一 —— 模型市场 pane 自带内层固定高度滚动
+ * 容器（.vgrid-viewport height:calc(100vh-200px)），其余 pane 靠 .main 自身
+ * 滚动。若把非 active pane 改成 position:absolute/visibility 堆叠，会让
+ * 自然高度的 pane 失去对 .main 滚动高度的贡献 → 引擎/本地等页无法滚动。
+ * 因此这里**保留 display:none/block**（零布局成本、a11y 安全），淡入用一次性
+ * 入场动画实现：新 pane display:block 的瞬间自动播放，旧 pane 即时消失。
+ * 这是“不破坏布局”的方案（见任务约定）。
+ * ────────────────────────────────────────────────────────────────────────── */
+.pane.active {
+  animation: pane-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes pane-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* 侧边栏 tab：背景/文字色平滑过渡（原 .12s，统一到 160ms）。 */
+.sidebar .pane-tab {
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * 2) 模态过渡（settings / downloads / update / onboarding）
+ *    由 modules/overlay-fx.js 驱动 .overlay-anim / .is-open / .is-closing。
+ * ────────────────────────────────────────────────────────────────────────── */
+.overlay { transition: opacity 150ms ease; }
+/* 仅加入 overlay-fx 的浮层参与动画；未接入的浮层保持原有即时显隐。 */
+.overlay.overlay-anim { opacity: 0; }
+.overlay.overlay-anim.is-open { opacity: 1; }
+.overlay.overlay-anim.is-closing { opacity: 0; pointer-events: none; }
+.overlay.overlay-anim .overlay-card {
+  transform: translateY(8px);
+  opacity: 0;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease;
+}
+.overlay.overlay-anim.is-open .overlay-card { transform: translateY(0); opacity: 1; }
+.overlay.overlay-anim.is-closing .overlay-card { transform: translateY(4px); opacity: 0; }
+
+/* 命令面板 / 快捷键面板：瞬时面板类浮层，只做入场动画（关闭保持即时，
+ * 符合 type-ahead 面板的交互直觉），动效参数与上述模态一致。 */
+.cmdpal-overlay:not([hidden]) .cmdpal-panel {
+  animation: pane-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cmdpal-overlay:not([hidden]) .cmdpal-help {
+  animation: pane-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * 3) 骨架屏 / 空状态平滑显现
+ * ────────────────────────────────────────────────────────────────────────── */
+/* 真实网格首次有数据时，淡入上移取代骨架屏（骨架屏 instant 隐藏被淡入掩盖）。 */
+#models-grid:not(.is-loading) {
+  animation: pane-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* 空状态出现时从“空白”淡入，避免硬切。 */
+.empty-state { animation: pane-in 200ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * 4) CLS（布局抖动）减少
+ * ────────────────────────────────────────────────────────────────────────── */
+/* .main 是主要滚动容器：设置中心切换内容、模态开关导致滚动条出现/消失时，
+ * 预留滚动条槽位，避免内容宽度左右跳动。 */
+.main { scrollbar-gutter: stable; }
+
+/* 模态打开时锁定背景滚动（.main 是真正的滚动容器）。
+ * 配合 scrollbar-gutter: stable，锁/解锁不引起宽度变化。 */
+body.modal-open .main { overflow: hidden; }
+
+/* 模型卡片：虚拟网格已用 inline height=168 固定行高，这里再加 min-height 兜底，
+ * 防止图片/图标晚到导致卡片高度变化（双重保险）。 */
+.vgrid-item { min-height: 168px; }
+
+/* 下载行 / LTX 等动态列表项：固定最小高度，内容异步填充时不撑高/塌缩。 */
+.dl-row { min-height: 44px; }
