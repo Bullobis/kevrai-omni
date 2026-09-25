@@ -11,6 +11,10 @@ on:
         required: false
         default: "v3.0.0"
 
+# gh release upload needs contents: write; nothing else in this job does.
+permissions:
+  contents: write
+
 jobs:
   render:
     name: Render Remotion videos
@@ -22,6 +26,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # git describe --tags below needs the actual tag ref; the default
+          # shallow clone (fetch-depth=1) has no tags, so the fallback
+          # "continuous" always fired and release uploads were silently skipped.
+          fetch-tags: true
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
