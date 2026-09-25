@@ -12,6 +12,7 @@ export const state = {
   pending: [],
   selectedId: null,
   downloads: {},         // taskId -> {taskId, downloaded, total, status, filename}
+  favFilter: "",         // "" | "favorites" | "recent" — market view toggle
 };
 
 export function subscribe(fn) { subs.add(fn); return () => subs.delete(fn); }

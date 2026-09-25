@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="styles/command-palette.css" />
   <link rel="stylesheet" href="styles/empty-states.css" />
   <link rel="stylesheet" href="styles/settings-center.css" />
+  <link rel="stylesheet" href="styles/favorites.css" />
 </head>
 <body>
   <a href="#main" class="skip-link">跳到正文</a>
@@ -116,6 +117,12 @@
           <label class="trending-toggle" title="只看热门模型">
             <input type="checkbox" id="trending-filter" /> 🔥 热门
           </label>
+          <label class="visually-hidden" for="fav-filter">收藏/最近使用筛选</label>
+          <select id="fav-filter" aria-label="按收藏或最近使用筛选">
+            <option value="">全部模型</option>
+            <option value="favorites">★ 仅收藏</option>
+            <option value="recent">🕘 最近使用</option>
+          </select>
           <div class="search-wrap">
             <label class="visually-hidden" for="search">搜索模型</label>
             <input id="search" type="search" placeholder="搜索模型（支持模糊、拼音式缩写、中文，按 / 聚焦）"
