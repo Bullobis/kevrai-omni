@@ -2,6 +2,7 @@
 "use strict";
 import { api } from "./api.js";
 import { toast } from "./toast.js";
+import { isViewVisible, onViewState } from "./view-visibility.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -15,8 +16,13 @@ let _pollTimer = null;
 let _chatHistory = [];
 let _lastCvtSrc = "";
 let _lastCvtArch = "";
+// R4 — 记住最近一次 renderMnnPage 的 root，视图切回时无需重新 render 即可
+// 恢复下载轮询（renderMnnPage 本身也会在切回时跑，这里只为防御时序）。
+let _lastRoot = null;
 
 export async function renderMnnPage(root) {
+  _lastRoot = root;
+  // 每次 render 先停掉上一份下载轮询，避免反复切页叠加定时器。
   if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
   root.innerHTML = `
     <div class="hw-toolbar">
@@ -54,8 +60,34 @@ export async function renderMnnPage(root) {
   });
 
   await refreshAll(root);
-  _pollTimer = setInterval(() => pollDownload(root), 1500);
+  _ensureDownloadPoll(root);
 }
+
+// R4 — 下载轮询生命周期：视图可见时跑，隐藏时 clearInterval 彻底停掉。
+// 定时器回调里再做一次可见性判断作为防御（切换事件与回调之间的竞态窗口）。
+function _ensureDownloadPoll(root) {
+  if (_pollTimer) return;
+  _pollTimer = setInterval(() => {
+    if (!isViewVisible("mnn")) return;
+    pollDownload(root);
+  }, 1500);
+}
+
+function _pausePolling() {
+  if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+  // 转换轮询一并暂停；切回时 renderMnnPage → renderConvert 会按侧端状态
+  // 决定是否重启（仍在跑则 startConvertPoll，已完成则直接展示结果）。
+  if (_convertPollTimer) { clearInterval(_convertPollTimer); _convertPollTimer = null; }
+}
+
+function _resumePolling() {
+  if (!_lastRoot) return;
+  _ensureDownloadPoll(_lastRoot);
+  // 切回立即补拉一次下载状态，不用等 1.5s。
+  pollDownload(_lastRoot);
+}
+
+onViewState("mnn", { onShow: _resumePolling, onHide: _pausePolling });
 
 async function refreshAll(root) {
   await Promise.all([
