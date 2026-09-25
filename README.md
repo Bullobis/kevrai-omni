@@ -16,7 +16,7 @@
 > 点击播放 [assets/media/promo.mp4](assets/media/promo.mp4)。全部画面取自 v2.8.1 真实运行界面（真实模型目录、真实硬件检测、真实 Agent 工具调用）：模型市场双源检索、硬件体检与模型推荐、Kevrai Agent 工具调用、短剧 Agent、LTX-2.5 视频生成、MNN 引擎。
 
 ![License: Kevrai Omni Community License v2.1](https://img.shields.io/badge/License-Kevrai%20Community%20v2.1-orange)
-![Version](https://img.shields.io/badge/version-3.1.0-brightgreen)
+![Version](https://img.shields.io/badge/version-3.2.0-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-1079%20passed-brightgreen)
 
 ---
