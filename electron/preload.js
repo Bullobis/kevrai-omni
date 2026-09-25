@@ -14,6 +14,7 @@
  */
 
 const { contextBridge, ipcRenderer, webUtils } = require("electron");
+const { normalizeMeasureArgs } = require("./measure-args");
 
 // ---------------------------------------------------------------------------
 // Internal helpers (not exported)
@@ -189,17 +190,12 @@ const api = {
     assertString(opts.id, "opts.id", 128);
     return invoke("kevrai:env-install-engine", opts);
   },
-  measureSources: (urls) => {
-    if (!Array.isArray(urls)) throw new Error("urls must be an array of strings");
-    const clean = [];
-    for (const u of urls) {
-      if (typeof u !== "string" || !/^https?:\/\//.test(u)) {
-        throw new Error("each url must be an http(s) string");
-      }
-      clean.push(u.slice(0, 2048));
-      if (clean.length >= 32) break;
-    }
-    return invoke("kevrai:measure-sources", { urls: clean });
+  measureSources: (opts) => {
+    // Normalisation/validation lives in electron/measure-args.js (unit-tested).
+    // Accepts a legacy array or { urls, force, file_size }; this makes the
+    // downloads "force remeasure" button work (it passes an object) and
+    // actually forwards force to the sidecar.
+    return invoke("kevrai:measure-sources", normalizeMeasureArgs(opts));
   },
 
   // ----- v2.8.1: source registry / health / lock ------------------------
