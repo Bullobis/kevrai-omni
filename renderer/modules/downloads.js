@@ -4,6 +4,7 @@ import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { unwrap, escapeHtml } from "./net.js";
 import { state, setState } from "./state.js";
+import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
 
 function fmtBytes(n) {
   if (n == null || isNaN(n)) return "?";
@@ -18,6 +19,8 @@ let unsub = null;
 // v2.8.1 — source speed-test panel state.
 let lastRanking = [];
 let lastSkipped = [];
+// a11y — 打开面板时的触发元素，关闭时归还焦点。
+let savedTrigger = null;
 
 export function wireDownloads() {
   overlayEl = ensureOverlay();
@@ -34,6 +37,14 @@ export function wireDownloads() {
   document.addEventListener("click", (e) => {
     const t = e.target.closest("[data-action=open-downloads]");
     if (t) { e.preventDefault(); showDownloads(); }
+  });
+
+  // Esc 关闭：优先级栈中位于设置之下。
+  registerEsc({
+    order: 70,
+    root: overlayEl,
+    isOpen: () => !!overlayEl && !overlayEl.hasAttribute("hidden"),
+    close: closeDownloads,
   });
 }
 
@@ -64,8 +75,8 @@ function ensureOverlay() {
     </div>
   `;
   el.addEventListener("click", (e) => {
-    if (e.target === el) el.setAttribute("hidden", "");
-    if (e.target.closest("[data-action=close-overlay]")) el.setAttribute("hidden", "");
+    if (e.target === el) closeDownloads();
+    if (e.target.closest("[data-action=close-overlay]")) closeDownloads();
     const re = e.target.closest("[data-action=remeasure-sources]");
     if (re) { e.preventDefault(); remeasureSources(); }
     const lock = e.target.closest("[data-action=lock-source]");
@@ -167,8 +178,17 @@ async function lockSource(sourceId) {
 
 export function showDownloads() {
   if (!overlayEl) overlayEl = ensureOverlay();
+  savedTrigger = recordFocus();
   overlayEl.removeAttribute("hidden");
   renderOverlay();
+  trapFocus(overlayEl);
+}
+
+export function closeDownloads() {
+  if (!overlayEl) return;
+  overlayEl.setAttribute("hidden", "");
+  restoreFocus(savedTrigger);
+  savedTrigger = null;
 }
 
 function renderOverlay() {

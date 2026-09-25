@@ -6,6 +6,7 @@ import { state, setState } from "./state.js";
 import { VirtualGrid } from "./virtual-grid.js";
 import { highlight as highlightText } from "./search.js";
 import { escapeHtml } from "./net.js";
+import { toggleFavorite, isFavorite, bumpRecent } from "./favorites.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -115,6 +116,36 @@ function fmtCount(n) {
   return String(v);
 }
 
+// lucide-style star outline; filled variant uses fill=currentColor.
+const STAR_POLYGON =
+  '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>';
+function starSvg(active) {
+  return active
+    ? `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">${STAR_POLYGON}</svg>`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"`
+      + ` stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${STAR_POLYGON}</svg>`;
+}
+
+// Build the favorite star button for a card. renderCard runs on every virtual
+// window re-layout, so isFavorite() is read fresh here to stay in sync.
+function favButtonHtml(m) {
+  const active = m.id ? isFavorite(m.id) : false;
+  const name = m.name || m.id || "该模型";
+  const label = `${active ? "取消收藏" : "收藏"} ${name}`;
+  return `<button type="button" class="fav-btn${active ? " active" : ""}" data-action="fav"`
+    + ` aria-label="${escapeHtml(label)}" title="${active ? "取消收藏" : "收藏"}">${starSvg(active)}</button>`;
+}
+
+// Repaint an already-mounted favorite button after a toggle (avoids a full
+// grid re-render on every star click).
+function paintFavButton(btn, active, name) {
+  if (!btn) return;
+  btn.classList.toggle("active", active);
+  btn.setAttribute("aria-label", `${active ? "取消收藏" : "收藏"} ${name || ""}`.trim());
+  btn.title = active ? "取消收藏" : "收藏";
+  btn.innerHTML = starSvg(active);
+}
+
 function renderCard(m) {
   const root = document.createElement("div");
   root.className = "card model-card";
@@ -126,6 +157,7 @@ function renderCard(m) {
   // its window on scroll, so reading state here keeps the class in sync; clicks
   // also call syncSelectedCards() to update already-mounted cards immediately.
   if (state.selectedId && m.id && m.id === state.selectedId) root.classList.add("selected");
+  if (m.id && isFavorite(m.id)) root.classList.add("is-favorite");
   const hw = m.hardware || {};
   const engineList = Array.isArray(m.engine) ? m.engine : (m.engine ? [m.engine] : []);
   const highlights = m._highlights || [];
@@ -159,23 +191,27 @@ function renderCard(m) {
   if (m.trending_score > 0) heatParts.push(`🔥 ${fmtCount(m.trending_score)}`);
   const heatPill = heatParts.length
     ? `<span class="pill heat" title="下载 / 点赞 / 热度分">${heatParts.join(" · ")}</span>` : "";
+  const favBtn = favButtonHtml(m);
   if (isRemote && !m.description) {
     // Cards for remote models have no upstream prose — show the repo instead of
     // leaving an empty paragraph, so the card never looks broken.
     root.innerHTML = `
     <div class="card-head">
-      <div class="card-title">${nameHtml}</div>
-      <div class="card-pills">
-        ${sizePill}
-        ${hubBadge}
-        ${typePill}
-        ${taskPill}
-        ${m.license ? `<span class="pill">${escapeHtml(m.license)}</span>` : ""}
-        ${m.trending ? `<span class="pill warn">🔥 trending</span>` : ""}
-        ${engineList.includes("mnn") ? `<span class="pill ok">MNN 可选</span>` : ""}
-        ${m.import_only ? `<span class="pill">仅下载/导入</span>` : ""}
-        ${scoreTag}
+      <div class="card-head-main">
+        <div class="card-title">${nameHtml}</div>
+        <div class="card-pills">
+          ${sizePill}
+          ${hubBadge}
+          ${typePill}
+          ${taskPill}
+          ${m.license ? `<span class="pill">${escapeHtml(m.license)}</span>` : ""}
+          ${m.trending ? `<span class="pill warn">🔥 trending</span>` : ""}
+          ${engineList.includes("mnn") ? `<span class="pill ok">MNN 可选</span>` : ""}
+          ${m.import_only ? `<span class="pill">仅下载/导入</span>` : ""}
+          ${scoreTag}
+        </div>
       </div>
+      ${favBtn}
     </div>
     <div class="card-body">
       <p class="card-desc mut mono-repo">${escapeHtml(m.repo || "")}</p>
@@ -190,18 +226,21 @@ function renderCard(m) {
   }
   root.innerHTML = `
     <div class="card-head">
-      <div class="card-title">${nameHtml}</div>
-      <div class="card-pills">
-        ${sizePill}
-        ${hubBadge}
-        ${typePill}
-        ${taskPill}
-        ${m.license ? `<span class="pill">${escapeHtml(m.license)}</span>` : ""}
-        ${m.trending ? `<span class="pill warn">🔥 trending</span>` : ""}
-        ${engineList.includes("mnn") ? `<span class="pill ok">MNN 可选</span>` : ""}
-        ${m.import_only ? `<span class="pill">仅下载/导入</span>` : ""}
-        ${scoreTag}
+      <div class="card-head-main">
+        <div class="card-title">${nameHtml}</div>
+        <div class="card-pills">
+          ${sizePill}
+          ${hubBadge}
+          ${typePill}
+          ${taskPill}
+          ${m.license ? `<span class="pill">${escapeHtml(m.license)}</span>` : ""}
+          ${m.trending ? `<span class="pill warn">🔥 trending</span>` : ""}
+          ${engineList.includes("mnn") ? `<span class="pill ok">MNN 可选</span>` : ""}
+          ${m.import_only ? `<span class="pill">仅下载/导入</span>` : ""}
+          ${scoreTag}
+        </div>
       </div>
+      ${favBtn}
     </div>
     <div class="card-body">
       <p class="card-desc">${descHtml}</p>
@@ -241,7 +280,18 @@ function onCardClick(idx, item, e) {
     installItem(item).catch(() => {});
     return;
   }
+  // Favorite star: never open the detail panel, just toggle + repaint the button.
+  const favBtn = e.target.closest && e.target.closest(".fav-btn");
+  if (favBtn) {
+    e.stopPropagation();
+    if (!item.id) return;
+    const nowFav = toggleFavorite(item.id);
+    paintFavButton(favBtn, nowFav, item.name || item.id);
+    favBtn.closest(".model-card")?.classList.toggle("is-favorite", nowFav);
+    return;
+  }
   setState({ selectedId: item.id || null });
+  if (item.id) bumpRecent(item.id);
   syncSelectedCards();
   showDetail(item);
 }
