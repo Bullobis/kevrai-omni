@@ -33,12 +33,10 @@ import json
 import logging
 import os
 import sys
-import tempfile
 import threading
 from pathlib import Path
 from typing import Any
 
-import pytest
 
 os.environ.setdefault("KEVRAI_SIDECAR_SECRET", "test-sidecar-secret")
 
@@ -230,7 +228,7 @@ def test_load_settings_non_object_falls_back(tmp_path):
 
 
 def test_load_settings_schema_mismatch_falls_back(tmp_path):
-    from app.settings import Settings, load_settings
+    from app.settings import load_settings
 
     p = tmp_path / "settings.json"
     # theme is a Literal; a bogus value fails model_validate -> defaults.

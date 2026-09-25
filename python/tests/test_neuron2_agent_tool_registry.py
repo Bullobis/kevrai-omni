@@ -11,7 +11,7 @@ import warnings
 
 import pytest
 
-from app.agent.tool_registry import Tool, ToolContext, ToolRegistry
+from app.agent.tool_registry import Tool, ToolRegistry
 
 
 def _make_tool(name: str, desc: str = "test tool") -> Tool:

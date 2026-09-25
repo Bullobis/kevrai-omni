@@ -29,7 +29,6 @@ import base64
 import json
 import os
 import random
-import string
 import sys
 from pathlib import Path
 from typing import Any
@@ -42,7 +41,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app import main as app_main  # noqa: E402
 from app.agent.tool_registry import (  # noqa: E402
     ToolContext,
-    ToolRegistry,
     extract_final_answer,
     parse_tool_call,
 )
@@ -124,7 +122,6 @@ def test_parse_tool_call_fuzz_no_crash():
 
 
 def test_parse_tool_call_deep_and_huge():
-    rng = random.Random(SEED + 1)
     # Deeply nested / truncated / huge JSON objects must not crash.
     for depth in [10, 100, 500, 2000]:
         s = '{"a":' * depth + "1" + "}" * depth
@@ -539,7 +536,6 @@ def test_engines_install_uninstall_fuzz(api_client, tmp_xdg):
 def test_path_param_fuzz(api_client):
     import httpx
 
-    rng = random.Random(SEED + 10)
     evil = ["", "../", "..%2f..%2fetc", "a" * 5000, "\x00", "%00",
             "..\\..\\windows", "foo/bar", "??", "{}", "{{7*7}}"]
     routes = [

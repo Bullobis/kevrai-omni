@@ -34,7 +34,7 @@ def _as_int(value: Any, default: int, lo: int, hi: int, field: str) -> int:
     try:
         n = value if isinstance(value, int) else int(float(str(value).strip()))
     except (ValueError, TypeError):
-        raise ValueError(f"{field} must be an integer, got {value!r}")
+        raise ValueError(f"{field} must be an integer, got {value!r}") from None
     return max(lo, min(n, hi))
 
 

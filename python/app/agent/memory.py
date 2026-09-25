@@ -194,9 +194,14 @@ class AgentMemory:
             if u:
                 ids.append(u["id"])
                 user_content = u["content"]
+            # ``placeholders`` is only a string of "?" placeholders (one per
+            # id); the actual id values are bound as parameters below, so this
+            # is not injectable (ruff S608 false positive).
             placeholders = ",".join("?" * len(ids))
             conn.execute(
-                f"DELETE FROM messages WHERE id IN ({placeholders})", ids)
+                f"DELETE FROM messages WHERE id IN ({placeholders})",  # noqa: S608
+                ids,
+            )
             conn.commit()
         self.touch_session(session_id)
         return user_content
