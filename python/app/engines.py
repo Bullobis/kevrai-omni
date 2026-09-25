@@ -9,6 +9,7 @@ tests and routes still work.
 from __future__ import annotations
 
 import contextlib
+import functools
 import hashlib
 import json
 import logging
@@ -17,6 +18,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import zipfile
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -46,6 +48,35 @@ GITHUB_ACCEL_PREFIXES: tuple[str, ...] = (
 )
 
 _HTTP_TIMEOUT = httpx.Timeout(connect=15.0, read=60.0, write=60.0, pool=15.0)
+
+# Module-level mutex serializing every engine install (binary + pip).
+#
+# Why: an install writes a per-engine ``.partial`` blob and then does a
+# read-modify-write on the shared ``installed.json`` manifest. Two concurrent
+# install() calls — e.g. a double-click that FastAPI dispatches to two
+# threadpool workers — interleave chunks into the same ``.partial`` file and
+# clobber each other's manifest record (lost ``active_url`` / progress, and
+# corrupted download bytes). Serializing all installs is the intended
+# single-instance mutex: engines are large binaries and the desktop UI never
+# needs parallel installs (Neuron3-Engines audit).
+_INSTALL_LOCK = threading.Lock()
+
+
+def _serialized_install(fn: Any) -> Any:
+    """Run an install entry point under the global install mutex.
+
+    The lock is held by the ``with`` block, so it is released on every exit
+    path (success or exception) — no manual release, no deadlock. No install
+    entry point calls another install entry point, so a plain non-reentrant
+    ``Lock`` is intentional (re-entrancy would mask a nested-call bug).
+    """
+
+    @functools.wraps(fn)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        with _INSTALL_LOCK:
+            return fn(*args, **kwargs)
+
+    return wrapper
 
 
 def _is_github_url(url: str) -> bool:
@@ -359,6 +390,7 @@ class EngineManager:
 
     # --- mutations ---
 
+    @_serialized_install
     def install(
         self,
         engine_id: str,
@@ -566,6 +598,7 @@ class EngineManager:
 
     # --- pip-based engines ---
 
+    @_serialized_install
     def install_pip(self, pypi_name: str, engine_id: str | None = None) -> EngineRecord:
         eid = engine_id or pypi_name
         target = self.engine_dir() / f"pip-{pypi_name}"
@@ -656,6 +689,7 @@ def save_status(root: Path, status: dict[str, Any]) -> None:
     os.replace(tmp, p)
 
 
+@_serialized_install
 def install_pip_engine(name: str, root: Path) -> InstallResult:
     target = engine_install_dir(root) / f"pip-{name}"
     target.mkdir(parents=True, exist_ok=True)
@@ -677,6 +711,7 @@ def install_pip_engine(name: str, root: Path) -> InstallResult:
         return InstallResult(engine_id=name, path=str(target), ok=False, message=f"exception: {e}")
 
 
+@_serialized_install
 def download_zip_engine(url: str, root: Path, engine_id: str) -> InstallResult:
     """Legacy zip download — now backed by the hardened download path.
 
@@ -715,6 +750,10 @@ def download_zip_engine(url: str, root: Path, engine_id: str) -> InstallResult:
         tmp.unlink(missing_ok=True)
         return InstallResult(engine_id=engine_id, path=str(target_dir), ok=True, message="installed")
     except Exception as e:
+        # N5：解压失败（损坏 zip / Zip-Slip / IO）时，下载下来的 download.tmp 是
+        # 一个不再可恢复的临时归档（本 legacy 路径不支持 Range 断点续传，下次会重下），
+        # 必须删掉，否则每次失败都在 engine 目录里留一份完整 zip。
+        tmp.unlink(missing_ok=True)
         return InstallResult(engine_id=engine_id, path="", ok=False, message=f"download failed: {e}")
 
 

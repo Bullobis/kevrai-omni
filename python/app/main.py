@@ -74,7 +74,6 @@ from .hardware import detect_hardware
 from .hub import (
     HUB_CURATED,
     BadCursor,
-    build_registry,
     cross_source_candidates,
     get_registry,
     reset_registry,
@@ -242,8 +241,12 @@ async def _lifespan(app: FastAPI):
     # LTX-2.5 video generation manager (outputs to data_root/outputs/ltx)
     app.state.ltx = LtxManager(APP_ROOT / "outputs" / "ltx")
     # Dual-source hub registry (HF + ModelScope + curated). Adapters own their
-    # httpx clients, so the lifespan must aclose() them on shutdown.
-    app.state.hub = build_registry(settings)
+    # httpx clients, so the lifespan must aclose() them on shutdown. Wire the
+    # lifespan handle to the *process singleton* (get_registry), NOT a fresh
+    # build_registry(): otherwise two registries exist, the one actually
+    # serving requests is never the one shutdown closes, and its HTTP pools
+    # leak at exit.
+    app.state.hub = get_registry(settings)
     # v2.8.1 — source metadata registry + health (design §2.4).
     app.state.source_registry = _build_source_registry(settings)
     # Aggregated multi-file download jobs (in-process; restart clears them).
@@ -601,6 +604,41 @@ def _get_hub(request: Request):
     return get_registry(settings)
 
 
+async def _aclose_hub_quietly(hub: Any) -> None:
+    """Close a retired hub registry's HTTP pools, best-effort.
+
+    Called from ``PUT /api/settings`` after the registry singleton was rebuilt.
+    Searches are short and already fault-tolerant (never 5xx), so closing the
+    warm old client mid-flight only degrades one in-flight request — far better
+    than leaking the old pool on every settings change.
+    """
+    with contextlib.suppress(Exception):
+        await hub.aclose()
+
+
+async def _retire_downloader(dl: Downloader) -> None:
+    """Close a retired downloader's connection pool once its tasks drain.
+
+    A ``PUT /api/settings`` that changes ``max_concurrent_downloads`` swaps in a
+    fresh :class:`Downloader`; the old one keeps running any in-flight tasks
+    (they are intentionally left to finish — the UI already loses track of
+    them). Its self-built httpx pool used to be dropped on the floor, leaking
+    keep-alive sockets on every settings change. We wait for the task table to
+    drain before closing, so an in-flight download is never cut mid-stream.
+    """
+    try:
+        while True:
+            snaps = await dl.list_tasks()
+            if not any(t["status"] not in {"done", "failed", "cancelled"} for t in snaps):
+                break
+            await asyncio.sleep(1.0)
+    finally:
+        # Runs even when the loop is cancelled at shutdown — the pool must
+        # still be closed.
+        with contextlib.suppress(Exception):
+            await dl.aclose()
+
+
 def _build_source_registry(settings: Settings) -> SourceRegistry:
     """Construct the source registry from settings (design §2.3.3 / §2.4.7)."""
     persist_path = None
@@ -752,22 +790,46 @@ def model_gguf_files(model_id: str) -> dict[str, Any]:
     raise HTTPException(status_code=404, detail=f"model {model_id} not found")
 
 
+#: TTL cache for the live GGUF enumeration (it hits the network for every repo).
+_GGUF_CACHE: dict[str, Any] = {"ts": 0.0, "repos": None}
+_GGUF_TTL_SECONDS: float = 600.0
+
+
 @app.get("/api/gguf-repos")
-def gguf_repos() -> dict[str, Any]:
-    """List all GGUF repos and their files (enumerated live from HF)."""
-    # Two entry shapes (success carries `files` + `count`, failure carries
-    # `error`), so the element type must be declared — otherwise mypy unifies
-    # the list on whichever dict literal it sees first and rejects the other.
-    out: list[dict[str, Any]] = []
-    for g in CATALOG.gguf_repos:
+def gguf_repos(force: bool = False) -> dict[str, Any]:
+    """List all GGUF repos and their files (enumerated live from HF).
+
+    Repos are enumerated concurrently (the per-repo call is blocking) and the
+    result is held in a short TTL cache so repeated requests do not re-hit the
+    network. ``?force=true`` bypasses the cache.
+    """
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+
+    now = time.monotonic()
+    if (
+        not force
+        and _GGUF_CACHE["repos"] is not None
+        and (now - _GGUF_CACHE["ts"]) < _GGUF_TTL_SECONDS
+    ):
+        return {"repos": _GGUF_CACHE["repos"], "cached": True}
+
+    def one(g: Any) -> dict[str, Any]:
         try:
             files = list_gguf_files(g.owner_repo, g.filter)
-        except Exception as e:
-            files = []
-            out.append({"id": g.id, "name": g.name, "owner_repo": g.owner_repo, "error": str(e)})
-            continue
-        out.append({"id": g.id, "name": g.name, "owner_repo": g.owner_repo, "files": files, "count": len(files)})
-    return {"repos": out}
+        except Exception as e:  # noqa: BLE001 — keep per-repo failure isolated
+            return {"id": g.id, "name": g.name, "owner_repo": g.owner_repo, "error": str(e)}
+        return {"id": g.id, "name": g.name, "owner_repo": g.owner_repo,
+                "files": files, "count": len(files)}
+
+    targets = list(CATALOG.gguf_repos)
+    workers = min(12, max(4, len(targets)))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        out = list(pool.map(one, targets))
+
+    _GGUF_CACHE["ts"] = now
+    _GGUF_CACHE["repos"] = out
+    return {"repos": out, "cached": False}
 
 
 #: Extensions that may be imported as a model file or archive (P0-3).
@@ -992,8 +1054,10 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
     ranking = await measure_sources(sources)
     best = pick_best(ranking) or {"url": sources[0]}
     em: EngineManager = request.app.state.engine_manager
+    # engines.json has no per-binary sha256; pass None to skip hash verification
+    # (previously passed cat.get("version") which always mismatched and failed).
     result = await asyncio.to_thread(
-        em.install, eid, str(best["url"]), cat.get("version", "")
+        em.install, eid, str(best["url"]), None
     )
     return {
         "ok": True,
@@ -1020,7 +1084,7 @@ def get_settings(request: Request) -> dict[str, Any]:
 
 
 @app.put("/api/settings")
-def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]:
+async def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]:
     s = _get_settings(request).model_copy()
     patch = body.model_dump(exclude_unset=True)
     try:
@@ -1040,8 +1104,14 @@ def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]:
     save_settings(s, request.app.state.settings_path)
     request.app.state.settings = s
     # Settings identity changed → rebuild the hub registry so new tokens/mirrors
-    # take effect immediately without a restart.
+    # take effect immediately without a restart. Repoint the lifespan handle at
+    # the fresh singleton so shutdown closes the registry actually serving
+    # requests; the warm old registry's HTTP pools are retired in the background.
+    old_hub = getattr(request.app.state, "hub", None)
     reset_registry()
+    request.app.state.hub = get_registry(s)
+    if old_hub is not None and old_hub is not request.app.state.hub:
+        asyncio.create_task(_aclose_hub_quietly(old_hub))
     # v2.8.1 — rebuild the source registry so new mirrors / GitCode settings apply.
     prev_reg = getattr(request.app.state, "source_registry", None)
     if prev_reg is not None:
@@ -1051,11 +1121,14 @@ def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]:
     # Update downloader concurrency — only rebuild when the concurrency limit
     # actually changes. Rebuilding unconditionally orphans every in-flight
     # download task (progress/cancel return 404 while the download continues)
-    # (BUG-04).
+    # (BUG-04). The retired downloader keeps its in-flight tasks until they
+    # drain, then closes its httpx pool (previously leaked on every change).
     new_concurrency = max(1, int(s.max_concurrent_downloads))
     old_dl: Downloader | None = getattr(request.app.state, "downloader", None)
     if old_dl is None or old_dl.max_concurrent != new_concurrency:
         request.app.state.downloader = Downloader(max_concurrent=new_concurrency)
+        if old_dl is not None and old_dl is not request.app.state.downloader:
+            asyncio.create_task(_retire_downloader(old_dl))
     # P0-1: redact secrets in the PUT echo too.
     return _redact_settings(s)
 
@@ -1420,7 +1493,10 @@ async def hub_job(request: Request, job_id: str) -> dict[str, Any]:
         done_b = 0
         if snap is not None:
             status = str(snap.get("status") or snap.get("state") or "running")
-            done_b = int(snap.get("downloaded") or snap.get("bytes_done") or 0)
+            # DownloadTask.snapshot() emits ``downloaded_bytes`` (downloader.py);
+            # the previous ``downloaded``/``bytes_done`` guesses never existed, so
+            # bytes_done/ratio stayed 0 while multi-file hub jobs were in flight.
+            done_b = int(snap.get("downloaded_bytes") or 0)
         if status in {"done", "completed", "success"}:
             files_done += 1
         elif status in {"failed", "error", "canceled", "cancelled"}:
@@ -2426,6 +2502,9 @@ async def v1_chat_completions(req: V1ChatReq):
     prompt = ""
     images: list[str] = []
     audios: list[str] = []
+    # N5：本请求由 _media_to_local 临时落盘的文件（data:/http(s) 下载产物）。
+    # 请求结束（成功/失败/取消）后必须统一 unlink；用户自己的本地路径不在此列。
+    created_temp: list[str] = []
     for msg in req.messages:
         role = str(msg.get("role", "user"))
         content = msg.get("content")
@@ -2442,13 +2521,13 @@ async def v1_chat_completions(req: V1ChatReq):
                     url = part.get("image_url")
                     if isinstance(url, dict):
                         url = url.get("url", "")
-                    img = await _media_to_local(str(url or ""), "image")
+                    img = await _media_to_local(str(url or ""), "image", created_temp)
                     if img:
                         images.append(img)
                 elif ptype == "audio":
                     src = part.get("audio") or part.get("input_audio") or {}
                     url = src.get("url") or src.get("data") if isinstance(src, dict) else src
-                    aud_path = await _media_to_local(str(url or ""), "audio")
+                    aud_path = await _media_to_local(str(url or ""), "audio", created_temp)
                     if aud_path:
                         audios.append(aud_path)
             content = "\n".join(text_parts) if text_parts else ""
@@ -2458,6 +2537,10 @@ async def v1_chat_completions(req: V1ChatReq):
         history.append({"role": role if role in ("user", "assistant") else "user", "content": content})
 
     if not history and not images and not audios:
+        # 提前失败也清理已落盘的临时媒体。
+        for p in created_temp:
+            with contextlib.suppress(OSError):
+                os.unlink(p)
         raise HTTPException(status_code=400, detail="messages 中没有可用内容")
     prompt = history[-1]["content"] if history else ""
     hist = history[:-1]
@@ -2465,16 +2548,27 @@ async def v1_chat_completions(req: V1ChatReq):
     model_id = req.model or (mnn_runtime.status().get("model_name") or "kevrai-mnn")
 
     if req.stream:
-        return _v1_stream(prompt, hist, images, audios, req, model_id)
-    return await _v1_once(prompt, hist, images, audios, req, model_id)
+        return _v1_stream(prompt, hist, images, audios, req, model_id, created_temp)
+    try:
+        return await _v1_once(prompt, hist, images, audios, req, model_id)
+    finally:
+        for p in created_temp:
+            with contextlib.suppress(OSError):
+                os.unlink(p)
 
 
-async def _media_to_local(url: str, kind: str) -> str:
+async def _media_to_local(url: str, kind: str,
+                          created: list[str] | None = None) -> str:
     """把多段 content 里的媒体引用落成本地文件路径（http(s)/data:base64/file:///绝对路径）。
 
     注意：本函数是 async —— 它由 ``v1_chat_completions`` 这条纯 async 链路调用，
     此前用同步 ``httpx.Client`` 会在网络慢时**冻结整个 sidecar 最长 60 秒**
     （下载进度、WebSocket、Agent 全部停摆）。改为 AsyncClient。
+
+    临时文件生命周期（N5 泄漏修复）：data:/http(s) 分支会 ``mkstemp`` 出一个新文件，
+    其路径会被追加到 ``created`` 由调用方在请求结束（成功/失败/取消）时统一 unlink；
+    本地绝对路径 / file:// 原样返回，**绝不**删除用户自己的文件。若本函数在 mkstemp
+    之后、return 之前异常，这里就地 unlink 刚建的临时文件，避免半写文件泄漏。
     """
     url = (url or "").strip()
     if not url:
@@ -2482,6 +2576,7 @@ async def _media_to_local(url: str, kind: str) -> str:
     import base64
     import tempfile
     if url.startswith("data:"):
+        path = ""
         try:
             meta, _, b64 = url.partition(",")
             raw = base64.b64decode(b64)
@@ -2498,12 +2593,18 @@ async def _media_to_local(url: str, kind: str) -> str:
             fd, path = tempfile.mkstemp(prefix=f"kevrai-{kind}-", suffix=ext)
             with os.fdopen(fd, "wb") as f:
                 f.write(raw)
+            if created is not None:
+                created.append(path)
             return path
         except Exception as e:  # noqa: BLE001
+            if path:
+                with contextlib.suppress(OSError):
+                    os.unlink(path)
             raise HTTPException(status_code=400, detail=f"data URL 解码失败: {e}") from e
     if url.startswith("file://"):
         url = url[len("file://"):]
     if url.startswith(("http://", "https://")):
+        path = ""
         try:
             import httpx
             async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
@@ -2520,10 +2621,15 @@ async def _media_to_local(url: str, kind: str) -> str:
             fd, path = tempfile.mkstemp(prefix=f"kevrai-{kind}-", suffix=ext)
             with os.fdopen(fd, "wb") as f:
                 f.write(r.content)
+            if created is not None:
+                created.append(path)
             return path
         except Exception as e:  # noqa: BLE001
+            if path:
+                with contextlib.suppress(OSError):
+                    os.unlink(path)
             raise HTTPException(status_code=400, detail=f"媒体下载失败: {e}") from e
-    # 本地绝对路径
+    # 本地绝对路径 —— 用户自己的文件，原样返回，不纳入 created 清理清单。
     if os.path.exists(url):
         return url
     raise HTTPException(status_code=400, detail=f"{kind} 文件不存在: {url}")
@@ -2574,7 +2680,8 @@ async def _v1_once(prompt: str, hist: list[dict[str, str]], images: list[str],
 
 
 def _v1_stream(prompt: str, hist: list[dict[str, str]], images: list[str],
-               audios: list[str], req: V1ChatReq, model_id: str) -> StreamingResponse:
+               audios: list[str], req: V1ChatReq, model_id: str,
+               created_temp: list[str] | None = None) -> StreamingResponse:
     """SSE 流式响应：逐段输出 chat.completion.chunk。"""
     def gen():
         try:
@@ -2616,6 +2723,12 @@ def _v1_stream(prompt: str, hist: list[dict[str, str]], images: list[str],
             yield f"data: {json.dumps({'error': {'message': f'推理失败：{e}', 'type': 'internal_error'}})}\n\n"
         finally:
             yield "data: [DONE]\n\n"
+            # N5：流式生成器在客户端断开 / 异常 / 正常结束时都会走到这里，
+            # 统一清理本请求临时落盘的媒体文件。
+            if created_temp:
+                for p in created_temp:
+                    with contextlib.suppress(OSError):
+                        os.unlink(p)
 
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})

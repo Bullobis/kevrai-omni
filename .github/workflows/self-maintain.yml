@@ -1,0 +1,181 @@
+name: cluster-self-maintain
+
+# Kevrai 集体协作集群的“无人值守巡检员”：不依赖任何会员会话，
+# 每天在 GitHub 托管端运行——后端测试、目录 URL 存活核验、依赖新鲜度，
+# 并把【高置信】问题自动汇总为一个去重的追踪 issue（待办池）。
+# 任何在线的集群代理都可认领该 issue 修复，形成自驱反馈循环。
+on:
+  schedule:
+    # 20:41 UTC 每日（北京时间次日 04:41，非整点、非高峰）
+    - cron: "41 20 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: cluster-self-maintain
+  cancel-in-progress: false
+
+jobs:
+  maintain:
+    name: 每日巡检 + 问题汇总
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip -q
+          pip install -q -r python/requirements.txt httpx
+
+      - name: Backend full test suite
+        id: tests
+        continue-on-error: true
+        working-directory: python
+        run: python -m pytest -q --tb=short 2>&1 | tee /tmp/pytest.log || true
+
+      - name: Extract pytest summary
+        run: |
+          line="$(grep -oE '[0-9]+ (passed|failed)[^,]*' /tmp/pytest.log | tail -1 || true)"
+          {
+            echo "PYTEST_LINE<<EOF"
+            echo "$line"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
+          if grep -q "failed" /tmp/pytest.log; then
+            echo "TESTS_OK=false" >> "$GITHUB_ENV"
+          else
+            echo "TESTS_OK=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Catalog URL liveness audit
+        run: |
+          python scripts/audit_catalog_liveness.py \
+            --json-out /tmp/liveness.json --md-out /tmp/liveness.md \
+            --concurrency 12 --timeout 15 || true
+          test -f /tmp/liveness.json || echo '{"counts":{},"results":[]}' > /tmp/liveness.json
+
+      - name: Dependency freshness (informational)
+        run: |
+          pip list --outdated --format=json > /tmp/pip-outdated.json 2>/dev/null || echo '[]' > /tmp/pip-outdated.json
+          npm outdated --json > /tmp/npm-outdated.json 2>/dev/null || echo '{}' > /tmp/npm-outdated.json
+
+      - name: Aggregate report
+        id: summary
+        run: |
+          python - <<'PY'
+          import json, datetime, pathlib, os
+
+          live = json.load(open("/tmp/liveness.json"))
+          counts = live.get("counts", {})
+          results = live.get("results", [])
+
+          # 高置信、需要处理的问题类别（GATED/UNCHECKED/低置信不触发，避免噪音）。
+          hard = {"DEAD", "SUSPICIOUS", "DNS_ERROR"}
+          problems = [r for r in results
+                      if r.get("verdict") in hard and r.get("confidence", "high") != "low"]
+
+          tests_ok = os.environ.get("TESTS_OK", "true") == "true"
+          pytest_line = os.environ.get("PYTEST_LINE", "")
+
+          try:
+              pip_old = json.load(open("/tmp/pip-outdated.json"))
+          except Exception:
+              pip_old = []
+          try:
+              npm_old = json.load(open("/tmp/npm-outdated.json"))
+          except Exception:
+              npm_old = {}
+
+          today = datetime.date.today().isoformat()
+          lines = [
+              f"# 集群每日巡检报告（{today}）", "",
+              "本 issue 由 `cluster-self-maintain` workflow 自动维护（去重、每日更新）。", "",
+              "## 后端测试",
+              f"- 结果：**{pytest_line or '未取得'}**",
+              f"- 状态：{'✅ 全绿' if tests_ok else '❌ 存在失败，需修复'}",
+              "",
+              "## 目录 URL 存活核验",
+              "- 判定计数：" + (", ".join(f"{k}={v}" for k, v in sorted(counts.items())) or "无"),
+              f"- 高置信问题条目：**{len(problems)}**",
+              "",
+              "| 判定 | URL | 状态 | 用于 | 说明 |",
+              "|---|---|---|---|---|",
+          ]
+          for r in sorted(problems, key=lambda x: x.get("verdict", "")):
+              refs = ", ".join(sorted(set(r.get("refs", [])))[:4])
+              detail = (r.get("detail") or "").replace("|", "/")[:80]
+              lines.append(f"| {r.get('verdict')} | `{r.get('url')}` | {r.get('status') or '—'} | {refs} | {detail} |")
+
+          lines += [
+              "",
+              "## 依赖新鲜度（仅供参考，不作为阻断）",
+              f"- pip 可更新包：{len(pip_old)} 个",
+              f"- npm 可更新包：{len(npm_old)} 个",
+              "",
+              "## 处理方式",
+              "1. 集群代理从最新 main 建独立 worktree，认领并修复上述问题；",
+              "2. 修复走特性分支 + Pull Request，后端须 pytest 全绿、真实计数；",
+              "3. 修复合并后，次日巡检会自动重新评估并在无问题时关闭本 issue。",
+              "",
+              f"_自动生成于 {today}，runner: ubuntu-latest。_",
+          ]
+          pathlib.Path("/tmp/report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+          has_problems = (not tests_ok) or bool(problems)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"has_problems={str(has_problems).lower()}\n")
+          PY
+
+      - name: Upload report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-maintain
+          path: |
+            /tmp/pytest.log
+            /tmp/liveness.json
+            /tmp/liveness.md
+            /tmp/pip-outdated.json
+            /tmp/npm-outdated.json
+            /tmp/report.md
+          if-no-files-found: ignore
+
+      - name: Create or refresh tracking issue
+        if: steps.summary.outputs.has_problems == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          gh label create self-maintain --description "auto cluster self-maintain tracker" --color "1D76DB" || true
+          EXISTING="$(gh issue list --label self-maintain --state open --json number --jq '.[0].number' || true)"
+          TITLE="集群每日巡检：待处理问题（自动维护）"
+          if [ -n "$EXISTING" ]; then
+            gh issue edit "$EXISTING" --title "$TITLE" --body-file /tmp/report.md
+            echo "updated issue #$EXISTING"
+          else
+            gh issue create --label self-maintain --title "$TITLE" --body-file /tmp/report.md
+          fi
+
+      - name: Close stale tracker when healthy
+        if: steps.summary.outputs.has_problems == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING="$(gh issue list --label self-maintain --state open --json number --jq '.[0].number' || true)"
+          if [ -n "$EXISTING" ]; then
+            gh issue close "$EXISTING" --comment "最新巡检已无高置信问题、测试全绿，自动关闭。" || true
+          fi

@@ -22,8 +22,31 @@
 > 点击播放 [assets/media/demo.mp4](assets/media/demo.mp4)。滚动演示由 `video/` 中的 Remotion 工程生成，GitHub Actions 每 6 小时刷新 `rolling-demo` Release 资产。
 
 ![License: Kevrai Omni Community License v2.1](https://img.shields.io/badge/License-Kevrai%20Community%20v2.1-orange)
-![Version](https://img.shields.io/badge/version-3.0.0-brightgreen)
-![Tests](https://img.shields.io/badge/tests-990%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.2.0-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1085%20passed-brightgreen)
+
+---
+
+## ✨ v3.2.0 更新亮点（UX 整合 + Remotion 滚动演示 + 发布加固）
+
+| 项目 | 说明 |
+|---|---|
+| 🧭 **设置与导航体验整合** | 标题栏设置齿轮、`Ctrl/Cmd + ,` 快捷键、设置三段分组、导航当前状态与悬停提示；详情栏支持关闭按钮，窄窗口下以右侧抽屉呈现 |
+| 🤖 **Agent 首次使用引导** | 空状态、建议问题卡片、点击自动填入输入框；未配置 LLM 时也能快速理解可执行任务 |
+| 🎬 **Remotion 滚动演示** | 独立 `video/` 工程生成 7 秒演示，GitHub Actions 每 6 小时刷新 `rolling-demo` Release 资产，视频工程与 Electron 运行时隔离 |
+| 🛡️ **Electron 安全与动态端口** | 权限请求默认拒绝；CSP 根据 sidecar host/port 动态生成；保留上下文隔离、预加载白名单和导航限制 |
+| 📦 **打包排除与发布加固** | Windows/Linux 打包排除测试、虚拟环境、缓存和构建产物；最终 zip/AppImage/deb 均执行独立完整性校验 |
+| 🧪 **测试与冒烟** | 合入 v3.1 后端可靠性加固与 Nova UX 回归；全量 **1085 passed**，Electron UI 冒烟和最终包校验通过 |
+
+---
+
+## ✨ v3.1.0 更新亮点（后端可靠性加固 + MNN 子进程隔离）
+
+| 项目 | 说明 |
+|---|---|
+| 🔒 **MNN 子进程隔离** | opt-in（`KEVRAI_MNN_SUBPROCESS=1`）将 MNN C++ 引擎放入独立 `spawn` 子进程；硬死锁时墙钟超时 `SIGKILL` 并由 OS 回收资源，下次加载自动重建，消除多线程 fork 死锁风险 |
+| 🧹 **资源泄漏修复** | 关闭时正确释放 hub 注册表与连接池；多模态临时媒体在成功/失败/取消/断连全路径清理；引擎 download.tmp 失败清理 |
+| 🧪 **可靠性验证** | 真实 sidecar 集成冒烟（零孤儿进程）、50 轮资源浸泡（FD/线程/子进程零增长）、25 轮 MNN kill/respawn 高压；全量 **1079 passed**，零新增第三方依赖 |
 
 ---
 

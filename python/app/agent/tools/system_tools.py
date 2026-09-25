@@ -10,6 +10,24 @@ from typing import Any
 from ..tool_registry import Tool, ToolContext
 
 
+def _as_int(value: Any, default: int, lo: int, hi: int, field: str) -> int:
+    """Coerce an LLM-supplied integer parameter with safe clamping.
+
+    Accepts int, float (truncated) and numeric strings; any other type raises
+    a clean ``ValueError`` (surfaced by the registry as ``ok: False`` with an
+    actionable message) instead of a bare ``int()`` traceback.
+    """
+    if value is None or value == "":
+        return default
+    if isinstance(value, bool):
+        raise ValueError(f"{field} must be an integer, got {value!r}")
+    try:
+        n = value if isinstance(value, int) else int(float(str(value).strip()))
+    except (ValueError, TypeError):
+        raise ValueError(f"{field} must be an integer, got {value!r}") from None
+    return max(lo, min(n, hi))
+
+
 # ---------------------------------------------------------------------------
 # check_hardware
 # ---------------------------------------------------------------------------
@@ -181,8 +199,7 @@ def _generate_text(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
     returns a helpful error with setup instructions.
     """
     prompt = str(params.get("prompt") or "").strip()
-    max_new_tokens = int(params.get("max_new_tokens") or 1024)
-    max_new_tokens = max(64, min(max_new_tokens, 8192))
+    max_new_tokens = _as_int(params.get("max_new_tokens"), 1024, 64, 8192, "max_new_tokens")
 
     if not prompt:
         return {"error": "prompt is required"}

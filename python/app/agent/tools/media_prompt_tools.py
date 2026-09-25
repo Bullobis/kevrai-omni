@@ -44,6 +44,24 @@ def _clean(v: Any, max_len: int = 500) -> str:
     return str(v or "").strip()[:max_len]
 
 
+def _as_int(value: Any, default: int, lo: int, hi: int, field: str) -> int:
+    """Coerce an LLM-supplied integer parameter with safe clamping.
+
+    Accepts int, float (truncated) and numeric strings; any other type raises
+    a clean ``ValueError`` (surfaced by the registry as ``ok: False`` with an
+    actionable message) instead of a bare ``int()`` traceback.
+    """
+    if value is None or value == "":
+        return default
+    if isinstance(value, bool):
+        raise ValueError(f"{field} must be an integer, got {value!r}")
+    try:
+        n = value if isinstance(value, int) else int(float(str(value).strip()))
+    except (ValueError, TypeError):
+        raise ValueError(f"{field} must be an integer, got {value!r}") from None
+    return max(lo, min(n, hi))
+
+
 def _split_tags(v: Any) -> list[str]:
     if isinstance(v, list):
         raw = [str(x) for x in v]
@@ -158,8 +176,7 @@ def _build_video_prompt(params: dict[str, Any], ctx: ToolContext) -> dict[str, A
     if camera not in _CAMERA_WORDS:
         # free-form camera descriptions are allowed but known words are preferred
         pass
-    duration = int(params.get("duration_s") or 5)
-    duration = max(1, min(duration, 15))
+    duration = _as_int(params.get("duration_s"), 5, 1, 15, "duration_s")
     extra_pos = _split_tags(params.get("extra_tags"))
     extra_neg = _split_tags(params.get("negative_tags"))
 
@@ -230,10 +247,8 @@ def _build_music_prompt(params: dict[str, Any], ctx: ToolContext) -> dict[str, A
         return {"error": "mood is required"}
     genre = _clean(params.get("genre"))
     instruments = _split_tags(params.get("instruments"))
-    tempo = int(params.get("tempo_bpm") or 90)
-    tempo = max(40, min(tempo, 220))
-    duration = int(params.get("duration_s") or 30)
-    duration = max(2, min(duration, 600))
+    tempo = _as_int(params.get("tempo_bpm"), 90, 40, 220, "tempo_bpm")
+    duration = _as_int(params.get("duration_s"), 30, 2, 600, "duration_s")
     extra_neg = _split_tags(params.get("negative_tags"))
 
     pos_parts = [f"情绪:{mood}"]

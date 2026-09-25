@@ -20,6 +20,24 @@ def _clean(v: Any, max_len: int = 8000) -> str:
     return str(v or "").strip()[:max_len]
 
 
+def _as_int(value: Any, default: int, lo: int, hi: int, field: str) -> int:
+    """Coerce an LLM-supplied integer parameter with safe clamping.
+
+    Accepts int, float (truncated) and numeric strings; any other type raises
+    a clean ``ValueError`` (surfaced by the registry as ``ok: False`` with an
+    actionable message) instead of a bare ``int()`` traceback.
+    """
+    if value is None or value == "":
+        return default
+    if isinstance(value, bool):
+        raise ValueError(f"{field} must be an integer, got {value!r}")
+    try:
+        n = value if isinstance(value, int) else int(float(str(value).strip()))
+    except (ValueError, TypeError):
+        raise ValueError(f"{field} must be an integer, got {value!r}") from None
+    return max(lo, min(n, hi))
+
+
 def _try_llm(prompt: str, max_new_tokens: int = 1024) -> dict[str, Any]:
     """Best-effort local LLM call; never raises (degrades to deterministic)."""
     try:
@@ -70,8 +88,7 @@ def _outline(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
         return {"error": "topic is required"}
     doc_type = _clean(params.get("doc_type"), 40) or "通用"
     template = _OUTLINE_TEMPLATES.get(doc_type, _OUTLINE_TEMPLATES["通用"])
-    n = int(params.get("sections") or len(template))
-    n = max(2, min(n, 12))
+    n = _as_int(params.get("sections"), len(template), 2, 12, "sections")
     sections = template[:n] if n <= len(template) else template + [f"补充部分{i}" for i in range(1, n - len(template) + 1)]
     outline = [{"index": i + 1, "heading": h, "points": []} for i, h in enumerate(sections)]
     prompt = (
@@ -166,8 +183,7 @@ def _summary(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
     text = _clean(params.get("text"))
     if not text:
         return {"error": "text is required"}
-    top_n = int(params.get("max_sentences") or 3)
-    top_n = max(1, min(top_n, 10))
+    top_n = _as_int(params.get("max_sentences"), 3, 1, 10, "max_sentences")
     sentences = _split_sentences(text)
     # Word frequency (CJK bigrams + ascii words), stopwords removed.
     tokens = re.findall(r"[一-鿿]{2,}|[A-Za-z]{2,}", text)

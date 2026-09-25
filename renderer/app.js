@@ -65,10 +65,15 @@ export async function loadAll() {
       engines:    ens?.body?.engines   || ens?.engines   || [],
       local:      locs?.body?.local    || locs?.local    || [],
     });
+    // GGUF 枚举需要触网，不阻塞首屏：后台加载，就绪后单独渲染。
+    api.ggufRepos()
+      .then((r) => { setState({ ggufRepos: r?.body?.repos || r?.repos || [] }); renderGGUF(); })
+      .catch(() => {});
     populateCategoryFilter();
     renderModelGrid();
     renderEngines();
     renderLocal();
+    renderGGUF();
     applyTheme();
     setHealthOk(`sidecar v${h?.body?.version || "?"}`);
     // Show local curated results immediately, then merge online results without
@@ -77,20 +82,6 @@ export async function loadAll() {
     runSearch({ resetPage: true }).catch(() => {});
   } catch (e) {
     setHealthErr(String(e?.message || e));
-  }
-  // GGUF live enumeration can take longer than the first paint. Keep it out of
-  // the critical path and update the GGUF pane when the detailed response arrives.
-  refreshGGUFRepos().catch(() => {});
-}
-
-async function refreshGGUFRepos() {
-  try {
-    const r = await api.ggufRepos();
-    const body = r?.body || r || {};
-    state.ggufRepos = body.repos || [];
-    renderGGUF();
-  } catch (_) {
-    // GGUF details are optional; the main market must remain usable.
   }
 }
 
@@ -111,7 +102,7 @@ function renderGGUF() {
   const el = $("#gguf-repos");
   if (!el) return;
   const repos = state.ggufRepos || [];
-  if (!repos.length) { el.innerHTML = `<div class="hint">GGUF 仓库列表为空（sidecar 未返回数据）。</div>`; return; }
+  if (!repos.length) { el.innerHTML = `<div class="hint">GGUF 仓库列表加载中…</div>`; return; }
   el.innerHTML = repos.map((r) => {
     if (r.error) {
       return `
@@ -364,6 +355,29 @@ function wirePaletteEvents() {
   window.addEventListener("kevrai:check-updates", () => {
     const b = document.querySelector("[data-action=check-updates]");
     if (b) b.click();
+  });
+  // v3.1.0 — persist theme chosen from the command palette.
+  window.addEventListener("kevrai:set-theme", (e) => {
+    const theme = e.detail && e.detail.theme;
+    if (!theme) return;
+    (async () => {
+      try {
+        const cur = await api.getSettings();
+        const s = (cur && (cur.body || cur)) || {};
+        s.theme = theme;
+        await api.putSettings(s);
+      } catch (_) {}
+    })();
+  });
+  // v3.1.0 — reveal the app data folder in the OS file manager.
+  window.addEventListener("kevrai:open-data", () => {
+    (async () => {
+      try {
+        const h = await api.health();
+        const p = h.app_root || (h.body && h.body.app_root);
+        if (p) await api.openPath(p);
+      } catch (_) {}
+    })();
   });
 }
 
