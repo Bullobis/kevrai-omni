@@ -506,7 +506,10 @@ class EnsureEngineReq(BaseModel):
 
 
 class SettingsUpdate(BaseModel):
-    model_config = {"protected_namespaces": ()}
+    # ``extra="forbid"``: a typo'd renderer field (e.g. ``thme``) must come back
+    # as a 422 instead of being silently dropped, which previously made the UI
+    # look like the setting "didn't save" with no diagnostic.
+    model_config = {"protected_namespaces": (), "extra": "forbid"}
     model_dir: str | None = None
     engine_dir: str | None = None
     download_dir: str | None = None
@@ -584,6 +587,36 @@ def _get_settings(request: Request) -> Settings:
     if s is None:
         s = load_settings()
     return s
+
+
+#: Serialises the settings read-modify-write critical section in
+#: ``PUT /api/settings``. Without it, two concurrent partial updates (A patches
+#: field x, B patches field y) both snapshot the same old Settings object and
+#: the later writer clobbers the earlier one's change (a lost update). The
+#: lock is re-created per running loop — asyncio locks bind to the loop that
+#: first acquires them, and the test-suite drives many short-lived loops.
+_SETTINGS_LOCK: "asyncio.Lock | None" = None
+_SETTINGS_LOCK_LOOP: object = None
+
+
+def _settings_lock() -> "asyncio.Lock":
+    global _SETTINGS_LOCK, _SETTINGS_LOCK_LOOP
+    loop = asyncio.get_running_loop()
+    if _SETTINGS_LOCK is None or _SETTINGS_LOCK_LOOP is not loop:
+        _SETTINGS_LOCK = asyncio.Lock()
+        _SETTINGS_LOCK_LOOP = loop
+    return _SETTINGS_LOCK
+
+
+async def _persist_settings(s: Settings, path: str | os.PathLike[str]) -> None:
+    """Async seam around the atomic on-disk write.
+
+    The write itself stays synchronous and atomic (temp-file + fsync +
+    ``os.replace``). It is surfaced as an ``async`` seam so tests can insert a
+    deterministic suspension between the read-copy and the write-back inside
+    the RMW critical section (see ``test_neuron10_settings_atomic.py``).
+    """
+    save_settings(s, path)
 
 
 def _get_downloader(request: Request) -> Downloader:
@@ -1086,24 +1119,32 @@ def get_settings(request: Request) -> dict[str, Any]:
 
 @app.put("/api/settings")
 async def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]:
-    s = _get_settings(request).model_copy()
-    patch = body.model_dump(exclude_unset=True)
-    try:
-        for k, v in patch.items():
-            if v is None:
-                continue
-            # Theme / HardwareAccel are Literal — validate_assignment re-runs
-            # the validator on setattr so typos here become a 400, not a
-            # silently-persisted garbage value (which previously survived).
-            if hasattr(s, k):
-                setattr(s, k, v)
-    except ValidationError as e:
-        locs = ".".join(str(x) for x in e.errors()[0].get("loc", [])) or "value"
-        raise HTTPException(
-            status_code=400, detail=f"invalid settings value for {locs}"
-        ) from e
-    save_settings(s, request.app.state.settings_path)
-    request.app.state.settings = s
+    # Critical section: read the live snapshot -> apply the patch -> persist ->
+    # publish on app.state.settings. Serialised by _settings_lock() so two
+    # concurrent partial updates cannot each snapshot the same old Settings and
+    # have the later write clobber the earlier one (lost update). The hub /
+    # source-registry / downloader rebuilds below only touch app.state handles
+    # and may run after the lock is released; by then state.settings already
+    # holds the merged result.
+    async with _settings_lock():
+        s = _get_settings(request).model_copy()
+        patch = body.model_dump(exclude_unset=True)
+        try:
+            for k, v in patch.items():
+                if v is None:
+                    continue
+                # Theme / HardwareAccel are Literal — validate_assignment re-runs
+                # the validator on setattr so typos here become a 400, not a
+                # silently-persisted garbage value (which previously survived).
+                if hasattr(s, k):
+                    setattr(s, k, v)
+        except ValidationError as e:
+            locs = ".".join(str(x) for x in e.errors()[0].get("loc", [])) or "value"
+            raise HTTPException(
+                status_code=400, detail=f"invalid settings value for {locs}"
+            ) from e
+        await _persist_settings(s, request.app.state.settings_path)
+        request.app.state.settings = s
     # Settings identity changed → rebuild the hub registry so new tokens/mirrors
     # take effect immediately without a restart. Repoint the lifespan handle at
     # the fresh singleton so shutdown closes the registry actually serving
