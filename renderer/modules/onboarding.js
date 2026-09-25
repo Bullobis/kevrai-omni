@@ -4,6 +4,7 @@
 "use strict";
 
 import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
+import { overlayOpen, overlayClose } from "./overlay-fx.js";
 
 const FLAG = "kevrai.onboarded.v1";
 
@@ -16,12 +17,12 @@ export function wireOnboarding() {
 
   // a11y — 记录打开前焦点，trap Tab 序，Esc 关闭。
   const savedTrigger = recordFocus();
-  overlay.removeAttribute("hidden");
+  overlayOpen(overlay);
   trapFocus(overlay);
   const close = () => {
     try { localStorage.setItem(FLAG, "1"); } catch (_) {}
-    overlay.remove();
     restoreFocus(savedTrigger);
+    overlayClose(overlay, { done: () => overlay.remove() });
   };
   overlay.querySelectorAll("[data-action=close-onboarding]").forEach((b) =>
     b.addEventListener("click", close));
