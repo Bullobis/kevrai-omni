@@ -22,7 +22,7 @@
 Kevrai Omni 是一个 **Electron 桌面壳 + Python 推理 sidecar** 的双进程架构：
 
 - **Electron 主进程**（Node 20.x，随 Electron 33 分发）：管窗口、生命周期、自动更新、把 Python sidecar 当子进程拉起来。
-- **渲染进程**（Chromium，原生 JS/HTML/CSS，无前端框架）：UI，约 21 个 ES 模块。
+- **渲染进程**（Chromium，原生 JS/HTML/CSS，无前端框架）：UI，约 29 个 ES 模块。
 - **preload 桥**（`contextBridge`）：渲染进程拿不到 Node，只能通过白名单 IPC 通道和主进程说话。
 - **Python sidecar**（FastAPI + Uvicorn）：真正的控制面——目录、引擎、下载、GPU 探测、推理运行时（llama.cpp / MNN / LTX 等），HTTP + WebSocket 都绑在 `127.0.0.1:17890`。
 
@@ -145,7 +145,7 @@ API 面按域分组（节选自 `preload.js` 实际导出）：
 
 ## 5. 渲染进程（renderer/）
 
-原生 ES Module，无打包器。入口 `renderer/index.html` → `renderer/app.js` 装配 `renderer/modules/*.js` 下 21 个模块。
+原生 ES Module，无打包器。入口 `renderer/index.html` → `renderer/app.js` 装配 `renderer/modules/*.js` 下 29 个模块。
 
 | 模块 | 职责（取自文件头注释） |
 |---|---|
@@ -170,6 +170,14 @@ API 面按域分组（节选自 `preload.js` 实际导出）：
 | `ltx.js` | LTX-2.5 视频生成面板（t2v/i2v）。 |
 | `generation-wait.js` | 生成等待动画遮罩。 |
 | `agent.js` | Kevrai Agent 助手面板（ReAct 循环 UI）。 |
+| `command-palette.js` | 命令面板（Ctrl/⌘+K）+ 全局快捷键体系；模糊匹配、最近命令、动作注册表。 |
+| `favorites.js` | 模型收藏与最近使用，localStorage（`kevrai:favorites` / `kevrai:recent`）持久化。 |
+| `focus-return.js` | 模态/浮层共享焦点工具：焦点归还、焦点陷阱、按优先级栈统一处理 Esc。 |
+| `i18n.js` | 极简 i18n：嵌套 key、占位符、字典回退、DOM 绑定（zh-CN / en-US）。 |
+| `idle.js` | 用 requestIdleCallback 把低优先级启动工作延后到空闲时段执行。 |
+| `overlay-fx.js` | 对话框浮层统一的打开/关闭过渡（仅 transform/opacity）。 |
+| `empty-state.js` | 统一空状态组件：图标 + 标题 + 辅助说明 + 可选主操作。 |
+| `view-visibility.js` | 视图可见性工具：后台视图（LTX / MNN）隐藏时停止轮询，省资源。 |
 
 ---
 
