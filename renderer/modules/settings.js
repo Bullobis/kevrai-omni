@@ -7,6 +7,9 @@ import { applyTheme } from "./theme.js";
 import { showGenerationWait, hideGenerationWait } from "./generation-wait.js";
 import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
 import { overlayOpen, overlayClose } from "./overlay-fx.js";
+import {
+  downloadExport, parseImport, importData, applyImportedPreferences,
+} from "./data-portability.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -151,6 +154,65 @@ export function wireSettings() {
       toast("设置已重置", { kind: "ok" });
     } catch (_) {}
   });
+
+  // ── 数据管理：导出 / 导入 ──────────────────────────────────────────────
+  // 已选中并通过校验的备份内容（在文件选择后暂存，等待用户选合并/替换）。
+  let pendingParsed = null;
+  const importConfirm = $("#import-confirm");
+  const importConfirmText = $("#import-confirm-text");
+  const importFileInput = $("#import-file-input");
+
+  const hideImportConfirm = () => {
+    pendingParsed = null;
+    if (importConfirm) importConfirm.hidden = true;
+    if (importFileInput) importFileInput.value = "";
+  };
+
+  $("#btn-export-data")?.addEventListener("click", async () => {
+    const ok = await downloadExport();
+    if (ok) toast("数据已导出", { kind: "ok" });
+    else toast("导出失败：浏览器不支持文件下载", { kind: "err" });
+  });
+
+  $("#btn-import-data")?.addEventListener("click", () => {
+    if (importFileInput) importFileInput.click();
+  });
+
+  importFileInput?.addEventListener("change", async () => {
+    const file = importFileInput.files && importFileInput.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      pendingParsed = parseImport(text);
+      const d = pendingParsed.data;
+      if (importConfirmText) {
+        importConfirmText.textContent =
+          `已选择「${file.name}」（收藏 ${(d.favorites || []).length} 个、`
+          + `最近使用 ${(d.recent || []).length} 条）。请选择导入方式：`;
+      }
+      if (importConfirm) importConfirm.hidden = false;
+    } catch (err) {
+      pendingParsed = null;
+      toast(err.message || "导入失败", { kind: "err" });
+      importFileInput.value = "";
+    }
+  });
+
+  const runImport = async (mode) => {
+    if (!pendingParsed) return;
+    try {
+      const stats = await importData(pendingParsed, mode);
+      applyImportedPreferences(pendingParsed);
+      toast(`已导入 ${stats.favorites} 个收藏、${stats.recent} 条最近使用`, { kind: "ok" });
+      hideImportConfirm();
+    } catch (err) {
+      toast(err.message || "导入失败", { kind: "err" });
+    }
+  };
+
+  $("#btn-import-merge")?.addEventListener("click", () => { runImport("merge").catch(() => {}); });
+  $("#btn-import-replace")?.addEventListener("click", () => { runImport("replace").catch(() => {}); });
+  $("#btn-import-cancel")?.addEventListener("click", hideImportConfirm);
 
   // Preview creative generation-wait animation
   $("#btn-preview-genwait")?.addEventListener("click", () => {
