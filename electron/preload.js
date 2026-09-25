@@ -27,6 +27,9 @@ function exposeErr(name, e) {
   return new Error(`${ERR_PRELUED}${name}: ${msg}`);
 }
 
+function assert(cond, msg) {
+  if (!cond) throw new Error(msg || "assertion failed");
+}
 function assertString(v, name, max = 256) {
   if (typeof v !== "string" || v.length === 0 || v.length > max) {
     throw new Error(`${name}: must be a non-empty string ≤${max}`);
