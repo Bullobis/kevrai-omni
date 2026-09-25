@@ -77,3 +77,50 @@
   color: var(--mut, #9aa0a6);
   font-size: var(--fs-sm, 13px);
 }
+
+/* ── Keyboard-shortcuts cheat-sheet (reuses the overlay/panel tokens) ─────── */
+.cmdpal-help {
+  width: min(560px, 92vw);
+  padding: 4px 8px 12px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.cmdpal-help-title {
+  padding: 12px 10px 6px;
+  font-size: var(--fs-md, 16px);
+  font-weight: 600;
+  color: var(--fg, #e8eaed);
+}
+.cmdpal-help-group {
+  margin: 10px 8px 4px;
+  font-size: var(--fs-xs, 12px);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mut, #9aa0a6);
+}
+.cmdpal-help-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 10px;
+  border-radius: var(--r-2, 8px);
+  font-size: var(--fs-base, 14px);
+  color: var(--fg, #e8eaed);
+}
+.cmdpal-help-row:hover { background: var(--card-hover, rgba(255, 255, 255, 0.06)); }
+.cmdpal-help-desc { flex: 1; }
+.cmdpal-help-row kbd {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: var(--fs-xs, 12px);
+  color: var(--fg, #e8eaed);
+  background: var(--stack-2, #1a1c21);
+  border: 1px solid var(--bord, rgba(255, 255, 255, 0.1));
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cmdpal-overlay { backdrop-filter: none; }
+}
