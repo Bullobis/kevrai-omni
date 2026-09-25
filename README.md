@@ -16,8 +16,18 @@
 > 点击播放 [assets/media/promo.mp4](assets/media/promo.mp4)。全部画面取自 v2.8.1 真实运行界面（真实模型目录、真实硬件检测、真实 Agent 工具调用）：模型市场双源检索、硬件体检与模型推荐、Kevrai Agent 工具调用、短剧 Agent、LTX-2.5 视频生成、MNN 引擎。
 
 ![License: Kevrai Omni Community License v2.1](https://img.shields.io/badge/License-Kevrai%20Community%20v2.1-orange)
-![Version](https://img.shields.io/badge/version-3.0.0-brightgreen)
-![Tests](https://img.shields.io/badge/tests-940%20passed-brightgreen)
+![Version](https://img.shields.io/badge/version-3.1.0-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1079%20passed-brightgreen)
+
+---
+
+## ✨ v3.1.0 更新亮点（后端可靠性加固 + MNN 子进程隔离）
+
+| 项目 | 说明 |
+|---|---|
+| 🔒 **MNN 子进程隔离** | opt-in（`KEVRAI_MNN_SUBPROCESS=1`）将 MNN C++ 引擎放入独立 `spawn` 子进程；硬死锁时墙钟超时 `SIGKILL` 并由 OS 回收资源，下次加载自动重建，消除多线程 fork 死锁风险 |
+| 🧹 **资源泄漏修复** | 关闭时正确释放 hub 注册表与连接池；多模态临时媒体在成功/失败/取消/断连全路径清理；引擎 download.tmp 失败清理 |
+| 🧪 **可靠性验证** | 真实 sidecar 集成冒烟（零孤儿进程）、50 轮资源浸泡（FD/线程/子进程零增长）、25 轮 MNN kill/respawn 高压；全量 **1079 passed**，零新增第三方依赖 |
 
 ---
 
