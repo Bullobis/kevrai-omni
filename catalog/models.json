@@ -1,5 +1,5 @@
 {
-  "version": "3.1.0",
+  "version": "3.2.0",
   "updated": "2026-09-24",
   "notice": "v2.9.0 K-Catalog 事实核验（ADR-0003）：修正 14 处失效/错误仓库 slug(THUDM/glm-4-9b-chat→zai-org/GLM-4.5, Tencent-Hunyuan→tencent, xinntao/Real-ESRGAN→ai-forever, Kiteretsu77/APISR→camenduru, Fanghua-Yu/SUPIR→camenduru[非官方转存], Kim2091/4x-UltraSharp→lokCX, haoheliu/audioldm2→audioldm2-full, ASLP-lab/DiffRhythm→DiffRhythm-base, VAST-AI-Research/TripoSR→stabilityai, RVC-Boss/GPT-SoVITS→lj1995, THU-MIG/yolov10→onnx-community, hpcaitech/Open-Sora→hpcai-tech, dummy9996/MiniMax-Music3-w4a8→NidAll, buffalo_l→immich-app/buffalo_l)；清除广告软文式描述；按平台分拆 sources（GitHub/HF 各用各 slug）。",
   "categories": [
