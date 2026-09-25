@@ -3,6 +3,8 @@
 // 「装引擎 → 下模型 → 输提示词」三步，然后让开。
 "use strict";
 
+import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
+
 const FLAG = "kevrai.onboarded.v1";
 
 export function wireOnboarding() {
@@ -12,12 +14,22 @@ export function wireOnboarding() {
     if (localStorage.getItem(FLAG)) { overlay.remove(); return; }
   } catch (_) { /* storage unavailable → show once per launch */ }
 
+  // a11y — 记录打开前焦点，trap Tab 序，Esc 关闭。
+  const savedTrigger = recordFocus();
   overlay.removeAttribute("hidden");
+  trapFocus(overlay);
   const close = () => {
     try { localStorage.setItem(FLAG, "1"); } catch (_) {}
     overlay.remove();
+    restoreFocus(savedTrigger);
   };
   overlay.querySelectorAll("[data-action=close-onboarding]").forEach((b) =>
     b.addEventListener("click", close));
   overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  registerEsc({
+    order: 50,
+    root: overlay,
+    isOpen: () => overlay.isConnected && !overlay.hasAttribute("hidden"),
+    close,
+  });
 }
