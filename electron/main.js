@@ -57,6 +57,24 @@ const SIDECAR_PY = app.isPackaged
   ? path.join(process.resourcesPath, "python", "app", "main.py")
   : path.join(__dirname, "..", "python", "app", "main.py");
 
+// Frozen sidecar (PyInstaller onedir) shipped at resources/sidecar. When the
+// executable exists we spawn it directly (no Python interpreter needed); the
+// source sidecar + in-app Python bootstrap remains a fallback. Dev builds can
+// also use a locally-built python/dist/sidecar for testing.
+function frozenSidecarExe() {
+  const base = app.isPackaged
+    ? path.join(process.resourcesPath, "sidecar")
+    : path.join(__dirname, "..", "python", "dist", "sidecar");
+  const exe = path.join(base, process.platform === "win32" ? "sidecar.exe" : "sidecar");
+  try { return fs.existsSync(exe) ? exe : null; } catch (_) { return null; }
+}
+
+function catalogResourceDir() {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, "catalog")
+    : path.join(__dirname, "..", "catalog");
+}
+
 //: 魔搭 (ModelScope) serves its official logo from this CDN. The model market
 //: renders it as the source badge, so the host must be allowed in `img-src` —
 //: a bare `'self' data:` silently blocked it (verified in a real browser).
@@ -213,6 +231,7 @@ function sidecarEnv() {
     ...process.env,
     KEVRAI_PORT: String(SIDECAR_PORT),
     KEVRAI_SIDECAR_SECRET: sidecarSecret,
+    KEVRAI_CATALOG_DIR: catalogResourceDir(),
     PYTHONUNBUFFERED: "1",
     PYTHONIOENCODING: "UTF-8",
     NODE_OPTIONS: "--max-old-space-size=2048", // belt-and-braces; python ignores but pinned per spec
@@ -394,22 +413,32 @@ async function relaunchAfterBootstrap() {
 }
 
 function startSidecar() {
-  const py = resolvePython();
-  if (!py) {
-    logError("no Python interpreter found — entering in-app bootstrap mode");
-    return "no-python";
+  // Prefer the frozen sidecar shipped at resources/sidecar (no Python needed).
+  const frozen = frozenSidecarExe();
+  let file, args, cwd;
+  if (frozen) {
+    file = frozen;
+    args = [];
+    cwd = path.dirname(frozen);
+  } else {
+    const py = resolvePython();
+    if (!py) {
+      logError("no Python interpreter found — entering in-app bootstrap mode");
+      return "no-python";
+    }
+    file = py;
+    args = [
+      "-X", "utf8", "-u",
+      "-m", "uvicorn", "app.main:app",
+      "--host", SIDECAR_HOST, "--port", String(SIDECAR_PORT),
+      "--no-access-log",
+      "--log-level", "warning",
+    ];
+    cwd = path.dirname(path.dirname(SIDECAR_PY));
   }
-  const cmd = [
-    "-X", "utf8", "-u",
-    "-m", "uvicorn", "app.main:app",
-    "--host", SIDECAR_HOST, "--port", String(SIDECAR_PORT),
-    "--no-access-log",
-    "--log-level", "warning",
-  ];
-  const cwd = path.dirname(path.dirname(SIDECAR_PY));
-  logInfo("spawn sidecar:", py, cmd.join(" "), "cwd=", cwd);
+  logInfo("spawn sidecar:", file, args.join(" "), "cwd=", cwd);
   try {
-    sidecarProc = spawn(py, cmd, {
+    sidecarProc = spawn(file, args, {
       cwd,
       env: sidecarEnv(),
       stdio: ["ignore", "pipe", "pipe"],

@@ -16,6 +16,13 @@ extraResources:
   - from: "catalog"
     to: "catalog"
     filter: ["**/*"]
+  # Frozen sidecar (PyInstaller onedir), built per-OS in release.yml before
+  # electron-builder runs. The tracked .gitkeep keeps this directory present in
+  # fresh checkouts / local --dir builds; main.js falls back to the source
+  # sidecar below when the frozen executable is absent.
+  - from: "python/dist/sidecar"
+    to: "sidecar"
+    filter: ["**/*", "!.gitkeep"]
   - from: "python"
     to: "python"
     # Include only the runtime sidecar sources; exclude the test suite,

@@ -132,7 +132,16 @@ APP_ROOT = _app_data_root()
 APP_ROOT.mkdir(parents=True, exist_ok=True)
 MODELS_DIR = APP_ROOT / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
-CATALOG_DIR = Path(__file__).resolve().parent.parent.parent / "catalog"
+def _resolve_catalog_dir() -> Path:
+    # 打包后的冻结 sidecar：Electron 经 KEVRAI_CATALOG_DIR 显式传入 catalog 路径
+    # （PyInstaller bundle 内 __file__ 上溯三级不再指向 resources/catalog）。
+    env_dir = os.environ.get("KEVRAI_CATALOG_DIR")
+    if env_dir:
+        return Path(env_dir)
+    return Path(__file__).resolve().parent.parent.parent / "catalog"
+
+
+CATALOG_DIR = _resolve_catalog_dir()
 
 try:
     CATALOG, ENGINES = load_catalog(CATALOG_DIR)

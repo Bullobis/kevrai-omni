@@ -1,0 +1,4 @@
+# Placeholder so this directory exists in fresh checkouts. The frozen sidecar
+# (sidecar executable + _internal/) is built per-OS by .github/workflows/release.yml
+# before electron-builder runs. main.js uses the source sidecar when the
+# executable is not present.
