@@ -336,6 +336,29 @@ function wirePaletteEvents() {
     const b = document.querySelector("[data-action=check-updates]");
     if (b) b.click();
   });
+  // v3.1.0 — persist theme chosen from the command palette.
+  window.addEventListener("kevrai:set-theme", (e) => {
+    const theme = e.detail && e.detail.theme;
+    if (!theme) return;
+    (async () => {
+      try {
+        const cur = await api.getSettings();
+        const s = (cur && (cur.body || cur)) || {};
+        s.theme = theme;
+        await api.putSettings(s);
+      } catch (_) {}
+    })();
+  });
+  // v3.1.0 — reveal the app data folder in the OS file manager.
+  window.addEventListener("kevrai:open-data", () => {
+    (async () => {
+      try {
+        const h = await api.health();
+        const p = h.app_root || (h.body && h.body.app_root);
+        if (p) await api.openPath(p);
+      } catch (_) {}
+    })();
+  });
 }
 
 async function bootstrap() {
