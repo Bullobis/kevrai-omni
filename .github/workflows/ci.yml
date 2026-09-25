@@ -12,6 +12,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# CI jobs only read the tree and upload artifacts; no push, no release.
+permissions:
+  contents: read
+
 jobs:
 
   # ------------------------------------------------------------------
