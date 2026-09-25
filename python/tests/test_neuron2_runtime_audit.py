@@ -29,7 +29,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import ltx_runtime, mnn_runtime  # noqa: E402
+from app import ltx_runtime  # noqa: E402
 from app.ltx_runtime import LtxManager, LtxParams, TaskState, _Cancelled  # noqa: E402
 
 _APP_DIR = Path(ltx_runtime.__file__).resolve().parent

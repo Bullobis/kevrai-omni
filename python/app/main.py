@@ -595,11 +595,11 @@ def _get_settings(request: Request) -> Settings:
 #: the later writer clobbers the earlier one's change (a lost update). The
 #: lock is re-created per running loop — asyncio locks bind to the loop that
 #: first acquires them, and the test-suite drives many short-lived loops.
-_SETTINGS_LOCK: "asyncio.Lock | None" = None
+_SETTINGS_LOCK: asyncio.Lock | None = None
 _SETTINGS_LOCK_LOOP: object = None
 
 
-def _settings_lock() -> "asyncio.Lock":
+def _settings_lock() -> asyncio.Lock:
     global _SETTINGS_LOCK, _SETTINGS_LOCK_LOOP
     loop = asyncio.get_running_loop()
     if _SETTINGS_LOCK is None or _SETTINGS_LOCK_LOOP is not loop:
@@ -3453,9 +3453,16 @@ async def ws_agent(websocket: WebSocket, session_id: str) -> None:
             # Boundary: a single blocking chat() call is NOT interruptible —
             # cancellation takes effect at the next ReAct checkpoint after that
             # call returns.
-            async def _run_offloaded():
-                return await _ws_loop.run_in_executor(
-                    None, lambda: asyncio.run(agent.run(message, session_id=session_id))
+            # Bind the loop/iteration-scoped values as default arguments so the
+            # coroutine captures THIS iteration's values and never a later
+            # loop iteration's (ruff B023 closure-binding).
+            async def _run_offloaded(
+                _loop: asyncio.AbstractEventLoop = _ws_loop,
+                _msg: str = message,
+                _session_id: str = session_id,
+            ):
+                return await _loop.run_in_executor(
+                    None, lambda: asyncio.run(agent.run(_msg, session_id=_session_id))
                 )
 
             run_task: asyncio.Task = asyncio.ensure_future(_run_offloaded())
