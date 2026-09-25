@@ -19,7 +19,7 @@
  *     declares a matching meta CSP).
  */
 
-const { app, BrowserWindow, ipcMain, shell, dialog, session, Menu, nativeTheme } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog, session, Menu, nativeTheme, screen } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 const fsp = require("node:fs/promises");
@@ -535,10 +535,55 @@ function resolveBackgroundColor() {
   return isDark ? "#0d0e11" : "#f6f7f9";
 }
 
+// ---------------------------------------------------------------------------
+// Window state persistence (remember size/position/maximize across launches)
+// ---------------------------------------------------------------------------
+
+let WINDOW_STATE_PATH = null;
+const MIN_VISIBLE_PX = 100; // a restored window must overlap a display by this much
+
+function loadWindowStateSync() {
+  try {
+    const s = JSON.parse(fs.readFileSync(WINDOW_STATE_PATH, "utf-8"));
+    return s && typeof s === "object" ? s : null;
+  } catch (_) { return null; }
+}
+
+async function saveWindowState(next) {
+  try {
+    const merged = { ...(loadWindowStateSync() || {}), ...next };
+    await fsp.writeFile(WINDOW_STATE_PATH, JSON.stringify(merged, null, 2),
+                        { encoding: "utf-8", mode: 0o600 });
+  } catch (_) {}
+}
+
+// Return the saved bounds only when they overlap a currently attached display
+// by at least MIN_VISIBLE_PX on both axes; otherwise null. This avoids restoring
+// a window onto a monitor that has since been disconnected.
+function safeRestoredBounds(saved) {
+  const b = saved && saved.bounds;
+  if (!b) return null;
+  const { x, y, width, height } = b;
+  if (![x, y, width, height].every(Number.isFinite)) return null;
+  if (width < MIN_VISIBLE_PX || height < MIN_VISIBLE_PX) return null;
+  const fits = screen.getAllDisplays().some((d) => {
+    const a = d.workArea;
+    const ow = Math.min(x + width, a.x + a.width) - Math.max(x, a.x);
+    const oh = Math.min(y + height, a.y + a.height) - Math.max(y, a.y);
+    return ow >= MIN_VISIBLE_PX && oh >= MIN_VISIBLE_PX;
+  });
+  return fits ? { x, y, width, height } : null;
+}
+
 function createWindow(bootstrapMode = false) {
+  // Restore the previous window size/position, but only if it still fits on a
+  // connected display (guards against a saved window on a since-removed monitor).
+  const savedWindow = loadWindowStateSync();
+  const restored = safeRestoredBounds(savedWindow);
   mainWindow = new BrowserWindow({
-    width: 1380,
-    height: 900,
+    width: restored ? restored.width : 1380,
+    height: restored ? restored.height : 900,
+    ...(restored ? { x: restored.x, y: restored.y } : {}),
     minWidth: 1024,
     minHeight: 700,
     title: "Kevrai Omni",
@@ -595,13 +640,39 @@ function createWindow(bootstrapMode = false) {
 
   mainWindow.on("closed", () => { mainWindow = null; });
 
+  // Restore a previously-maximized window. Handle the case where the window is
+  // already visible (the "show" event may have fired before this runs); on real
+  // desktops maximize() resizes to the full work area.
+  if (restored && savedWindow && savedWindow.maximized) {
+    const doMax = () => { try { mainWindow.maximize(); } catch (_) {} };
+    if (mainWindow.isVisible()) doMax();
+    else mainWindow.once("show", doMax);
+  }
+
+  // Persist size/position (debounced). While maximized we keep the last normal
+  // bounds rather than the maximized geometry, so un-maximizing/restoring later
+  // returns to the user's real window size.
+  let saveTimer = null;
+  const scheduleSaveBounds = () => {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      if (!mainWindow || mainWindow.isDestroyed() || mainWindow.isMaximized()) return;
+      saveWindowState({ bounds: mainWindow.getBounds() });
+    }, 400);
+  };
+  mainWindow.on("resize", scheduleSaveBounds);
+  mainWindow.on("move", scheduleSaveBounds);
+
   // Notify a custom title bar when the maximize state flips so its button icon
   // can switch between "maximize" and "restore". No-op if no listener.
   const sendMax = (v) => {
     try { mainWindow.webContents.send("window:maximize-change", v); } catch (_) {}
   };
-  mainWindow.on("maximize", () => sendMax(true));
-  mainWindow.on("unmaximize", () => sendMax(false));
+  mainWindow.on("maximize", () => { sendMax(true); saveWindowState({ maximized: true }); });
+  mainWindow.on("unmaximize", () => {
+    sendMax(false);
+    try { saveWindowState({ maximized: false, bounds: mainWindow.getBounds() }); } catch (_) {}
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -1548,6 +1619,7 @@ function pollDownloadProgress(taskId) {
 async function bootstrap() {
   setupLogger();
   SETTINGS_PATH = path.join(userDataDir(), "settings.json");
+  WINDOW_STATE_PATH = path.join(userDataDir(), "window-state.json");
 
   // Single-instance lock: secondary launches focus existing window.
   const gotLock = app.requestSingleInstanceLock();
