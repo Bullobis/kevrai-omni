@@ -4,6 +4,7 @@ import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { createEmptyState } from "./empty-state.js";
 import { isViewVisible, onViewState } from "./view-visibility.js";
+import { t } from "./i18n.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -45,17 +46,17 @@ async function loadCapabilities() {
     cap = r?.body || r;
     renderCapabilities();
   } catch (e) {
-    setStatus("无法加载 LTX-2.5 能力信息：" + (e.message || e), "error");
+    setStatus(t("ltx.loadCapsFailed", { err: e.message || e }), "error");
   }
 }
 
 function renderCapabilities() {
   const engineBadge = document.getElementById("ltx-engine-badge");
   if (cap.engine_ready) {
-    engineBadge.textContent = cap.cuda_available ? "引擎就绪 · CUDA" : "引擎就绪 · CPU";
+    engineBadge.textContent = cap.cuda_available ? t("ltx.engineReadyCuda") : t("ltx.engineReadyCpu");
     engineBadge.className = "ltx-badge ok";
   } else {
-    engineBadge.textContent = "引擎未安装";
+    engineBadge.textContent = t("ltx.engineNotInstalled");
     engineBadge.className = "ltx-badge warn";
   }
   // Populate presets
@@ -134,29 +135,29 @@ function collectParams() {
 
 async function generate() {
   if (cap && !cap.engine_ready) {
-    toast("请先安装 LTX-2.5 推理引擎（见上方提示）", { kind: "error" });
+    toast(t("ltx.needEngine"), { kind: "error" });
     return;
   }
   const params = collectParams();
   if (!params.prompt) {
-    toast("请输入提示词", { kind: "error" });
+    toast(t("ltx.needPrompt"), { kind: "error" });
     document.getElementById("ltx-prompt").focus();
     return;
   }
   const btn = document.getElementById("ltx-generate");
   btn.disabled = true;
-  setStatus("提交生成任务…", "info");
+  setStatus(t("ltx.submitting"), "info");
   try {
     const r = await api.ltxGenerate(params);
     const task = r?.body?.task || r?.task;
     if (task) {
-      setStatus(`任务已提交：${task.id}`, "info");
+      setStatus(t("ltx.taskSubmitted", { id: task.id }), "info");
       startPolling();
     }
   } catch (e) {
     const detail = e?.response?.data?.detail || e.message || String(e);
-    setStatus("生成失败：" + detail, "error");
-    toast("生成失败：" + detail, { kind: "error" });
+    setStatus(t("ltx.genFailed", { err: detail }), "error");
+    toast(t("ltx.genFailed", { err: detail }), { kind: "error" });
   } finally {
     btn.disabled = false;
   }
@@ -166,12 +167,12 @@ async function cancelActive() {
   const r = await api.ltxTasks();
   const body = r?.body || r;
   const active = body?.active;
-  if (!active) { toast("当前没有运行中的任务", { kind: "info" }); return; }
+  if (!active) { toast(t("ltx.noActiveTask"), { kind: "info" }); return; }
   try {
     await api.ltxCancel(active.id);
-    toast("已请求取消", { kind: "info" });
+    toast(t("ltx.cancelRequested"), { kind: "info" });
   } catch (e) {
-    toast("取消失败：" + (e.message || e), { kind: "error" });
+    toast(t("ltx.cancelFailed", { err: e.message || e }), { kind: "error" });
   }
 }
 
@@ -204,13 +205,13 @@ async function pollTasks() {
     if (!active || ["done", "failed", "cancelled"].includes(active.state)) {
       if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
       if (active?.state === "done") {
-        setStatus("生成完成 ✓", "ok");
-        toast("视频生成完成", { kind: "ok" });
+        setStatus(t("ltx.genDone"), "ok");
+        toast(t("ltx.videoDone"), { kind: "ok" });
         loadOutputs();
       } else if (active?.state === "failed") {
-        setStatus("生成失败：" + (active.error || ""), "error");
+        setStatus(t("ltx.genFailed", { err: active.error || "" }), "error");
       } else if (active?.state === "cancelled") {
-        setStatus("已取消", "warn");
+        setStatus(t("ltx.cancelled"), "warn");
       }
     }
   } catch (e) {
@@ -252,17 +253,17 @@ function renderTaskList(tasks) {
   if (!tasks.length) {
     host.replaceChildren(createEmptyState({
       icon: "film",
-      title: "暂无任务",
-      hint: "生成过的任务会按时间显示在这里。",
+      title: t("ltx.noTasksTitle"),
+      hint: t("ltx.noTasksHint"),
     }));
     return;
   }
-  host.innerHTML = tasks.slice(0, 10).map((t) => `
-    <div class="ltx-task-row state-${t.state}">
-      <span class="ltx-task-id">${t.id}</span>
-      <span class="ltx-task-state">${stateLabel(t.state)}</span>
-      <span class="ltx-task-meta">${t.width}×${t.height} · ${t.num_frames}f · ${t.preset}</span>
-      <span class="ltx-task-time">${(t.elapsed_s || 0).toFixed(1)}s</span>
+  host.innerHTML = tasks.slice(0, 10).map((task) => `
+    <div class="ltx-task-row state-${task.state}">
+      <span class="ltx-task-id">${task.id}</span>
+      <span class="ltx-task-state">${stateLabel(task.state)}</span>
+      <span class="ltx-task-meta">${task.width}×${task.height} · ${task.num_frames}f · ${task.preset}</span>
+      <span class="ltx-task-time">${(task.elapsed_s || 0).toFixed(1)}s</span>
     </div>`).join("");
 }
 
@@ -275,8 +276,8 @@ async function loadOutputs() {
     const host = document.getElementById("ltx-gallery");
     if (host) host.replaceChildren(createEmptyState({
       icon: "image",
-      title: "暂无生成结果",
-      hint: "完成一次文生视频 / 图生视频后，结果会显示在这里。",
+      title: t("ltx.noResultsTitle"),
+      hint: t("ltx.noResultsHint"),
     }));
   }
 }
@@ -287,9 +288,9 @@ function renderOutputs(outputs) {
   if (!outputs.length) {
     host.replaceChildren(createEmptyState({
       icon: "image",
-      title: "暂无生成结果",
-      hint: "完成一次生成后，视频 / 动图会显示在这里。",
-      actionLabel: "刷新",
+      title: t("ltx.noResultsTitle"),
+      hint: t("ltx.noResultsHintShort"),
+      actionLabel: t("ltx.refresh"),
     }));
     host.querySelector(".es-action")?.addEventListener("click", () => loadOutputs());
     return;
@@ -314,7 +315,7 @@ async function openOutputsFolder() {
   try {
     await api.openPath(cap.outputs_dir);
   } catch (e) {
-    toast("无法打开文件夹：" + (e.message || e), { kind: "error" });
+    toast(t("ltx.openFolderFailed", { err: e.message || e }), { kind: "error" });
   }
 }
 
@@ -326,8 +327,8 @@ function setStatus(msg, kind) {
 
 function stateLabel(s) {
   return ({
-    queued: "排队中", loading: "加载模型", running: "生成中", saving: "保存中",
-    done: "完成", failed: "失败", cancelled: "已取消",
+    queued: t("ltx.statusQueued"), loading: t("ltx.statusLoading"), running: t("ltx.statusRunning"), saving: t("ltx.statusSaving"),
+    done: t("ltx.statusDone"), failed: t("ltx.statusFailed"), cancelled: t("ltx.statusCancelled"),
   })[s] || s;
 }
 

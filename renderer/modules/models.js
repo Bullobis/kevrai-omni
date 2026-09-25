@@ -7,6 +7,7 @@ import { VirtualGrid } from "./virtual-grid.js";
 import { highlight as highlightText } from "./search.js";
 import { escapeHtml } from "./net.js";
 import { toggleFavorite, isFavorite, bumpRecent } from "./favorites.js";
+import { t } from "./i18n.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -58,7 +59,7 @@ export function hideGridSkeleton() {
 export function renderModelGrid() {
   // Initial render: catalog models only (local models live in the Local pane).
   const items = (state.models || []).slice();
-  $("#models-count").textContent = `${items.length} 条`;
+  $("#models-count").textContent = t("market.count", { n: items.length });
   hideGridSkeleton();
 }
 
@@ -135,10 +136,11 @@ function starSvg(active) {
 // window re-layout, so isFavorite() is read fresh here to stay in sync.
 function favButtonHtml(m) {
   const active = m.id ? isFavorite(m.id) : false;
-  const name = m.name || m.id || "该模型";
-  const label = `${active ? "取消收藏" : "收藏"} ${name}`;
+  const name = m.name || m.id || "";
+  const verb = active ? t("market.favRemoveShort") : t("market.favAddShort");
+  const label = `${verb} ${name}`.trim();
   return `<button type="button" class="fav-btn${active ? " active" : ""}" data-action="fav"`
-    + ` aria-label="${escapeHtml(label)}" title="${active ? "取消收藏" : "收藏"}">${starSvg(active)}</button>`;
+    + ` aria-label="${escapeHtml(label)}" title="${escapeHtml(verb)}">${starSvg(active)}</button>`;
 }
 
 // Repaint an already-mounted favorite button after a toggle (avoids a full
@@ -146,8 +148,9 @@ function favButtonHtml(m) {
 function paintFavButton(btn, active, name) {
   if (!btn) return;
   btn.classList.toggle("active", active);
-  btn.setAttribute("aria-label", `${active ? "取消收藏" : "收藏"} ${name || ""}`.trim());
-  btn.title = active ? "取消收藏" : "收藏";
+  const verb = active ? t("market.favRemoveShort") : t("market.favAddShort");
+  btn.setAttribute("aria-label", `${verb} ${name || ""}`.trim());
+  btn.title = verb;
   btn.innerHTML = starSvg(active);
 }
 
@@ -156,7 +159,7 @@ function renderCard(m) {
   root.className = "card model-card";
   root.setAttribute("tabindex", "0");
   root.setAttribute("role", "button");
-  root.setAttribute("aria-label", `选择模型 ${m.name}`);
+  root.setAttribute("aria-label", t("market.selectModel", { name: escapeHtml(m.name || "") }));
   root.dataset.id = m.id || "";
   // Highlight the card whose detail panel is currently open. The grid re-renders
   // its window on scroll, so reading state here keeps the class in sync; clicks
@@ -169,33 +172,33 @@ function renderCard(m) {
   const nameHl = highlights.filter((h) => h.field === "name");
   const descHl = highlights.filter((h) => h.field === "description");
   const nameHtml = nameHl.length
-    ? highlightText(m.name || m.id || "未命名", nameHl)
-    : escapeHtml(m.name || m.id || "未命名");
+    ? highlightText(m.name || m.id || t("market.unnamed"), nameHl)
+    : escapeHtml(m.name || m.id || t("market.unnamed"));
   const descHtml = descHl.length
     ? highlightText(m.description || "", descHl)
     : escapeHtml(m.description || "");
   const scoreTag = (m._score && m._score > 0)
-    ? `<span class="pill score" title="相关度 ${m._score}">·</span>` : "";
+    ? `<span class="pill score" title="${t("market.scoreTitle", { n: m._score })}">·</span>` : "";
   const isRemote = m.hub && m.hub !== "curated";
   // v2.8.0 — remote cards: show the hub badge and, when the size is unknown,
   // say so explicitly instead of rendering "0 B" / NaN (E28).
   const hubBadge = isRemote
     ? `<span class="pill hub-${escapeHtml(m.hub)}">${hubLogo(m.hub, m.hub_display)}${escapeHtml(m.hub_display || m.hub)}</span>` : "";
   const sizePill = m.size_known === false || (!m.size_gb && isRemote)
-    ? `<span class="pill" title="上游未提供体积">大小未知</span>`
+    ? `<span class="pill" title="${t("market.sizeUnknownTitle")}">${t("market.sizeUnknown")}</span>`
     : (m.size_gb ? `<span class="pill">${(+m.size_gb).toFixed(1)} GB</span>` : "");
   // v2.9.0 — type (category) + function (task) + heat, per the user's request
   // to surface everything the upstream actually provides.
   const typePill = m.category
-    ? `<span class="pill" title="类型">${escapeHtml(categoryLabel(m.category))}</span>` : "";
+    ? `<span class="pill" title="${t("market.typeLabel")}">${escapeHtml(categoryLabel(m.category))}</span>` : "";
   const taskPill = m.task
-    ? `<span class="pill" title="功能">${escapeHtml(taskLabel(m.task))}</span>` : "";
+    ? `<span class="pill" title="${t("market.taskLabel")}">${escapeHtml(taskLabel(m.task))}</span>` : "";
   const heatParts = [];
   if (m.downloads > 0) heatParts.push(`⬇ ${fmtCount(m.downloads)}`);
   if (m.likes > 0) heatParts.push(`♥ ${fmtCount(m.likes)}`);
   if (m.trending_score > 0) heatParts.push(`🔥 ${fmtCount(m.trending_score)}`);
   const heatPill = heatParts.length
-    ? `<span class="pill heat" title="下载 / 点赞 / 热度分">${heatParts.join(" · ")}</span>` : "";
+    ? `<span class="pill heat" title="${t("market.heatTitle")}">${heatParts.join(" · ")}</span>` : "";
   const favBtn = favButtonHtml(m);
   if (isRemote && !m.description) {
     // Cards for remote models have no upstream prose — show the repo instead of
@@ -211,8 +214,8 @@ function renderCard(m) {
           ${taskPill}
           ${m.license ? `<span class="pill">${escapeHtml(m.license)}</span>` : ""}
           ${m.trending ? `<span class="pill warn">🔥 trending</span>` : ""}
-          ${engineList.includes("mnn") ? `<span class="pill ok">MNN 可选</span>` : ""}
-          ${m.import_only ? `<span class="pill">仅下载/导入</span>` : ""}
+          ${engineList.includes("mnn") ? `<span class="pill ok">${t("market.mnnOptional")}</span>` : ""}
+          ${m.import_only ? `<span class="pill">${t("market.importOnly")}</span>` : ""}
           ${scoreTag}
         </div>
       </div>
@@ -223,8 +226,8 @@ function renderCard(m) {
       ${heatPill ? `<p class="card-heat">${heatPill}</p>` : ""}
     </div>
     <div class="card-foot">
-      <span class="mut">${escapeHtml(m.owner || "")}${hw.vram_gb ? ` · 建议 ${escapeHtml(hw.vram_gb)}GB 显存` : ""}</span>
-      <button class="primary small" data-action="install" aria-label="开始安装">安装</button>
+      <span class="mut">${escapeHtml(m.owner || "")}${hw.vram_gb ? ` · ${t("market.suggestedVram", { n: escapeHtml(hw.vram_gb) })}` : ""}</span>
+      <button class="primary small" data-action="install" aria-label="${t("market.installAria")}">${t("market.install")}</button>
     </div>
   `;
     return root;
@@ -240,8 +243,8 @@ function renderCard(m) {
           ${taskPill}
           ${m.license ? `<span class="pill">${escapeHtml(m.license)}</span>` : ""}
           ${m.trending ? `<span class="pill warn">🔥 trending</span>` : ""}
-          ${engineList.includes("mnn") ? `<span class="pill ok">MNN 可选</span>` : ""}
-          ${m.import_only ? `<span class="pill">仅下载/导入</span>` : ""}
+          ${engineList.includes("mnn") ? `<span class="pill ok">${t("market.mnnOptional")}</span>` : ""}
+          ${m.import_only ? `<span class="pill">${t("market.importOnly")}</span>` : ""}
           ${scoreTag}
         </div>
       </div>
@@ -252,8 +255,8 @@ function renderCard(m) {
       ${heatPill ? `<p class="card-heat">${heatPill}</p>` : ""}
     </div>
     <div class="card-foot">
-      <span class="mut">${escapeHtml(m.owner || m.category || "")}${hw.vram_gb ? ` · 建议 ${escapeHtml(hw.vram_gb)}GB 显存` : ""}</span>
-      <button class="primary small" data-action="install" aria-label="开始安装">安装</button>
+      <span class="mut">${escapeHtml(m.owner || m.category || "")}${hw.vram_gb ? ` · ${t("market.suggestedVram", { n: escapeHtml(hw.vram_gb) })}` : ""}</span>
+      <button class="primary small" data-action="install" aria-label="${t("market.installAria")}">${t("market.install")}</button>
     </div>
   `;
   return root;
@@ -262,13 +265,14 @@ function renderCard(m) {
 // Human labels for the English category ids (the ids themselves are kept in
 // data/state — only the display text is localized).
 const CATEGORY_LABELS = {
-  llm: "文本生成", tts: "语音合成", video: "视频生成", image: "图片生成",
-  superres: "超分辨率", audio: "音频理解", "3d": "3D 生成", vision: "多模态",
-  pending: "待定", other: "其他",
+  llm: "category_llm", tts: "category_tts", video: "category_video", image: "category_image",
+  superres: "category_superres", audio: "category_audio", "3d": "category_3d", vision: "category_vision",
+  pending: "category_pending", other: "category_other",
 };
 
 export function categoryLabel(id) {
-  return CATEGORY_LABELS[id] || id || "";
+  const key = CATEGORY_LABELS[id];
+  return key ? t(`market.${key}`) : (id || "");
 }
 
 // Upstream task ids are English/kebab-case; show the readable form.
@@ -314,13 +318,15 @@ async function installItem(item) {
   const engines = Array.isArray(item.engine) ? item.engine
                 : (item.engine ? [item.engine] : []);
   if (!engines.length) {
-    toast("该模型暂未指定引擎", { kind: "warn" });
+    toast(t("toast.engineNotSpecified"), { kind: "warn" });
     return;
   }
   // 安装首选引擎；支持多引擎的模型（如 llama.cpp + MNN）可在详情页选择其他引擎。
   try {
     await api.installEngine(engines[0]);
-    toast(`正在安装引擎 ${engines[0]}${engines.length > 1 ? `（另可选 ${engines.slice(1).join("/")}）` : ""}`, { kind: "ok" });
+    toast(engines.length > 1
+      ? t("toast.installingEngineAlt", { engine: engines[0], alt: engines.slice(1).join("/") })
+      : t("toast.installingEngine", { engine: engines[0] }), { kind: "ok" });
   } catch (_) { /* toast shown */ }
 }
 
@@ -328,7 +334,7 @@ export function populateCategoryFilter() {
   const sel = $("#cat-filter");
   sel.replaceChildren();
   const all = document.createElement("option");
-  all.value = ""; all.textContent = "全部分类";
+  all.value = ""; all.textContent = t("market.allCategories");
   sel.appendChild(all);
   for (const c of (state.categories || [])) {
     const o = document.createElement("option");
@@ -429,7 +435,7 @@ export async function showDetail(item) {
     b.addEventListener("click", async () => {
       b.disabled = true;
       const id = b.dataset.id;
-      try { await api.installEngine(id); toast(`正在安装引擎 ${id}`, { kind: "ok" }); }
+      try { await api.installEngine(id); toast(t("toast.installingEngine", { id }), { kind: "ok" }); }
       catch (_) {}
       b.disabled = false;
     })
@@ -438,7 +444,7 @@ export async function showDetail(item) {
     b.addEventListener("click", async () => {
       b.disabled = true;
       const id = b.dataset.id;
-      try { await api.uninstallEngine(id); toast(`已卸载 ${id}`, { kind: "ok" }); }
+      try { await api.uninstallEngine(id); toast(t("toast.uninstalledEngine", { id }), { kind: "ok" }); }
       catch (_) {}
       b.disabled = false;
     })
@@ -454,7 +460,7 @@ export async function showDetail(item) {
       b.disabled = true;
       try {
         await api.mnnDownload({ repo: b.dataset.repo });
-        toast("开始下载 MNN 模型（仓库直下）", { kind: "ok" });
+        toast(t("toast.mnnRepoStart"), { kind: "ok" });
       } catch (_) { /* toast shown (409 已存在/进行中) */ }
       b.disabled = false;
     })
@@ -463,15 +469,15 @@ export async function showDetail(item) {
   host.querySelector("#btn-import-local-for-detail")?.addEventListener("click", async () => {
     const p = await api.pickFile();
     if (!p) return;
-    try { await api.importModel({ path: p, mode: "copy" }); toast("已导入", { kind: "ok" }); }
+    try { await api.importModel({ path: p, mode: "copy" }); toast(t("toast.imported"), { kind: "ok" }); }
     catch (_) {}
   });
 }
 
 function renderSkeleton(item) {
   return `
-    <header class="panel-head"><h2>${escapeHtml(item.name || item.id || "模型详情")}</h2></header>
-    <p class="mut">加载完整信息…</p>
+    <header class="panel-head"><h2>${escapeHtml(item.name || item.id || t("market.detailFallbackTitle"))}</h2></header>
+    <p class="mut">${t("market.loadingDetail")}</p>
   `;
 }
 
@@ -490,8 +496,8 @@ async function _lazyLoadGgufFiles(host, detail) {
       return;
     }
     anchor.outerHTML = `
-      <h3 class="section">所有量化版本（${files.length}）</h3>
-      <details><summary>展开全部 .gguf 文件</summary>
+      <h3 class="section">${t("market.quantVersions", { n: files.length })}</h3>
+      <details><summary>${t("market.expandGguf")}</summary>
         <ul class="gguf-list">
           ${files.map((f) => `<li>
             <span class="gguf-name">${escapeHtml(f.path || f.name || "")}</span>
@@ -501,7 +507,7 @@ async function _lazyLoadGgufFiles(host, detail) {
       </details>`;
   } catch (_) {
     const a = host.querySelector("#gguf-lazy");
-    if (a) a.outerHTML = `<p class="hint">量化版本列表加载失败（仓库镜像均不可达）。</p>`;
+    if (a) a.outerHTML = `<p class="hint">${t("market.quantLoadFailed")}</p>`;
   }
 }
 
@@ -540,16 +546,16 @@ function renderDetail(m, gguf) {
   const isRemote = !!(m.hub && m.hub !== "curated");
   // v2.8.0 — remote repos live on HF or ModelScope; link to the right host.
   const repoHost = m.hub === "modelscope" ? "https://modelscope.cn/models" : "https://huggingface.co";
-  const repoLabel = m.hub === "modelscope" ? "在 魔搭 ModelScope 查看" : "在 Hugging Face 查看";
+  const repoLabel = m.hub === "modelscope" ? t("market.viewOnModelscope") : t("market.viewOnHf");
   const sizePill = m.size_known === false || (!m.size_gb && isRemote)
-    ? `<span class="pill">大小未知</span>`
+    ? `<span class="pill">${t("market.sizeUnknown")}</span>`
     : (m.size_gb ? `<span class="pill">${(+m.size_gb).toFixed(1)} GB</span>` : "");
   const ownerText = m.owner_full_name
     ? `${m.owner || ""}${m.owner ? " · " : ""}${m.owner_full_name}` : (m.owner || "");
   const heatBits = [];
-  if (m.downloads > 0) heatBits.push(`${fmtCount(m.downloads)} 次下载`);
-  if (m.likes > 0) heatBits.push(`${fmtCount(m.likes)} 点赞`);
-  if (m.trending_score > 0) heatBits.push(`热度分 ${m.trending_score}`);
+  if (m.downloads > 0) heatBits.push(t("market.downloadsCount", { n: fmtCount(m.downloads) }));
+  if (m.likes > 0) heatBits.push(t("market.likesCount", { n: fmtCount(m.likes) }));
+  if (m.trending_score > 0) heatBits.push(t("market.heatScore", { n: m.trending_score }));
   const frameworks = Array.isArray(m.frameworks) ? m.frameworks : [];
   const architectures = Array.isArray(m.architectures) ? m.architectures : [];
   const repoUrl = m.repo ? `${repoHost}/${m.repo}` : "";
@@ -562,42 +568,42 @@ function renderDetail(m, gguf) {
         ${m.category ? `<span class="pill">${escapeHtml(categoryLabel(m.category))}</span>` : ""}
         ${m.task ? `<span class="pill">${escapeHtml(taskLabel(m.task))}</span>` : ""}
         ${m.license ? `<span class="pill">${escapeHtml(m.license)}</span>` : ""}
-        ${m.is_hot ? `<span class="pill warn">🔥 热门</span>` : ""}
-        ${m.is_new ? `<span class="pill ok">✨ 新品</span>` : ""}
-        ${engines.includes("mnn") ? `<span class="pill ok">MNN 可选</span>` : ""}
-        ${m.import_only ? `<span class="pill">仅下载/导入</span>` : ""}
-        ${m.gated ? `<span class="pill warn">gated 受控访问</span>` : ""}
+        ${m.is_hot ? `<span class="pill warn">${t("market.hot")}</span>` : ""}
+        ${m.is_new ? `<span class="pill ok">${t("market.new")}</span>` : ""}
+        ${engines.includes("mnn") ? `<span class="pill ok">${t("market.mnnOptional")}</span>` : ""}
+        ${m.import_only ? `<span class="pill">${t("market.importOnly")}</span>` : ""}
+        ${m.gated ? `<span class="pill warn">${t("market.gated")}</span>` : ""}
       </div>
     </header>
     ${(m.description || chineseNameOf(m))
       ? `<p class="card-desc">${escapeHtml(m.description || chineseNameOf(m))}</p>` : ""}
-    ${m.gated ? `<p class="hint">ⓘ 该仓库为 gated（受控访问）：先在 HuggingFace 仓库页面接受许可协议，再到「设置」填入你的 HF Token，然后才能下载。</p>` : ""}
+    ${m.gated ? `<p class="hint">${t("market.gatedHint")}</p>` : ""}
 
     ${isRemote ? `
-    <h3 class="section">基本信息</h3>
+    <h3 class="section">${t("market.basicInfo")}</h3>
     <div class="detail-grid">
-      ${detailRow("名称", m.name)}
-      ${detailRow("仓库全名", m.repo, { title: m.repo })}
-      ${detailRow("公司 / 组织", ownerText)}
-      ${detailRow("上传者", m.nickname)}
-      ${detailRow("类型", categoryLabel(m.category))}
-      ${detailRow("功能", taskLabel(m.task))}
-      ${detailRow("体积", m.size_known === false ? "未知" : fmtBytes(m.size_bytes) || (m.size_gb ? `${m.size_gb} GB` : ""))}
-      ${detailRow("许可", m.license)}
-      ${detailRow("主框架", m.library)}
-      ${detailRow("框架", frameworks.join(" / "))}
-      ${detailRow("架构", architectures.join(" / "))}
-      ${detailRow("版本", m.revision)}
+      ${detailRow(t("market.detailName"), m.name)}
+      ${detailRow(t("market.detailRepo"), m.repo, { title: m.repo })}
+      ${detailRow(t("market.detailOrg"), ownerText)}
+      ${detailRow(t("market.detailUploader"), m.nickname)}
+      ${detailRow(t("market.detailType"), categoryLabel(m.category))}
+      ${detailRow(t("market.detailTask"), taskLabel(m.task))}
+      ${detailRow(t("market.detailSize"), m.size_known === false ? t("market.unknown") : fmtBytes(m.size_bytes) || (m.size_gb ? `${m.size_gb} GB` : ""))}
+      ${detailRow(t("market.detailLicense"), m.license)}
+      ${detailRow(t("market.detailFramework"), m.library)}
+      ${detailRow(t("market.detailFrameworks"), frameworks.join(" / "))}
+      ${detailRow(t("market.detailArch"), architectures.join(" / "))}
+      ${detailRow(t("market.detailVersion"), m.revision)}
     </div>
 
-    <h3 class="section">热度与时间</h3>
+    <h3 class="section">${t("market.heatAndTime")}</h3>
     <div class="detail-grid">
-      ${detailRow("下载量", m.downloads > 0 ? m.downloads.toLocaleString("zh-CN") : "")}
-      ${detailRow("点赞", m.likes > 0 ? m.likes.toLocaleString("zh-CN") : "")}
-      ${detailRow("热度分", m.trending_score > 0 ? String(m.trending_score) : "")}
-      ${detailRow("创建时间", fmtDate(m.created_at))}
-      ${detailRow("更新时间", fmtDate(m.updated_at))}
-      ${detailRow("标记", [m.is_hot ? "热门" : "", m.is_new ? "新品" : "", m.trending ? "trending" : ""].filter(Boolean).join(" / "))}
+      ${detailRow(t("market.detailDownloads"), m.downloads > 0 ? m.downloads.toLocaleString() : "")}
+      ${detailRow(t("market.detailLikes"), m.likes > 0 ? m.likes.toLocaleString() : "")}
+      ${detailRow(t("market.detailHeat"), m.trending_score > 0 ? String(m.trending_score) : "")}
+      ${detailRow(t("market.detailCreated"), fmtDate(m.created_at))}
+      ${detailRow(t("market.detailUpdated"), fmtDate(m.updated_at))}
+      ${detailRow(t("market.detailMarks"), [m.is_hot ? t("market.markHot") : "", m.is_new ? t("market.markNew") : "", m.trending ? "trending" : ""].filter(Boolean).join(" / "))}
     </div>
     ` : ""}
 
@@ -612,42 +618,42 @@ function renderDetail(m, gguf) {
 
     ${engines.includes("mnn") && m.mnn_repo ? `<p>
       <button class="primary small" data-action="mnn-download-repo"
-              data-repo="${escapeHtml(m.mnn_repo)}">下载 MNN 版（${escapeHtml(m.mnn_repo)}）</button>
-      <span class="hint">从仓库直下官方预转换 MNN 模型。</span>
+              data-repo="${escapeHtml(m.mnn_repo)}">${t("market.downloadMnn", { repo: escapeHtml(m.mnn_repo) })}</button>
+      <span class="hint">${t("market.downloadMnnHint")}</span>
     </p>` : ""}
 
     ${hw.vram_gb ? `
-    <h3 class="section">官方建议配置</h3>
+    <h3 class="section">${t("market.recommendedConfig")}</h3>
     <div class="hw-need-grid">
-      <div class="hw-need"><span class="hw-k">显存</span><span class="hw-v">${escapeHtml(hw.vram_gb)} GB${hw.min_vram_gb ? `（最低 ${escapeHtml(hw.min_vram_gb)}GB）` : ""}</span></div>
-      <div class="hw-need"><span class="hw-k">内存</span><span class="hw-v">${escapeHtml(hw.ram_gb || "?")} GB</span></div>
-      <div class="hw-need"><span class="hw-k">磁盘</span><span class="hw-v">${escapeHtml(hw.disk_gb || m.size_gb || "?")} GB</span></div>
+      <div class="hw-need"><span class="hw-k">${t("market.vram")}</span><span class="hw-v">${escapeHtml(hw.vram_gb)} GB${hw.min_vram_gb ? `（${t("market.minVram", { n: escapeHtml(hw.min_vram_gb) })}）` : ""}</span></div>
+      <div class="hw-need"><span class="hw-k">${t("market.ram")}</span><span class="hw-v">${escapeHtml(hw.ram_gb || "?")} GB</span></div>
+      <div class="hw-need"><span class="hw-k">${t("market.disk")}</span><span class="hw-v">${escapeHtml(hw.disk_gb || m.size_gb || "?")} GB</span></div>
     </div>
     ${hw.notes ? `<p class="hint">💡 ${escapeHtml(hw.notes)}</p>` : ""}
-    ${engines.includes("mnn") ? `<p class="hint">⬢ 该模型支持 MNN 引擎（端侧更快）：可到「MNN 引擎」页下载官方预转换版本，或用 llama.cpp 加载 GGUF —— 两种引擎由你选择。</p>` : ""}
+    ${engines.includes("mnn") ? `<p class="hint">${t("market.mnnEngineHint")}</p>` : ""}
     ` : ""}
 
-    <h3 class="section">所需引擎</h3>
+    <h3 class="section">${t("market.requiredEngines")}</h3>
     <div class="list compact">
       ${engines.length === 0
-        ? `<div class="hint">该模型未指派引擎，请联系上游维护者。</div>`
+        ? `<div class="hint">${t("market.engineUnassigned")}</div>`
         : engines.map((e) => `
           <div class="row">
             <div class="grow">
-              <div class="name">${escapeHtml(typeof e === "string" ? e : (e.id || e.name || ""))}${e === "mnn" ? ' <span class="pill ok">端侧加速</span>' : ""}</div>
+              <div class="name">${escapeHtml(typeof e === "string" ? e : (e.id || e.name || ""))}${e === "mnn" ? ` <span class="pill ok">${t("market.edgeAccel")}</span>` : ""}</div>
               <div class="sub">${escapeHtml(typeof e === "string" ? "" : (e.description || ""))}</div>
             </div>
-            <span class="pill ${e.installed ? "ok" : ""}">${e.installed ? "已安装" : "未安装"}</span>
+            <span class="pill ${e.installed ? "ok" : ""}">${e.installed ? t("market.installed") : t("market.notInstalled")}</span>
             <button class="primary" data-action="install-engine"
-                    data-id="${escapeHtml(typeof e === "string" ? e : e.id)}">${e.installed ? "重装" : "安装"}</button>
+                    data-id="${escapeHtml(typeof e === "string" ? e : e.id)}">${e.installed ? t("market.reinstall") : t("market.install")}</button>
             ${e.installed ? `<button class="danger" data-action="uninstall-engine"
-              data-id="${escapeHtml(typeof e === "string" ? e : e.id)}">卸载</button>` : ""}
+              data-id="${escapeHtml(typeof e === "string" ? e : e.id)}">${t("market.uninstall")}</button>` : ""}
           </div>`).join("")}
     </div>
 
-    <h3 class="section">导入本地副本</h3>
-    <p class="hint">将已有的 GGUF / safetensors 文件导入到本地库。</p>
-    <button class="secondary" id="btn-import-local-for-detail">📥 选择文件</button>
+    <h3 class="section">${t("market.importLocalCopy")}</h3>
+    <p class="hint">${t("market.importLocalHint")}</p>
+    <button class="secondary" id="btn-import-local-for-detail">${t("market.chooseFile")}</button>
 
     ${m.description && isRemote ? `
       <h3 class="section">详细介绍</h3>
@@ -655,8 +661,8 @@ function renderDetail(m, gguf) {
     ` : ""}
 
     ${ggufFiles.length > 0 ? `
-      <h3 class="section">所有量化版本（${ggufFiles.length}）</h3>
-      <details><summary>展开全部 .gguf 文件</summary>
+      <h3 class="section">${t("market.quantVersions", { n: ggufFiles.length })}</h3>
+      <details><summary>${t("market.expandGguf")}</summary>
         <ul class="gguf-list">
           ${ggufFiles.map((f) => `<li>
             <span class="gguf-name">${escapeHtml(f.path || f.name || "")}</span>
@@ -664,7 +670,7 @@ function renderDetail(m, gguf) {
           </li>`).join("")}
         </ul>
       </details>
-    ` : (m.gguf_repo ? `<div id="gguf-lazy"><p class="mut tiny">正在加载量化版本列表…</p></div>` : "")}
+    ` : (m.gguf_repo ? `<div id="gguf-lazy"><p class="mut tiny">${t("market.loadingQuant")}</p></div>` : "")}
   `;
 }
 
