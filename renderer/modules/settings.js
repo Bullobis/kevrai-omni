@@ -6,6 +6,7 @@ import { state, setState } from "./state.js";
 import { applyTheme } from "./theme.js";
 import { showGenerationWait, hideGenerationWait } from "./generation-wait.js";
 import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
+import { overlayOpen, overlayClose } from "./overlay-fx.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -25,8 +26,7 @@ export async function openSettings() {
   const overlay = $("#settings-overlay");
   if (!overlay) return;
   savedTrigger = recordFocus();
-  overlay.removeAttribute("hidden");
-  overlay.setAttribute("aria-hidden", "false");
+  overlayOpen(overlay);   // 淡入+上移过渡（替代直接 removeAttribute hidden）
 
   // 每次打开都回到「通用」分类，避免停留在上次关闭时的非可见分类。
   switchSettingsSection("general");
@@ -45,11 +45,10 @@ export async function openSettings() {
 export function closeSettings() {
   const overlay = $("#settings-overlay");
   if (!overlay) return;
-  overlay.setAttribute("hidden", "");
-  overlay.setAttribute("aria-hidden", "true");
-  // 焦点归还给打开设置前的触发元素。
+  // 焦点立即归还（不延迟），hidden 由 overlay-fx 在淡出后设置。
   restoreFocus(savedTrigger);
   savedTrigger = null;
+  overlayClose(overlay);
 }
 
 // 设置中心左侧分类切换：高亮对应导航按钮，只显示对应内容分区。
