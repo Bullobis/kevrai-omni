@@ -14,13 +14,11 @@ bug that was confirmed and minimally fixed.
 from __future__ import annotations
 
 import asyncio
-import json
 
 import pytest
 from starlette.websockets import WebSocketDisconnect
 
 from app.agent import Agent, AgentMemory, ToolContext
-from app.agent.skill import Skill, SkillManager
 from app.agent.tool_registry import Tool, ToolRegistry
 from app.agent.tools import build_default_registry, build_skill_manager
 
@@ -306,7 +304,7 @@ class TestHistoryContext:
         router = _CaptureRouter()
         mem, _, agent = _make_agent(tmp_path, router=router)
         huge = "长" * 6000
-        result = await agent.run(huge, session_id="cap-in")
+        await agent.run(huge, session_id="cap-in")
         # The persisted user message must be the truncated 5000-char version.
         msgs = mem.get_recent_messages("cap-in", n=5)
         user_msgs = [m for m in msgs if m["role"] == "user"]
@@ -382,7 +380,6 @@ def test_ws_agent_disconnect_mid_run_no_unhandled_exception(hub_client):
     surface an unhandled task exception. agent.run has no cooperative
     cancellation (see parliament note) and will finish its current bounded run,
     but the handler must swallow send failures on the dead socket."""
-    import threading
     import time
 
     from app import main as app_main

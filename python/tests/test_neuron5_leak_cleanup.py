@@ -15,7 +15,6 @@ from __future__ import annotations
 import base64
 import os
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from fastapi import HTTPException
@@ -103,7 +102,7 @@ async def test_data_url_write_failure_self_cleans_temp(tmp_path: Path, monkeypat
 
     def boom_fdopen(*a, **k):
         # 第一次（也是唯一一次）打开刚建的 fd 写盘时炸掉。
-        fh = real_fdopen(*a, **k)
+        real_fdopen(*a, **k)
         raise OSError("simulated disk full on write")
 
     monkeypatch.setattr(m.os, "fdopen", boom_fdopen)

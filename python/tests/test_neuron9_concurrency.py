@@ -24,10 +24,8 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
-import tempfile
 import threading
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -117,7 +115,7 @@ def _wire_app(tmp_xdg: Path):
 
 
 async def test_hub_jobs_concurrent_no_lost_update(tmp_xdg, monkeypatch):
-    s = _wire_app(tmp_xdg)
+    _wire_app(tmp_xdg)
     gate = asyncio.Event()
     gate2 = asyncio.Event()
     hub = _FakeHub(gate)
@@ -436,7 +434,7 @@ def test_settings_atomic_write_no_torn_file(tmp_path):
 
 def test_no_thread_or_fd_leak_after_blast():
     base_threads = threading.active_count()
-    base_fds = len(os.listdir(f"/proc/self/fd")) if os.path.isdir("/proc/self/fd") else -1
+    base_fds = len(os.listdir("/proc/self/fd")) if os.path.isdir("/proc/self/fd") else -1
 
     barrier = threading.Barrier(16)
 

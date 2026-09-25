@@ -178,7 +178,6 @@ def test_disk_gb_reasonable_vs_size_gb():
     """disk_gb should not be >3x size_gb for text-only LLM models."""
     m = _models()
     violations = []
-    text_categories = {"llm", "text", "chat", "instruct", "code"}
     for mid, model in m.items():
         if model.get("category") == "pending":
             continue
