@@ -729,5 +729,33 @@
     "notTested": "Not benchmarked yet.",
     "detecting": "Detecting…",
     "detectFailed": "Detection failed: {err}"
+  },
+  "compare": {
+    "title": "Model Compare",
+    "toolbar": "Compare",
+    "add": "Add to compare",
+    "remove": "Remove from compare",
+    "added": "Added to compare",
+    "removed": "Removed from compare",
+    "maxReached": "Compare up to 4 models at once",
+    "clear": "Clear compare",
+    "cleared": "Compare list cleared",
+    "empty": "No models selected for compare",
+    "emptyHint": "Tap the compare button on a model card to add it",
+    "close": "Close",
+    "count": "{n} / 4",
+    "missing": "—",
+    "dimensions": {
+      "name": "Name",
+      "category": "Category / Task",
+      "size": "File size",
+      "license": "License",
+      "engine": "Engine / Format",
+      "vram": "VRAM needed",
+      "repo": "Repo / Source",
+      "description": "Description",
+      "trending": "Trending",
+      "tags": "Tags"
+    }
   }
 }
