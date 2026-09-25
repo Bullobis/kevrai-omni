@@ -3,14 +3,20 @@
 import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { createEmptyState } from "./empty-state.js";
+import { isViewVisible, onViewState } from "./view-visibility.js";
 
 const $ = (s) => document.querySelector(s);
 
 let cap = null;
 let pollTimer = null;
-let outputsTimer = null;
+// R4 — initLtx 由 switchView 的 dataset.rendered 守门只调一次，但再加一层
+// 模块内 guard，防止未来误调用导致按钮事件监听器重复绑定。
+let ltxInited = false;
 
 export async function initLtx() {
+  if (ltxInited) return;
+  ltxInited = true;
+
   document.getElementById("ltx-generate").addEventListener("click", generate);
   document.getElementById("ltx-cancel").addEventListener("click", cancelActive);
   document.getElementById("ltx-seed-random").addEventListener("click", () => {
@@ -172,10 +178,23 @@ async function cancelActive() {
 function startPolling() {
   if (pollTimer) return;
   pollTimer = setInterval(pollTasks, 1000);
-  pollTasks();
 }
 
+function stopPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+// R4 — LTX 视图隐藏时彻底停掉 1s 轮询（clearInterval，定时器不再触发），
+// 切回时恢复并立即 pollTasks() 一次补拉状态。生成任务在 sidecar 端继续跑，
+// 只是 UI 在隐藏期间不打请求；切回后立即看到最新进度。
+onViewState("ltx", {
+  onShow() { startPolling(); pollTasks(); },
+  onHide() { stopPolling(); },
+});
+
 async function pollTasks() {
+  // 防御：即使定时器因竞态多跑了一次，视图不可见时也不打网络。
+  if (!isViewVisible("ltx")) return;
   try {
     const r = await api.ltxTasks();
     const body = r?.body || r;

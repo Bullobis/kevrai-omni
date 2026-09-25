@@ -28,6 +28,7 @@ import { wireUpdate } from "./modules/update.js";
 import { initCommandPalette } from "./modules/command-palette.js";
 import { initI18n } from "./modules/i18n.js";
 import { createEmptyState } from "./modules/empty-state.js";
+import { whenIdle } from "./modules/idle.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -70,13 +71,15 @@ export async function loadAll() {
       .then((r) => { setState({ ggufRepos: r?.body?.repos || r?.repos || [] }); renderGGUF(); })
       .catch(() => {});
     populateCategoryFilter();
+    // 首屏关键路径：只铺市场外壳（更新计数 + 收起 HTML 骨架）。虚拟网格的
+    // 卡片窗口由下方 runSearch() 唯一挂载——这里再 setItems 一次会在搜索结果
+    // 到达后立即被重挂，白白多一次布局+渲染。
     renderModelGrid();
-    renderEngines();
-    renderLocal();
-    renderGGUF();
-    renderPending();
     applyTheme();
     setHealthOk(`sidecar v${h?.body?.version || "?"}`);
+    // 非首屏面板（引擎 / 本地模型 / GGUF / 待开源）在空闲期渲染，让出主线程给
+    // 首屏可交互；这些面板默认隐藏，用户切过去之前渲染即可。
+    whenIdle(() => { renderEngines(); renderLocal(); renderGGUF(); renderPending(); });
     // v2.4.0 — drive the market grid through the super search (facets, sort).
     runSearch({ resetPage: true }).catch(() => {});
   } catch (e) {
@@ -256,6 +259,11 @@ function switchView(name) {
       initAgent().catch((e) => toast("Agent 页加载失败：" + e.message, { kind: "err" }));
     }
   }
+  // R4 — 统一派发视图切换事件。后台轮询型模块（LTX / MNN）通过
+  // modules/view-visibility.js 订阅，在自己的视图隐藏时暂停网络请求，
+  // 切回时恢复并立即刷新一次。放在所有 lazy-render 之后，确保订阅者
+  // 回调触发时 DOM / 模块状态已就绪。
+  window.dispatchEvent(new CustomEvent("kevrai:view-change", { detail: { view: name } }));
 }
 
 // ---------------------------------------------------------------------------
@@ -432,19 +440,25 @@ async function bootstrap() {
   wireDragDrop();
   wireGlobalUI();
   wireWindowControls();
-  wireUpdate();
   wireThemeListener();
   const i18nReady = initI18n();
   wirePaletteEvents();
   // 命令面板构建时会读取占位文案，须在字典加载完成后再初始化，避免占位符显示原始 key。
   i18nReady.then(() => initCommandPalette());
-  // 这两个此前只 import 未调用：
-  //   - wireOnboarding  → #onboarding-overlay 一直显隐错乱（首启引导永不关闭）
-  //   - wireEngineUpdates → #btn-engines-check-updates 点击无响应
-  wireOnboarding();
-  wireEngineUpdates();
   // logo / 头像的加载失败降级（替代此前被 CSP 拦截的内联 onerror）
   wireLogoFallbacks();
+
+  // 非关键初始化延迟到空闲期：首启引导、引擎更新按钮、应用更新检查。
+  // 它们不在 DOMContentLoaded → 首屏可交互 的关键路径上；rIC（无则 setTimeout 0）
+  // 会在首帧绘制后立即执行。三个 wire 函数均已幂等。
+  whenIdle(() => { wireOnboarding(); wireEngineUpdates(); wireUpdate(); });
+  // 防御：若用户在 idle 跑起来之前就点了 header 的「检查更新」按钮，在捕获阶段
+  // 立即补接线（wireUpdate 幂等，且派发过程中新增的监听器会对本次点击生效）。
+  document.addEventListener("click", (e) => {
+    if (e.target.closest && e.target.closest("[data-action=check-updates]")) {
+      wireUpdate();
+    }
+  }, true);
 
   // Initial settings fetch (for theme)
   try {

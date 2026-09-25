@@ -49,11 +49,16 @@ export function hideGridSkeleton() {
   if (sk) sk.hidden = true;
 }
 
+// Prepare the market shell once the catalog has loaded: update the item count
+// and retire the initial HTML skeleton. This deliberately does NOT call
+// vgrid.setItems() — runSearch() (called right after in loadAll) is the single
+// entry point that mounts the virtual window. Calling setItems() here would
+// mount ~12 cards and then immediately remount them again when runSearch's
+// results arrive: a redundant layout+render on the startup critical path.
 export function renderModelGrid() {
   // Initial render: catalog models only (local models live in the Local pane).
   const items = (state.models || []).slice();
   $("#models-count").textContent = `${items.length} 条`;
-  vgrid.setItems(items);
   hideGridSkeleton();
 }
 
