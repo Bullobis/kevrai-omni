@@ -76,7 +76,11 @@ export function renderEngines() {
 }
 
 // v2.4.1 — toolbar: explicit update check against GitHub releases.
+// Idempotent: deferred to idle at startup, but safe to re-invoke.
+let engineUpdatesWired = false;
 export function wireEngineUpdates() {
+  if (engineUpdatesWired) return;
+  engineUpdatesWired = true;
   const btn = $("#btn-engines-check-updates");
   if (!btn) return;
   btn.addEventListener("click", async () => {
