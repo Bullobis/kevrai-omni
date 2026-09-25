@@ -1195,6 +1195,12 @@ function registerIpc() {
     const l = (typeof limit === "number" && limit > 0) ? limit : 100;
     return sidecarFetch(`/api/agent/sessions/${encodeURIComponent(sessionId)}/messages?limit=${l}`);
   });
+  ipcMain.handle("kevrai:agent-regenerate", async (_e, sessionId) => {
+    assert(typeof sessionId === "string" && sessionId.length > 0, "sessionId: invalid");
+    return sidecarFetch(
+      `/api/agent/sessions/${encodeURIComponent(sessionId)}/regenerate`,
+      { method: "POST", body: {} });
+  });
   ipcMain.handle("kevrai:agent-prefs-get", async () => sidecarFetch("/api/agent/preferences"));
   ipcMain.handle("kevrai:agent-prefs-set", async (_e, key, value) => {
     assert(typeof key === "string" && key.length > 0, "key: invalid");

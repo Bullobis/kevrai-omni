@@ -208,6 +208,26 @@ class TestAgentMemory:
         assert mem.get_session("sess1") is None
         assert mem.delete_session("sess1") is False
 
+    def test_trim_last_exchange_removes_pair_and_returns_user(self, mem):
+        mem.add_message("sess1", "user", "first question")
+        mem.add_message("sess1", "assistant", "first answer")
+        mem.add_message("sess1", "user", "second question")
+        mem.add_message("sess1", "assistant", "second answer")
+        assert mem.trim_last_exchange("sess1") == "second question"
+        msgs = mem.get_messages("sess1")
+        assert len(msgs) == 2
+        assert msgs[-1]["content"] == "first answer"
+
+    def test_trim_without_assistant_returns_none_and_keeps_user(self, mem):
+        mem.add_message("sess1", "user", "only user")
+        assert mem.trim_last_exchange("sess1") is None
+        assert len(mem.get_messages("sess1")) == 1
+
+    def test_trim_orphan_assistant_drops_only_assistant(self, mem):
+        mem.add_message("sess1", "assistant", "orphan answer")
+        assert mem.trim_last_exchange("sess1") is None
+        assert len(mem.get_messages("sess1")) == 0
+
     def test_list_sessions(self, mem):
         mem.create_session("a")
         mem.create_session("b")

@@ -3230,6 +3230,34 @@ def agent_delete_session(request: Request, session_id: str = PathParam(...)) -> 
     return {"ok": True, "session_id": session_id}
 
 
+@app.post("/api/agent/sessions/{session_id}/regenerate")
+async def agent_regenerate(request: Request, session_id: str = PathParam(...)) -> dict[str, Any]:
+    """Regenerate the last assistant answer.
+
+    Drops the final user+assistant pair, then re-runs the same user message
+    via the normal chat path, so the session never holds a duplicate user
+    turn. Returns the fresh answer (same shape as /api/agent/chat).
+    """
+    agent = _get_agent(request)
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", session_id or ""):
+        raise HTTPException(status_code=400, detail="invalid session_id")
+    last_user = agent.memory.trim_last_exchange(session_id)
+    if last_user is None:
+        raise HTTPException(status_code=404, detail="no assistant message to regenerate")
+    result = await agent.run(last_user, session_id=session_id)
+    return {
+        "ok": result.success,
+        "answer": result.answer,
+        "session_id": result.session_id,
+        "tools_used": result.tools_used,
+        "llm_used": result.llm_used,
+        "model_name": result.model_name,
+        "duration_ms": result.duration_ms,
+        "regenerated": True,
+        "error": result.error or "",
+    }
+
+
 @app.get("/api/agent/preferences")
 def agent_get_preferences(request: Request) -> dict[str, Any]:
     """Get all stored agent preferences."""

@@ -171,6 +171,36 @@ class AgentMemory:
             ).fetchall()
         return [dict(r) for r in reversed(rows)]
 
+    def trim_last_exchange(self, session_id: str) -> str | None:
+        """Remove the final assistant message and the user message that
+        precedes it (used to regenerate an answer without duplicating the user
+        turn). Returns that user message's content, or ``None`` when there is
+        no assistant message to regenerate from."""
+        with self._conn() as conn:
+            a = conn.execute(
+                "SELECT id FROM messages WHERE session_id=? AND role='assistant' "
+                "ORDER BY id DESC LIMIT 1",
+                (session_id,),
+            ).fetchone()
+            if not a:
+                return None
+            u = conn.execute(
+                "SELECT id, content FROM messages WHERE session_id=? AND role='user' "
+                "AND id < ? ORDER BY id DESC LIMIT 1",
+                (session_id, a["id"]),
+            ).fetchone()
+            ids = [a["id"]]
+            user_content: str | None = None
+            if u:
+                ids.append(u["id"])
+                user_content = u["content"]
+            placeholders = ",".join("?" * len(ids))
+            conn.execute(
+                f"DELETE FROM messages WHERE id IN ({placeholders})", ids)
+            conn.commit()
+        self.touch_session(session_id)
+        return user_content
+
     # ------------------------------------------------------------------
     # Preferences
     # ------------------------------------------------------------------

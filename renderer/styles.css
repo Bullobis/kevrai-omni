@@ -851,6 +851,13 @@ html[data-theme="light"] .mnn-msg.user { color: #fff; }
 .agent-msg-content { word-break: break-word; white-space: pre-wrap; }
 .agent-tools-used { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
 .agent-tool-tag { font-size: 10px; padding: 1px 6px; border-radius: 8px; background: rgba(74, 125, 255, 0.15); color: #7aa3ff; border: 1px solid rgba(74, 125, 255, 0.25); font-family: var(--mono, monospace); }
+.agent-msg-actions { margin-top: 8px; display: flex; gap: 6px; opacity: 0.5; transition: opacity 0.15s ease; }
+.agent-msg:hover .agent-msg-actions, .agent-msg:focus-within .agent-msg-actions { opacity: 1; }
+.agent-msg-btn {
+  font-size: 11px; padding: 2px 8px; border-radius: 7px; cursor: pointer;
+  background: transparent; color: inherit; border: 1px solid currentColor; opacity: 0.75;
+}
+.agent-msg-btn:hover { opacity: 1; background: rgba(128, 128, 128, 0.2); }
 .agent-input-area { display: flex; gap: 8px; align-items: flex-end; }
 .agent-input { flex: 1; background: var(--card, #1b1c1f); color: var(--fg, #ccc); border: 1px solid var(--border, #333); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; resize: none; font-family: inherit; line-height: 1.5; }
 .agent-input:focus-visible { outline: none; border-color: var(--accent, #4a7dff); box-shadow: var(--focus); }
