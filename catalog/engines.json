@@ -10,19 +10,16 @@
       "github": "ggml-org/llama.cpp",
       "license": "MIT",
       "platforms": {
-        "windows-x64": "https://github.com/ggml-org/llama.cpp/releases/latest/download/llama-bin-win-cuda-x64.zip",
-        "linux-x64": "https://github.com/ggml-org/llama.cpp/releases/latest/download/llama-bin-linux-x64-cuda.zip",
-        "darwin-arm64": "https://github.com/ggml-org/llama.cpp/releases/latest/download/llama-bin-macos-arm64.zip"
+        "windows-x64": "https://github.com/ggml-org/llama.cpp/releases",
+        "linux-x64": "https://github.com/ggml-org/llama.cpp/releases",
+        "darwin-arm64": "https://github.com/ggml-org/llama.cpp/releases"
       },
       "size_mb": 250,
       "trending": true,
       "sources": [
         "https://github.com/ggml-org/llama.cpp/releases/latest",
         "https://github.com/ggml-org/llama.cpp",
-        "https://objects.githubusercontent.com/ggml-org/llama.cpp",
-        "https://github.com/ggml-org/llama.cpp/releases/latest/download/llama-bin-win-cuda-x64.zip",
-        "https://github.com/ggml-org/llama.cpp/releases/latest/download/llama-bin-linux-x64-cuda.zip",
-        "https://github.com/ggml-org/llama.cpp/releases/latest/download/llama-bin-macos-arm64.zip"
+        "https://github.com/ggml-org/llama.cpp/releases"
       ]
     },
     {
@@ -60,12 +57,12 @@
       "size_mb": 60,
       "trending": true,
       "sources": [
-        "https://pypi.org/simple/MNN/",
-        "https://mirrors.aliyun.com/pypi/simple/MNN/",
-        "https://mirrors.tuna.tsinghua.edu.cn/pypi/simple/MNN/",
-        "https://mirrors.huaweicloud.com/repository/pypi/simple/MNN/",
-        "https://mirrors.cloud.tencent.com/pypi/simple/MNN/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/MNN/",
+        "https://pypi.org/simple/mnn/",
+        "https://mirrors.aliyun.com/pypi/simple/mnn/",
+        "https://mirrors.tuna.tsinghua.edu.cn/pypi/simple/mnn/",
+        "https://mirrors.huaweicloud.com/repository/pypi/simple/mnn/",
+        "https://mirrors.cloud.tencent.com/pypi/simple/mnn/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/mnn/",
         "https://github.com/alibaba/MNN/releases/latest",
         "https://github.com/alibaba/MNN",
         "https://gitcode.com/alibaba/MNN",
@@ -259,30 +256,30 @@
       "id": "chatterbox",
       "name": "Chatterbox Engine",
       "category": "tts",
-      "description": "ResembleAI/chatterbox — 情感/克隆 TTS。",
+      "description": "resemble-ai/chatterbox — 情感/克隆 TTS。",
       "github": "resemble-ai/chatterbox",
       "license": "Apache-2.0",
       "size_mb": 15,
       "trending": true,
       "sources": [
-        "https://github.com/ResembleAI/chatterbox/releases/latest",
-        "https://github.com/ResembleAI/chatterbox",
-        "https://objects.githubusercontent.com/ResembleAI/chatterbox"
+        "https://github.com/resemble-ai/chatterbox/releases/latest",
+        "https://github.com/resemble-ai/chatterbox",
+        "https://objects.githubusercontent.com/resemble-ai/chatterbox"
       ]
     },
     {
       "id": "indextts",
       "name": "IndexTTS Engine",
       "category": "tts",
-      "description": "IndexTeam/IndexTTS-2 — 工业级 TTS 推理。",
+      "description": "index-tts/index-tts — 工业级 TTS 推理。",
       "github": "index-tts/index-tts",
       "license": "Apache-2.0",
       "size_mb": 20,
       "trending": true,
       "sources": [
-        "https://github.com/IndexTeam/IndexTTS-2/releases/latest",
-        "https://github.com/IndexTeam/IndexTTS-2",
-        "https://objects.githubusercontent.com/IndexTeam/IndexTTS-2"
+        "https://github.com/index-tts/index-tts/releases/latest",
+        "https://github.com/index-tts/index-tts",
+        "https://objects.githubusercontent.com/index-tts/index-tts"
       ]
     },
     {
@@ -319,45 +316,45 @@
       "id": "triposr",
       "name": "TripoSR Engine",
       "category": "3d",
-      "description": "VAST-AI/TripoSR — 单图秒级 3D 重建推理。",
+      "description": "VAST-AI-Research/TripoSR — 单图秒级 3D 重建推理。",
       "github": "VAST-AI-Research/TripoSR",
       "license": "MIT",
       "size_mb": 40,
       "trending": true,
       "sources": [
-        "https://github.com/VAST-AI/TripoSR/releases/latest",
-        "https://github.com/VAST-AI/TripoSR",
-        "https://objects.githubusercontent.com/VAST-AI/TripoSR"
+        "https://github.com/VAST-AI-Research/TripoSR/releases/latest",
+        "https://github.com/VAST-AI-Research/TripoSR",
+        "https://objects.githubusercontent.com/VAST-AI-Research/TripoSR"
       ]
     },
     {
       "id": "direct3d-s2",
       "name": "Direct3D-S2 Engine",
       "category": "3d",
-      "description": "thu-ml-lab/Direct3D-S2 — 直生 3D 大模型推理。",
+      "description": "DreamTechAI/Direct3D-S2 — 直生 3D 大模型推理。",
       "github": "DreamTechAI/Direct3D-S2",
       "license": "Apache-2.0",
       "size_mb": 80,
       "trending": true,
       "sources": [
-        "https://github.com/thu-ml-lab/Direct3D-S2/releases/latest",
-        "https://github.com/thu-ml-lab/Direct3D-S2",
-        "https://objects.githubusercontent.com/thu-ml-lab/Direct3D-S2"
+        "https://github.com/DreamTechAI/Direct3D-S2/releases/latest",
+        "https://github.com/DreamTechAI/Direct3D-S2",
+        "https://objects.githubusercontent.com/DreamTechAI/Direct3D-S2"
       ]
     },
     {
       "id": "triposg",
       "name": "TripoSG Engine",
       "category": "3d",
-      "description": "VAST-AI/TripoSG — 图像到高质量 3D。",
+      "description": "VAST-AI-Research/TripoSG — 图像到高质量 3D。",
       "github": "VAST-AI-Research/TripoSG",
       "license": "MIT",
       "size_mb": 30,
       "trending": true,
       "sources": [
-        "https://github.com/VAST-AI/TripoSG/releases/latest",
-        "https://github.com/VAST-AI/TripoSG",
-        "https://objects.githubusercontent.com/VAST-AI/TripoSG"
+        "https://github.com/VAST-AI-Research/TripoSG/releases/latest",
+        "https://github.com/VAST-AI-Research/TripoSG",
+        "https://objects.githubusercontent.com/VAST-AI-Research/TripoSG"
       ]
     },
     {
@@ -429,8 +426,8 @@
       "size_mb": 1000,
       "trending": true,
       "platforms": {
-        "windows-x64": "https://github.com/ollama/ollama/releases/latest/download/OllamaSetup.exe",
-        "linux-x64": "https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tgz",
+        "windows-x64": "https://ollama.com/download/OllamaSetup.exe",
+        "linux-x64": "https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tar.zst",
         "darwin-arm64": "https://github.com/ollama/ollama/releases/latest/download/Ollama-darwin.zip"
       },
       "sources": [
