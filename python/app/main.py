@@ -2513,36 +2513,47 @@ async def v1_chat_completions(req: V1ChatReq):
     # N5：本请求由 _media_to_local 临时落盘的文件（data:/http(s) 下载产物）。
     # 请求结束（成功/失败/取消）后必须统一 unlink；用户自己的本地路径不在此列。
     created_temp: list[str] = []
-    for msg in req.messages:
-        role = str(msg.get("role", "user"))
-        content = msg.get("content")
-        if isinstance(content, list):
-            # OpenAI 多段 content：提取文本 + 图片 + 音频
-            text_parts: list[str] = []
-            for part in content:
-                if not isinstance(part, dict):
-                    continue
-                ptype = str(part.get("type", ""))
-                if ptype == "text":
-                    text_parts.append(str(part.get("text", "") or ""))
-                elif ptype == "image_url":
-                    url = part.get("image_url")
-                    if isinstance(url, dict):
-                        url = url.get("url", "")
-                    img = await _media_to_local(str(url or ""), "image", created_temp)
-                    if img:
-                        images.append(img)
-                elif ptype == "audio":
-                    src = part.get("audio") or part.get("input_audio") or {}
-                    url = src.get("url") or src.get("data") if isinstance(src, dict) else src
-                    aud_path = await _media_to_local(str(url or ""), "audio", created_temp)
-                    if aud_path:
-                        audios.append(aud_path)
-            content = "\n".join(text_parts) if text_parts else ""
-        content = str(content or "").strip()
-        if not content:
-            continue
-        history.append({"role": role if role in ("user", "assistant") else "user", "content": content})
+    # N8: the loop below calls _media_to_local, which raises HTTPException(400)
+    # on a bad data:/http URL. If that happens on the *2nd* message, the temp
+    # files written on the *1st* message must still be unlinked — the only
+    # existing cleanup finally wraps _v1_once, so a loop-time raise used to leak
+    # every earlier temp file. Catch any loop-time failure, clean, re-raise.
+    try:
+        for msg in req.messages:
+            role = str(msg.get("role", "user"))
+            content = msg.get("content")
+            if isinstance(content, list):
+                # OpenAI 多段 content：提取文本 + 图片 + 音频
+                text_parts: list[str] = []
+                for part in content:
+                    if not isinstance(part, dict):
+                        continue
+                    ptype = str(part.get("type", ""))
+                    if ptype == "text":
+                        text_parts.append(str(part.get("text", "") or ""))
+                    elif ptype == "image_url":
+                        url = part.get("image_url")
+                        if isinstance(url, dict):
+                            url = url.get("url", "")
+                        img = await _media_to_local(str(url or ""), "image", created_temp)
+                        if img:
+                            images.append(img)
+                    elif ptype == "audio":
+                        src = part.get("audio") or part.get("input_audio") or {}
+                        url = src.get("url") or src.get("data") if isinstance(src, dict) else src
+                        aud_path = await _media_to_local(str(url or ""), "audio", created_temp)
+                        if aud_path:
+                            audios.append(aud_path)
+                content = "\n".join(text_parts) if text_parts else ""
+            content = str(content or "").strip()
+            if not content:
+                continue
+            history.append({"role": role if role in ("user", "assistant") else "user", "content": content})
+    except BaseException:
+        for p in created_temp:
+            with contextlib.suppress(OSError):
+                os.unlink(p)
+        raise
 
     if not history and not images and not audios:
         # 提前失败也清理已落盘的临时媒体。
