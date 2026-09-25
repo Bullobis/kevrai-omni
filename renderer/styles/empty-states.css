@@ -1,0 +1,98 @@
+/* renderer/styles/empty-states.css — 统一空状态（Unified Empty States）
+ *
+ * 对标 Cherry Studio：无数据时的居中插画位。所有颜色走设计 token，
+ * 深色（默认）与浅色（html[data-theme="light"]）都自动协调。
+ *
+ * 结构：
+ *   .empty-state
+ *     .empty-state-iconwrap > svg.empty-state-icon   （lucide 风格）
+ *     h3.empty-state-title                            （一行标题）
+ *     p.empty-state-hint                              （一行辅助说明，--mut）
+ *     button.es-action                                （可选主操作按钮）
+ */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--sp-1, 8px);
+  padding: 40px 20px;
+  color: var(--mut, #9aa0a6);
+}
+
+.empty-state-iconwrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--r-4, 14px);
+  background: var(--card, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--bord, rgba(255, 255, 255, 0.09));
+  color: var(--mut, #9aa0a6);
+  margin-bottom: 4px;
+}
+
+.empty-state-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.empty-state-title {
+  margin: 0;
+  font-size: var(--fs-md, 16px);
+  font-weight: 500;
+  color: var(--fg, #e8eaed);
+}
+
+.empty-state-hint {
+  margin: 0;
+  max-width: 360px;
+  font-size: var(--fs-sm, 13px);
+  line-height: 1.6;
+  color: var(--mut, #9aa0a6);
+}
+
+.empty-state .es-action {
+  margin-top: var(--sp-1, 8px);
+}
+
+/* 模型市场的 .no-results 复用同一视觉语言（保留旧类名兼容，增强为带图标位）。 */
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--sp-1, 8px);
+  padding: 40px 20px;
+  color: var(--mut, #9aa0a6);
+}
+.no-results-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-4, 14px);
+  background: var(--card, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--bord, rgba(255, 255, 255, 0.09));
+  font-size: 28px;
+  margin: 0;
+}
+.no-results .link-btn {
+  background: none;
+  border: none;
+  color: var(--acc, #4ca97a);
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: var(--fs-sm, 13px);
+  padding: 2px 4px;
+}
+.no-results .link-btn:hover { filter: brightness(1.1); }
+
+/* 详情面板的空状态（#detail-panel.detail-empty）——与统一组件对齐。 */
+.detail-empty.empty-state {
+  min-height: 60vh;
+}
