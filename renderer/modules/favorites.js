@@ -8,6 +8,7 @@
 // under node --test.
 "use strict";
 import { toast } from "./toast.js";
+import { t } from "./i18n.js";
 
 const FAV_KEY = "kevrai:favorites";   // string[], most-recently-favorited first
 const RECENT_KEY = "kevrai:recent";   // string[], most-recently-used first
@@ -69,7 +70,7 @@ export function toggleFavorite(modelId) {
     return false;
   }
   if (list.length >= FAV_MAX) {
-    try { toast(`收藏已达上限（${FAV_MAX} 个），请先取消部分收藏`, { kind: "warn" }); } catch (_) {}
+    try { toast(t("toast.favLimit", { n: FAV_MAX }), { kind: "warn" }); } catch (_) {}
     return false;
   }
   list.unshift(id);

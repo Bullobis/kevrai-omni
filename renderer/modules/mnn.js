@@ -3,6 +3,7 @@
 import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { isViewVisible, onViewState } from "./view-visibility.js";
+import { t } from "./i18n.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -27,26 +28,25 @@ export async function renderMnnPage(root) {
   root.innerHTML = `
     <div class="hw-toolbar">
       <div>
-        <h2 class="hw-title">⬢ MNN 推理引擎（阿里巴巴开源）</h2>
-        <p class="hint">端侧速度怪兽：CPU 汇编级优化 + GPU 后端，跑 Qwen 系常比 llama.cpp 更快。
-          引擎经 pip 安装（自带完整 LLM 运行时），模型为官方预转换 MNN 格式（taobao-mnn），下载即用。</p>
+        <h2 class="hw-title">${t("mnn.title")}</h2>
+        <p class="hint">${t("mnn.hint")}</p>
       </div>
       <div class="hw-toolbar-actions">
-        <button class="secondary" id="mnn-refresh">刷新</button>
+        <button class="secondary" id="mnn-refresh">${t("mnn.refresh")}</button>
       </div>
     </div>
     <div id="mnn-engine-state"></div>
     <div id="mnn-chat-card" class="mnn-chat-card" hidden></div>
-    <h3 class="section">已下载的 MNN 模型</h3>
+    <h3 class="section">${t("mnn.downloadedTitle")}</h3>
     <div id="mnn-local" class="list"></div>
-    <h3 class="section">模型格式转换（HF → MNN）</h3>
+    <h3 class="section">${t("mnn.convertTitle")}</h3>
     <div id="mnn-convert" class="mnn-convert-card"></div>
-    <h3 class="section">MNN 模型市场（官方预转换 · 开箱即用）</h3>
+    <h3 class="section">${t("mnn.marketTitle")}</h3>
     <div id="mnn-market" class="list"></div>
     <div id="mnn-dl-progress" hidden>
       <div class="mnn-dl-head">
         <span id="mnn-dl-name" class="sub"></span>
-        <button class="ghost small" id="mnn-dl-cancel">取消</button>
+        <button class="ghost small" id="mnn-dl-cancel">${t("mnn.cancel")}</button>
       </div>
       <div class="hw-score-bar"><div id="mnn-dl-fill" class="hw-score-fill" style="width:0%"></div></div>
       <div id="mnn-dl-info" class="mut tiny"></div>
@@ -55,7 +55,7 @@ export async function renderMnnPage(root) {
 
   $("#mnn-refresh", root).addEventListener("click", () => refreshAll(root));
   $("#mnn-dl-cancel", root).addEventListener("click", async () => {
-    try { await api.mnnDownloadCancel(); toast("已请求取消下载", { kind: "ok" }); }
+    try { await api.mnnDownloadCancel(); toast(t("mnn.cancelRequested"), { kind: "ok" }); }
     catch (_) {}
   });
 
@@ -110,7 +110,7 @@ async function renderEngineState(root) {
     const r = await api.mnnStatus();
     st = r?.body || r || {};
   } catch (e) {
-    el.innerHTML = `<p class="hint">无法获取 MNN 状态：${esc(e?.message || e)}</p>`;
+    el.innerHTML = `<p class="hint">${t("mnn.statusFailed", { err: esc(e?.message || e) })}</p>`;
     return;
   }
   _renderEngineStateInner(root, el, st);
@@ -121,34 +121,34 @@ function _renderEngineStateInner(root, el, st) {
   el.innerHTML = installed ? `
     <div class="mnn-state-card ok">
       <div class="grow">
-        <div class="name">MNN 引擎已就绪 ${st.engine_version ? `<span class="pill ok">v${esc(st.engine_version)}</span>` : ""}</div>
+        <div class="name">${t("mnn.ready")} ${st.engine_version ? `<span class="pill ok">v${esc(st.engine_version)}</span>` : ""}</div>
         <div class="sub">${st.loaded
-          ? `当前已加载：<b>${esc(st.model_name)}</b>（对话 ${st.chat_count} 次）`
-          : "尚未加载模型 —— 从下方市场下载一个，或在已下载列表中点「加载」"}</div>
+          ? t("mnn.loadedChat", { model: `<b>${esc(st.model_name)}</b>`, n: st.chat_count })
+          : t("mnn.notLoaded")}</div>
       </div>
-      ${st.loaded ? `<button class="danger small" data-action="mnn-unload">卸载模型</button>` : ""}
+      ${st.loaded ? `<button class="danger small" data-action="mnn-unload">${t("mnn.unload")}</button>` : ""}
     </div>
   ` : `
     <div class="mnn-state-card warn">
       <div class="grow">
-        <div class="name">MNN 引擎未安装</div>
-        <div class="sub">点击右侧按钮经 pip 安装（约 60MB，含完整 LLM 运行时）。已配置国内镜像加速。</div>
+        <div class="name">${t("mnn.notInstalled")}</div>
+        <div class="sub">${t("mnn.installHint")}</div>
       </div>
-      <button class="primary" data-action="mnn-install">安装 MNN 引擎</button>
+      <button class="primary" data-action="mnn-install">${t("mnn.install")}</button>
     </div>
   `;
 
   const installBtn = el.querySelector("[data-action=mnn-install]");
   if (installBtn) installBtn.addEventListener("click", async () => {
     installBtn.disabled = true;
-    installBtn.textContent = "安装中…";
+    installBtn.textContent = t("mnn.installing");
     try {
       await api.envInstallPip({ name: "MNN" });
-      toast("MNN 引擎安装完成", { kind: "ok" });
+      toast(t("mnn.installDone"), { kind: "ok" });
       await renderEngineState(root);
     } catch (_) { /* toast shown */ }
     installBtn.disabled = false;
-    installBtn.textContent = "安装 MNN 引擎";
+    installBtn.textContent = t("mnn.install");
   });
 
   const unloadBtn = el.querySelector("[data-action=mnn-unload]");
@@ -156,7 +156,7 @@ function _renderEngineStateInner(root, el, st) {
     try {
       await api.mnnUnload();
       _chatHistory = [];
-      toast("已卸载 MNN 模型", { kind: "ok" });
+      toast(t("mnn.unloadedModel"), { kind: "ok" });
       await refreshAll(root);
     } catch (_) {}
   });
@@ -175,20 +175,20 @@ function renderChatCard(root, st) {
   card.hidden = false;
   card.innerHTML = `
     <div class="mnn-chat-head">
-      <b>💬 与 ${esc(st.model_name)} 对话（MNN 真实推理）</b>
+      <b>${t("mnn.chatWith", { model: esc(st.model_name) })}</b>
       <span class="mut tiny" id="mnn-chat-stat"></span>
     </div>
     <div class="mnn-chat-log" id="mnn-chat-log"></div>
     <div class="mnn-chat-input-row">
       <input id="mnn-chat-input" type="text" maxlength="4000"
-             placeholder="输入消息，回车发送…" autocomplete="off" />
-      <button class="primary" id="mnn-chat-send">发送</button>
+             placeholder="${t("mnn.chatPlaceholder")}" autocomplete="off" />
+      <button class="primary" id="mnn-chat-send">${t("mnn.send")}</button>
     </div>
   `;
   const log = $("#mnn-chat-log", card);
   _chatHistory.forEach((m) => appendChatMsg(log, m.role, m.content));
   if (!_chatHistory.length) {
-    log.innerHTML = `<div class="mut tiny" style="padding:8px 2px">试试：「你好，介绍一下你自己」</div>`;
+    log.innerHTML = `<div class="mut tiny" style="padding:8px 2px">${t("mnn.tryHint")}</div>`;
   }
   const input = $("#mnn-chat-input", card);
   const send = async () => {
@@ -197,13 +197,13 @@ function renderChatCard(root, st) {
     input.value = "";
     input.disabled = true;
     appendChatMsg(log, "user", text);
-    const thinking = appendChatMsg(log, "assistant", "…思考中…");
+    const thinking = appendChatMsg(log, "assistant", t("mnn.thinking"));
     try {
       const r = await api.mnnChat({ prompt: text, history: _chatHistory.slice(-20), max_new_tokens: 512 });
       const b = r?.body || r || {};
-      thinking.textContent = b.text || "(空回复)";
+      thinking.textContent = b.text || t("mnn.emptyReply");
       const stat = $("#mnn-chat-stat", card);
-      if (stat) stat.textContent = `${b.elapsed_s || "?"}s · ${b.speed_cps || "?"} 字/秒`;
+      if (stat) stat.textContent = t("mnn.rate", { s: b.elapsed_s || "?", cps: b.speed_cps || "?" });
       _chatHistory.push({ role: "user", content: text });
       _chatHistory.push({ role: "assistant", content: b.text || "" });
     } catch (e) {
@@ -240,12 +240,12 @@ async function renderLocal(root) {
     const r = await api.mnnLocal();
     data = r?.body || r || {};
   } catch (e) {
-    el.innerHTML = `<p class="hint">读取失败：${esc(e?.message || e)}</p>`;
+    el.innerHTML = `<p class="hint">${t("mnn.readFailed", { err: esc(e?.message || e) })}</p>`;
     return;
   }
   const models = data.models || [];
   if (!models.length) {
-    el.innerHTML = `<p class="hint">还没有下载过 MNN 模型。从下方市场挑选一个吧 —— 小模型（LFM2.5-230M 仅 ~0.2GB）几十秒即可完成。</p>`;
+    el.innerHTML = `<p class="hint">${t("mnn.noDownloaded")}</p>`;
     return;
   }
   let st = {};
@@ -254,20 +254,20 @@ async function renderLocal(root) {
     <div class="row">
       <div class="grow">
         <div class="name">${esc(m.id)}
-          ${st.loaded && st.model_dir === m.dir ? '<span class="pill ok">已加载</span>' : ""}</div>
+          ${st.loaded && st.model_dir === m.dir ? `<span class="pill ok">${t("mnn.loaded")}</span>` : ""}</div>
         <div class="sub" title="${esc(m.dir)}">${esc(m.dir)} · ${esc(m.size_gb)} GB</div>
       </div>
-      ${st.loaded && st.model_dir === m.dir ? "" : `<button class="primary small" data-action="mnn-load" data-dir="${esc(m.dir)}" data-name="${esc(m.id)}">加载</button>`}
+      ${st.loaded && st.model_dir === m.dir ? "" : `<button class="primary small" data-action="mnn-load" data-dir="${esc(m.dir)}" data-name="${esc(m.id)}">${t("mnn.load")}</button>`}
     </div>
   `).join("");
 
   el.querySelectorAll("[data-action=mnn-load]").forEach((b) => {
     b.addEventListener("click", async () => {
       b.disabled = true;
-      b.textContent = "加载中…";
+      b.textContent = t("mnn.loading");
       try {
         await api.mnnLoad({ model_dir: b.dataset.dir, model_name: b.dataset.name });
-        toast(`模型已加载：${b.dataset.name}`, { kind: "ok" });
+        toast(t("mnn.loadedModel", { name: b.dataset.name }), { kind: "ok" });
         _chatHistory = [];
         await refreshAll(root);
       } catch (_) { /* toast shown */ }

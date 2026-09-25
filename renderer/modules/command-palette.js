@@ -214,13 +214,15 @@ function registerDefaults() {
       if (b) b.click();
     }, ["sidebar", "侧边栏", "collapse", "折叠", "menu"], "panel-left", "操作");
   actions.get("toggleSidebar").shortcut = "⌘B";
-  registerAction("showShortcuts", () => "键盘快捷键",
+  registerAction("showShortcuts", () => t("cmdpal.actions.showShortcuts"),
     () => openHelp(), ["shortcuts", "hotkeys", "快捷键", "键盘", "help", "帮助"], "keyboard", "系统");
   actions.get("showShortcuts").shortcut = "⌘/";
 }
 
 // 分组展示顺序（空查询时按此顺序渲染）。
 const GROUP_ORDER = ["导航", "操作", "主题", "系统"];
+// 渲染分组标题时把内部 group 名映射到字典 key（action.group 仍保持中文以兼容既有测试）。
+const GROUP_LABEL_KEY = { "导航": "cmdpal.groupNav", "操作": "cmdpal.groupAction", "主题": "cmdpal.groupTheme", "系统": "cmdpal.groupSystem" };
 
 // ── DOM 构建（仅在浏览器环境执行）────────────────────────────────────────────
 function buildOverlay() {
@@ -343,19 +345,19 @@ function renderList() {
     const rest = filtered.filter((a) => !r[a.id]);
 
     if (recent.length) {
-      listEl.appendChild(renderGroupHeader("最近使用"));
+      listEl.appendChild(renderGroupHeader(t("cmdpal.recent")));
       ordered.push(...recent);
     }
     for (const g of GROUP_ORDER) {
       const items = rest.filter((a) => (a.group || "操作") === g);
       if (!items.length) continue;
-      listEl.appendChild(renderGroupHeader(g));
+      listEl.appendChild(renderGroupHeader(t(GROUP_LABEL_KEY[g] || "cmdpal.other")));
       ordered.push(...items);
     }
     const knownGroups = new Set([...GROUP_ORDER, ""]);
     const ungrouped = rest.filter((a) => !knownGroups.has(a.group));
     if (ungrouped.length) {
-      listEl.appendChild(renderGroupHeader("其他"));
+      listEl.appendChild(renderGroupHeader(t("cmdpal.other")));
       ordered.push(...ungrouped);
     }
   } else {
@@ -423,29 +425,29 @@ export function isOpen() {
 // ── Keyboard shortcuts cheat-sheet (Ctrl/⌘+/) ────────────────────────────────
 // 与 initCommandPalette 中实际注册的快捷键严格一一对应，不列不存在的键位。
 const SHORTCUTS = [
-  { group: "全局", items: [
-    ["Ctrl K", "打开 / 关闭命令面板"],
-    ["Ctrl /", "打开本快捷键速查"],
-    ["Ctrl ,", "打开设置"],
-    ["Ctrl D", "打开下载面板"],
-    ["Ctrl B", "收起 / 展开侧边栏"],
+  { groupKey: "cmdpal.scGroupGlobal", items: [
+    ["Ctrl K", "cmdpal.scItemToggle"],
+    ["Ctrl /", "cmdpal.scItemOpenHelp"],
+    ["Ctrl ,", "cmdpal.scItemOpenSettings"],
+    ["Ctrl D", "cmdpal.scItemOpenDownloads"],
+    ["Ctrl B", "cmdpal.scItemToggleSidebar"],
   ] },
-  { group: "导航", items: [
-    ["Ctrl 1 … 9", "切换到第 1–9 个页面"],
-    ["Ctrl 0", "切换到最后一个页面"],
+  { groupKey: "cmdpal.scGroupNav", items: [
+    ["Ctrl 1 … 9", "cmdpal.scItemSwitchPage"],
+    ["Ctrl 0", "cmdpal.scItemLastPage"],
   ] },
-  { group: "搜索", items: [
-    ["/", "聚焦搜索框（输入框内除外）"],
-    ["Ctrl F", "聚焦搜索框并全选内容"],
+  { groupKey: "cmdpal.scGroupSearch", items: [
+    ["/", "cmdpal.scItemFocusSearch"],
+    ["Ctrl F", "cmdpal.scItemFocusSearchSelect"],
   ] },
-  { group: "命令面板", items: [
-    ["↑ ↓", "选择命令"],
-    ["Enter", "执行选中命令"],
-    ["Esc", "关闭命令面板"],
+  { groupKey: "cmdpal.scGroupPalette", items: [
+    ["↑ ↓", "cmdpal.scItemMove"],
+    ["Enter", "cmdpal.scItemRun"],
+    ["Esc", "cmdpal.scItemClosePalette"],
   ] },
-  { group: "模态操作", items: [
-    ["Esc", "关闭速查 / 设置 / 下载 / 更新 / 引导弹窗"],
-    ["Esc", "在输入框中先退出输入焦点"],
+  { groupKey: "cmdpal.scGroupModal", items: [
+    ["Esc", "cmdpal.scItemCloseModal"],
+    ["Esc", "cmdpal.scItemExitInput"],
   ] },
 ];
 
@@ -456,7 +458,7 @@ function buildHelpOverlay() {
   helpOverlay.className = "cmdpal-overlay";
   helpOverlay.setAttribute("role", "dialog");
   helpOverlay.setAttribute("aria-modal", "true");
-  helpOverlay.setAttribute("aria-label", "键盘快捷键");
+  helpOverlay.setAttribute("aria-label", t("cmdpal.shortcutsTitle"));
   helpOverlay.hidden = true;
 
   const panel = document.createElement("div");
@@ -467,10 +469,10 @@ function buildHelpOverlay() {
   head.className = "cmdpal-help-head";
   const title = document.createElement("div");
   title.className = "cmdpal-help-title";
-  title.textContent = "键盘快捷键";
+  title.textContent = t("cmdpal.shortcutsTitle");
   const closeBtn = document.createElement("button");
   closeBtn.className = "cmdpal-help-close";
-  closeBtn.setAttribute("aria-label", "关闭快捷键速查");
+  closeBtn.setAttribute("aria-label", t("cmdpal.shortcutsClose"));
   closeBtn.textContent = "×";
   closeBtn.addEventListener("click", closeHelp);
   head.appendChild(title);
@@ -480,14 +482,14 @@ function buildHelpOverlay() {
   for (const g of SHORTCUTS) {
     const gh = document.createElement("div");
     gh.className = "cmdpal-help-group";
-    gh.textContent = g.group;
+    gh.textContent = t(g.groupKey);
     panel.appendChild(gh);
-    for (const [keys, desc] of g.items) {
+    for (const [keys, descKey] of g.items) {
       const row = document.createElement("div");
       row.className = "cmdpal-help-row";
       const d = document.createElement("span");
       d.className = "cmdpal-help-desc";
-      d.textContent = desc;
+      d.textContent = t(descKey);
       const kbd = document.createElement("kbd");
       kbd.textContent = keys;
       row.appendChild(d);
@@ -606,3 +608,12 @@ export function initCommandPalette(container) {
 
 // Node 环境下也注册默认动作（便于单测 filterActions / registerAction）
 registerDefaults();
+
+// 语言切换后：丢弃缓存的 help overlay（下次打开按新语言重建），
+// 动作 label 是懒加载函数，重开命令面板即自动刷新。
+if (typeof document !== "undefined" && document.addEventListener) {
+  document.addEventListener("kevrai:locale-changed", () => {
+    helpOverlay = null;
+    if (overlay && !overlay.hidden) renderList();
+  });
+}

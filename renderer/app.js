@@ -27,7 +27,7 @@ import { wireDragDrop } from "./modules/dragdrop.js";
 import { wireOnboarding } from "./modules/onboarding.js";
 import { wireUpdate } from "./modules/update.js";
 import { initCommandPalette } from "./modules/command-palette.js";
-import { initI18n } from "./modules/i18n.js";
+import { initI18n, t } from "./modules/i18n.js";
 import { createEmptyState } from "./modules/empty-state.js";
 import { whenIdle } from "./modules/idle.js";
 
@@ -110,9 +110,9 @@ function renderGGUF() {
   if (!repos.length) {
     const es = createEmptyState({
       icon: "packageOpen",
-      title: "暂无 GGUF 仓库",
-      hint: "还没有枚举到任何 GGUF 仓库。点刷新重试，或在模型市场下载模型后回到这里查看量化文件。",
-      actionLabel: "刷新",
+      title: t("gguf.emptyTitle"),
+      hint: t("gguf.emptyHint"),
+      actionLabel: t("header.refresh"),
     });
     es.querySelector(".es-action")?.addEventListener("click", () => loadAll());
     el.replaceChildren(es);
@@ -125,15 +125,15 @@ function renderGGUF() {
       <div class="grow">
         <div class="name">${escapeHtml(r.name || r.owner_repo)}</div>
         <div class="sub">${escapeHtml(r.owner_repo || "")}</div>
-        <div class="sub">无法连接仓库：${escapeHtml(r.error)}</div>
+        <div class="sub">${t("gguf.cannotConnect", { err: escapeHtml(r.error) })}</div>
       </div>
-      <span class="pill">离线</span>
+      <span class="pill">${t("gguf.offline")}</span>
     </div>`;
     }
     const files = (r.files || []).slice(0, 8).map((f) => `
       <div class="sub">· ${escapeHtml(f.path)} (${((f.size || 0) / 1e9).toFixed(2)} GB)</div>`).join("");
     const more = (r.files || []).length > 8
-      ? `<div class="sub mut">… 共 ${r.count || (r.files || []).length} 个文件</div>` : "";
+      ? `<div class="sub mut">${t("gguf.moreFiles", { n: r.count || (r.files || []).length })}</div>` : "";
     return `
     <div class="row">
       <div class="grow">
@@ -141,7 +141,7 @@ function renderGGUF() {
         <div class="sub">${escapeHtml(r.owner_repo || "")}</div>
         ${files}${more}
       </div>
-      <span class="pill ok">${r.count || (r.files || []).length} 个文件</span>
+      <span class="pill ok">${t("gguf.filesCount", { n: r.count || (r.files || []).length })}</span>
     </div>`;
   }).join("");
 }
@@ -153,9 +153,9 @@ function renderLocal() {
   if (!list.length) {
     const es = createEmptyState({
       icon: "hardDrive",
-      title: "还没有本地模型",
-      hint: "从你的硬盘一键导入 GGUF / safetensors，也可以把文件直接拖入窗口。",
-      actionLabel: "选择文件",
+      title: t("local.emptyTitle"),
+      hint: t("local.emptyHint"),
+      actionLabel: t("local.pickFile"),
     });
     es.querySelector(".es-action")?.addEventListener("click", () => $("#btn-import-file")?.click());
     el.replaceChildren(es);
@@ -169,7 +169,7 @@ function renderLocal() {
     const canLlm = es.includes("llama.cpp");
     const canMnn = es.includes("mnn");
     const running = state.llm && state.llm.running && state.llm.model_path === m.path;
-    const engLine = es.length ? `<div class="sub">可用引擎：${escapeHtml(es.join("、"))}</div>` : "";
+    const engLine = es.length ? `<div class="sub">${t("local.availableEngines", { list: escapeHtml(es.join("、")) })}</div>` : "";
     return `
     <div class="row">
       <div class="grow">
@@ -178,14 +178,14 @@ function renderLocal() {
         <div class="sub">${((m.size_bytes || 0) / 1e9).toFixed(2)} GB</div>
         ${engLine}
       </div>
-      ${running ? `<span class="pill ok">运行中 :${state.llm.port}</span>
-        <button class="secondary small" data-action="llm-stop">停止</button>` :
+      ${running ? `<span class="pill ok">${t("local.running", { port: state.llm.port })}</span>
+        <button class="secondary small" data-action="llm-stop">${t("local.stop")}</button>` :
         canLlm ? `<button class="secondary small" data-action="llm-start"
-              data-path="${escapeHtml(m.path || "")}" aria-label="用 llama.cpp 启动">▶ 启动</button>` : ""}
-      ${canMnn ? `<span class="pill">MNN 页可加载</span>` : ""}
-      <span class="pill ok">本地</span>
+              data-path="${escapeHtml(m.path || "")}" aria-label="${t("local.startLlamaAria")}">${t("local.start")}</button>` : ""}
+      ${canMnn ? `<span class="pill">${t("local.mnnLoadable")}</span>` : ""}
+      <span class="pill ok">${t("local.localBadge")}</span>
       ${m.path ? `<button class="secondary small" data-action="reveal-local"
-              data-path="${escapeHtml(m.path)}" aria-label="在文件管理器中定位">定位</button>` : ""}
+              data-path="${escapeHtml(m.path)}" aria-label="${t("local.revealAria")}">${t("local.locate")}</button>` : ""}
     </div>`;
   }).join("");
 }
@@ -198,21 +198,21 @@ function renderPending() {
   if (!list.length) {
     const es = createEmptyState({
       icon: "clock",
-      title: "暂无待开源模型",
-      hint: "这里会列出尚未开源权重的模型。官方公开权重后会自动上架到模型市场。",
+      title: t("local.pendingEmptyTitle"),
+      hint: t("local.pendingEmptyHint"),
     });
     el.replaceChildren(es);
     return;
   }
   el.innerHTML = list.map((m) => {
-    const name = m.name || m.id || "未命名";
+    const name = m.name || m.id || t("market.unnamed");
     return `
     <div class="row">
       <div class="grow">
         <div class="name">${escapeHtml(name)}</div>
         ${m.description ? `<div class="sub">${escapeHtml(m.description)}</div>` : ""}
       </div>
-      <span class="pill warn">待开源</span>
+      <span class="pill warn">${t("local.pendingBadge")}</span>
     </div>`;
   }).join("");
 }
@@ -225,7 +225,7 @@ function switchView(name) {
     const root = document.getElementById("env-root");
     if (root && !root.dataset.rendered) {
       root.dataset.rendered = "1";
-      renderEnvironmentsPage(root).catch((e) => toast("环境页加载失败：" + e.message, { kind: "err" }));
+      renderEnvironmentsPage(root).catch((e) => toast(t("toast.envPageFailed", { err: e.message }), { kind: "err" }));
     }
   }
   // v2.3.0 — hardware recommendation page (re-render on every visit; data is cheap & cached).
@@ -233,7 +233,7 @@ function switchView(name) {
     const root = document.getElementById("hw-root");
     if (root && !root.dataset.rendered) {
       root.dataset.rendered = "1";
-      renderHardwarePage(root).catch((e) => toast("硬件推荐页加载失败：" + e.message, { kind: "err" }));
+      renderHardwarePage(root).catch((e) => toast(t("toast.hwPageFailed", { err: e.message }), { kind: "err" }));
     }
   }
   // v2.3.0 — MNN engine page (re-render on every visit to refresh statuses).
@@ -241,7 +241,7 @@ function switchView(name) {
     const root = document.getElementById("mnn-root");
     if (root) {
       root.dataset.rendered = "1";
-      renderMnnPage(root).catch((e) => toast("MNN 页加载失败：" + e.message, { kind: "err" }));
+      renderMnnPage(root).catch((e) => toast(t("toast.mnnPageFailed", { err: e.message }), { kind: "err" }));
     }
   }
   // v2.4.0 — LTX-2.5 video generation page (init once).
@@ -249,7 +249,7 @@ function switchView(name) {
     const root = document.getElementById("pane-ltx");
     if (root && !root.dataset.rendered) {
       root.dataset.rendered = "1";
-      initLtx().catch((e) => toast("LTX-2.5 页加载失败：" + e.message, { kind: "err" }));
+      initLtx().catch((e) => toast(t("toast.ltxPageFailed", { err: e.message }), { kind: "err" }));
     }
   }
   // v2.7.0 — Kevrai Agent page (init once).
@@ -257,7 +257,7 @@ function switchView(name) {
     const root = document.getElementById("pane-agent");
     if (root && !root.dataset.rendered) {
       root.dataset.rendered = "1";
-      initAgent().catch((e) => toast("Agent 页加载失败：" + e.message, { kind: "err" }));
+      initAgent().catch((e) => toast(t("toast.agentPageFailed", { err: e.message }), { kind: "err" }));
     }
   }
   // R4 — 统一派发视图切换事件。后台轮询型模块（LTX / MNN）通过
@@ -282,8 +282,8 @@ function wireWindowControls() {
   if (btnClose) btnClose.addEventListener("click", () => { k.winClose(); });
   const setMax = (isMax) => {
     if (btnMax) {
-      btnMax.setAttribute("aria-label", isMax ? "还原" : "最大化");
-      btnMax.title = isMax ? "还原" : "最大化";
+      btnMax.setAttribute("aria-label", isMax ? t("app.winRestore") : t("app.winMaximize"));
+      btnMax.title = isMax ? t("app.winRestore") : t("app.winMaximize");
     }
     if (ico) {
       ico.innerHTML = isMax
@@ -311,7 +311,7 @@ function wireGlobalUI() {
     if (reveal) {
       e.preventDefault();
       const p = reveal.dataset.path;
-      if (p) api.openPath(p).then(() => toast("已在文件管理器中定位", { kind: "ok" })).catch(() => {});
+      if (p) api.openPath(p).then(() => toast(t("toast.located"), { kind: "ok" })).catch(() => {});
     }
     // DIY: start llama.cpp for a local .gguf model (v2.8.0)
     const llmStartBtn = e.target.closest("[data-action=llm-start]");
@@ -320,15 +320,15 @@ function wireGlobalUI() {
       const p = llmStartBtn.dataset.path;
       if (!p) return;
       llmStartBtn.disabled = true;
-      toast("正在启动 llama-server…");
+      toast(t("toast.llmStarting"));
       api.llmStart({ model_path: p })
         .then((r) => {
           state.llm = { running: true, port: r.port, model_path: p };
-          toast(`已启动，服务端口 :${r.port}`, { kind: "ok" });
+          toast(t("toast.llmStarted", { port: r.port }), { kind: "ok" });
           renderLocal();
         })
         .catch((err) => {
-          toast("启动失败：" + err.message, { kind: "err" });
+          toast(t("toast.llmStartFailed", { err: err.message }), { kind: "err" });
           llmStartBtn.disabled = false;
         });
     }
@@ -336,8 +336,8 @@ function wireGlobalUI() {
     if (llmStopBtn) {
       e.preventDefault();
       api.llmStop()
-        .then(() => { state.llm = null; renderLocal(); toast("已停止", { kind: "ok" }); })
-        .catch((err) => toast("停止失败：" + err.message, { kind: "err" }));
+        .then(() => { state.llm = null; renderLocal(); toast(t("toast.llmStopped"), { kind: "ok" }); })
+        .catch((err) => toast(t("toast.llmStopFailed", { err: err.message }), { kind: "err" }));
     }
   });
 
@@ -350,7 +350,7 @@ function wireGlobalUI() {
   if (detect) detect.addEventListener("click", async () => {
     try {
       const r = await api.detectGPU();
-      toast(`检测到 GPU：${(r?.body || r || []).length || 0}`, { kind: "ok" });
+      toast(t("toast.gpuDetected", { n: (r?.body || r || []).length || 0 }), { kind: "ok" });
     } catch (_) {}
   });
 
@@ -359,14 +359,14 @@ function wireGlobalUI() {
   if (impFolder) impFolder.addEventListener("click", async () => {
     const p = await api.pickFolder();
     if (!p) return;
-    try { await api.importModel({ path: p, mode: "copy" }); toast("已导入", { kind: "ok" }); loadAll(); }
+    try { await api.importModel({ path: p, mode: "copy" }); toast(t("toast.imported"), { kind: "ok" }); loadAll(); }
     catch (_) {}
   });
   const impFile = $("#btn-import-file");
   if (impFile) impFile.addEventListener("click", async () => {
     const p = await api.pickFile();
     if (!p) return;
-    try { await api.importModel({ path: p, mode: "copy" }); toast("已导入", { kind: "ok" }); loadAll(); }
+    try { await api.importModel({ path: p, mode: "copy" }); toast(t("toast.imported"), { kind: "ok" }); loadAll(); }
     catch (_) {}
   });
 
@@ -489,7 +489,7 @@ async function bootstrap() {
       appShell.classList.toggle("sidebar-expanded", expanded);
       sidebar.classList.toggle("expanded", expanded);
       sidebarToggle.textContent = expanded ? "⟨" : "☰";
-      sidebarToggle.setAttribute("aria-label", expanded ? "收起侧边栏" : "展开侧边栏");
+      sidebarToggle.setAttribute("aria-label", expanded ? t("app.collapseSidebar") : t("app.expandSidebar"));
     };
     try { applySidebar(localStorage.getItem(SIDEBAR_KEY) === "1"); } catch (_) {}
     sidebarToggle.addEventListener("click", () => {
@@ -514,9 +514,9 @@ async function bootstrap() {
   });
 
   // First render
-  loadAll().catch((e) => toast("加载失败：" + (e?.message || e), { kind: "err" }));
+  loadAll().catch((e) => toast(t("toast.loadFailed", { err: e?.message || e }), { kind: "err" }));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  bootstrap().catch((e) => toast("初始化失败：" + (e?.message || e), { kind: "err" }));
+  bootstrap().catch((e) => toast(t("toast.initFailed", { err: e?.message || e }), { kind: "err" }));
 });
