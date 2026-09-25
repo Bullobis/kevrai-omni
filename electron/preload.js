@@ -327,6 +327,10 @@ const api = {
   },
   agentSessions: (limit) => invoke("kevrai:agent-sessions", limit),
   agentSessionMessages: (sessionId, limit) => invoke("kevrai:agent-session-messages", sessionId, limit),
+  agentRegenerate: (sessionId) => {
+    assertString(sessionId, "sessionId", 128);
+    return invoke("kevrai:agent-regenerate", sessionId);
+  },
   agentGetPreferences: () => invoke("kevrai:agent-prefs-get"),
   agentSetPreference: (key, value) => invoke("kevrai:agent-prefs-set", key, value),
   // ----- v2.8.0: 可插拔技能库 -----

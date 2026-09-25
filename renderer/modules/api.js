@@ -115,6 +115,7 @@ export const api = {
   agentChat:            wrap("agentChat",            (opts) => k().agentChat(opts)),
   agentSessions:        wrap("agentSessions",        (limit) => k().agentSessions(limit)),
   agentSessionMessages: wrap("agentSessionMessages", (id, limit) => k().agentSessionMessages(id, limit)),
+  agentRegenerate:      wrap("agentRegenerate",      (id) => k().agentRegenerate(id)),
   agentGetPreferences:  wrap("agentGetPreferences",  () => k().agentGetPreferences()),
   agentSetPreference:   wrap("agentSetPreference",   (key, value) => k().agentSetPreference(key, value)),
   // v2.8.0 — 可插拔技能库

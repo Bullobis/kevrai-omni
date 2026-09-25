@@ -456,11 +456,53 @@ function _appendMessage(role, content, animate = false, tools = []) {
   const toolsHtml = tools && tools.length
     ? `<div class="agent-tools-used">工具: ${tools.map((t) => `<span class="agent-tool-tag">${esc(t)}</span>`).join("")}</div>`
     : "";
+  const regenBtn = role === "assistant"
+    ? `<button type="button" class="agent-msg-btn" data-msg-action="regen" title="重新生成">↻ 重新生成</button>`
+    : "";
   div.innerHTML = `
     <div class="agent-msg-label">${esc(label)}</div>
     <div class="agent-msg-content">${esc(content).replace(/\n/g, "<br>")}</div>
     ${toolsHtml}
+    <div class="agent-msg-actions">
+      <button type="button" class="agent-msg-btn" data-msg-action="copy" title="复制">⧉ 复制</button>
+      ${regenBtn}
+    </div>
   `;
   container.appendChild(div);
+  div.querySelector('[data-msg-action="copy"]').addEventListener("click", () => _copyText(content));
+  div.querySelector('[data-msg-action="regen"]')?.addEventListener("click", () => _regenerate());
   container.scrollTop = container.scrollHeight;
+}
+
+async function _copyText(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    toast("已复制", { kind: "ok" });
+  } catch (_) {
+    toast("复制失败", { kind: "err" });
+  }
+}
+
+// Regenerate the last assistant answer (backend trims the final pair and
+// re-runs); then redraw the whole session so the UI matches the store.
+async function _regenerate() {
+  if (_busy) return;
+  try {
+    _busy = true;
+    await api.agentRegenerate(_sessionId);
+    await _loadSessionMessages();
+  } catch (e) {
+    console.warn("regenerate failed:", e);
+  } finally {
+    _busy = false;
+  }
 }
