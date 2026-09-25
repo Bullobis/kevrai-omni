@@ -24,6 +24,20 @@ let selectedIdx = 0;
 let rendered = []; // 当前过滤后的动作列表
 let inited = false;
 
+// Recently-used commands (persisted; only read/written in the browser).
+const RECENT_KEY = "kevrai:cmd-recent";
+function getRecent() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "{}"); } catch (_) { return {}; }
+}
+function bumpRecent(id) {
+  try {
+    const r = getRecent();
+    r[id] = Date.now();
+    const top = Object.entries(r).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(Object.fromEntries(top)));
+  } catch (_) {}
+}
+
 // ── 纯函数：模糊匹配（可在 Node 下单测）──────────────────────────────────────
 /**
  * subsequenceMatch(query, target) — 子序列匹配：query 的每个字符按顺序出现在 target 中即命中。
@@ -83,6 +97,16 @@ function emit(name, detail) {
   window.dispatchEvent(new CustomEvent(name, { detail: detail || {} }));
 }
 
+// Apply a theme to <html> immediately (persistence is handled by the app via
+// the kevrai:set-theme event). Defaults to dark when the OS query is absent.
+function applyThemeInstant(theme) {
+  if (!hasDocument) return;
+  const sysDark = hasWindow && window.matchMedia
+    ? window.matchMedia("(prefers-color-scheme: dark)").matches : true;
+  const dark = theme === "dark" || (theme === "system" && sysDark);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+}
+
 function registerDefaults() {
   // 切 pane：dispatch kevrai:navigate { tab }
   const panes = [
@@ -116,6 +140,24 @@ function registerDefaults() {
       await setLocale(next);
       renderList();
     }, ["locale", "language", "i18n", "语言", "en", "zh", "中文", "english"]);
+
+  // v3.1.0 — theme switching, data folder, sidebar toggle.
+  registerAction("themeDark", () => t("cmdpal.actions.themeDark"),
+    () => { applyThemeInstant("dark"); emit("kevrai:set-theme", { theme: "dark" }); },
+    ["dark", "深色", "theme", "主题", "night"]);
+  registerAction("themeLight", () => t("cmdpal.actions.themeLight"),
+    () => { applyThemeInstant("light"); emit("kevrai:set-theme", { theme: "light" }); },
+    ["light", "浅色", "theme", "主题", "day"]);
+  registerAction("themeSystem", () => t("cmdpal.actions.themeSystem"),
+    () => { applyThemeInstant("system"); emit("kevrai:set-theme", { theme: "system" }); },
+    ["system", "系统", "theme", "主题", "auto"]);
+  registerAction("openDataDir", () => t("cmdpal.actions.openDataDir"),
+    () => emit("kevrai:open-data"), ["data", "folder", "数据", "目录", "open"]);
+  registerAction("toggleSidebar", () => t("cmdpal.actions.toggleSidebar"),
+    () => {
+      const b = hasDocument ? document.getElementById("sidebar-toggle") : null;
+      if (b) b.click();
+    }, ["sidebar", "侧边栏", "collapse", "折叠", "menu"]);
 }
 
 // ── DOM 构建（仅在浏览器环境执行）────────────────────────────────────────────
@@ -171,6 +213,14 @@ function renderList() {
   if (!listEl) return;
   const q = inputEl ? inputEl.value : "";
   rendered = filterActions(currentActionList(), q);
+  // Empty query: surface recently-used commands first (stable for the rest).
+  if (!q.trim()) {
+    const r = getRecent();
+    rendered = rendered
+      .map((a, i) => ({ a, i, recent: r[a.id] || 0 }))
+      .sort((x, y) => y.recent - x.recent || x.i - y.i)
+      .map((x) => x.a);
+  }
   selectedIdx = 0;
   listEl.replaceChildren();
   if (!rendered.length) {
@@ -216,6 +266,7 @@ function runSelected(i) {
   const idx = (typeof i === "number") ? i : selectedIdx;
   const a = rendered[idx];
   if (!a) return;
+  bumpRecent(a.id);
   closeCommandPalette();
   try { a.handler(a); } catch (_) {}
 }
