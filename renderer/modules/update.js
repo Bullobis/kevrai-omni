@@ -9,16 +9,26 @@
 
 import { api } from "./api.js";
 import { toast } from "./toast.js";
+import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
 
 const $ = (s) => document.querySelector(s);
 
+// a11y — 打开更新面板前的触发元素，关闭时归还焦点。
+let savedTrigger = null;
+
 function openOverlay() {
   const el = $("#update-overlay");
-  if (el) el.removeAttribute("hidden");
+  if (!el) return;
+  savedTrigger = recordFocus();
+  el.removeAttribute("hidden");
+  trapFocus(el);
 }
 function closeOverlay() {
   const el = $("#update-overlay");
-  if (el) el.setAttribute("hidden", "");
+  if (!el) return;
+  el.setAttribute("hidden", "");
+  restoreFocus(savedTrigger);
+  savedTrigger = null;
 }
 
 function setStatus(text) {
@@ -185,6 +195,13 @@ export function wireUpdate() {
   if (overlay) {
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) closeOverlay();
+    });
+    // Esc 关闭（全局优先级栈最下层之一）。
+    registerEsc({
+      order: 60,
+      root: overlay,
+      isOpen: () => !overlay.hasAttribute("hidden"),
+      close: closeOverlay,
     });
   }
 }
