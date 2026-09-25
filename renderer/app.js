@@ -372,6 +372,16 @@ function wireGlobalUI() {
 }
 
 function wirePaletteEvents() {
+  // a11y — 「跳到正文」：锚点跳转不会把焦点给到 #main（它是 tabindex=-1 的
+  // 容器），这里手动 focus()，否则读屏/键盘用户焦点仍停在 skip-link 上。
+  const skip = document.querySelector(".skip-link");
+  if (skip) {
+    skip.addEventListener("click", (e) => {
+      e.preventDefault();
+      const main = document.getElementById("main");
+      if (main) main.focus();
+    });
+  }
   // The i18n command palette (Ctrl/⌘+K) is decoupled and talks via window events.
   window.addEventListener("kevrai:navigate", (e) => {
     const tab = e.detail && e.detail.tab;
