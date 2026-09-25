@@ -4,6 +4,7 @@ import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { state } from "./state.js";
 import { escapeHtml } from "./net.js";
+import { createEmptyState } from "./empty-state.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -11,6 +12,17 @@ export function renderEngines() {
   const el = $(".engine-grid");
   if (!el) return;
   const engines = state.engines || [];
+  if (!engines.length) {
+    const es = createEmptyState({
+      icon: "cpu",
+      title: "暂无可用引擎",
+      hint: "首次安装某类模型时会提示安装对应引擎，也可以稍后在这里手动预装。",
+      actionLabel: "刷新",
+    });
+    es.querySelector(".es-action")?.addEventListener("click", () => renderEngines());
+    el.replaceChildren(es);
+    return;
+  }
   el.replaceChildren(...engines.map(engineRow));
   el.querySelectorAll("button[data-action=install]").forEach((b) =>
     b.addEventListener("click", async () => {

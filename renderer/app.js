@@ -27,6 +27,7 @@ import { wireOnboarding } from "./modules/onboarding.js";
 import { wireUpdate } from "./modules/update.js";
 import { initCommandPalette } from "./modules/command-palette.js";
 import { initI18n } from "./modules/i18n.js";
+import { createEmptyState } from "./modules/empty-state.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -73,6 +74,7 @@ export async function loadAll() {
     renderEngines();
     renderLocal();
     renderGGUF();
+    renderPending();
     applyTheme();
     setHealthOk(`sidecar v${h?.body?.version || "?"}`);
     // v2.4.0 — drive the market grid through the super search (facets, sort).
@@ -99,7 +101,17 @@ function renderGGUF() {
   const el = $("#gguf-repos");
   if (!el) return;
   const repos = state.ggufRepos || [];
-  if (!repos.length) { el.innerHTML = `<div class="hint">GGUF 仓库列表加载中…</div>`; return; }
+  if (!repos.length) {
+    const es = createEmptyState({
+      icon: "packageOpen",
+      title: "暂无 GGUF 仓库",
+      hint: "还没有枚举到任何 GGUF 仓库。点刷新重试，或在模型市场下载模型后回到这里查看量化文件。",
+      actionLabel: "刷新",
+    });
+    es.querySelector(".es-action")?.addEventListener("click", () => loadAll());
+    el.replaceChildren(es);
+    return;
+  }
   el.innerHTML = repos.map((r) => {
     if (r.error) {
       return `
@@ -132,7 +144,17 @@ function renderLocal() {
   const el = $("#local-list");
   if (!el) return;
   const list = state.local || [];
-  if (!list.length) { el.innerHTML = `<div class="hint">还没有本地模型，拖拽文件到窗口或使用下方按钮导入。</div>`; return; }
+  if (!list.length) {
+    const es = createEmptyState({
+      icon: "hardDrive",
+      title: "还没有本地模型",
+      hint: "从你的硬盘一键导入 GGUF / safetensors，也可以把文件直接拖入窗口。",
+      actionLabel: "选择文件",
+    });
+    es.querySelector(".es-action")?.addEventListener("click", () => $("#btn-import-file")?.click());
+    el.replaceChildren(es);
+    return;
+  }
   el.innerHTML = list.map((m) => {
     // v2.8.0 DIY: compatible_engines comes from /api/models/local (read-time
     // detection) — .gguf → llama.cpp, config.json+*.mnn → mnn, HF dir →
@@ -158,6 +180,33 @@ function renderLocal() {
       <span class="pill ok">本地</span>
       ${m.path ? `<button class="secondary small" data-action="reveal-local"
               data-path="${escapeHtml(m.path)}" aria-label="在文件管理器中定位">定位</button>` : ""}
+    </div>`;
+  }).join("");
+}
+
+// 待官方开源列表：无数据时显示统一空状态。
+function renderPending() {
+  const el = $("#pending-list");
+  if (!el) return;
+  const list = state.pending || [];
+  if (!list.length) {
+    const es = createEmptyState({
+      icon: "clock",
+      title: "暂无待开源模型",
+      hint: "这里会列出尚未开源权重的模型。官方公开权重后会自动上架到模型市场。",
+    });
+    el.replaceChildren(es);
+    return;
+  }
+  el.innerHTML = list.map((m) => {
+    const name = m.name || m.id || "未命名";
+    return `
+    <div class="row">
+      <div class="grow">
+        <div class="name">${escapeHtml(name)}</div>
+        ${m.description ? `<div class="sub">${escapeHtml(m.description)}</div>` : ""}
+      </div>
+      <span class="pill warn">待开源</span>
     </div>`;
   }).join("");
 }
