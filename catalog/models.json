@@ -5357,9 +5357,7 @@
       "note": "列出该仓库全部 .gguf 文件，每一个都能在 Kevrai Omni 里一键下载并在 llama.cpp 中加载。",
       "sources": [
         "https://huggingface.co/unsloth/Qwen3-32B-GGUF",
-        "https://hf-mirror.com/unsloth/Qwen3-32B-GGUF",
-        "https://hf-mirror.us/unsloth/Qwen3-32B-GGUF",
-        "https://hf-cn-mirror.com/unsloth/Qwen3-32B-GGUF"
+        "https://hf-mirror.com/unsloth/Qwen3-32B-GGUF"
       ]
     },
     {
@@ -5370,9 +5368,7 @@
       "note": "社区通用 DeepSeek-R1 全量化版本。",
       "sources": [
         "https://huggingface.co/unsloth/DeepSeek-R1-GGUF",
-        "https://hf-mirror.com/unsloth/DeepSeek-R1-GGUF",
-        "https://hf-mirror.us/unsloth/DeepSeek-R1-GGUF",
-        "https://hf-cn-mirror.com/unsloth/DeepSeek-R1-GGUF"
+        "https://hf-mirror.com/unsloth/DeepSeek-R1-GGUF"
       ]
     }
   ],
