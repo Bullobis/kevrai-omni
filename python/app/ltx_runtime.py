@@ -500,7 +500,6 @@ def _write_video(frames: Any, out: Path, *, fps: int, fmt: str) -> Path:
     unavailable and a GIF fallback file is produced)."""
     try:
         import imageio
-        import numpy as np
     except ImportError as e:
         raise LtxEngineMissing("写出视频需要 imageio/imageio-ffmpeg") from e
 
@@ -509,6 +508,12 @@ def _write_video(frames: Any, out: Path, *, fps: int, fmt: str) -> Path:
     if arr and hasattr(arr[0], "astype"):
         arr = [f for f in arr]
     if arr and getattr(arr[0], "dtype", None) is not None and arr[0].dtype != "uint8":
+        # numpy is only needed to rescale non-uint8 frames; keep it lazy so
+        # plain GIF writing works without numpy installed.
+        try:
+            import numpy as np
+        except ImportError as e:
+            raise LtxEngineMissing("归一化非 uint8 帧需要 numpy") from e
         arr = [(np.clip(f, 0, 1) * 255).astype("uint8") if float(f.max()) <= 1.0
                else f.astype("uint8") for f in arr]
 
