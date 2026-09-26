@@ -5,8 +5,8 @@ name: promo-render
 # 无需 apt 安装 Chrome/Chromium，也无需 Xvfb/DISPLAY。
 on:
   schedule:
-    # 每周一 03:00 UTC（北京时间周一 11:00）
-    - cron: "0 3 * * 1"
+    # 每周三 12:00 北京时间（04:00 UTC）——集群统一协作窗口
+    - cron: "0 4 * * 3"
   workflow_dispatch:
 
 # 回推 promo.mp4 需要写权限；使用内置 GITHUB_TOKEN。
