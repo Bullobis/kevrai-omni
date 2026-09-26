@@ -55,3 +55,6 @@ htmlcov/
 
 # Remotion 渲染产物（不跟踪 mp4 等视频文件）
 remotion/out/
+
+# PyInstaller work directory
+python/build/

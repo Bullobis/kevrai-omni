@@ -16,6 +16,12 @@ extraResources:
   - from: "catalog"
     to: "catalog"
     filter: ["**/*"]
+  # Frozen PyInstaller sidecar (platform onedir). Built in CI before packaging;
+  # a bundled .gitkeep keeps this path present on fresh checkouts. The main
+  # process prefers this over the source sidecar when it exists.
+  - from: "python/dist/sidecar"
+    to: "sidecar"
+    filter: ["**/*"]
   - from: "python"
     to: "python"
     # Include only the runtime sidecar sources; exclude the test suite,
