@@ -172,10 +172,11 @@ function buildOverlay(options) {
     }, { once: true });
   }
 
-  // Cancel
-  if (opts.showCancel && opts.onCancel) {
+  // Cancel: always dismiss the overlay; invoke onCancel when provided so a
+  // rendered cancel button is never a dead control.
+  if (opts.showCancel) {
     root.querySelector("#gw-cancel").addEventListener("click", () => {
-      opts.onCancel();
+      if (typeof opts.onCancel === "function") opts.onCancel();
       hideGenerationWait();
     });
   }
