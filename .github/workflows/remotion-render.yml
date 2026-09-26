@@ -1,9 +1,10 @@
 name: Remotion Video Render
 
-# 每月 1 号 UTC 00:00 自动渲染，同时支持手动触发
+# 发布配套短片：在 Release 发布时渲染并上传到该 Release（“适当的时候”才构建，
+# 不再按月空跑）；同时支持手动触发并指定版本标签。
 on:
-  schedule:
-    - cron: "0 0 1 * *"
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       version:
@@ -52,10 +53,10 @@ jobs:
         run: npm ci
 
       - name: Render LogoIntro (10s, 1920x1080)
-        run: npx remotion render LogoIntro out/logo-intro.mp4 --codec=h264 --props='{"version":"${{ github.event.inputs.version || 'v3.0.0' }}"}'
+        run: npx remotion render LogoIntro out/logo-intro.mp4 --codec=h264 --props='{"version":"${{ github.event.release.tag_name || github.event.inputs.version || 'v3.0.0' }}"}'
 
       - name: Render VersionPoster (15s, 1080x1080)
-        run: npx remotion render VersionPoster out/version-poster.mp4 --codec=h264 --props='{"version":"${{ github.event.inputs.version || 'v3.0.0' }}"}'
+        run: npx remotion render VersionPoster out/version-poster.mp4 --codec=h264 --props='{"version":"${{ github.event.release.tag_name || github.event.inputs.version || 'v3.0.0' }}"}'
 
       - name: Upload to GitHub Release
         if: success()
@@ -63,7 +64,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -x
-          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "continuous")
+          TAG="${{ github.event.release.tag_name }}"
+          if [ -z "$TAG" ]; then TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "continuous"); fi
           echo "Uploading videos to release: $TAG"
           gh release upload "$TAG" out/logo-intro.mp4 out/version-poster.mp4 --clobber || echo "::warning::Release $TAG not found, skipped upload"
 
