@@ -133,7 +133,13 @@ APP_ROOT = _app_data_root()
 APP_ROOT.mkdir(parents=True, exist_ok=True)
 MODELS_DIR = APP_ROOT / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
-CATALOG_DIR = Path(__file__).resolve().parent.parent.parent / "catalog"
+# In a frozen PyInstaller bundle __file__ no longer points at the source tree,
+# so the Electron main process passes the catalog location explicitly. Fall
+# back to the source-relative path for dev runs.
+CATALOG_DIR = Path(
+    os.environ.get("KEVRAI_CATALOG_DIR")
+    or (Path(__file__).resolve().parent.parent.parent / "catalog")
+)
 
 try:
     CATALOG, ENGINES = load_catalog(CATALOG_DIR)
