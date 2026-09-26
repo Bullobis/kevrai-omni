@@ -968,11 +968,12 @@ button.ghost.icon svg.ic { width: 16px; height: 16px; }
 .win-btn {
   width: 34px; height: 30px; display: inline-flex; align-items: center;
   justify-content: center; border: none; background: transparent; cursor: pointer;
-  color: var(--mut); border-radius: var(--r-2, 8px);
+  color: var(--fg); opacity: 0.62; border-radius: var(--r-2, 8px);
+  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
 .win-btn .ic { width: 15px; height: 15px; }
-.win-btn:hover { background: var(--card-hover, rgba(0,0,0,0.07)); color: var(--fg); }
-.win-btn-close:hover { background: var(--win-close); color: #fff; }
+.win-btn:hover { background: var(--card-hover, rgba(0,0,0,0.07)); color: var(--fg); opacity: 1; }
+.win-btn-close:hover { background: var(--win-close); color: #fff; opacity: 1; }
 body.is-mac .win-ctl { display: none; }
 /* Draggable title bar on frameless builds; interactive controls stay clickable. */
 .titlebar { -webkit-app-region: drag; }
