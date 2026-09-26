@@ -6,8 +6,8 @@ name: cluster-self-maintain
 # 任何在线的集群代理都可认领该 issue 修复，形成自驱反馈循环。
 on:
   schedule:
-    # 20:41 UTC 每日（北京时间次日 04:41，非整点、非高峰）
-    - cron: "41 20 * * *"
+    # 每周三 04:00 UTC（北京时间周三 12:00，统一集群工作日窗口）
+    - cron: "0 4 * * 3"
   workflow_dispatch:
 
 permissions:
