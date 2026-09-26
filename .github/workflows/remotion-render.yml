@@ -1,9 +1,10 @@
 name: Remotion Video Render
 
-# 每月 1 号 UTC 00:00 自动渲染，同时支持手动触发
+# 每月第一个周三 12:00 Asia/Shanghai（UTC 04:00）自动渲染，同时支持手动触发
 on:
   schedule:
-    - cron: "0 0 1 * *"
+    # 1–7 号且为周三，即每月第一个周三；统一协作批次
+    - cron: "0 4 1-7 * 3"
   workflow_dispatch:
     inputs:
       version:
