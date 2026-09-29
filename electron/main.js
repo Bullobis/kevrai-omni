@@ -58,6 +58,24 @@ const SIDECAR_PY = app.isPackaged
   ? path.join(process.resourcesPath, "python", "app", "main.py")
   : path.join(__dirname, "..", "python", "app", "main.py");
 
+// PyInstaller onedir bundle of the sidecar. When present it needs no Python
+// interpreter at all. Dev: <repo>/python/dist/sidecar/sidecar; packaged:
+// process.resourcesPath/sidecar/sidecar (.exe on Windows).
+function frozenSidecarExe() {
+  const exe = process.platform === "win32" ? "sidecar.exe" : "sidecar";
+  const candidate = app.isPackaged
+    ? path.join(process.resourcesPath, "sidecar", exe)
+    : path.join(__dirname, "..", "python", "dist", "sidecar", exe);
+  try { return fs.existsSync(candidate) ? candidate : null; } catch (_) { return null; }
+}
+
+// Catalog location passed to a frozen sidecar (its __file__ cannot locate it).
+function catalogResourceDir() {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, "catalog")
+    : path.join(__dirname, "..", "catalog");
+}
+
 //: 魔搭 (ModelScope) serves its official logo from this CDN. The model market
 //: renders it as the source badge, so the host must be allowed in `img-src` —
 //: a bare `'self' data:` silently blocked it (verified in a real browser).
@@ -214,6 +232,11 @@ function sidecarEnv() {
     ...process.env,
     KEVRAI_PORT: String(SIDECAR_PORT),
     KEVRAI_SIDECAR_SECRET: sidecarSecret,
+    // Consumed by the frozen sidecar launcher (run_sidecar.py) and catalog lookup.
+    KEVRAI_SIDECAR_HOST: SIDECAR_HOST,
+    KEVRAI_SIDECAR_PORT: String(SIDECAR_PORT),
+    KEVRAI_CATALOG_DIR: catalogResourceDir(),
+    KEVRAI_SIDECAR_LOGLEVEL: "warning",
     PYTHONUNBUFFERED: "1",
     PYTHONIOENCODING: "UTF-8",
     NODE_OPTIONS: "--max-old-space-size=2048", // belt-and-braces; python ignores but pinned per spec
@@ -394,7 +417,55 @@ async function relaunchAfterBootstrap() {
   return true;
 }
 
+// Bind logging / auto-restart handling to a spawned sidecar process (shared by
+// the frozen and source launch paths).
+function attachSidecarProc(proc) {
+  proc.stdout.on("data", (d) => logInfo("[sidecar]", d.toString().trimEnd()));
+  proc.stderr.on("data", (d) => {
+    const t = d.toString().trimEnd();
+    logWarn("[sidecar-stderr]", t);
+    sidecarStderrTail.push(t);
+    if (sidecarStderrTail.length > 80) sidecarStderrTail.shift();
+  });
+  proc.on("error", (e) => logError("sidecar error event:", e.message));
+  proc.on("exit", (code, signal) => {
+    sidecarReady = false;
+    logWarn("sidecar exited code=", code, "signal=", signal);
+    if (sidecarManualStop) return;
+    if (sidecarRestartCount >= SIDECAR_RESTART_MAX) {
+      logError("sidecar restart budget exceeded; giving up.");
+      notifyRenderer("sidecar:down", { reason: "restart-budget-exhausted", code });
+      return;
+    }
+    const delay = Math.min(30_000, 1000 * Math.pow(2, sidecarRestartCount));
+    sidecarRestartCount += 1;
+    logInfo(`sidecar auto-restart in ${delay}ms (attempt ${sidecarRestartCount}/${SIDECAR_RESTART_MAX})`);
+    setTimeout(() => {
+      try { startSidecar(); } catch (_) {}
+    }, delay);
+  });
+}
+
 function startSidecar() {
+  // Prefer the frozen PyInstaller bundle when present: no Python interpreter,
+  // no runtime pip. Host / port / catalog are delivered via sidecarEnv().
+  const frozen = frozenSidecarExe();
+  if (frozen) {
+    logInfo("spawn frozen sidecar:", frozen);
+    try {
+      sidecarProc = spawn(frozen, [], {
+        env: sidecarEnv(),
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
+      });
+    } catch (e) {
+      logError("frozen spawn failed:", e.message);
+      return false;
+    }
+    attachSidecarProc(sidecarProc);
+    return true;
+  }
+  // Source fallback: run uvicorn through an available Python interpreter.
   const py = resolvePython();
   if (!py) {
     logError("no Python interpreter found — entering in-app bootstrap mode");
@@ -419,30 +490,7 @@ function startSidecar() {
     logError("spawn failed:", e.message);
     return false;
   }
-  sidecarProc.stdout.on("data", (d) => logInfo("[sidecar]", d.toString().trimEnd()));
-  sidecarProc.stderr.on("data", (d) => {
-    const t = d.toString().trimEnd();
-    logWarn("[sidecar-stderr]", t);
-    sidecarStderrTail.push(t);
-    if (sidecarStderrTail.length > 80) sidecarStderrTail.shift();
-  });
-  sidecarProc.on("error", (e) => logError("sidecar error event:", e.message));
-  sidecarProc.on("exit", (code, signal) => {
-    sidecarReady = false;
-    logWarn("sidecar exited code=", code, "signal=", signal);
-    if (sidecarManualStop) return;
-    if (sidecarRestartCount >= SIDECAR_RESTART_MAX) {
-      logError("sidecar restart budget exceeded; giving up.");
-      notifyRenderer("sidecar:down", { reason: "restart-budget-exhausted", code });
-      return;
-    }
-    const delay = Math.min(30_000, 1000 * Math.pow(2, sidecarRestartCount));
-    sidecarRestartCount += 1;
-    logInfo(`sidecar auto-restart in ${delay}ms (attempt ${sidecarRestartCount}/${SIDECAR_RESTART_MAX})`);
-    setTimeout(() => {
-      try { startSidecar(); } catch (_) {}
-    }, delay);
-  });
+  attachSidecarProc(sidecarProc);
   return true;
 }
 

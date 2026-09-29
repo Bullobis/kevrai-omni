@@ -14,7 +14,33 @@
  */
 
 const { contextBridge, ipcRenderer, webUtils } = require("electron");
-const { normalizeMeasureArgs } = require("./measure-args");
+
+// A sandboxed preload must be a SINGLE FILE: the sandbox cannot require other
+// local scripts (Electron docs, "Breach to Barrier"). This pure normalizer is
+// therefore inlined here; keep it in sync with electron/measure-args.js, which
+// is retained as the copy imported by the plain-Node unit tests.
+function normalizeMeasureArgs(opts) {
+  const o = Array.isArray(opts) ? { urls: opts } : opts;
+  if (o === null || typeof o !== "object") {
+    throw new Error("opts must be an object or an array of urls");
+  }
+  const { urls } = o;
+  if (!Array.isArray(urls)) throw new Error("urls must be an array of strings");
+  const clean = [];
+  for (const u of urls) {
+    if (typeof u !== "string" || !/^https?:\/\//.test(u)) {
+      throw new Error("each url must be an http(s) string");
+    }
+    clean.push(u.slice(0, 2048));
+    if (clean.length >= 32) break;
+  }
+  const payload = { urls: clean };
+  if (o.force === true) payload.force = true;
+  if (Number.isFinite(o.file_size) && o.file_size > 0) {
+    payload.file_size = Math.trunc(o.file_size);
+  }
+  return payload;
+}
 
 // ---------------------------------------------------------------------------
 // Internal helpers (not exported)
