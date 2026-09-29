@@ -34,6 +34,6 @@ v3.2.0 是在 v3.1.0（后端可靠性 + MNN 子进程隔离）之上的**最终
 - 下载后用随附 `SHA256SUMS.txt` 校验：`sha256sum -c SHA256SUMS.txt`
 - Windows / macOS 产物以对应平台 CI 构建的 Release 资产为准。
 
-## 自运行（不依赖任何会话）
-- 每日自维护巡检、每周安全审计、每周宣传视频重渲染、每月短片渲染均由
-  GitHub Actions 自动执行；接续入口见记忆仓库 `CLUSTER_RUNBOOK.md`。
+## 自运行（不依赖人工会话）
+- 每周三的自维护巡检、安全审计与宣传视频重渲染，以及随版本发布的短片渲染，
+  均由 GitHub Actions 自动执行。

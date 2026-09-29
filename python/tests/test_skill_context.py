@@ -378,7 +378,7 @@ def test_ws_agent_happy_path_final_event(hub_client):
 def test_ws_agent_disconnect_mid_run_no_unhandled_exception(hub_client):
     """Disconnecting the client while agent.run() is still working must not
     surface an unhandled task exception. agent.run has no cooperative
-    cancellation (see parliament note) and will finish its current bounded run,
+    cancellation and will finish its current bounded run,
     but the handler must swallow send failures on the dead socket."""
     import time
 

@@ -1,12 +1,11 @@
-name: cluster-self-maintain
+name: self-maintain
 
-# Kevrai 集体协作集群的“无人值守巡检员”：不依赖任何会员会话，
-# 每天在 GitHub 托管端运行——后端测试、目录 URL 存活核验、依赖新鲜度，
-# 并把【高置信】问题自动汇总为一个去重的追踪 issue（待办池）。
-# 任何在线的集群代理都可认领该 issue 修复，形成自驱反馈循环。
+# 无人值守的自动巡检：在 GitHub 托管端运行——后端测试、目录 URL 存活核验、
+# 依赖新鲜度，并把【高置信】问题自动汇总为一个去重的追踪 issue（待办池）。
+# 维护者可认领该 issue 修复，形成自驱反馈循环。
 on:
   schedule:
-    # 每周三 04:00 UTC（北京时间周三 12:00，统一集群工作日窗口）
+    # 每周三 04:00 UTC（北京时间周三 12:00）
     - cron: "0 4 * * 3"
   workflow_dispatch:
 
@@ -15,7 +14,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: cluster-self-maintain
+  group: self-maintain
   cancel-in-progress: false
 
 jobs:
@@ -104,7 +103,7 @@ jobs:
           today = datetime.date.today().isoformat()
           lines = [
               f"# 集群每日巡检报告（{today}）", "",
-              "本 issue 由 `cluster-self-maintain` workflow 自动维护（去重、每日更新）。", "",
+              "本 issue 由 `self-maintain` workflow 自动维护（去重、每周三更新）。", "",
               "## 后端测试",
               f"- 结果：**{pytest_line or '未取得'}**",
               f"- 状态：{'✅ 全绿' if tests_ok else '❌ 存在失败，需修复'}",
@@ -160,7 +159,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          gh label create self-maintain --description "auto cluster self-maintain tracker" --color "1D76DB" || true
+          gh label create self-maintain --description "auto self-maintain tracker" --color "1D76DB" || true
           EXISTING="$(gh issue list --label self-maintain --state open --json number --jq '.[0].number' || true)"
           TITLE="集群每日巡检：待处理问题（自动维护）"
           if [ -n "$EXISTING" ]; then
