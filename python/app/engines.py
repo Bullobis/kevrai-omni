@@ -58,7 +58,7 @@ _HTTP_TIMEOUT = httpx.Timeout(connect=15.0, read=60.0, write=60.0, pool=15.0)
 # clobber each other's manifest record (lost ``active_url`` / progress, and
 # corrupted download bytes). Serializing all installs is the intended
 # single-instance mutex: engines are large binaries and the desktop UI never
-# needs parallel installs (Neuron3-Engines audit).
+# needs parallel installs.
 _INSTALL_LOCK = threading.Lock()
 
 # Guards the read-modify-write of ``installed.json``. ``install()``/

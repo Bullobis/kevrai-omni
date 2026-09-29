@@ -851,7 +851,7 @@ function registerIpc() {
   });
 
   // --- Window controls (custom / frameless title bar support) -------------
-  // These let a future custom title bar (Kova-Aurora owns the HTML/CSS) drive
+  // These let a future custom title bar drive
   // the OS window without exposing the raw window API to the renderer. They are
   // safe to register now — inert until the renderer calls them.
   ipcMain.handle("window:minimize", () => { try { if (mainWindow) mainWindow.minimize(); } catch (_) {} });

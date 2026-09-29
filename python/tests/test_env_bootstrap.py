@@ -1,6 +1,6 @@
-"""Neuron-Env (K-Cortex 第三切片) 回归测试 — app.env pip 引导路径.
+"""app.env pip 引导路径回归测试.
 
-本文件只覆盖第三切片审计中确认修复的两处真实问题：
+本文件覆盖审计中确认修复的两处真实问题：
   1. upgrade_pip_package 必须真正传入 ``--upgrade``（否则 pip 对已安装包
      报 "Requirement already satisfied" 并退出 0，升级按钮静默空操作）。
   2. pip 安装/升级失败必须抛出中文、可定位的 InstallError（与 sidecar

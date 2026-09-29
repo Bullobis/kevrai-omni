@@ -1,4 +1,4 @@
-/* renderer/styles/transitions.css — Kova R4 视觉精修：
+/* renderer/styles/transitions.css — 视图/模态过渡与视觉稳定性：
  *   1) 视图（.pane）切换淡入
  *   2) 模态（.overlay）打开/关闭过渡统一
  *   3) 骨架屏/空状态平滑显现

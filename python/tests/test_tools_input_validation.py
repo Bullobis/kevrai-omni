@@ -1,4 +1,4 @@
-"""Neuron-3 (K-Cortex third slice) regression tests — tools input validation.
+"""Tools input validation regression tests.
 
 Guards the fix where every tool handler previously called ``int(params.get(...))``
 directly on LLM-supplied integer parameters. A small local model emitting a stray

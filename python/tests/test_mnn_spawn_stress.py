@@ -1,4 +1,4 @@
-"""Neuron-MNN 6th slice: spawn-context high-pressure stress tests.
+"""Spawn-context high-pressure stress tests.
 
 The subprocess isolation was moved from the platform-default ``fork`` start
 method to an explicit ``spawn`` context (see ``_MP_CTX`` in ``mnn_runtime``).

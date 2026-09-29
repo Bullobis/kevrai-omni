@@ -1,4 +1,4 @@
-"""K-Cortex Neuron-10 — settings PUT atomicity & lost-update repair.
+"""Settings PUT atomicity & lost-update regression tests.
 
 The ``PUT /api/settings`` handler does a read-modify-write (RMW):
 
@@ -339,7 +339,7 @@ def test_put_unknown_field_rejected_422(tmp_xdg):
 
 
 def test_put_invalid_literal_still_400_under_lock(tmp_xdg):
-    """validate_assignment (slice 3) must still 400 after locking."""
+    """validate_assignment must still 400 after locking."""
     _wire_app(tmp_xdg)
     from fastapi.testclient import TestClient
 

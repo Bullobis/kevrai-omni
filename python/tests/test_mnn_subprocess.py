@@ -1,4 +1,4 @@
-"""Neuron-MNN 4th slice: subprocess isolation integration tests.
+"""Subprocess isolation integration tests.
 
 The C++ MNN engine can hard-deadlock during generate(); in-process that leaves
 a parked daemon thread. This suite exercises the opt-in subprocess isolation

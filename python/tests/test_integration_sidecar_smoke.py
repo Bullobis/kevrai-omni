@@ -1,4 +1,4 @@
-"""Neuron4-Smoke：真实子进程 sidecar 启动集成冒烟测试。
+"""真实子进程 sidecar 启动集成冒烟测试。
 
 与 ``test_smoke.py``（进程内 ``TestClient``）不同，本测试以**真实子进程**方式
 拉起 ``python -m uvicorn app.main:app``，走完整 ASGI / HTTP 栈，验证：
@@ -189,5 +189,5 @@ def test_sidecar_real_subprocess_smoke(tmp_path: Path) -> None:
         log_fh.close()
         assert proc.poll() is not None, "sidecar subprocess was not reaped"
 
-    # 运行耗时仅记录，不作为通过/失败阈值（供议会提案归档）。
+    # 运行耗时仅记录，不作为通过/失败阈值。
     print(f"\n[sidecar-smoke] startup={startup_s:.2f}s shutdown={shutdown_s:.2f}s")

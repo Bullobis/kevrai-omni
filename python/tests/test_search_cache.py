@@ -1,4 +1,4 @@
-"""Regression tests for Neuron-API slice 2 — Task 1: search corpus cache.
+"""Regression tests for the search corpus cache.
 
 The bug was that ``/api/search`` built a fresh ``models`` list on every
 request, so ``get_corpus`` keyed by ``id(models)`` never hit. We now pass a

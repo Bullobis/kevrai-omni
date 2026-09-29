@@ -1,4 +1,4 @@
-"""Neuron-Deep (K-Cortex slice 7) evidence-based audit + regression tests.
+"""Evidence-based audit + regression tests for lightly-covered backend paths.
 
 Scope: backend paths lightly covered by earlier slices. Each test either
 locks a behaviour we audited as correct (guard) or reproduces a bug that was

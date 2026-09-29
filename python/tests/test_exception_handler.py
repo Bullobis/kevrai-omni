@@ -1,4 +1,4 @@
-"""Regression tests for Neuron-API slice 2 — Task 2: global exception handler.
+"""Regression tests for the global exception handler.
 
 Endpoints that raise a plain (non-HTTPException) error must return a uniform
 JSON 500 envelope instead of Starlette's default plain-text body, and must

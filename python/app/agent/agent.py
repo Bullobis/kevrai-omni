@@ -150,7 +150,7 @@ class Agent:
         self.ctx.memory = memory
         self._step_callback: Callable[[AgentStep], None] | None = None
 
-        # --- Cooperative cancellation (K-Cortex neuron-12) -----------------
+        # --- Cooperative cancellation ---------------------------------------
         # One threading.Event per in-flight run, keyed by session_id. The Agent
         # is a singleton that may concurrently serve many sessions, so the token
         # must be per-session: cancelling session A must not touch session B.
@@ -480,7 +480,7 @@ class Agent:
     async def run(self, message: str, session_id: str = "default") -> AgentResult:
         """Process one user message through the ReAct loop.
 
-        Cooperative cancellation (K-Cortex neuron-12): a fresh per-session
+        Cooperative cancellation: a fresh per-session
         threading.Event is reserved for this run and removed in ``finally``, so
         a cancel signal can never leak into the next run on the same session.
         The inner loop body checks the token at each ReAct checkpoint and

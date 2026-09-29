@@ -1,4 +1,4 @@
-"""Neuron-11 (K-Cortex slice 11) evidence-based audit + regression tests.
+"""Skill runtime / context evidence-based regression tests.
 
 Scope: three previously shallow paths —
   1. Skill execution runtime (registry wiring, disable/enable, exception

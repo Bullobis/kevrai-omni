@@ -1,4 +1,4 @@
-"""Regression tests for Project K-Cortex Neuron-Runtime hardening.
+"""Runtime hardening regression tests.
 
 Covers the bugs found in the 2026-09-24 audit of ``ltx_runtime`` /
 ``mnn_runtime`` / ``drama``. All tests are offline: torch / diffusers /
