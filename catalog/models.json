@@ -1,6 +1,6 @@
 {
   "version": "3.6.0",
-  "updated": "2026-09-24",
+  "updated": "2026-09-29",
   "notice": "v2.9.0 数据核验：修正 14 处失效/错误仓库 slug(THUDM/glm-4-9b-chat→zai-org/GLM-4.5, Tencent-Hunyuan→tencent, xinntao/Real-ESRGAN→ai-forever, Kiteretsu77/APISR→camenduru, Fanghua-Yu/SUPIR→camenduru[非官方转存], Kim2091/4x-UltraSharp→lokCX, haoheliu/audioldm2→audioldm2-full, ASLP-lab/DiffRhythm→DiffRhythm-base, VAST-AI-Research/TripoSR→stabilityai, RVC-Boss/GPT-SoVITS→lj1995, THU-MIG/yolov10→onnx-community, hpcaitech/Open-Sora→hpcai-tech, dummy9996/MiniMax-Music3-w4a8→NidAll, buffalo_l→immich-app/buffalo_l)；清除广告软文式描述；按平台分拆 sources（GitHub/HF 各用各 slug）。",
   "categories": [
     {
@@ -4632,59 +4632,6 @@
       ]
     },
     {
-      "id": "deepseek-v4.1-flash",
-      "category": "llm",
-      "name": "DeepSeek V4.1 Flash",
-      "repo": "deepseek-ai/DeepSeek-V4.1-Flash",
-      "size_gb": 160,
-      "engine": [
-        "vllm",
-        "sglang",
-        "llama.cpp"
-      ],
-      "license": "MIT",
-      "trending": true,
-      "description": "DeepSeek V4.1-Flash（2026-09-10）：MIT 许可、1M 上下文，原生支持图文输入的多模态 MoE，强化 Agent 与长程任务，发布后下载量快速攀升。",
-      "sources": [
-        "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/",
-        "https://hf-mirror.com/deepseek-ai/DeepSeek-V4.1-Flash/",
-        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4.1-Flash/"
-      ],
-      "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/",
-      "hardware": {
-        "vram_gb": 24,
-        "min_vram_gb": 12,
-        "ram_gb": 64,
-        "disk_gb": 160,
-        "notes": "估算：MoE，激活约 16B，量化后单卡可试；目前无官方 unsloth GGUF，仅有社区转存需自行甄别"
-      },
-      "modality": {
-        "multimodal": true,
-        "understand": [
-          "image",
-          "text"
-        ],
-        "generate": [
-          "text"
-        ],
-        "notes": "官方 pipeline 为 image-text-to-text"
-      },
-      "tags": [
-        "LLM",
-        "chat",
-        "llama.cpp",
-        "sglang",
-        "trending",
-        "vllm",
-        "多模态",
-        "大模型",
-        "大语言模型",
-        "对话",
-        "热门",
-        "语言模型"
-      ]
-    },
-    {
       "id": "deepseek-v4-pro-0813",
       "category": "llm",
       "name": "DeepSeek V4 Pro 0813",
@@ -5390,6 +5337,288 @@
         "diffusers",
         "i2v",
         "sglang",
+        "t2v",
+        "trending",
+        "video",
+        "图生视频",
+        "文生视频",
+        "热门",
+        "视频",
+        "视频生成"
+      ]
+    },
+    {
+      "id": "mimo-v2.6-pro",
+      "category": "llm",
+      "name": "MiMo-V2.6-Pro (1.02T)",
+      "repo": "XiaomiMiMo/MiMo-V2.6-Pro-MOPD",
+      "gguf_repo": "",
+      "size_gb": 1020,
+      "engine": [
+        "vllm",
+        "sglang"
+      ],
+      "license": "MIT",
+      "trending": true,
+      "description": "小米 MiMo-V2.6-Pro 旗舰推理模型，1.02T 总参/42B 激活稀疏 MoE，1M 上下文，原生支持文本/图像/视频/音频输入，面向复杂编程、长程任务与科研。",
+      "sources": [
+        "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-MOPD/",
+        "https://hf-mirror.com/XiaomiMiMo/MiMo-V2.6-Pro-MOPD/",
+        "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL/"
+      ],
+      "primary_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-MOPD/",
+      "hardware": {
+        "vram_gb": 640,
+        "min_vram_gb": 320,
+        "ram_gb": 2048,
+        "disk_gb": 1100,
+        "notes": "FP8 约 1TB（估算）；多卡集群，消费级硬件不可行"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "image",
+          "video",
+          "audio"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "LLM",
+        "chat",
+        "sglang",
+        "trending",
+        "vllm",
+        "大模型",
+        "大语言模型",
+        "对话",
+        "热门",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "mimo-v2.6-flash",
+      "category": "llm",
+      "name": "MiMo-V2.6-Flash (309B)",
+      "repo": "XiaomiMiMo/MiMo-V2.6-Flash-MOPD",
+      "gguf_repo": "",
+      "size_gb": 309,
+      "engine": [
+        "vllm",
+        "sglang"
+      ],
+      "license": "MIT",
+      "trending": true,
+      "description": "小米 MiMo-V2.6-Flash，309B 总参/15B 激活 MoE，高效推理，1M 上下文，全模态输入，平衡效率与成本。",
+      "sources": [
+        "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-MOPD/",
+        "https://hf-mirror.com/XiaomiMiMo/MiMo-V2.6-Flash-MOPD/",
+        "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-RL/"
+      ],
+      "primary_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-MOPD/",
+      "hardware": {
+        "vram_gb": 192,
+        "min_vram_gb": 96,
+        "ram_gb": 512,
+        "disk_gb": 340,
+        "notes": "FP8 约 309GB（估算）；多卡"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "image",
+          "video",
+          "audio"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "LLM",
+        "chat",
+        "sglang",
+        "trending",
+        "vllm",
+        "大模型",
+        "大语言模型",
+        "对话",
+        "热门",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "gemma-4-31b",
+      "category": "llm",
+      "name": "Gemma 4 31B IT",
+      "repo": "google/gemma-4-31B-it",
+      "gguf_repo": "",
+      "size_gb": 62,
+      "engine": [
+        "llama.cpp",
+        "vllm"
+      ],
+      "license": "Apache 2.0",
+      "trending": true,
+      "description": "Google Gemma 4 31B 稠密旗舰，基于 Gemini 3 研究，128K/256K 上下文，原生函数调用与结构化输出，可配置思考模式，140+ 语言，含视觉理解。",
+      "sources": [
+        "https://huggingface.co/google/gemma-4-31B-it/",
+        "https://hf-mirror.com/google/gemma-4-31B-it/"
+      ],
+      "primary_url": "https://huggingface.co/google/gemma-4-31B-it/",
+      "hardware": {
+        "vram_gb": 20,
+        "min_vram_gb": 14,
+        "ram_gb": 48,
+        "disk_gb": 70,
+        "notes": "Q4 约 18GB（估算）"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "image"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "LLM",
+        "chat",
+        "llama.cpp",
+        "trending",
+        "vllm",
+        "大模型",
+        "大语言模型",
+        "对话",
+        "热门",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "gemma-4-26b-a4b",
+      "category": "llm",
+      "name": "Gemma 4 26B A4B IT",
+      "repo": "google/gemma-4-26B-A4B-it",
+      "gguf_repo": "",
+      "size_gb": 52,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "Apache 2.0",
+      "trending": false,
+      "description": "Gemma 4 26B A4B 混合专家，25.2B 总参/3.8B 激活，30 层，256K 上下文，视觉理解，高智能/参数比。",
+      "sources": [
+        "https://huggingface.co/google/gemma-4-26B-A4B-it/",
+        "https://hf-mirror.com/google/gemma-4-26B-A4B-it/"
+      ],
+      "primary_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/",
+      "hardware": {
+        "vram_gb": 16,
+        "min_vram_gb": 10,
+        "ram_gb": 40,
+        "disk_gb": 60,
+        "notes": "Q4 约 14GB（估算）"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "image"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "LLM",
+        "chat",
+        "llama.cpp",
+        "大模型",
+        "大语言模型",
+        "对话",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "gemma-4-12b",
+      "category": "llm",
+      "name": "Gemma 4 12B IT",
+      "repo": "google/gemma-4-12B-it",
+      "gguf_repo": "",
+      "size_gb": 24,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "Apache 2.0",
+      "trending": false,
+      "description": "Gemma 4 12B 稠密，128K/256K 上下文，函数调用与结构化输出，可配置思考，消费级显卡友好。",
+      "sources": [
+        "https://huggingface.co/google/gemma-4-12B-it/",
+        "https://hf-mirror.com/google/gemma-4-12B-it/"
+      ],
+      "primary_url": "https://huggingface.co/google/gemma-4-12B-it/",
+      "hardware": {
+        "vram_gb": 8,
+        "min_vram_gb": 6,
+        "ram_gb": 24,
+        "disk_gb": 30,
+        "notes": "Q4 约 7GB（估算）"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "LLM",
+        "chat",
+        "llama.cpp",
+        "大模型",
+        "大语言模型",
+        "对话",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "hunyuanvideo-1.5",
+      "category": "video",
+      "name": "HunyuanVideo 1.5 (T2V/I2V)",
+      "repo": "tencent/HunyuanVideo-1.5",
+      "gguf_repo": "",
+      "size_gb": 31,
+      "engine": [
+        "diffusers"
+      ],
+      "license": "Tencent",
+      "trending": true,
+      "description": "腾讯 HunyuanVideo 1.5，8.3B 参数，文生/图生视频，消费级显卡可跑，支持 deepcache/teacache/taylorcache 缓存加速，已支持 Diffusers。",
+      "sources": [
+        "https://huggingface.co/tencent/HunyuanVideo-1.5/",
+        "https://hf-mirror.com/tencent/HunyuanVideo-1.5/",
+        "https://modelscope.cn/models/Tencent-Hunyuan/HunyuanVideo-1.5"
+      ],
+      "primary_url": "https://huggingface.co/tencent/HunyuanVideo-1.5/",
+      "hardware": {
+        "vram_gb": 32,
+        "min_vram_gb": 16,
+        "ram_gb": 64,
+        "disk_gb": 120,
+        "notes": "8.3B；480p 权重约 31GB；24GB 显存可跑（量化/缓存）"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "video"
+        ]
+      },
+      "tags": [
+        "diffusers",
+        "i2v",
         "t2v",
         "trending",
         "video",
