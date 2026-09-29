@@ -189,5 +189,5 @@ def test_sidecar_real_subprocess_smoke(tmp_path: Path) -> None:
         log_fh.close()
         assert proc.poll() is not None, "sidecar subprocess was not reaped"
 
-    # 运行耗时仅记录，不作为通过/失败阈值（供议会提案归档）。
+    # 运行耗时仅记录，不作为通过/失败阈值（供性能基线归档）。
     print(f"\n[sidecar-smoke] startup={startup_s:.2f}s shutdown={shutdown_s:.2f}s")
