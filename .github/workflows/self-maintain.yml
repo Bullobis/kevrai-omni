@@ -1,12 +1,12 @@
-name: cluster-self-maintain
+name: weekly-self-maintain
 
-# Kevrai 集体协作集群的“无人值守巡检员”：不依赖任何会员会话，
-# 每天在 GitHub 托管端运行——后端测试、目录 URL 存活核验、依赖新鲜度，
+# 每周自动巡检：在 GitHub 托管端运行，不依赖任何在线会话——
+# 后端测试、目录 URL 存活核验、依赖新鲜度，
 # 并把【高置信】问题自动汇总为一个去重的追踪 issue（待办池）。
-# 任何在线的集群代理都可认领该 issue 修复，形成自驱反馈循环。
+# 维护者可认领该 issue 修复，形成反馈循环。
 on:
   schedule:
-    # 每周三 04:00 UTC（北京时间周三 12:00，统一集群工作日窗口）
+    # 每周三 04:00 UTC（北京时间周三 12:00，统一维护窗口）
     - cron: "0 4 * * 3"
   workflow_dispatch:
 
@@ -15,12 +15,12 @@ permissions:
   issues: write
 
 concurrency:
-  group: cluster-self-maintain
+  group: weekly-self-maintain
   cancel-in-progress: false
 
 jobs:
   maintain:
-    name: 每日巡检 + 问题汇总
+    name: 每周巡检 + 问题汇总
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -103,8 +103,8 @@ jobs:
 
           today = datetime.date.today().isoformat()
           lines = [
-              f"# 集群每日巡检报告（{today}）", "",
-              "本 issue 由 `cluster-self-maintain` workflow 自动维护（去重、每日更新）。", "",
+              f"# 每周巡检报告（{today}）", "",
+              "本 issue 由 `weekly-self-maintain` workflow 自动维护（去重、每周更新）。", "",
               "## 后端测试",
               f"- 结果：**{pytest_line or '未取得'}**",
               f"- 状态：{'✅ 全绿' if tests_ok else '❌ 存在失败，需修复'}",
@@ -128,9 +128,9 @@ jobs:
               f"- npm 可更新包：{len(npm_old)} 个",
               "",
               "## 处理方式",
-              "1. 集群代理从最新 main 建独立 worktree，认领并修复上述问题；",
+              "1. 维护者从最新 main 建独立 worktree，认领并修复上述问题；",
               "2. 修复走特性分支 + Pull Request，后端须 pytest 全绿、真实计数；",
-              "3. 修复合并后，次日巡检会自动重新评估并在无问题时关闭本 issue。",
+              "3. 修复合并后，下次巡检会自动重新评估并在无问题时关闭本 issue。",
               "",
               f"_自动生成于 {today}，runner: ubuntu-latest。_",
           ]
@@ -160,9 +160,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          gh label create self-maintain --description "auto cluster self-maintain tracker" --color "1D76DB" || true
+          gh label create self-maintain --description "auto weekly self-maintain tracker" --color "1D76DB" || true
           EXISTING="$(gh issue list --label self-maintain --state open --json number --jq '.[0].number' || true)"
-          TITLE="集群每日巡检：待处理问题（自动维护）"
+          TITLE="每周巡检：待处理问题（自动维护）"
           if [ -n "$EXISTING" ]; then
             gh issue edit "$EXISTING" --title "$TITLE" --body-file /tmp/report.md
             echo "updated issue #$EXISTING"
