@@ -136,7 +136,7 @@ def main() -> int:
         "serialNumber": f"urn:uuid:{hashlib.sha1(json.dumps(components, sort_keys=True).encode()).hexdigest()[:8]}-sbom",
         "metadata": {
             "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
-            "tools": [{"vendor": "Kevrai Cabinet", "name": "generate_sbom.py",
+            "tools": [{"vendor": "Kevrai", "name": "generate_sbom.py",
                        "version": "1.0.0"}],
             "component": {
                 "type": "application",
