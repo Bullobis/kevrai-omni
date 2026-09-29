@@ -103,7 +103,13 @@ def _relevance_norm(model: RemoteModel, idx: int, bucket_len: int) -> float:
         except (TypeError, ValueError):
             r = 0.0
         # `search.py` scores are unbounded; squash into [0, 1) monotonically.
-        return min(1.0, r / 40.0) if r > 0 else 0.0
+        if r > 0:
+            return min(1.0, r / 40.0)
+        # No text-match score (typically browsing with an empty query). Fall
+        # back to the curated model's position within its bucket, exactly like
+        # remote sources, so the hand-picked catalog is not starved on page 1
+        # by remote results whose only edge is a large raw download count.
+        return 1.0 - (idx / max(1, bucket_len))
     return 1.0 - (idx / max(1, bucket_len))
 
 
