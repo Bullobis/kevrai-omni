@@ -359,7 +359,17 @@
     "genWaitCaption4": "优化细节…",
     "genWaitCaption5": "即将完成…",
     "genWaitCanceled": "生成已取消",
-    "genWaitDone": "演示完成"
+    "genWaitDone": "演示完成",
+    "accentColor": "强调色",
+    "density": "界面密度",
+    "accentGreen": "绿色",
+    "accentBlue": "蓝色",
+    "accentViolet": "紫色",
+    "accentOrange": "橙色",
+    "accentPink": "粉色",
+    "accentCyan": "青色",
+    "densityComfortable": "舒适",
+    "densityCompact": "紧凑"
   },
   "onboarding": {
     "title": "欢迎使用 Kevrai Omni，三步上手",
@@ -477,7 +487,15 @@
       "themeSystem": "跟随系统主题",
       "openDataDir": "打开数据文件夹",
       "toggleSidebar": "切换侧边栏",
-      "showShortcuts": "键盘快捷键"
+      "showShortcuts": "键盘快捷键",
+      "densityComfortable": "密度：舒适",
+      "densityCompact": "密度：紧凑",
+      "accentGreen": "强调色：绿",
+      "accentBlue": "强调色：蓝",
+      "accentViolet": "强调色：紫",
+      "accentOrange": "强调色：橙",
+      "accentPink": "强调色：粉",
+      "accentCyan": "强调色：青"
     }
   },
   "downloads": {
