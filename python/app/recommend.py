@@ -14,6 +14,12 @@ from typing import Any
 
 _FIT_ORDER = {"perfect": 0, "good": 1, "tight": 2, "no": 3}
 
+# Fixed RAM (GB) needed on top of the model's own weight for CPU inference:
+# runtime, KV/activation buffers and a little headroom. Used by the small-model
+# fallback so a conservative catalog ram_gb suggestion does not veto a model
+# whose real footprint (size_gb) clearly fits.
+_CPU_OVERHEAD_GB = 1.5
+
 
 def _model_hw(m: dict[str, Any]) -> dict[str, Any]:
     hw = m.get("hardware") or {}
@@ -44,6 +50,19 @@ def rate_model(m: dict[str, Any], hw_sys: dict[str, Any]) -> dict[str, Any]:
     ram = float(hw_sys.get("ram_total_gb") or 0)
     disk_free = float((hw_sys.get("disk") or {}).get("free_gb") or 0)
 
+    # --- 平台/架构兼容性（硬约束，优先于资源估算）---
+    engines = [str(e).lower() for e in (m.get("engine") or [])]
+    plat = str(hw_sys.get("platform") or "").lower()
+    if "mlx" in engines and "darwin arm64" not in plat:
+        # MLX runs only on Apple Silicon. Linux, Windows and even macOS on
+        # x86_64 (Rosetta) cannot execute it regardless of available memory.
+        return {
+            "fit": "no",
+            "reasons": [f"MLX 仅支持 Apple Silicon（macOS arm64），当前平台 {plat or '未知'} 无法运行"],
+            "disk_note": "",
+            "need": {"vram_gb": 0.0, "ram_gb": 0.0, "disk_gb": 0.0},
+        }
+
     need_vram = mhw["vram"]
     min_vram = mhw["min_vram"] or mhw["vram"] * 0.6
     need_ram = mhw["ram"] or mhw["disk"] * 1.2
@@ -68,6 +87,15 @@ def rate_model(m: dict[str, Any], hw_sys: dict[str, Any]) -> dict[str, Any]:
             vfit = "tight"
     elif need_vram <= 0:
         vfit = "good"
+    elif (0 < float(m.get("size_gb") or 0) <= 3.0
+          and ram >= float(m.get("size_gb") or 0) + _CPU_OVERHEAD_GB):
+        # Fallback for SMALL models (<=3GB): catalog ram_gb is a conservative
+        # blanket suggestion, but for a small model CPU inference really needs
+        # the model weight (size_gb) plus runtime overhead (large models have
+        # sizable KV/activation costs, so they are intentionally excluded).
+        vfit = "tight"
+        reasons.append(
+            f"内存 {ram:g}GB 可容纳模型（约 {float(m.get('size_gb') or 0):g}GB）加运行开销，CPU 可跑（轻量任务）")
     else:
         reasons.append(f"显存与内存均不足（需 ≥{min_vram:g}GB 显存或 ≥{need_ram:g}GB 内存）")
         vfit = "no"
@@ -122,6 +150,14 @@ def recommend(
             continue
         if not (m.get("engine") or []):
             continue  # 未指派引擎的模型不可执行
+
+        # Add-on components (LoRA weights, "requires base model" extras) cannot
+        # run on their own, so they are not surfaced as standalone picks; they
+        # are offered alongside their base model instead.
+        id_name = f"{m.get('id', '')} {m.get('name', '')}".lower()
+        hw_notes = str(((m.get("hardware") or {}).get("notes") or "")).lower()
+        if "lora" in id_name or "需配合" in hw_notes or "附加权重" in hw_notes:
+            continue
 
         r = rate_model(m, hw_sys)
         if r["fit"] == "no":
