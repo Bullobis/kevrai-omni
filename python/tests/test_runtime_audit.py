@@ -11,7 +11,7 @@ Finding:
   * mnn_runtime is an **in-process C++ singleton**; its streaming timeout uses
     a daemon thread, not a child OS process.
 
-No production code is changed by this slice. These tests *lock in* the audit
+These tests *lock in* the audit
 invariants so that a future commit which introduces a real subprocess into
 either runtime is forced (by a red CI) to also add process-group cleanup:
 
