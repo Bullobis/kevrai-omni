@@ -1,4 +1,4 @@
-// tests/cabinet-use/run-tests.mjs — Deputy-USE 自测（node 直跑，无浏览器）。
+// tests/frontend-use/run-tests.mjs — 前端模块自测（node 直跑，无浏览器）。
 // 覆盖：i18n t() 回退链、{param} 插值、setLocale 持久化、bindI18n（mock DOM 真实路径）、
 //       command-palette 模糊过滤、subsequenceMatch、registerAction、真实 locales JSON 对齐。
 "use strict";
@@ -91,7 +91,7 @@ async function main() {
 
   await test("i18n: t() 插值 {name}", () => {
     i18n.registerDict("zh-CN", { toast: { hello: "你好 {name}，共 {n} 条" } });
-    assert.equal(i18n.t("toast.hello", { name: "Cabinet", n: 3 }), "你好 Cabinet，共 3 条");
+    assert.equal(i18n.t("toast.hello", { name: "Sam", n: 3 }), "你好 Sam，共 3 条");
   });
 
   await test("i18n: 回退链 当前语言→zh-CN→key", async () => {
