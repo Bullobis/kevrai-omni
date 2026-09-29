@@ -4632,6 +4632,59 @@
       ]
     },
     {
+      "id": "deepseek-v4.1-flash",
+      "category": "llm",
+      "name": "DeepSeek V4.1 Flash",
+      "repo": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "size_gb": 160,
+      "engine": [
+        "vllm",
+        "sglang",
+        "llama.cpp"
+      ],
+      "license": "MIT",
+      "trending": true,
+      "description": "DeepSeek V4.1-Flash（2026-09-10）：MIT 许可、1M 上下文，原生支持图文输入的多模态 MoE，强化 Agent 与长程任务，发布后下载量快速攀升。",
+      "sources": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/",
+        "https://hf-mirror.com/deepseek-ai/DeepSeek-V4.1-Flash/",
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4.1-Flash/"
+      ],
+      "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/",
+      "hardware": {
+        "vram_gb": 24,
+        "min_vram_gb": 12,
+        "ram_gb": 64,
+        "disk_gb": 160,
+        "notes": "估算：MoE，激活约 16B，量化后单卡可试；目前无官方 unsloth GGUF，仅有社区转存需自行甄别"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "image",
+          "text"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "官方 pipeline 为 image-text-to-text"
+      },
+      "tags": [
+        "LLM",
+        "chat",
+        "llama.cpp",
+        "sglang",
+        "trending",
+        "vllm",
+        "多模态",
+        "大模型",
+        "大语言模型",
+        "对话",
+        "热门",
+        "语言模型"
+      ]
+    },
+    {
       "id": "deepseek-v4-pro-0813",
       "category": "llm",
       "name": "DeepSeek V4 Pro 0813",
