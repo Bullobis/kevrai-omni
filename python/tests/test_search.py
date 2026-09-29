@@ -213,9 +213,9 @@ def test_corpus_memoized():
 def test_recent_searches_roundtrip(tmp_path, monkeypatch):
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache"))
-    # re-import to pick up patched settings path
-    import importlib
-    importlib.reload(search_mod)
+    # _history_path() reads default_cache_root() live, so the patched env is
+    # honored without reloading the module (a reload would replace module-level
+    # classes and pollute later test modules that bind them at collection).
     search_mod.push_recent("ltx video")
     search_mod.push_recent("qwen")
     recent = search_mod.recent_searches()
