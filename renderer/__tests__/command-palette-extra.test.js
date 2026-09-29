@@ -18,7 +18,7 @@ import {
 test("iconSvg returns a well-formed inline svg for known names", () => {
   for (const name of ["search", "settings", "download", "gpu", "refresh",
     "update", "globe", "sun", "moon", "monitor", "folder", "panel-left",
-    "keyboard", "navigate"]) {
+    "keyboard", "navigate", "bell", "droplet", "rows"]) {
     const svg = iconSvg(name);
     assert.ok(svg.startsWith('<svg class="cmdpal-icon"'), `svg wrapper for ${name}`);
     assert.ok(svg.includes('viewBox="0 0 24 24"'), `viewBox for ${name}`);

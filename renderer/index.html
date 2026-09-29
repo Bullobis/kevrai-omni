@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="styles/transitions.css" />
   <link rel="stylesheet" href="styles/error-banner.css" />
   <link rel="stylesheet" href="styles/notification.css" />
+  <link rel="stylesheet" href="styles/appearance.css" />
 </head>
 <body>
   <a href="#main" class="skip-link" data-i18n="app.skipToContent">跳到正文</a>
@@ -462,6 +463,24 @@
               <span data-i18n="settings.appearancePreview">主题预览</span>
               <p class="mut tiny" data-i18n="settings.appearanceHint">主题在「通用」分类中切换。界面自动跟随所选主题：深色为低亮度表面层级，浅色为高亮纸面层级，图标与文字对比度均保持可读。</p>
             </label>
+            <div class="appearance-block">
+              <span class="appearance-label" data-i18n="settings.accentColor">强调色</span>
+              <div class="accent-swatches" id="accent-swatches" role="radiogroup" data-i18n-aria-label="settings.accentColor">
+                <button type="button" class="swatch is-active" data-accent-choice="green" style="--sw:#4ca97a" role="radio" aria-checked="true" data-i18n-aria-label="settings.accentGreen" data-i18n-title="settings.accentGreen"></button>
+                <button type="button" class="swatch" data-accent-choice="blue" style="--sw:#4f9cf9" role="radio" aria-checked="false" data-i18n-aria-label="settings.accentBlue" data-i18n-title="settings.accentBlue"></button>
+                <button type="button" class="swatch" data-accent-choice="violet" style="--sw:#9b8afb" role="radio" aria-checked="false" data-i18n-aria-label="settings.accentViolet" data-i18n-title="settings.accentViolet"></button>
+                <button type="button" class="swatch" data-accent-choice="orange" style="--sw:#f5a356" role="radio" aria-checked="false" data-i18n-aria-label="settings.accentOrange" data-i18n-title="settings.accentOrange"></button>
+                <button type="button" class="swatch" data-accent-choice="pink" style="--sw:#f072a6" role="radio" aria-checked="false" data-i18n-aria-label="settings.accentPink" data-i18n-title="settings.accentPink"></button>
+                <button type="button" class="swatch" data-accent-choice="cyan" style="--sw:#3fc6c2" role="radio" aria-checked="false" data-i18n-aria-label="settings.accentCyan" data-i18n-title="settings.accentCyan"></button>
+              </div>
+            </div>
+            <div class="appearance-block">
+              <span class="appearance-label" data-i18n="settings.density">界面密度</span>
+              <div class="density-toggle" id="density-toggle" role="radiogroup" data-i18n-aria-label="settings.density">
+                <button type="button" class="density-opt is-active" data-density-choice="comfortable" role="radio" aria-checked="true" data-i18n="settings.densityComfortable">舒适</button>
+                <button type="button" class="density-opt" data-density-choice="compact" role="radio" aria-checked="false" data-i18n="settings.densityCompact">紧凑</button>
+              </div>
+            </div>
           </section>
 
           <section class="settings-section" data-section="data" aria-label="数据管理" hidden>

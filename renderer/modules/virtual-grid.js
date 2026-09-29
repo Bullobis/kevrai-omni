@@ -8,7 +8,8 @@
 export class VirtualGrid {
   constructor(host, opts = {}) {
     this.host = host;
-    this.itemHeight     = opts.itemHeight     || 168;
+    this._itemHeightBase = opts.itemHeight || 168;
+    this.itemHeight     = this._currentItemHeight();
     this.colsOfWidth    = opts.colsOfWidth    || (() => this._defaultCols());
     this.gap            = opts.gap            || 14;
     this.padding        = opts.padding        || 16;
@@ -70,12 +71,22 @@ export class VirtualGrid {
     this._layout();
   }
 
+  // 读取 :root 上的数值型 CSS 变量（用于密度/主题在运行时调整网格几何），
+  // 未定义或非法时回退到 fallback，永不抛错。
+  _cssNum(name, fallback) {
+    try {
+      const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+      return Number.isFinite(v) && v > 0 ? v : fallback;
+    } catch (_) { return fallback; }
+  }
+  _currentItemHeight() { return this._cssNum("--grid-item-h", this._itemHeightBase); }
+
   _defaultCols() {
     // Prefer the viewport's inner width: it excludes the vertical scrollbar,
     // unlike host.clientWidth, so the column count matches the space the items
     // actually get.
     const w = (this.viewport && this.viewport.clientWidth) || this.host.clientWidth || 1024;
-    const min = 280, pad = this.padding * 2, gap = this.gap;
+    const min = this._cssNum("--grid-min-w", 280), pad = this.padding * 2, gap = this.gap;
     return Math.max(1, Math.floor((w - pad + gap) / (min + gap)));
   }
 
@@ -110,6 +121,7 @@ export class VirtualGrid {
   }
 
   _layout() {
+    this.itemHeight = this._currentItemHeight();
     const cols = this._cols();
     const rows = Math.ceil(this.items.length / cols);
     const rowH = this.itemHeight + this.gap;

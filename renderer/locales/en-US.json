@@ -359,7 +359,17 @@
     "genWaitCaption4": "Refining details…",
     "genWaitCaption5": "Almost done…",
     "genWaitCanceled": "Generation canceled",
-    "genWaitDone": "Demo complete"
+    "genWaitDone": "Demo complete",
+    "accentColor": "Accent color",
+    "density": "Density",
+    "accentGreen": "Green",
+    "accentBlue": "Blue",
+    "accentViolet": "Violet",
+    "accentOrange": "Orange",
+    "accentPink": "Pink",
+    "accentCyan": "Cyan",
+    "densityComfortable": "Comfortable",
+    "densityCompact": "Compact"
   },
   "onboarding": {
     "title": "Welcome to Kevrai Omni — three steps to get started",
@@ -477,7 +487,15 @@
       "themeSystem": "Match system theme",
       "openDataDir": "Open data folder",
       "toggleSidebar": "Toggle sidebar",
-      "showShortcuts": "Keyboard shortcuts"
+      "showShortcuts": "Keyboard shortcuts",
+      "densityComfortable": "Density: Comfortable",
+      "densityCompact": "Density: Compact",
+      "accentGreen": "Accent: Green",
+      "accentBlue": "Accent: Blue",
+      "accentViolet": "Accent: Violet",
+      "accentOrange": "Accent: Orange",
+      "accentPink": "Accent: Pink",
+      "accentCyan": "Accent: Cyan"
     }
   },
   "downloads": {
