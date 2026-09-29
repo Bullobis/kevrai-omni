@@ -1,4 +1,4 @@
-"""v2.9.1 K-Catalog fact-check regression tests (ADR-0003).
+"""v2.9.1 catalog fact-check regression tests.
 
 Locks in the corrected repository slugs verified live against the
 HuggingFace API on 2026-09-24. Guards against re-introducing the ghost
