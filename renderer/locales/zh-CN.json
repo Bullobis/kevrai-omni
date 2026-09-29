@@ -563,7 +563,13 @@
     "noSkills": "暂无技能",
     "loadFailed": "加载失败",
     "historyPlaceholder": "— 历史会话 —",
-    "sessionLabel": "{id} ({n} 条)"
+    "sessionLabel": "{id} ({n} 条)",
+    "emptyTitle": "有什么可以帮你？",
+    "emptySub": "规则模式下可直接使用搜索、推荐、硬件检测等工具；加载本地 LLM 后可自由对话。",
+    "suggestHardware": "我的硬件能跑什么模型？",
+    "suggestSearch": "帮我搜索 Qwen 模型",
+    "suggestRecommend": "推荐适合 8GB 显存的模型",
+    "suggestMusic": "搜索音乐生成模型"
   },
   "mnn": {
     "title": "⬢ MNN 推理引擎（阿里巴巴开源）",
