@@ -57,10 +57,10 @@ export function getFocusables(root) {
 export function trapFocus(root) {
   if (!root) return () => {};
   // 同一 root 重复打开时不重复绑监听器，只把焦点重新送回首元素。
-  if (root._kovatrapDetach) {
+  if (root._focusTrapDetach) {
     const again = getFocusables(root);
     if (again[0]) again[0].focus();
-    return root._kovatrapDetach;
+    return root._focusTrapDetach;
   }
   const list = getFocusables(root);
   if (list[0]) list[0].focus();
@@ -78,9 +78,9 @@ export function trapFocus(root) {
   root.addEventListener("keydown", handler);
   const detach = () => {
     root.removeEventListener("keydown", handler);
-    delete root._kovatrapDetach;
+    delete root._focusTrapDetach;
   };
-  root._kovatrapDetach = detach;
+  root._focusTrapDetach = detach;
   return detach;
 }
 

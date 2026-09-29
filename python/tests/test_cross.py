@@ -1,4 +1,4 @@
-"""Neuron-Cross (4th slice) — cross-module lifecycle / data-contract regressions.
+"""Cross-module lifecycle / data-contract regressions.
 
 Pins three bugs found by the cross-module adversarial review:
 

@@ -1,4 +1,4 @@
-"""K-Cortex Neuron-9 — concurrency & race-condition audit.
+"""Concurrency & race-condition audit.
 
 Every test here forces a *deterministic* interleaving (threading.Barrier /
 asyncio.Event / monkeypatched mid-critical-section delay) rather than hoping the

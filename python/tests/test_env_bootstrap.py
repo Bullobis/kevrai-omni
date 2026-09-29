@@ -1,6 +1,6 @@
-"""Neuron-Env (K-Cortex 第三切片) 回归测试 — app.env pip 引导路径.
+"""app.env pip 引导路径回归测试.
 
-本文件只覆盖第三切片审计中确认修复的两处真实问题：
+本文件覆盖确认修复的两处真实问题：
   1. upgrade_pip_package 必须真正传入 ``--upgrade``（否则 pip 对已安装包
      报 "Requirement already satisfied" 并退出 0，升级按钮静默空操作）。
   2. pip 安装/升级失败必须抛出中文、可定位的 InstallError（与 sidecar
@@ -17,7 +17,7 @@ import pytest
 from app.env import InstallError, install_pip_package, upgrade_pip_package
 
 
-def test_neuron3_upgrade_uses_upgrade_flag_and_no_pin():
+def test_upgrade_uses_upgrade_flag_and_no_pin():
     with patch("app.env._run", return_value=(0, "ok", "")) as m:
         upgrade_pip_package("fastapi")
     cmd = m.call_args.args[0]
@@ -28,21 +28,21 @@ def test_neuron3_upgrade_uses_upgrade_flag_and_no_pin():
     assert cmd[-1] == "fastapi"
 
 
-def test_neuron3_install_default_has_no_upgrade_flag():
+def test_install_default_has_no_upgrade_flag():
     with patch("app.env._run", return_value=(0, "ok", "")) as m:
         install_pip_package("fastapi")
     cmd = m.call_args.args[0]
     assert "--upgrade" not in cmd, "普通安装不应带 --upgrade"
 
 
-def test_neuron3_install_pins_version_when_given():
+def test_install_pins_version_when_given():
     with patch("app.env._run", return_value=(0, "ok", "")) as m:
         install_pip_package("fastapi", version="0.111.0")
     cmd = m.call_args.args[0]
     assert cmd[-1] == "fastapi==0.111.0"
 
 
-def test_neuron3_default_cn_mirrors_appended():
+def test_default_cn_mirrors_appended():
     """审计点1：默认应挂载多个国内镜像（非单一硬编码源）。"""
     with patch("app.env._run", return_value=(0, "ok", "")) as m:
         install_pip_package("fastapi")
@@ -57,7 +57,7 @@ def test_neuron3_default_cn_mirrors_appended():
     assert cmd.count("--extra-index-url") == 3
 
 
-def test_neuron3_install_failure_chinese_message_with_tail():
+def test_install_failure_chinese_message_with_tail():
     """审计点3/5：失败必须是中文可定位提示，并保留错误尾部。"""
     with patch("app.env._run", return_value=(1, "", "Could not find a version")), \
             pytest.raises(InstallError) as exc:
@@ -69,7 +69,7 @@ def test_neuron3_install_failure_chinese_message_with_tail():
     assert "pip install failed" not in msg, "旧英文提示应被中文化"
 
 
-def test_neuron3_upgrade_failure_chinese_message():
+def test_upgrade_failure_chinese_message():
     with patch("app.env._run", return_value=(1, "", "network is unreachable")), \
             pytest.raises(InstallError) as exc:
         upgrade_pip_package("uvicorn")
@@ -79,7 +79,7 @@ def test_neuron3_upgrade_failure_chinese_message():
     assert "network is unreachable" in msg
 
 
-def test_neuron3_success_returns_dict_shape():
+def test_success_returns_dict_shape():
     with patch("app.env._run", return_value=(0, "installed tail output", "")):
         out = upgrade_pip_package("pydantic")
     assert out["ok"] is True
@@ -87,7 +87,7 @@ def test_neuron3_success_returns_dict_shape():
     assert out["output_tail"] == "installed tail output"
 
 
-def test_neuron3_timeout_is_passed_through():
+def test_timeout_is_passed_through():
     """审计点3：pip 引导子进程必须带超时（300s）。"""
     with patch("app.env._run", return_value=(0, "", "")) as m:
         install_pip_package("x")

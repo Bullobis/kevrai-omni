@@ -1,4 +1,4 @@
-"""Neuron-Agent K-Cortex reliability regression tests.
+"""Agent reliability regression tests.
 
 Coaches the agent loop against malformed/misbehaving LLM-router results and
 robust output parsing that the v2.7.0 suite did not cover:

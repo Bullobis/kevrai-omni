@@ -1,7 +1,6 @@
-"""Neuron3-Engines slice audit regression tests.
+"""Engines audit regression tests.
 
-Covers the two bugs confirmed by code evidence during the K-Cortex third-slice
-audit (Project K-Cortex, Neuron-Engines):
+Covers the two bugs confirmed by code evidence during the engines audit:
 
   * BUG-A (mnn_catalog): ``list_mnn_files`` / ``_MIRRORS`` must never direct
     enumeration or generated download URLs at ``hf-cdn.sufy.com`` — a

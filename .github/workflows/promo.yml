@@ -47,8 +47,8 @@ jobs:
             echo "promo.mp4 与上一版逐字节相同，无需提交。"
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "Bullobis"
+          git config user.email "2671369836@qq.com"
           git add assets/media/promo.mp4
           git commit -m "chore(promo): scheduled promo refresh $(date -u +%Y-%m-%d)"
           git push

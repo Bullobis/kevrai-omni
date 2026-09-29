@@ -1,6 +1,7 @@
 node_modules/
 dist/
 build/output/
+python/build/
 __pycache__/
 *.pyc
 .venv/

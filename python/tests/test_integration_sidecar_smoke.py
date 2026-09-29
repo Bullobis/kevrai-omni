@@ -1,4 +1,4 @@
-"""Neuron4-Smoke：真实子进程 sidecar 启动集成冒烟测试。
+"""真实子进程 sidecar 启动集成冒烟测试。
 
 与 ``test_smoke.py``（进程内 ``TestClient``）不同，本测试以**真实子进程**方式
 拉起 ``python -m uvicorn app.main:app``，走完整 ASGI / HTTP 栈，验证：

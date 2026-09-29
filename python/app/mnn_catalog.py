@@ -15,7 +15,7 @@ from . import USER_AGENT
 # More sources = better reachability from CN networks (user preference).
 # NOTE: ``hf-cdn.sufy.com`` is a typosquat/phishing clone and is hard-blocked
 # by SECURITY.md / ``DEFAULT_BLOCKED_MIRRORS`` — it must never appear here, even
-# as a last-resort fallback (Neuron3-Engines audit).
+# as a last-resort fallback.
 _MIRRORS = (
     "https://hf-mirror.com",
     "https://hf-mirror.us",

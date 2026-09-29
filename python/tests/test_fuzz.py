@@ -1,4 +1,4 @@
-"""Neuron-8 (K-Cortex slice 8) — fuzz / malformed-input hardening tests.
+"""Fuzz / malformed-input hardening tests.
 
 Goal: every "external input → parse/validate" boundary must survive arbitrary
 garbage without an uncaught exception / 500 traceback. Bad input must surface as

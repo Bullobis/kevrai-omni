@@ -1,4 +1,4 @@
-// renderer/__tests__/visual-transitions.test.js — Kova R4 视觉精修单测。
+// renderer/__tests__/visual-transitions.test.js — 视觉过渡单测。
 // 覆盖：模态打开/关闭时序、reduced-motion 立即关闭、关闭过渡不立即 hidden、
 // body 滚动锁引用计数。纯 DOM 逻辑，jsdom 下单测。
 import { test } from "node:test";

@@ -1,4 +1,4 @@
-"""Regression tests for Neuron-API slice 2 — Task 2: global exception handler.
+"""Regression tests — global exception handler.
 
 Endpoints that raise a plain (non-HTTPException) error must return a uniform
 JSON 500 envelope instead of Starlette's default plain-text body, and must
@@ -22,7 +22,7 @@ def test_uncaught_exception_returns_json_500():
     """A route that raises a plain exception → JSON 500, not plain text."""
     secret_path = "/home/user/secret/token_path.py"  # must NOT leak
 
-    @app_main.app.get("/api/_neuron2_test/_boom")
+    @app_main.app.get("/api/_test/_boom")
     def _boom():
         raise RuntimeError(f"kaboom at {secret_path}")
 
@@ -30,7 +30,7 @@ def test_uncaught_exception_returns_json_500():
         # raise_server_exceptions=False so the handler's 500 reaches us
         # instead of re-raising in the test thread.
         client = TestClient(app_main.app, raise_server_exceptions=False)
-        r = client.get("/api/_neuron2_test/_boom")
+        r = client.get("/api/_test/_boom")
         assert r.status_code == 500
         ct = r.headers.get("content-type", "")
         assert "application/json" in ct, f"expected JSON content-type, got {ct!r}"
@@ -41,7 +41,7 @@ def test_uncaught_exception_returns_json_500():
         # Clean up the test route so it doesn't leak into other tests.
         app_main.app.router.routes = [
             r for r in app_main.app.router.routes
-            if getattr(r, "path", None) != "/api/_neuron2_test/_boom"
+            if getattr(r, "path", None) != "/api/_test/_boom"
         ]
 
 
@@ -50,7 +50,7 @@ def test_uncaught_exception_does_not_leak_sensitive_info():
     secret = "hf_VERYSECRETTOKEN_12345"
     leaky_path = "/etc/passwd"
 
-    @app_main.app.get("/api/_neuron2_test/_leak")
+    @app_main.app.get("/api/_test/_leak")
     def _leak():
         try:
             raise ValueError(f"token={secret} at {leaky_path}")
@@ -59,7 +59,7 @@ def test_uncaught_exception_does_not_leak_sensitive_info():
 
     try:
         client = TestClient(app_main.app, raise_server_exceptions=False)
-        r = client.get("/api/_neuron2_test/_leak")
+        r = client.get("/api/_test/_leak")
         assert r.status_code == 500
         text = r.text
         assert secret not in text, "token leaked in error response"
@@ -69,19 +69,19 @@ def test_uncaught_exception_does_not_leak_sensitive_info():
     finally:
         app_main.app.router.routes = [
             r for r in app_main.app.router.routes
-            if getattr(r, "path", None) != "/api/_neuron2_test/_leak"
+            if getattr(r, "path", None) != "/api/_test/_leak"
         ]
 
 
 def test_http_exception_keeps_default_detail_format():
     """HTTPException must still produce the default ``{'detail': ...}`` body."""
-    @app_main.app.get("/api/_neuron2_test/_missing")
+    @app_main.app.get("/api/_test/_missing")
     def _missing():
         raise HTTPException(status_code=404, detail="model xyz not found")
 
     try:
         client = TestClient(app_main.app, raise_server_exceptions=False)
-        r = client.get("/api/_neuron2_test/_missing")
+        r = client.get("/api/_test/_missing")
         assert r.status_code == 404
         body = r.json()
         assert "detail" in body, f"HTTPException lost its detail field: {body}"
@@ -91,5 +91,5 @@ def test_http_exception_keeps_default_detail_format():
     finally:
         app_main.app.router.routes = [
             r for r in app_main.app.router.routes
-            if getattr(r, "path", None) != "/api/_neuron2_test/_missing"
+            if getattr(r, "path", None) != "/api/_test/_missing"
         ]

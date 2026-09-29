@@ -1,4 +1,4 @@
-"""Neuron-Hub K-Cortex reliability regression tests.
+"""Hub reliability regression tests.
 
 Covers the hardening applied to the download/Hub link:
 

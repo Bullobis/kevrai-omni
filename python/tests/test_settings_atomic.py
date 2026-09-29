@@ -1,4 +1,4 @@
-"""K-Cortex Neuron-10 — settings PUT atomicity & lost-update repair.
+"""Settings PUT atomicity & lost-update repair regression tests.
 
 The ``PUT /api/settings`` handler does a read-modify-write (RMW):
 

@@ -18,7 +18,7 @@ if git diff --cached --quiet; then
   exit 0
 fi
 
-git -c user.name="Kevrai Bot" -c user.email="bot@kevrai.local" \
+git -c user.name="Bullobis" -c user.email="2671369836@qq.com" \
   commit -m "chore(promo): scheduled promo refresh $(date -u +%F)"
 git push origin main
 echo "promo refreshed and pushed."

@@ -1,9 +1,9 @@
-"""Neuron-Runtime2 audit guards (Project K-Cortex, 2026-09-24).
+"""Runtime audit guards.
 
 P1 question re-audited: *do LTX / MNN runtimes spawn child processes that
 would need a process-group kill on cancellation?*
 
-Finding (see parliament/20260924-neuron2-runtime-k-cortex.md):
+Finding:
   * ltx_runtime runs diffusers **in-process** on a daemon thread; the only child
     it can ever produce is the ffmpeg that imageio-ffmpeg launches internally,
     and that happens ONLY in the SAVING phase, strictly after generation has
@@ -61,7 +61,7 @@ def _mnn_source() -> str:
 #
 # ltx_runtime must remain a pure in-process runtime (no OS child to reap).
 # mnn_runtime now OPT-IN spawns a forked child to isolate the C++ engine
-# (Neuron4 slice, 2026-09-24); that child MUST be reaped on every
+# That child MUST be reaped on every
 # timeout/crash/abort path. We forbid raw subprocess/Popen (which would need
 # separate process-group bookkeeping) and require the multiprocessing path to
 # carry a _kill() that SIGKILLs the child.
@@ -74,7 +74,7 @@ def test_audited_runtimes_spawn_no_direct_subprocess(src_text, name):
     """ltx_runtime must stay a pure in-process runtime."""
     for token in _FORBIDDEN_TOKENS:
         assert token not in src_text, (
-            f"{name} uses {token!r}; Neuron-Runtime2 requires this call to be "
+            f"{name} uses {token!r}; the runtime requires this call to be "
             f"wrapped in a process-group-aware launcher and reaped on cancel."
         )
 

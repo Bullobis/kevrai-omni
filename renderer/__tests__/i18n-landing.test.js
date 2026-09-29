@@ -38,7 +38,7 @@ test("嵌套 key 按点号路径取值", () => {
 });
 
 test("{param} 占位符替换，缺失占位符原样保留", () => {
-  assert.equal(t("app.welcome", { name: "Kova" }), "你好 Kova");
+  assert.equal(t("app.welcome", { name: "Sam" }), "你好 Sam");
   registerDict("zh-CN", { templated: "a={a} b={b}" });
   // 只传 a，b 保留原样。
   assert.equal(t("templated", { a: "1" }), "a=1 b={b}");
@@ -62,7 +62,7 @@ test("setLocale 切换后 t() 立即返回对应语言", async () => {
   await setLocale("en-US");
   assert.equal(getLocale(), "en-US");
   assert.equal(t("nav.market"), "Market");
-  assert.equal(t("app.welcome", { name: "Kova" }), "Hello Kova");
+  assert.equal(t("app.welcome", { name: "Sam" }), "Hello Sam");
   await setLocale("zh-CN");
   assert.equal(t("nav.market"), "市场");
 });

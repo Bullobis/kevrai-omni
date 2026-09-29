@@ -72,7 +72,7 @@ class TestDownloadFileAllowlist:
         with pytest.raises(ValueError, match="non-allowlisted host"):
             importer.download_file(
                 "https://evil.example.com/malware.bin",
-                Path("/tmp/should_not_exist_k_cortex.bin"),
+                Path("/tmp/should_not_exist.bin"),
                 enforce_allowlist=True,
             )
 

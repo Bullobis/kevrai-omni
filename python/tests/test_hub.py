@@ -1,4 +1,4 @@
-"""Neuron-Hub2 K-Cortex regression tests.
+"""Hub regression tests.
 
 Covers the two P2 hardening items added on top of the v2.8.1 retry/single-flight
 work:

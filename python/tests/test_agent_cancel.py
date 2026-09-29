@@ -1,4 +1,4 @@
-"""Neuron-12: cooperative cancellation for ``agent.run()``.
+"""Cooperative cancellation for ``agent.run()``.
 
 The ReAct loop is synchronous (router.chat / registry.execute block), so a
 cancellation request can only be honoured at explicit checkpoints. These tests

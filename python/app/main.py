@@ -614,7 +614,7 @@ async def _persist_settings(s: Settings, path: str | os.PathLike[str]) -> None:
     The write itself stays synchronous and atomic (temp-file + fsync +
     ``os.replace``). It is surfaced as an ``async`` seam so tests can insert a
     deterministic suspension between the read-copy and the write-back inside
-    the RMW critical section (see ``test_neuron10_settings_atomic.py``).
+    the RMW critical section (see ``test_settings_atomic.py``).
     """
     save_settings(s, path)
 

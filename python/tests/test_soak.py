@@ -1,4 +1,4 @@
-"""Neuron5 soak test: resource hygiene under repeated operation.
+"""Soak test: resource hygiene under repeated operation.
 
 Loops N rounds of key backend operations (search hit/miss, recommend, agent
 tool dispatch, MNN load/unload in subprocess mode, download success/failure)

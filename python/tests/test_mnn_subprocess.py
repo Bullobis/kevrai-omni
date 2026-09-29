@@ -1,4 +1,4 @@
-"""Neuron-MNN 4th slice: subprocess isolation integration tests.
+"""Subprocess isolation integration tests.
 
 The C++ MNN engine can hard-deadlock during generate(); in-process that leaves
 a parked daemon thread. This suite exercises the opt-in subprocess isolation
@@ -14,7 +14,7 @@ Coverage:
     (the whole point: the parked C++ thread dies with the OS process)
   * clean shutdown leaves no lingering child process
 
-Default (env unset) behavior is covered by test_neuron_runtime.py; these tests
+Default (env unset) behavior is covered by test_runtime.py; these tests
 only touch the opt-in path.
 """
 from __future__ import annotations

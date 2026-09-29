@@ -1,6 +1,6 @@
-"""Neuron3-Misc 审计回归测试 — ``app.converter``。
+"""``app.converter`` 审计回归测试。
 
-审计范围（Project K-Cortex 第三切片）：格式探测 / 转换边界 / 路径穿越 / 资源限制 / 异常。
+审计范围：格式探测 / 转换边界 / 路径穿越 / 资源限制 / 异常。
 本组测试全部用 mock 替换子进程，绝不真实调用 MNNConvert / git / 转换脚本。
 
 覆盖的经证据确认的修复：
