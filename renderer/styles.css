@@ -106,6 +106,11 @@ html[data-theme="light"] {
   --mut:  #4a515c;            /* a11y: 8.0:1 on white，11px 小字留足 AA 余量 */
   --acc:  #2f7d55;
   --acc2: #2b6b8f;
+  /* 语义色在浅色下需单独给值：深色版的 --ok #4ca97a / --warn #d9a05b /
+     --err #e06c75 是为深底调的亮度，搬到白底上不足 3:1。 */
+  --ok:   #1f7a4d;
+  --warn: #8a5a12;
+  --err:  #b3261e;
   --hot:      #c44a1f;            /* 稍暗的橙，保证白底对比度 */
   --hot-soft: rgba(196, 74, 31, 0.15);
   --hot-text: #b5441a;
@@ -204,6 +209,40 @@ html[data-theme="light"] .skip-link { color: #fff; }
 .sidebar .ico { width: auto; font-size: 19px; opacity: 1; line-height: 1; }
 .sidebar-foot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding-top: 10px; align-items: center; }
 .sidebar-foot .mut.tiny { margin: 0; display: none; }   /* 图标轨道放不下文字 */
+
+/* ---------- Sidebar expanded (v3.0.0) ----------
+   app.js toggles `.sidebar-expanded` on .app-shell and `.expanded` on
+   .sidebar, and persists the state under `kevrai:sidebar-expanded`.
+   Collapsed is the 64px icon rail above; expanded restores the labels
+   that .pane-tab's `font-size: 0` hides, so the two states share one
+   markup tree. Widths are kept in sync with .app-shell's grid track. */
+.app-shell.sidebar-expanded { grid-template-columns: 190px 1fr 340px; }
+.app-shell.sidebar-expanded .sidebar { padding: 10px 10px; }
+.app-shell.sidebar-expanded .sidebar .pane-tab {
+  width: 100%; height: 38px; margin: 0;
+  justify-content: flex-start; gap: 10px; padding: 0 10px;
+  font-size: var(--fs-sm);
+}
+.app-shell.sidebar-expanded .sidebar .ico { flex: 0 0 auto; }
+.app-shell.sidebar-expanded .tab-label {
+  font-size: var(--fs-sm); line-height: 1.2; color: inherit;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.app-shell.sidebar-expanded .sidebar-foot { align-items: stretch; }
+.app-shell.sidebar-expanded .sidebar-foot .ghost.full {
+  justify-content: flex-start; gap: 10px; padding: 0 10px; width: 100%;
+  font-size: var(--fs-sm);
+}
+.app-shell.sidebar-expanded .sidebar-foot .mut.tiny { display: block; text-align: center; }
+@media (max-width: 1280px) {
+  .app-shell.sidebar-expanded { grid-template-columns: 168px 1fr 300px; }
+}
+/* In the rail the label is only a tooltip, so keep it out of the a11y
+   tree twice over: the button already carries title + aria-label. */
+.app-shell .tab-label { pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  .app-shell.sidebar-expanded .sidebar { transition: none; }
+}
 
 /* ---------- Main column ---------- */
 .main { padding: 18px 22px; overflow-y: auto; outline: none; min-width: 0; }
@@ -308,8 +347,10 @@ html[data-theme="light"] .skip-link { color: #fff; }
 
 /* ---------- Pills / lists / rows ---------- */
 .pill {
+  /* --card rather than a white alpha: a rgba(255,255,255,.03) fill is
+     invisible on the light theme, where surfaces are white already. */
   padding: 3px 9px; border-radius: var(--radius-pill); font-size: var(--fs-xs);
-  border: 1px solid var(--bord); background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--bord); background: var(--card);
   color: var(--mut);
 }
 .pill.ok { color: var(--ok); border-color: rgba(93, 211, 158, 0.4); }
@@ -507,7 +548,7 @@ html[data-theme="light"] ::selection { color: #fff; }
 .page-env .card h2 { font-size: var(--fs-md); margin: 0 0 10px; }
 .page-env .card h3 { font-size: var(--fs-sm); margin: 14px 0 8px; color: var(--mut); }
 .page-env .muted { color: var(--mut); }
-.page-env .err { color: #ff8080; }
+.page-env .err { color: var(--err); }
 
 .mirror-group { margin-top: var(--sp-2); padding: var(--sp-2); background: var(--bg2); border-radius: var(--radius-sm); }
 .mirror-row { display: grid; grid-template-columns: auto 160px 1fr; gap: 12px; padding: 6px 10px; align-items: center; cursor: pointer; border-radius: var(--radius-sm); }
@@ -523,11 +564,11 @@ html[data-theme="light"] ::selection { color: #fff; }
 .speed-row .rank { color: var(--acc); font-weight: 700; }
 .speed-row .metric { color: var(--mut); }
 .speed-row .status { text-align: right; font-family: ui-monospace, monospace; }
-.speed-row.ok { border-left: 3px solid #4ade80; }
-.speed-row.fail { opacity: 0.6; border-left: 3px solid #ff7070; }
+.speed-row.ok { border-left: 3px solid var(--ok); }
+.speed-row.fail { opacity: 0.6; border-left: 3px solid var(--err); }
 
-.issues-banner { background: rgba(255, 180, 60, 0.1); border: 1px solid #ffb43c; border-radius: 8px; padding: 8px 12px; margin: 10px 0; }
-.issues-banner .issue { color: #ffb43c; margin: 4px 0; font-size: 13px; }
+.issues-banner { background: color-mix(in srgb, var(--warn) 12%, transparent); border: 1px solid var(--warn); border-radius: 8px; padding: 8px 12px; margin: 10px 0; }
+.issues-banner .issue { color: var(--warn); margin: 4px 0; font-size: 13px; }
 
 .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp-2); margin: var(--sp-2) 0; }
 .status-grid .kv { background: var(--bg2); padding: 10px 14px; border-radius: var(--radius-sm); }
@@ -538,14 +579,14 @@ html[data-theme="light"] ::selection { color: #fff; }
 .pkg-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 .pkg-table th, .pkg-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
 .pkg-table th { color: var(--mut); font-weight: 500; }
-.pkg-table .missing { color: #ff8080; }
+.pkg-table .missing { color: var(--err); }
 .pkg-table .small { padding: 4px 10px; font-size: var(--fs-xs); }
 .pkg-table button.small { padding: 4px 12px; font-size: var(--fs-xs); }
 
 .engine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp-2); margin-top: var(--sp-2); }
 .engine-item { background: var(--bg2); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--line); }
 .engine-item h4 { margin: 0 0 6px; font-size: var(--fs-sm); }
-.engine-item.installed { border-color: #4ade80; }
+.engine-item.installed { border-color: var(--ok); }
 .engine-item .small { font-size: var(--fs-xs); }
 .engine-item .xsmall { font-size: 10px; }
 
