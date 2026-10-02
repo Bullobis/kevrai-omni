@@ -10,10 +10,43 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import warnings
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
+
+# The C json scanner recurses once per nesting level, so a deeply nested
+# payload ("{\"a\":" * 5000) raises RecursionError instead of
+# JSONDecodeError. Python's default limit is 1000, which a legitimate model
+# response can exceed, so we parse deep payloads under a temporarily raised
+# limit and restore it in a finally block. The ceiling keeps a pathological
+# payload from exhausting the C stack (8 MB default) — see _MAX_JSON_DEPTH.
+_MAX_JSON_DEPTH = 4000
+_MAX_RECURSION_LIMIT = 8000
+
+
+def _loads_deep(payload: str) -> Any:
+    """``json.loads`` that tolerates nesting deeper than the recursion limit.
+
+    Raises the interpreter limit just for this call, bounded by the payload's
+    own bracket depth so a pathological input cannot drive the limit to the
+    maximum. Depth beyond ``_MAX_JSON_DEPTH`` still raises RecursionError,
+    which callers must handle — this widens the accepted range, it does not
+    remove the bound.
+    """
+    limit = sys.getrecursionlimit()
+    if limit >= _MAX_RECURSION_LIMIT:
+        return json.loads(payload)
+    # +200 covers json's own frames on top of the nesting depth.
+    needed = min(payload.count("{") + payload.count("[") + 200, _MAX_RECURSION_LIMIT)
+    if needed <= limit:
+        return json.loads(payload)
+    sys.setrecursionlimit(needed)
+    try:
+        return json.loads(payload)
+    finally:
+        sys.setrecursionlimit(limit)
 
 
 @dataclass
@@ -111,6 +144,38 @@ class ToolRegistry:
         return "\n".join(lines)
 
 
+def _iter_balanced_prefixes(rest: str):
+    """Yield ``rest`` prefixes that end where its brackets balance.
+
+    Scanning is string-aware so braces inside JSON string values are not
+    counted. Prefixes are produced outermost-first (a closing brace at depth
+    0), so the first one that parses as a dict is the whole object.
+    """
+    depth = 0
+    in_str = False
+    escaped = False
+    for i, ch in enumerate(rest):
+        if in_str:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+        elif ch in "{[":
+            depth += 1
+        elif ch in "}]":
+            depth -= 1
+            if depth == 0:
+                yield rest[: i + 1]
+            elif depth < 0:
+                # Closing bracket before any opener — nothing left to try.
+                return
+
+
 def parse_tool_call(text: str) -> tuple[str, dict[str, Any]] | None:
     """Parse a tool call from LLM output.
 
@@ -130,16 +195,22 @@ def parse_tool_call(text: str) -> tuple[str, dict[str, Any]] | None:
         rest = m.group(2)
         # The JSON object may be followed by free-text commentary on the same
         # line (a small local LLM occasionally appends "# search for ...").
-        # Non-greedily stopping at the first '}' breaks nested objects, so we
-        # walk the '}' positions and retry json.loads until one parses.
-        end = rest.find("}")
-        while end != -1:
-            candidate = rest[: end + 1]
+        # Stopping at the first '}' breaks nested objects, so we try each
+        # prefix that ends where the brackets balance, outermost first, and
+        # take the first that parses. Tracking depth ourselves (rather than
+        # retrying json.loads at every '}') keeps this linear: the naive walk
+        # re-parsed the whole prefix per '}', which is quadratic and cost
+        # seconds on the deeply nested payloads test_fuzz.py throws at it.
+        for candidate in _iter_balanced_prefixes(rest):
             try:
-                params = json.loads(candidate)
+                params = _loads_deep(candidate)
             except json.JSONDecodeError:
-                end = rest.find("}", end + 1)
                 continue
+            except RecursionError:
+                # Nested past the depth ceiling: a malformed tool call must
+                # never take down the caller, so fall through to the next
+                # supported format.
+                break
             if isinstance(params, dict):
                 return name, params
             break

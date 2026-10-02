@@ -658,3 +658,54 @@ def test_agent_loop_tolerates_garbage_router_output(tmp_path):
         assert res.success or res.error, "every run must return an AgentResult"
         n += 1
     assert n == len(garbage)
+
+
+def test_parse_tool_call_restores_recursion_limit():
+    """A deep-but-parseable payload must not leave the limit raised.
+
+    ``_loads_deep`` lifts the interpreter recursion limit for the duration of
+    one ``json.loads`` call. If the restore were ever dropped, every later
+    call in the process would run with a raised limit, so a deep payload
+    anywhere in the agent loop could then exhaust the C stack.
+    """
+    import sys
+
+    from app.agent.tool_registry import _MAX_RECURSION_LIMIT
+
+    before = sys.getrecursionlimit()
+    deep = '{"a":' * 2000 + "1" + "}" * 2000
+    assert parse_tool_call("Action: search_models|" + deep) is not None
+    assert sys.getrecursionlimit() == before
+
+    # The raised limit must also be released when the parse raises.
+    unbalanced = '{"a":' * 2000
+    parse_tool_call("Action: search_models|" + unbalanced)
+    assert sys.getrecursionlimit() == before
+    assert before < _MAX_RECURSION_LIMIT
+
+
+def test_parse_tool_call_deep_is_linear():
+    """Deep nesting must not trigger a quadratic rescan of the payload.
+
+    The original implementation retried ``json.loads`` at every ``}``,
+    re-parsing the whole prefix each time. On the 4000-deep input that cost
+    over a second; it is now linear, so a much deeper payload must stay in
+    the same order of time rather than growing quadratically.
+    """
+    import time
+
+    def elapsed(depth: int) -> float:
+        payload = '{"a":' * depth + "1" + "}" * depth
+        start = time.monotonic()
+        parse_tool_call("Action: search_models|" + payload)
+        return time.monotonic() - start
+
+    # Warm up so the first measurement is not dominated by import costs.
+    elapsed(50)
+    shallow, deep = elapsed(1000), elapsed(4000)
+    # A quadratic walk would be ~16x. Allow generous headroom for slow CI
+    # while still failing loudly if the old behaviour returns.
+    assert deep < max(shallow * 8, 0.5), (
+        f"parse time grew super-linearly: 1000 deep={shallow:.3f}s, "
+        f"4000 deep={deep:.3f}s"
+    )
