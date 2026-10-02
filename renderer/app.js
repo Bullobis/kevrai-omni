@@ -16,6 +16,7 @@ import { renderMnnPage } from "./modules/mnn.js";
 import { initAgent } from "./modules/agent.js";
 import { state, setState } from "./modules/state.js";
 import { applyTheme, wireThemeListener } from "./modules/theme.js";
+import { initSidebarToggle } from "./modules/sidebar.js";
 import { initModels, renderModelGrid, populateCategoryFilter,
          wireLogoFallbacks, getVgrid, hideGridSkeleton } from "./modules/models.js";
 import { initSearch, runSearch } from "./modules/search.js";
@@ -486,25 +487,10 @@ async function bootstrap() {
   const settingsBtn = document.querySelector("[data-action=open-settings]");
   if (settingsBtn) settingsBtn.addEventListener("click", (e) => { e.preventDefault(); openSettings().catch(() => {}); });
 
-  // v3.0.0 — Sidebar expand/collapse toggle (persisted in localStorage)
-  const sidebarToggle = document.getElementById("sidebar-toggle");
-  const appShell = document.querySelector(".app-shell");
-  const sidebar = document.querySelector(".sidebar");
-  if (sidebarToggle && appShell && sidebar) {
-    const SIDEBAR_KEY = "kevrai:sidebar-expanded";
-    const applySidebar = (expanded) => {
-      appShell.classList.toggle("sidebar-expanded", expanded);
-      sidebar.classList.toggle("expanded", expanded);
-      sidebarToggle.textContent = expanded ? "⟨" : "☰";
-      sidebarToggle.setAttribute("aria-label", expanded ? t("app.collapseSidebar") : t("app.expandSidebar"));
-    };
-    try { applySidebar(localStorage.getItem(SIDEBAR_KEY) === "1"); } catch (_) {}
-    sidebarToggle.addEventListener("click", () => {
-      const expanded = !appShell.classList.contains("sidebar-expanded");
-      applySidebar(expanded);
-      try { localStorage.setItem(SIDEBAR_KEY, expanded ? "1" : "0"); } catch (_) {}
-    });
-  }
+  // v3.0.0 — Sidebar expand/collapse toggle (persisted in localStorage).
+  // Logic lives in modules/sidebar.js so it can be unit-tested; app.js is a
+  // side-effecting bootstrap that tests cannot import.
+  initSidebarToggle(t);
 
   // v3.0.0 — Token field show/hide toggle
   document.querySelectorAll(".token-toggle").forEach((btn) => {

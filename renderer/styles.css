@@ -237,12 +237,11 @@ html[data-theme="light"] .skip-link { color: #fff; }
 @media (max-width: 1280px) {
   .app-shell.sidebar-expanded { grid-template-columns: 168px 1fr 300px; }
 }
-/* In the rail the label is only a tooltip, so keep it out of the a11y
-   tree twice over: the button already carries title + aria-label. */
+/* The label carries no behaviour of its own — the native tooltip comes from
+   the parent button's `title`. Letting pointer events fall through keeps the
+   label from swallowing hover (which would suppress that tooltip) and lets
+   clicks reach the button underneath. */
 .app-shell .tab-label { pointer-events: none; }
-@media (prefers-reduced-motion: reduce) {
-  .app-shell.sidebar-expanded .sidebar { transition: none; }
-}
 
 /* ---------- Main column ---------- */
 .main { padding: 18px 22px; overflow-y: auto; outline: none; min-width: 0; }
@@ -324,7 +323,7 @@ html[data-theme="light"] .skip-link { color: #fff; }
 /* Heat stats sit on their own line under the description. */
 .card-heat { margin: 4px 0 0; font-size: 11px; color: var(--mut); }
 .card-heat .pill { font-size: 10px; padding: 2px 7px; color: var(--warn); }
-.pill.heat { color: var(--warn); border-color: rgba(246, 193, 119, 0.28); }
+.pill.heat { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 28%, transparent); }
 /* A remote card with no upstream prose shows its repo id instead. */
 .card-desc.mono-repo { font-family: var(--font-mono, ui-monospace, monospace); opacity: 0.7; }
 
@@ -353,8 +352,8 @@ html[data-theme="light"] .skip-link { color: #fff; }
   border: 1px solid var(--bord); background: var(--card);
   color: var(--mut);
 }
-.pill.ok { color: var(--ok); border-color: rgba(93, 211, 158, 0.4); }
-.pill.warn { color: var(--warn); border-color: rgba(246, 193, 119, 0.4); }
+.pill.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+.pill.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
 
 .list { display: flex; flex-direction: column; gap: 8px; }
 .list.compact { gap: 6px; }
@@ -677,8 +676,8 @@ html[data-theme="light"] ::selection { color: #fff; }
   margin-bottom: var(--sp-2);
 
 }
-.mnn-state-card.ok { border-color: rgba(93, 211, 158, 0.4); }
-.mnn-state-card.warn { border-color: rgba(246, 193, 119, 0.4); }
+.mnn-state-card.ok { border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+.mnn-state-card.warn { border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
 
 /* MNN 对话窗 */
 .mnn-chat-card {
