@@ -977,9 +977,25 @@ def progress() -> dict[str, Any]:
 
 
 @app.get("/api/gpu")
-async def gpu() -> dict[str, Any]:
+async def gpu(request: Request) -> dict[str, Any]:
+    """GPU inventory.
+
+    ``detect`` forks several vendor probes with 3-5 s timeouts, so results are
+    cached for 60 s; ``?refresh=1`` forces a fresh probe. GPU hardware does not
+    change while the app runs, so a short TTL costs nothing and stops the
+    repeated IPC calls from spawning the probes again.
+    """
+    force = str(request.query_params.get("refresh", "")).lower() in {"1", "true", "yes"}
+    cached = _GPU_CACHE.get("data")
+    if (cached is not None and not force
+            and time.monotonic() - float(_GPU_CACHE.get("ts") or 0.0) < _GPU_CACHE_TTL_S):
+        return cached
+
     gpus = await detect_gpus()
-    return {"gpus": [g.model_dump() for g in gpus], "count": len(gpus)}
+    payload = {"gpus": [g.model_dump() for g in gpus], "count": len(gpus)}
+    _GPU_CACHE["data"] = payload
+    _GPU_CACHE["ts"] = time.monotonic()
+    return payload
 
 
 # ---------------------------------------------------------------------------
@@ -1866,6 +1882,12 @@ _HW_CACHE_TTL = 300.0
 _ENV_STATUS_CACHE: dict[str, Any] = {"ts": 0.0, "data": None}
 _ENV_STATUS_TTL_S = 30.0
 
+# /api/gpu 同样 fork 4 个探测子进程（nvidia-smi / rocm-smi 等，各带 3~5s
+# 超时），而 GPU 硬件在进程生命周期内不会变。缓存 60s：既能挡住 UI 反复
+# 询问造成的进程风暴，又不影响运行中插拔 eGPU 的场景。
+_GPU_CACHE: dict[str, Any] = {"ts": 0.0, "data": None}
+_GPU_CACHE_TTL_S = 60.0
+
 
 @app.get("/api/hardware")
 async def hardware(request: Request, refresh: int = 0) -> dict[str, Any]:
@@ -1899,7 +1921,7 @@ async def recommend(limit: int = 12, category: str | None = None,
         _HW_CACHE["ts"] = now
     hw = _HW_CACHE["data"]
     recs = recommend_models(
-        [m.model_dump() for m in CATALOG.models],
+        _get_dumped_models(),
         hw, limit=limit, category=category,
     )
     return {
