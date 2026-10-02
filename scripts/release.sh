@@ -93,9 +93,15 @@ step "4. Working tree must be clean"
 # ----------------------------------------------------------------------
 if git rev-parse --git-dir >/dev/null 2>&1; then
   if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
-    info "warning: working tree has uncommitted changes"
-    if [ "${DRY_RUN}" -eq 0 ]; then
+    # The runbook lists a clean tree as a pre-flight requirement, so a dirty
+    # one has to stop the release: building here would ship uncommitted code
+    # that no tag describes. --dry-run still reports it and continues.
+    if [ "${DRY_RUN}" -eq 1 ]; then
+      info "warning: working tree has uncommitted changes (dry-run continues)"
       git status --porcelain | head -10
+    else
+      git status --porcelain | head -10
+      fail "working tree has uncommitted changes; commit or stash them first"
     fi
   else
     info "working tree clean"

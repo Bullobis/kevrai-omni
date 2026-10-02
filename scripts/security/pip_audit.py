@@ -227,6 +227,7 @@ def main() -> int:
             source = "osv-direct (pip-audit unavailable)"
         else:
             vulns = None
+            source = "unresolved"
             note = "could not resolve version"
 
         rows.append({
@@ -240,12 +241,23 @@ def main() -> int:
             "note": note,
         })
 
+    # A package whose version never resolved was never actually checked.
+    # Reporting that as `vulnerabilities: null` alone is indistinguishable
+    # from "no vulnerabilities found" once the rows are summed, which reads
+    # as a clean bill of health. `status` makes the difference explicit and
+    # `complete` lets a caller gate on it instead of parsing per-row notes.
+    unchecked = [r["name"] for r in rows if r["vulnerabilities"] is None]
     report = {
         "tool": "pip_audit.py",
         "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
         "requirements_file": str(req_path),
         "pip_audit_available": shutil.which("pip-audit") is not None,
         "pip_audit_error": (audit or {}).get("error") if isinstance(audit, dict) else None,
+        "status": "complete" if not unchecked else "incomplete",
+        "complete": not unchecked,
+        "unchecked_count": len(unchecked),
+        "unchecked_packages": unchecked,
+        "vulnerability_count": sum(len(r["vulnerabilities"] or []) for r in rows),
         "direct_dependencies": rows,
         "transitive_dependency_count": len(by_name),
     }
@@ -255,6 +267,13 @@ def main() -> int:
     else:
         Path(args.out).write_text(text + "\n", encoding="utf-8")
         print(f"wrote {args.out} ({len(rows)} direct deps, {len(by_name)} transitive)")
+    if unchecked:
+        # Report-only tooling should still be loud when it could not see.
+        print(
+            f"warning: {len(unchecked)}/{len(rows)} dependencies could not be "
+            f"audited (network or resolver unavailable): {', '.join(unchecked)}",
+            file=sys.stderr,
+        )
     return 0
 
 
