@@ -52,6 +52,8 @@ echo "  py:   $(${PY} --version 2>&1 || true)"
 HOST_OS="$(uname -s)"
 WINRES=""
 WINE_CMD=""
+WINE_32BIT_OK=0
+WINE_NO_32BIT=""
 if [ "${HOST_OS}" != "MINGW"* ] && [ "${HOST_OS}" != "MSYS"* ] && [ "${HOST_OS}" != "CYGWIN"* ]; then
   WINRES="$(command -v go-winres || true)"
   if [ -z "${WINRES}" ]; then
@@ -66,22 +68,82 @@ if [ "${HOST_OS}" != "MINGW"* ] && [ "${HOST_OS}" != "MSYS"* ] && [ "${HOST_OS}"
   echo "  winres: ${WINRES}"
 
   # Wine may be needed for the NSIS target.  Probe it for real: `--version`
-  # alone succeeds even when the loader/DLL pairing is broken, so also run a
-  # trivial PE command and check for the expected output.
-  for candidate in "$(command -v wine64 || true)" "$(command -v wine || true)"; do
+  # alone succeeds even when the loader/DLL pairing is broken.
+  #
+  # Two independent gates, because they fail for different reasons and the
+  # user needs to be told which one bit them:
+  #
+  #   gate 1 — can Wine run a 64-bit PE at all?  WINEARCH=win64 is used here
+  #            deliberately: a win32 prefix cannot even be created when
+  #            `wine32:i386` is missing, so probing with win32 would fail at
+  #            gate 1 and we could never tell the two problems apart.
+  #   gate 2 — can it run a **32-bit** PE?  electron-builder's NSIS step runs
+  #            makensis.exe, which is PE32/i386.  A Wine install with only the
+  #            `wine64` package passes gate 1 (its cmd is 64-bit) and then dies
+  #            inside electron-builder with "could not load ntdll.so ...
+  #            i386-unix/ntdll.so: cannot open shared object file" — a much
+  #            more confusing message.  Probing with a real 32-bit PE surfaces
+  #            it here, where we can name the missing package.
+  #
+  # WINEARCH=win32 is correct and required for the *build* (see the NSIS
+  # section below).  What breaks it is a missing `wine32:i386`, not the
+  # WINEARCH value.
+  #
+  # Candidate order matters.  `/usr/bin/wine` is a shell wrapper that runs the
+  # i386 loader unconditionally and aborts when `wine32:i386` is absent — the
+  # exact situation gate 2 exists to diagnose.  The bare `wine64` loader still
+  # runs 64-bit PEs in that state, so it is tried first and the wrapper second;
+  # otherwise the probe would give up before it could name the real problem.
+  # Note: on Debian/Ubuntu there is no `wine64` *command* — only the bare
+  # loader at /usr/lib/wine/wine64.  A `command -v wine64` probe silently
+  # yields nothing, so the real path is listed explicitly alongside the
+  # wrapper.
+  for candidate in /usr/lib/wine/wine64 "$(command -v wine64 || true)" "$(command -v wine || true)"; do
     [ -n "${candidate}" ] || continue
-    if [ "$("${candidate}" --version 2>/dev/null | head -c 5)" = "wine-" ]; then
-      probe_prefix="$(mktemp -d)"
-      if WINEARCH=win32 WINEPREFIX="${probe_prefix}" WINEDEBUG=-all \
-           timeout 120 "${candidate}" cmd /c "echo PROBE_OK" 2>/dev/null | grep -q PROBE_OK; then
-        WINE_CMD="${candidate}"
-      fi
-      rm -rf "${probe_prefix}"
-      [ -n "${WINE_CMD}" ] && break
+    [ "$("${candidate}" --version 2>/dev/null | head -c 5)" = "wine-" ] || continue
+
+    # ── gate 1: 64-bit PE ──
+    probe64="$(mktemp -d)"
+    if ! WINEARCH=win64 WINEPREFIX="${probe64}" WINEDEBUG=-all \
+         timeout 120 "${candidate}" cmd /c "echo PROBE_OK" 2>/dev/null | grep -q PROBE_OK; then
+      rm -rf "${probe64}"
+      continue
     fi
+    rm -rf "${probe64}"
+
+    # ── gate 2: 32-bit PE ──
+    probe32="$(mktemp -d)"
+    probe32_ok=0
+    nsis_mk="$(find "${HOME}/.cache/electron-builder" -name makensis.exe -type f 2>/dev/null | head -1)"
+    if [ -n "${nsis_mk}" ]; then
+      if WINEARCH=win32 WINEPREFIX="${probe32}" WINEDEBUG=-all \
+           timeout 120 "${candidate}" "${nsis_mk}" -VERSION >/dev/null 2>&1; then
+        probe32_ok=1
+      fi
+    elif [ -d /usr/lib/i386-linux-gnu/wine/i386-unix ]; then
+      # makensis not cached yet, so we cannot run it.  Check the loader that
+      # its absence would break instead of guessing.
+      probe32_ok=1
+    fi
+    rm -rf "${probe32}"
+
+    if [ "${probe32_ok}" -eq 1 ]; then
+      WINE_CMD="${candidate}"
+      WINE_32BIT_OK=1
+    else
+      WINE_NO_32BIT="${candidate}"
+    fi
+    [ -n "${WINE_CMD}" ] && break
   done
   if [ -n "${WINE_CMD}" ]; then
     echo "  wine:   ${WINE_CMD} (usable — NSIS installer will be built)"
+  elif [ -n "${WINE_NO_32BIT}" ]; then
+    echo "  wine:   ${WINE_NO_32BIT} found, but 32-bit PE support is MISSING."
+    echo "          NSIS needs makensis.exe (PE32/i386); without wine32:i386 it"
+    echo "          fails with \"could not load ntdll.so ... i386-unix/ntdll.so\"."
+    echo "          Fix:  dpkg --add-architecture i386 && apt-get update && \\"
+    echo "                apt-get install -y wine wine64 wine32:i386"
+    echo "          NSIS installer will be skipped; the portable zip is unaffected."
   else
     echo "  wine:   not usable — NSIS installer will be skipped"
   fi
@@ -318,10 +380,18 @@ step "7. Build the NSIS installer"
 #
 # Two environment details matter and are easy to get wrong:
 #
-#   1. WINEARCH must be win32.  Ubuntu's `wine` launcher is a 32-bit ELF
-#      binary; forcing WINEARCH=win64 makes it look for a 64-bit loader and
-#      fail with "could not load kernel32.dll, status c0000135".
-#   2. WINEPREFIX must point at a prefix whose architecture matches WINEARCH,
+#   1. WINEARCH must be win32, because makensis.exe is PE32/i386.  Note this
+#      is *not* because Ubuntu's `wine` launcher is 32-bit — it is not; with
+#      `wine32:i386` installed the launcher uses the 64-bit loader in wow64
+#      mode and WINEARCH=win32 is still what works.  An earlier version of
+#      this comment claimed the opposite and sent people down the wrong path.
+#   2. The `wine32:i386` package must be installed.  Without it there is no
+#      i386 loader at all, and Wine fails with
+#        "could not load ntdll.so: .../i386-unix/ntdll.so: cannot open
+#         shared object file"
+#      which has nothing to do with WINEARCH.  The probe above gates on this
+#      so the failure surfaces here with an actionable message.
+#   3. WINEPREFIX must point at a prefix whose architecture matches WINEARCH,
 #      otherwise Wine refuses to reuse it.
 #
 # macOS and native Windows builds skip this block entirely.
@@ -364,8 +434,15 @@ if [ "${NSIS_OK}" -eq 0 ]; then
   echo "    The portable zip above is fully functional and needs no installer."
   echo "    To produce the installer:"
   echo "      • run  npm run build:win  on a Windows machine, or"
-  echo "      • install Wine (apt-get install -y wine64 wine32:i386) and re-run"
-  echo "        this script — it will pick Wine up automatically."
+  if [ -n "${WINE_NO_32BIT}" ]; then
+    echo "      • install 32-bit Wine support and re-run this script — the"
+    echo "        makensis.exe that NSIS needs is a 32-bit PE:"
+    echo "          dpkg --add-architecture i386 && apt-get update && \\"
+    echo "            apt-get install -y wine wine64 wine32:i386"
+  else
+    echo "      • install Wine (apt-get install -y wine64 wine32:i386) and re-run"
+    echo "        this script — it will pick Wine up automatically."
+  fi
   echo ""
 fi
 
