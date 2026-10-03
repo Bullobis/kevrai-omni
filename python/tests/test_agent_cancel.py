@@ -23,7 +23,6 @@ import asyncio
 import threading
 import time
 
-
 from app.agent import Agent, AgentMemory, ToolContext
 from app.agent.tool_registry import Tool, ToolRegistry
 
@@ -400,6 +399,7 @@ def test_rest_agent_cancel_noop_when_idle(hub_client):
 
 def test_rest_agent_cancel_requires_bearer():
     from fastapi.testclient import TestClient
+
     from app import main as app_main
 
     with TestClient(app_main.app) as c:

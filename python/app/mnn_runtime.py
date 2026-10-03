@@ -681,7 +681,7 @@ class _MnnSubprocessClient:
         p.start()
         child_conn.close()
         self._conn = parent_conn
-        self._proc = p
+        self._proc = p  # type: ignore[assignment]
         self._killed_by_us = False
         self._state["error"] = ""
         if not parent_conn.poll(_CHILD_READY_TIMEOUT_S):

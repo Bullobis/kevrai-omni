@@ -37,7 +37,6 @@ import threading
 from pathlib import Path
 from typing import Any
 
-
 os.environ.setdefault("KEVRAI_SIDECAR_SECRET", "test-sidecar-secret")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -47,7 +46,6 @@ import httpx  # noqa: E402
 
 from app import main as app_main  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -56,7 +54,7 @@ from app import main as app_main  # noqa: E402
 class _NoOpLock:
     """Stand-in lock that serialises nothing — used to expose the raw race."""
 
-    async def __aenter__(self) -> "_NoOpLock":
+    async def __aenter__(self) -> _NoOpLock:
         return self
 
     async def __aexit__(self, *exc: Any) -> bool:

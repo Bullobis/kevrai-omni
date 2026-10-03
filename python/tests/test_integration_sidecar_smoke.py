@@ -102,7 +102,7 @@ def test_sidecar_real_subprocess_smoke(tmp_path: Path) -> None:
     # 子进程日志落到文件（不用 PIPE，避免管道缓冲写满把 server 卡死）；
     # 失败时可 tail 这个文件定位。
     log_path = tmp_path / "sidecar.log"
-    log_fh = open(log_path, "wb")
+    log_fh = open(log_path, "wb")  # noqa: SIM115
     cmd = [
         sys.executable, "-m", "uvicorn", "app.main:app",
         "--host", "127.0.0.1", "--port", str(port), "--log-level", "warning",

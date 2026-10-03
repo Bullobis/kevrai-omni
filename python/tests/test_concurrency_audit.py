@@ -39,7 +39,6 @@ import httpx  # noqa: E402
 from app import main as app_main  # noqa: E402
 from app.engines import EngineManager, EngineRecord, EngineState  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -281,9 +280,9 @@ def test_mnn_get_client_single_instance(monkeypatch):
 
 
 def test_get_agent_single_build(monkeypatch, tmp_xdg):
+    from app import agent as agent_mod
     from app.agent import skill_hub as sh_mod
     from app.agent import tools as tools_mod
-    from app import agent as agent_mod
 
     constructions = {"n": 0}
 
@@ -400,7 +399,7 @@ def test_converter_single_flight_rejects_second():
 
 def test_settings_atomic_write_no_torn_file(tmp_path):
     """Concurrent save_settings must never leave a partial settings.json."""
-    from app.settings import Settings, save_settings, load_settings
+    from app.settings import Settings, load_settings, save_settings
 
     p = tmp_path / "settings.json"
     errors: list[BaseException] = []

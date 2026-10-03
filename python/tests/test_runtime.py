@@ -32,18 +32,18 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app import ltx_runtime, mnn_runtime  # noqa: E402
+from app.drama import (  # noqa: E402
+    LlmOutputError,
+    _normalize_script,
+    _safe_int,
+    build_storyboard,
+)
 from app.ltx_runtime import (  # noqa: E402
     LtxManager,
     LtxParams,
     TaskState,
     _Cancelled,
     _write_video,
-)
-from app.drama import (  # noqa: E402
-    LlmOutputError,
-    _normalize_script,
-    _safe_int,
-    build_storyboard,
 )
 
 

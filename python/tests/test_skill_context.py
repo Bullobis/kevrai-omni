@@ -329,6 +329,7 @@ class TestHistoryContext:
 # ===========================================================================
 def test_ws_agent_rejects_bearerless_upgrade():
     from fastapi.testclient import TestClient
+
     from app import main as app_main
 
     with TestClient(app_main.app, headers={"authorization": "Bearer wrong-secret"}) as c:

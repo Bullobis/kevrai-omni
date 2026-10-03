@@ -22,10 +22,10 @@ class TestInstallEngineSha256:
         fake_engine_manager.install = MagicMock(return_value={
             "ok": True, "engine_id": "llama-cpp", "path": "/tmp/test",
         })
-        with patch("app.main.asyncio.to_thread", new=AsyncMock(return_value={"ok": True})):
-            with patch.object(app.state, "engine_manager", fake_engine_manager, create=True):
-                with patch("app.sources.measure_sources", new=AsyncMock(return_value=[])):
-                    with patch("app.sources.pick_best", return_value={"url": "https://example.com/eng.zip"}):
+        with patch("app.main.asyncio.to_thread", new=AsyncMock(return_value={"ok": True})), \
+                 patch.object(app.state, "engine_manager", fake_engine_manager, create=True), \
+                 patch("app.sources.measure_sources", new=AsyncMock(return_value=[])), \
+                 patch("app.sources.pick_best", return_value={"url": "https://example.com/eng.zip"}):
                         client = TestClient(app)
                         resp = client.post("/api/env/install-engine", json={
                             "id": "llama.cpp",

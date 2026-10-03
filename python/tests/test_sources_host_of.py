@@ -8,7 +8,6 @@ literal prefix only.
 
 from __future__ import annotations
 
-
 from app.sources import _host_of
 
 

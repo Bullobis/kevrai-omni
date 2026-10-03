@@ -242,9 +242,8 @@ def test_modelscope_urls_well_formed():
     violations = []
     for mid, model in m.items():
         for url in model.get("sources", []):
-            if "modelscope.cn" in url:
-                if not url.startswith("https://modelscope.cn/models/"):
-                    violations.append(f"{mid}: {url}")
+            if "modelscope.cn" in url and not url.startswith("https://modelscope.cn/models/"):
+                violations.append(f"{mid}: {url}")
     assert not violations, f"Malformed ModelScope URLs: {violations[:5]}"
 
 

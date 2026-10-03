@@ -318,11 +318,9 @@ def test_media_to_local_data_url_fuzz():
             pytest.fail(f"_media_to_local raised {type(e).__name__} for {url!r}: {e}")
         finally:
             for p in created:
-                try:
+                with contextlib.suppress(OSError):
 
                     os.unlink(p)
-                except OSError:
-                    pass
         n += 1
     assert n >= 300
 
@@ -344,11 +342,9 @@ def test_media_to_local_file_path_traversal():
             pytest.fail(f"unexpected {type(e).__name__} for {url!r}: {e}")
         finally:
             for p in created:
-                try:
+                with contextlib.suppress(OSError):
 
                     os.unlink(p)
-                except OSError:
-                    pass
 
 
 class _FakeResp:
@@ -389,11 +385,9 @@ def test_media_to_local_http_non200_mocked(monkeypatch):
         assert e.status_code == 400
     finally:
         for p in created:
-            try:
+            with contextlib.suppress(OSError):
 
                 os.unlink(p)
-            except OSError:
-                pass
 
 
 # ---------------------------------------------------------------------------
@@ -532,7 +526,6 @@ def test_engines_install_uninstall_fuzz(api_client, tmp_xdg):
 
 
 def test_path_param_fuzz(api_client):
-    import httpx
 
     evil = ["", "../", "..%2f..%2fetc", "a" * 5000, "\x00", "%00",
             "..\\..\\windows", "foo/bar", "??", "{}", "{{7*7}}"]
