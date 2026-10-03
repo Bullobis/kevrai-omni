@@ -188,9 +188,9 @@ jobs:
               echo "✓ $f"
             fi
           done < <(find . -type f -name '*.js' \
-                    -not -path './node_modules/*' \
-                    -not -path './build/*' \
-                    -not -path './dist/*')
+                    -not -path '*/node_modules/*' \
+                    -not -path '*/build/*' \
+                    -not -path '*/dist/*')
           if [ "$fail" -eq 1 ]; then
             echo "❌ one or more .js files failed to parse" >> $GITHUB_STEP_SUMMARY
             exit 1
