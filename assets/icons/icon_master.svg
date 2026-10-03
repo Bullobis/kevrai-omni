@@ -1,69 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="Kevrai Omni">
+  <!--
+    Kevrai Omni - icon master (vector source of truth)
+
+    栅格化产物全部由本文件派生，请勿直接编辑那些文件：
+      assets/icons/icon-{16,24,32,48,64,128,256,512,1024}.png
+      assets/icons/icon.ico
+      assets/icons/icon-preview-on-white.png
+
+    几何由 logo-final.png (1024x1024) 轮廓追踪得到，不是手工估算：
+      主形状  cv2.findContours(RETR_CCOMP) + approxPolyDP(eps=0.002*周长)
+      内六边形 逐顶点定位（实测线宽 1px，峰值亮度 87/255，约 #2E5A78）
+    fill-rule="evenodd" 用来挖空笔画之间的封闭区域。
+
+    注意：外六边形并非正六边形。实测顶点横向 209..815、纵向 169..849，
+    高宽比约 1.12 —— 不要"顺手修正"成正六边形，那是错的。
+  -->
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#3B2BD6"/>
-      <stop offset="0.5" stop-color="#7A4BFF"/>
-      <stop offset="1" stop-color="#18C8F0"/>
-    </linearGradient>
-    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#9F7BFF"/>
-      <stop offset="1" stop-color="#27E0E0"/>
-    </linearGradient>
-    <linearGradient id="kStroke" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#DCE8FF"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.65">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55"/>
-      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.10"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    <radialGradient id="bg" cx="0.5" cy="0.44" r="0.78">
+      <stop offset="0" stop-color="#0B2350"/>
+      <stop offset="0.55" stop-color="#061A3C"/>
+      <stop offset="1" stop-color="#030D24"/>
     </radialGradient>
-    <radialGradient id="hub" cx="0.38" cy="0.32" r="0.75">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="0.55" stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#BCD8FF"/>
-    </radialGradient>
-    <linearGradient id="ringHi" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
-      <stop offset="0.35" stop-color="#FFFFFF" stop-opacity="0.55"/>
-      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.55"/>
-      <stop offset="0.7" stop-color="#FFFFFF" stop-opacity="0"/>
+    <linearGradient id="accent" x1="0" y1="0" x2="0.2" y2="1">
+      <stop offset="0" stop-color="#22F7F8"/>
+      <stop offset="0.5" stop-color="#00F4F5"/>
+      <stop offset="1" stop-color="#00D8E4"/>
     </linearGradient>
-    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#1A0B57" flood-opacity="0.35"/>
-    </filter>
-    <filter id="ringShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0A1F66" flood-opacity="0.30"/>
-    </filter>
-    <filter id="kShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0F1456" flood-opacity="0.35"/>
-    </filter>
-    <filter id="hubShadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F1456" flood-opacity="0.40"/>
-    </filter>
   </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
 
-  <!-- Base squircle -->
-  <rect x="112" y="112" width="800" height="800" rx="200" ry="200" fill="url(#bg)" filter="url(#soft)"/>
-  <rect x="112" y="112" width="800" height="800" rx="200" ry="200" fill="url(#glow)"/>
-  <path d="M160 300 Q340 150 560 180 Q420 250 320 360 Z" fill="#FFFFFF" opacity="0.12"/>
+  <!-- 内层装饰六边形：1px 细线 -->
+  <path d="M511 237 L756 375 L756 619 L515 781 L270 651 L270 369 Z"
+        fill="none" stroke="#2E5A78" stroke-width="1.6" stroke-linejoin="round" opacity="0.85"/>
 
-  <!-- O ring (gradient) -->
-  <circle cx="512" cy="512" r="220" fill="none" stroke="url(#ring)" stroke-width="56" filter="url(#ringShadow)"/>
-
-  <!-- Subtle glass-highlight arc on the O ring (a clean band, not dashes) -->
-  <circle cx="512" cy="512" r="220" fill="none" stroke="url(#ringHi)" stroke-width="8" stroke-opacity="0.7"
-          stroke-dasharray="260 1220" stroke-dashoffset="-360" transform="rotate(-40 512 512)"/>
-
-  <!-- K letter: junction at O center, vertical crosses O ring top & bottom, arms extend right and cross O ring -->
-  <g stroke="#FFFFFF" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" fill="none" filter="url(#kShadow)">
-    <line x1="512" y1="268" x2="512" y2="756"/>
-    <line x1="512" y1="512" x2="746" y2="286"/>
-    <line x1="512" y1="512" x2="746" y2="738"/>
+  <!-- 主形状 -->
+  <g fill="url(#accent)" fill-rule="evenodd">
+    <!-- area=51776 px, bbox x208..815 y168..849 -->
+    <path d="M511 168 L211 333 L208 674 L217 688 L495 843 L517 849 L813 681 L815 339 L804 326 ZM511 195 L790 348 L790 667 L513 823 L233 667 L233 348 Z"/>
+    <!-- area=45983 px, bbox x344..700 y349..666 -->
+    <path d="M698 356 L693 352 L593 352 L586 369 L472 484 L469 355 L361 353 L357 387 L344 405 L347 420 L357 429 L357 561 L345 576 L345 589 L357 603 L359 659 L463 662 L469 658 L472 532 L586 645 L592 663 L694 661 L700 650 L698 615 L581 500 L640 440 L653 441 L665 434 L671 422 L668 405 L699 374 ZM446 526 L447 527 L447 637 L446 638 L381 638 L380 637 L380 603 L388 597 L393 587 L393 578 L392 575 ZM492 520 L493 519 L550 519 L554 523 L559 525 L566 525 L571 523 L676 626 L676 637 L675 638 L615 638 L609 632 L603 631 ZM671 376 L654 394 L643 393 L636 395 L629 400 L623 411 L624 425 L561 488 L554 490 L548 497 L493 497 L492 496 L603 383 L609 381 L614 375 L670 375 ZM446 375 L447 376 L447 493 L441 498 L439 502 L438 513 L384 563 L382 563 L379 560 L380 559 L380 465 L379 464 L380 432 L379 430 L389 421 L393 412 L393 404 L389 395 L380 387 L380 376 L381 375 Z"/>
   </g>
-
-  <!-- Junction hub: the "middle" overlap focal point -->
-  <circle cx="512" cy="512" r="38" fill="url(#hub)" filter="url(#hubShadow)"/>
-  <circle cx="512" cy="512" r="38" fill="none" stroke="url(#ring)" stroke-width="5" opacity="0.85"/>
-  <circle cx="512" cy="512" r="13" fill="#FFFFFF" opacity="0.95"/>
 </svg>
