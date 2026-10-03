@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import contextlib
 import json
 import os
 import random
@@ -257,13 +258,10 @@ def test_load_catalog_fuzz(tmp_path):
             ])
             _write(d, "engines.json", eng)
 
-        try:
+        # Any *clean*, anticipated exception is acceptable — but we want to
+        # surface surprising ones (KeyError/AttributeError) as test failures.
+        with contextlib.suppress(Exception):
             load_catalog(d, dev_mode=True)
-        except (FileNotFoundError, ValueError, TypeError,
-                json.JSONDecodeError, Exception):
-            # Any *clean*, anticipated exception is acceptable — but we want to
-            # surface surprising ones (KeyError/AttributeError) as test failures.
-            pass
         n += 1
     assert n >= 400
 
@@ -548,11 +546,15 @@ def test_path_param_fuzz(api_client):
             url = route.format(p=p)
             try:
                 r = api_client.get(url)
-            except httpx.InvalidURL:
-                # The HTTP client itself refuses to build e.g. a NUL-bearing
-                # URL; that never reaches the server and is not a server 500.
-                n += 1
-                continue
+            except Exception as exc:
+                # The HTTP client may refuse to build a URL (e.g. NUL-bearing)
+                # before it reaches the server; that is not a server 500.
+                # Any InvalidURL subclass (or an aliased httpx whose InvalidURL
+                # lives on a distinct class object) is treated the same.
+                if type(exc).__name__ == "InvalidURL":
+                    n += 1
+                    continue
+                raise
             _assert_no_500(r, f"GET {url}")
             n += 1
     assert n >= len(routes) * len(evil)
