@@ -31,6 +31,30 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 # before any TestClient makes a request.
 os.environ.setdefault("KEVRAI_SIDECAR_SECRET", "test-sidecar-secret")
 
+# Session-level XDG / APPDATA isolation. ``app.main`` computes AND creates
+# APP_ROOT/MODELS_DIR at import time (module-level constants), and many test
+# modules import ``app`` at collection time -- before any per-test fixture can
+# point XDG at a throwaway dir. Without this guard, side effects such as the
+# local-model import smoke test land in the user's real data directory
+# (observed: a fake.gguf copied into the live XDG data dir). Establish one
+# isolated session root here, before ``app`` is ever imported. setdefault
+# keeps any explicitly provided environment override intact.
+_SESSION_ROOT = Path(tempfile.mkdtemp(prefix="kevrai-session-"))
+# Force (not setdefault): the runner already exports real XDG vars, so
+# setdefault leaves them in place and the suite still touches live data.
+# KEVRAI_TEST_KEEP_XDG opts out for the rare test that inspects real paths.
+if not os.environ.get("KEVRAI_TEST_KEEP_XDG"):
+    for _env, _sub in (
+        ("XDG_DATA_HOME", "data"),
+        ("XDG_CACHE_HOME", "cache"),
+        ("XDG_STATE_HOME", "state"),
+        ("LOCALAPPDATA", "appdata"),
+        ("APPDATA", "appdata"),
+    ):
+        _p = _SESSION_ROOT / _sub
+        _p.mkdir(parents=True, exist_ok=True)
+        os.environ[_env] = str(_p)
+
 # Inject the bearer header into EVERY TestClient in the suite, exactly like the
 # Electron main process does. Individual tests stay focused on what they
 # actually assert; the auth-enforcement tests override this per-request.

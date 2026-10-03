@@ -563,7 +563,13 @@
     "noSkills": "No skills",
     "loadFailed": "Load failed",
     "historyPlaceholder": "— History —",
-    "sessionLabel": "{id} ({n} msgs)"
+    "sessionLabel": "{id} ({n} msgs)",
+    "emptyTitle": "How can I help?",
+    "emptySub": "In rules mode you can use search, recommendations and hardware tools; load a local LLM for free conversation.",
+    "suggestHardware": "What models can my hardware run?",
+    "suggestSearch": "Search for Qwen models",
+    "suggestRecommend": "Recommend models for 8GB VRAM",
+    "suggestMusic": "Find music generation models"
   },
   "mnn": {
     "title": "⬢ MNN inference engine (Alibaba open-source)",

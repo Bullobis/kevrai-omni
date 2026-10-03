@@ -6,6 +6,7 @@ import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { unwrap } from "./net.js";
 import { t } from "./i18n.js";
+import { renderMarkdown } from "./markdown.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -30,6 +31,26 @@ export async function initAgent() {
   await _refreshStatus();
   _loadSkills();
   _loadSessionList();
+}
+
+function _agentEmptyHtml() {
+  const qs = [
+    t("agent.suggestHardware"),
+    t("agent.suggestSearch"),
+    t("agent.suggestRecommend"),
+    t("agent.suggestMusic"),
+  ];
+  return `
+    <div id="agent-empty" class="agent-empty">
+      <div class="agent-empty-ico" aria-hidden="true">🤖</div>
+      <div class="agent-empty-title">${t("agent.emptyTitle")}</div>
+      <div class="agent-empty-sub">${t("agent.emptySub")}</div>
+      <div class="agent-empty-suggests">
+        ${qs
+          .map((q) => `<button type="button" class="agent-empty-suggest" data-q="${esc(q)}">${esc(q)}</button>`)
+          .join("")}
+      </div>
+    </div>`;
 }
 
 function _renderShell() {
@@ -81,7 +102,7 @@ function _renderShell() {
           </div>
         </div>
       </details>
-      <div id="agent-messages" class="agent-messages"></div>
+      <div id="agent-messages" class="agent-messages">${_agentEmptyHtml()}</div>
       <div class="agent-input-area">
         <textarea id="agent-input" class="agent-input" rows="2"
           placeholder="${t("agent.inputPlaceholder")}"
@@ -115,9 +136,19 @@ function _wireEvents(root) {
     }
   });
   sendBtn.addEventListener("click", _sendMessage);
+  // 空状态示例问题：点击即填入并发送
+  $("#agent-messages", root).addEventListener("click", (e) => {
+    const b = e.target.closest && e.target.closest(".agent-empty-suggest");
+    if (!b) return;
+    const q = b.getAttribute("data-q");
+    if (!q) return;
+    input.value = q;
+    sendBtn.disabled = false;
+    _sendMessage();
+  });
   newBtn.addEventListener("click", () => {
     _sessionId = "sess_" + Date.now().toString(36);
-    $("#agent-messages", root).innerHTML = "";
+    $("#agent-messages", root).innerHTML = _agentEmptyHtml();
     input.value = "";
     sendBtn.disabled = true;
     _loadSessionList();
@@ -389,6 +420,9 @@ async function _loadSessionMessages() {
   } catch (e) {
     console.warn("load messages failed:", e);
   }
+  if (!container.querySelector(".agent-msg")) {
+    container.innerHTML = _agentEmptyHtml();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -448,6 +482,7 @@ async function _sendMessage() {
 function _appendMessage(role, content, animate = false, tools = []) {
   const container = document.getElementById("agent-messages");
   if (!container) return;
+  container.querySelector("#agent-empty")?.remove();
   const div = document.createElement("div");
   div.className = `agent-msg agent-msg-${role}`;
   const label = role === "user" ? "你" : "Kevrai Agent";
@@ -457,9 +492,11 @@ function _appendMessage(role, content, animate = false, tools = []) {
   const regenBtn = role === "assistant"
     ? `<button type="button" class="agent-msg-btn" data-msg-action="regen" title="重新生成">↻ 重新生成</button>`
     : "";
+  const contentHtml =
+    role === "assistant" ? renderMarkdown(content) : esc(content).replace(/\n/g, "<br>");
   div.innerHTML = `
     <div class="agent-msg-label">${esc(label)}</div>
-    <div class="agent-msg-content">${esc(content).replace(/\n/g, "<br>")}</div>
+    <div class="agent-msg-content">${contentHtml}</div>
     ${toolsHtml}
     <div class="agent-msg-actions">
       <button type="button" class="agent-msg-btn" data-msg-action="copy" title="复制">⧉ 复制</button>
