@@ -1,12 +1,12 @@
 ===============================================================================
                     KEVRAI OMNI COMMUNITY LICENSE
-                           Version 2.1
+                           Version 2.5
 ===============================================================================
 
 Copyright (c) 2026 Kevrai Omni contributors.
 All rights not expressly granted to you in this License are reserved.
 
-"Kevrai Omni Community License v2.1" is a source-available license. It is
+"Kevrai Omni Community License v2.5" is a source-available license. It is
 NOT an Open Source Initiative (OSI) approved open source license, because it
 imposes a Commercial Use authorization requirement. However, it grants broad
 non-commercial use rights, including the right to view, study, modify, and
@@ -45,7 +45,51 @@ its substance (the "anti-circumvention principle"): conduct that achieves in
 substance what this License prohibits shall not be rendered permissible merely
 because it is structured to avoid a literal prohibition. See Article 17.
 
+
 ===============================================================================
+VERSION HISTORY — v2.5 (supersedes v2.1)
+===============================================================================
+v2.5 (2026-10) — Enforcement & AI Training hardening
+  • Article 12: new Section 12.10 — full enforcement-cost recovery for the
+    Licensor (discovery, forensics, technical investigation, platform
+    takedown costs). Section 12.6 prevailing-party recovery is retained
+    and is now stated to be the *minimum*, not the exclusive, remedy.
+  • Article 12: new Section 12.11 — joint & several liability where a
+    breach is caused by Affiliates, contractors, agents, or a group of
+    coordinating entities acting in concert.
+  • Article 17: new Section 17.7 — enumerated non-exhaustive list of
+    concrete evasion patterns (fork-and-rebrand, service wrapping,
+    threshold splitting, cloud-jumping, model-hopping, log mining,
+    synthetic-use patterns) that are per-se considered circumvention.
+  • Article 17: new Section 17.8 — attribution-of-identity: the entity
+    that benefits economically from the Software is the Licensor-facing
+    licensee, regardless of the intermediate legal entity that holds the
+    copy.
+  • Article 18: new Section 18.6 — shadow-model and query-log training
+    ban: training, fine-tuning, or distillation from Inputs, Outputs,
+    traces, logs, transcripts, session recordings, prompt/response pairs,
+    or embeddings is prohibited even where such artifacts are otherwise
+    accessible to the Licensee.
+  • Article 18: new Section 18.7 — synthetic-competitor prohibition:
+    building an integrated product whose primary value proposition
+    duplicates the Software's functionality (even with an independent
+    stack) is treated as Commercial Use requiring Authorization.
+  • Article 18: new Section 18.8 — model-hopping: substituting a
+    differently-licensed upstream model does not avoid this Article;
+    the more restrictive of this Article and the substituted model's own
+    license governs.
+  • NEW Article 20 — Compliance Audit & Annual Reporting: commercial
+    licensees must maintain records, submit an annual compliance report,
+    and cooperate with the Licensor's verification program.
+  • Article 19 updated to cross-reference Article 20.
+  • Appendix B (application template) and Appendix F (compliance
+    checklist) updated to reflect the new obligations.
+  • Articles 1–16 and Appendices A, C, D, E: substantively unchanged
+    from v2.1.
+
+v2.1 (2026) — Initial release of the Kevrai Omni Community License.
+===============================================================================
+
 ARTICLE 1 — DEFINITIONS
 ===============================================================================
 
@@ -225,7 +269,8 @@ ARTICLE 1 — DEFINITIONS
 1.15 "Prohibited Use" means any use of the Software or its Derivative Works
      that is prohibited under Article 7 (Responsible AI Use and Prohibited
      Uses), Article 17 (Anti-Evasion), Article 18 (AI Training and
-     Competitive Restrictions), or Appendix C (Prohibited Uses List).
+     Competitive Restrictions), Article 20 (Compliance Audit and Annual
+     Reporting), or Appendix C (Prohibited Uses List).
 
 1.16 "Third-Party Component" means any software, model weight, dataset,
      engine binary, library, framework, or other component that is not part
@@ -1284,6 +1329,42 @@ ARTICLE 12 — ENFORCEMENT AND REMEDIES
      platforms' removal or disablement of the allegedly infringing material in
      accordance with their policies and applicable law.
 
+12.10 Full Enforcement-Cost Recovery. In addition to any recovery available
+     under Section 12.6, the Licensor shall be entitled to recover from the
+     breaching party the full, reasonable, documented out-of-pocket costs
+     actually incurred in investigating, preserving evidence, and enforcing
+     this License, including but not limited to:
+     (a) internal investigation time at then-current fully-loaded employee
+         rates;
+     (b) forensic imaging, decryption, log analysis, and reverse-engineering
+         of infringing artifacts;
+     (c) technical-verification costs, including independent expert reports
+         used to establish infringement, circumvention under Article 17, or
+         prohibited training or distillation under Article 18;
+     (d) platform takedown, DMCA, marketplace, app-store, registrar, and
+         hosting-provider enforcement costs under Section 12.9;
+     (e) costs of preservation applications, freezing or attachment orders,
+         and any equivalent injunctive or inter partes proceedings;
+     (f) costs of travel, translation, notarization, and service of process
+         in any jurisdiction; and
+     (g) interest on all amounts from the date incurred at the highest
+         rate permitted by applicable law.
+     Recovery under this Section 12.10 is in addition to damages, penalties,
+     liquidated damages, and the recovery provided under Section 12.6, and is
+     not limited by them.
+12.11 Joint and Several Liability; Concerted Action. Where a breach of this
+     License is caused, enabled, facilitated, instigated, or participated in
+     by two or more legal entities, natural persons, or their Affiliates,
+     agents, contractors, or nominees acting alone, in combination, or in
+     concert, the Licensor may elect to pursue any one, several, or all of
+     them for the full remedy, and each such party shall be jointly and
+     severally liable for the full amount of damages, penalties,
+     liquidated damages, enforcement costs under Section 12.10, and
+     attorneys' fees under Section 12.6 that the Licensor obtains or incurs
+     in connection with that breach. Coordination, common ownership, common
+     direction, revenue sharing, cross-referral, contractual referral
+     arrangements, or a shared business model is evidence of concerted
+     action, but is not required for Section 12.11 to apply.
 ===============================================================================
 ARTICLE 13 — TRADEMARKS
 ===============================================================================
@@ -1446,7 +1527,8 @@ ARTICLE 16 — TERMINATION
      and Remedies), Article 13 (Trademarks), Article 14 (Disclaimer of
      Warranty), Article 15 (Limitation of Liability), Article 16
      (Termination), Article 17 (Anti-Evasion), Article 18 (AI Training and
-     Competitive Restrictions), and Article 19 (General Provisions), together
+     Competitive Restrictions), Article 19 (General Provisions), and
+     Article 20 (Compliance Audit and Annual Reporting), together
      with any other provisions that by their nature are intended to survive
      termination.
 
@@ -1516,6 +1598,74 @@ ARTICLE 17 — ANTI-EVASION AND LICENSE INTEGRITY
      Licensor and any competent authority may look through formal structures
      to the actual use, benefit, and control of the Software.
 
+17.7 Enumerated Circumvention Patterns. Without limiting the generality of
+     Sections 17.1 through 17.4 and 17.6, each of the following is,
+     standing alone, per se circumvention of this License and does not require
+     the Licensor to prove subjective intent beyond the ordinary course of
+     conduct: in each case the party asserting the pattern may rely on
+     Section 12.11 for liability, Section 12.10 for cost recovery, and
+     Section 18.4 for downstream taint of any derived model, dataset, or
+     system.
+     (a) Fork-and-rebrand: forking, renaming, cosmetic re-skinning, or
+         repackaging of the Software, its installer, its icons, its
+         user-interface strings, its CLI names, or its package identity in
+         an attempt to obscure origin, while retaining functionality that
+         is substantially similar to the Software or to a substantial part
+         of it.
+     (b) Service wrapping: exposing the Software, or a substantial part of
+         it, to third parties through a proxy, wrapper, gateway, "AI
+         assistant", "agent platform", no-code product, marketplace, or
+         hosted service without a Commercial Authorization; the existence
+         of an independent user-facing product name does not change the
+         analysis.
+     (c) Threshold splitting: dividing users, revenue, deployments, tenants,
+         organizations, sub-accounts, workspaces, projects, API keys, or
+         billing periods to keep any of them below a threshold in this
+         License (employee count, revenue, customer count, use-duration, or
+         any similar threshold), where the aggregate exceeds the threshold.
+     (d) Cloud-jumping: moving deployments between cloud providers, regions,
+         self-hosted clusters, or third-party hosts in a manner designed to
+         avoid detection, telemetry, audit, or the obligations of Article 4
+         (source disclosure) or Article 5 (Commercial Use).
+     (e) Model-hopping: substituting or adding third-party models or
+         systems in a way designed to obscure that the Software or a
+         substantial part of it remains the core of the resulting product
+         or service.
+     (f) Log-mining training: training, fine-tuning, distilling, or
+         calibrating any model, dataset, or system on Inputs, Outputs,
+         transcripts, session recordings, traces, logs, embeddings, prompt/
+         response pairs, or evaluation sets generated by the Software, even
+         where such artifacts are "yours" under ordinary law; see also
+         Section 18.6.
+     (g) Synthetic-use: simulating, scripting, or automating user
+         interactions with the Software to accumulate Outputs, telemetry,
+         or evaluation data for any purpose prohibited by this License.
+     (h) Referral laundering: routing potential commercial users through a
+         shell entity, nonprofit, educational, academic, personal-use, or
+         "free tier" label in order to obtain non-commercial treatment.
+     (i) Contractual evasion: using agreements with counterparties to
+         disclaim, shift, or conceal obligations under this License where
+         such conduct would breach this License if undertaken directly by
+         the Licensee.
+     (j) Obfuscated distribution: distributing a version of the Software or
+         a Derivative Work in an obfuscated, packed, embedded, dynamically
+         loaded, containerized, or otherwise non-transparent form for the
+         purpose of defeating Section 4.3, Section 4.7, Article 4.8, or
+         Article 17.
+     The Licensor may treat participation in, facilitation of, or knowing
+     benefit from any of the above patterns as independent acts of
+     circumvention, even where the Licensor is unable to prove individual
+     intent by each participant.
+17.8 Attribution of Identity. Where the Licensee is a legal entity
+     interposed between an ultimate beneficiary of the Software and the
+     Licensor, the Licensor may treat the ultimate beneficiary, and each
+     entity in the chain that (a) exercises operational control, (b)
+     directs the use of the Software, (c) receives the economic benefit,
+     (d) is charged, is charged indirectly, or is compensated for the use
+     of the Software, or (e) otherwise has a substantial interest in the
+     outcome of the Software, as a joint party subject to this License and
+     to the remedies of Article 12. Section 17.8 applies independently of
+     whether the interposed entity is an Affiliate under Section 1.9.
 ===============================================================================
 ARTICLE 18 — AI TRAINING, DISTILLATION, AND COMPETITIVE RESTRICTIONS
 ===============================================================================
@@ -1573,6 +1723,59 @@ ARTICLE 18 — AI TRAINING, DISTILLATION, AND COMPETITIVE RESTRICTIONS
      Models; the more restrictive of this Article 18 and the applicable
      upstream license governs.
 
+18.6 Shadow Model and Query-Log Training. Without limiting Section 18.1,
+     you may not use, aggregate, ingest, retain, mine, or analyze any
+     Inputs, Outputs, session transcripts, prompt/response pairs,
+     conversation histories, tool-call traces, evaluation results,
+     embeddings, latents, log files, telemetry, cache files, checkpoint
+     files, or derived datasets produced in the ordinary course of using
+     the Software (each such artifact, an "Interaction Artifact"), to:
+     (a) train, pre-train, fine-tune, continue-train, post-train, align,
+         distill, calibrate, or adapt any AI model, dataset, retriever,
+         embedding model, agent policy, prompt library, tool definition,
+         workflow, or product — regardless of whether the model or dataset
+         is used internally, externally, or through a separate entity;
+     (b) construct any training, validation, evaluation, red-team, RLHF,
+         DPO, or preference dataset derived from Interaction Artifacts;
+     (c) build a "shadow model", "reference model", "oracle", or
+         emulation whose purpose, function, or effect is to reproduce,
+         approximate, or predict the behavior of the Software or any Model
+         accessed through it; or
+     (d) accumulate Interaction Artifacts with the intent, plan, or
+         expectation of later using them for any purpose prohibited in
+         this Article 18.
+     This Section 18.6 applies whether or not the Licensee owns, controls,
+     or has a legal right to the underlying Inputs, and whether or not the
+     Licensee has deleted the Software, terminated a Commercial
+     Authorization, or ceased to be a Licensee. Retention of Interaction
+     Artifacts for purposes other than those permitted by this License
+     after termination or breach shall itself constitute breach.
+18.7 Synthetic-Competitor Prohibition. You may not build, market, sell,
+     license, distribute, or operate any product, service, or platform
+     whose primary value proposition is to provide users substantially the
+     same functionality that the Software provides — including an AI chat,
+     agent, tool-calling, workflow, model-management, or media-generation
+     product that exposes substantially equivalent features and workflows —
+     in a manner that would reasonably be expected to substitute for the
+     Software in the Licensee's customer or end-user market. The existence
+     of an "independent stack", a differently-named product, a distinct
+     trademark, a separate corporate entity, a distinct upstream model,
+     or a differing technical implementation does not avoid Section 18.7
+     where the substance of the product is a functional substitute.
+     Commercial Use of a Synthetic Competitor requires a prior written
+     Commercial Authorization that expressly covers that product or
+     service. The non-commercial research exceptions in Section 18.2 and
+     the benchmarking permissions in Section 18.3 remain available on
+     their own terms.
+18.8 Model-Hopping and Upstream-Substitution. Substituting a differently
+     licensed upstream Model, or combining the Software with a third-party
+     Model, does not diminish the obligations of this Article 18. In
+     each case the more restrictive of this Article 18 and the upstream
+     Model's own license governs. Adding, removing, or rotating upstream
+     Models, providers, or APIs to the extent that the Software's identity
+     as a product or service is substantially altered is treated as the
+     creation of a Derivative Work and a Synthetic Competitor where
+     applicable, and remains subject to Articles 4, 5, 17, 18, and 20.
 ===============================================================================
 ARTICLE 19 — GENERAL PROVISIONS
 ===============================================================================
@@ -1754,6 +1957,79 @@ ARTICLE 19 — GENERAL PROVISIONS
      under applicable law (including fair use, fair dealing, or other
      statutory exceptions).
 
+ARTICLE 20 — COMPLIANCE AUDIT AND ANNUAL REPORTING
+
+19.21 Compliance Audit and Reporting. Article 20 (Compliance Audit and
+     Annual Reporting) supplements Articles 4, 5, 12, 17, and 18. In case of
+     conflict between Article 20 and any other provision of this License,
+     the more restrictive interpretation governs.
+===============================================================================
+20.1 Record Keeping. Every Licensee holding a Commercial Authorization,
+     and any other Licensee whose aggregate use in a calendar year exceeds
+     the thresholds in Article 5, shall maintain complete and accurate
+     records sufficient to demonstrate compliance with this License for a
+     period of not less than three (3) years after the relevant use or
+     disclosure, including at minimum:
+     (a) identity of the Licensee, each Affiliate covered, and each end
+         user or customer receiving the benefit of the Software;
+     (b) commercial-invoice copies, fees paid, and the scope and term of
+         the applicable Commercial Authorization;
+     (c) all deployments, hosting locations, cloud providers, and regions;
+     (d) aggregate user counts, revenue, and volume metrics sufficient to
+         verify Article 5 thresholds and Section 5.8 material-change
+         reporting;
+     (e) all Derivative Works, Effective Source Code disclosures, and
+         notices delivered under Article 4, including dates and recipients;
+     (f) all Model provenance records, upstream licenses, and third-party
+         notices under Section 4.6 and Section 7.8;
+     (g) privacy notices, consent records, DPIAs, and any Data-Processing
+         Agreements under Article 6;
+     (h) safety-filter configurations, human-oversight procedures, and
+         End-User AI disclosure records under Article 7; and
+     (i) all communications with the Licensor regarding use, disclosure,
+         security incidents, or enforcement.
+20.2 Annual Compliance Report. Each Licensee described in Section 20.1
+     shall, within ninety (90) days of the end of each calendar year
+     (and, in the first year, within ninety (90) days after the effective
+     date of the Commercial Authorization or threshold-triggering event,
+     as applicable), deliver a signed Annual Compliance Report to the
+     Licensor. The report shall describe, at the level of detail necessary
+     for the Licensor to verify compliance, the matters covered by
+     Section 20.1 and shall include an officer-certified attestation that
+     the report is true and complete. A failure to deliver the Annual
+     Compliance Report is itself a breach of this License, subject to the
+     remedies of Article 12 including Section 12.4 cure restrictions,
+     Section 12.10 cost recovery, and Section 12.11 joint liability.
+20.3 Verification Program. The Licensor may, at its reasonable option,
+     (a) rely on the Annual Compliance Report, (b) exercise the audit
+     right in Section 12.5, (c) require independent third-party
+     verification, or (d) require additional documentation reasonably
+     requested, to verify compliance. Any such verification request is to
+     be made by written notice and shall not unreasonably burden the
+     Licensee. Cost allocation is as follows: the Licensor bears its own
+     costs unless the verification uncovers material non-compliance,
+     in which case the Licensee bears the Licensor's reasonable
+     verification costs in addition to the remedies of Article 12.
+20.4 Cooperation. Every Licensee shall cooperate with the Licensor's
+     verification program by designating a single compliance point of
+     contact, providing timely access to records and personnel as
+     reasonably necessary, and responding to reasonable written inquiries
+     within fifteen (15) business days. Failure to cooperate is treated
+     as a material breach of this License and, where it results in the
+     Licensor being unable to verify compliance, shall be treated as
+     non-compliance for purposes of Section 12.5 and Section 20.2.
+20.5 Non-Waiver; Continuing Obligation. Compliance obligations under this
+     Article 20 survive termination of a Commercial Authorization and are
+     not waived by the Licensor's failure to require an Annual Compliance
+     Report in any single year. This Article 20 supplements, and does not
+     limit, the Licensor's audit and enforcement rights under Articles 5,
+     12, 17, and 18.
+20.6 Non-Commercial Licensees. A non-commercial Licensee is not required
+     to submit an Annual Compliance Report, but shall maintain sufficient
+     records to evidence that its use remains non-commercial, and shall
+     promptly notify the Licensor in writing if its use would trigger
+     Article 5. Failure to notify within fifteen (15) business days after
+     the triggering event is itself a breach of this License.
 ===============================================================================
 APPENDIX A — COMMERCIAL AUTHORIZATION APPLICATION AND CONTACT
 ===============================================================================
@@ -1937,6 +2213,27 @@ SECTION 10 — ADDITIONAL INFORMATION
 10.2 Any specific terms or conditions you are requesting:
 
 -------------------------------------------------------------------------------
+SECTION 12 — COMPLIANCE, RECORDS AND POINT OF CONTACT (ARTICLE 20)
+-------------------------------------------------------------------------------
+12.1 Annual Compliance Report contact (name, email, phone):
+12.2 Do you have a designated officer authorized to sign Annual Compliance
+    Reports under Section 20.2?  [ ] Yes  [ ] No
+12.3 If yes, name and title:
+12.4 Describe your record-keeping system for the categories in Section 20.1:
+12.5 Do you maintain the records required by Section 20.1 for at least three
+    (3) years?  [ ] Yes  [ ] No. If no, describe remediation plan:
+12.6 Have you previously been a licensee, or had contact with the Licensor,
+    or been audited under this License or any predecessor version?  [ ] Yes
+    [ ] No. If yes, describe:
+12.7 Do you currently use, or have you previously used, the Software,
+    Outputs, or any Interaction Artifact for training, distillation, or
+    evaluation purposes?  [ ] Yes  [ ] No. If yes, describe in detail:
+12.8 Do you intend to build, sell, or operate any product, service, or
+    platform whose primary value proposition duplicates the Software's
+    functionality (a Synthetic Competitor under Section 18.7)?  [ ] Yes
+    [ ] No. If yes, describe:
+
+-------------------------------------------------------------------------------
 SECTION 11 — DECLARATION
 -------------------------------------------------------------------------------
 
@@ -1947,7 +2244,7 @@ I, the undersigned, declare that:
 (c) I will immediately notify the Licensor of any material change in the
     information provided;
 (d) I will use the Software strictly in accordance with the Kevrai Omni
-    Community License v2.1 and any Commercial Authorization granted;
+    Community License v2.5 and any Commercial Authorization granted;
 (e) I will not seek to evade the License through any arrangement described in
     Article 17, and will comply with Article 18.
 
@@ -2242,11 +2539,18 @@ F.5 Responsible AI
 F.6 AI training / competition
     [ ] No unauthorized training/distillation/competing use (Art 18)
     [ ] No bulk extraction of catalog/prompts/tool definitions (18.1(c))
+    [ ] No shadow-model, oracle, or emulation built from Interactions (18.6)
+    [ ] No training on Inputs/Outputs/transcripts/logs/embeddings (18.6)
+    [ ] No Synthetic Competitor product or service without Authorization (18.7)
+    [ ] Model-hopping/upstream substitution analyzed (18.8)
 
 F.7 Export and anti-evasion
     [ ] Export-control/sanctions screening done (Art 8)
     [ ] No threshold splitting or intermediary evasion (Art 17)
-    [ ] Records retained (5.9, 8.5)
+    [ ] Enumerated circumvention patterns reviewed; none triggered (17.7)
+    [ ] Ultimate-beneficiary attribution checked where an entity is
+        interposed (17.8)
+    [ ] Records retained (5.9, 8.5, 20.1)
 
 F.8 Business protections
     [ ] Required insurance in place (5.10)
@@ -2254,6 +2558,16 @@ F.8 Business protections
     [ ] Audit cooperation and records ready (12.5)
     [ ] Trademark use compliant (Art 13)
 
+F.9 Compliance, records, and reporting (v2.5)
+    [ ] Records retained per Section 20.1 for at least three (3) years
+    [ ] Annual Compliance Report officer/designee identified (20.2)
+    [ ] Annual Compliance Report submitted within 90 days of year-end (20.2)
+    [ ] Compliance point-of-contact designated (20.4)
+    [ ] Non-commercial Licensees: monitoring use against Article 5
+        thresholds; 15-business-day notification process ready (20.6)
+    [ ] Enforcement-cost recovery understood (12.10)
+    [ ] Joint-and-several liability for Affiliates/coordinators understood
+        (12.11)
 ===============================================================================
 END OF LICENSE
 ===============================================================================
