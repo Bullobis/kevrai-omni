@@ -45,6 +45,12 @@ ${PY} -m pip install -i "${INDEX}" --disable-pip-version-check \
   -r python/requirements.txt || fail "pip install failed"
 
 step "3. Clean prior artifacts"
+# build/output is shared with build_windows.sh (electron-builder.yml hardcodes
+# `directories.output`).  The Windows script no longer wipes it wholesale so the
+# two can run in either order without destroying each other's output; this one
+# still does, which is the asymmetry to be aware of when running them back to
+# back.  To keep both platforms' artifacts, build them into separate checkouts
+# or move the outputs aside between runs.
 rm -rf build/output dist
 
 step "4. electron-builder --linux AppImage deb"

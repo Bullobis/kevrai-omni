@@ -184,8 +184,18 @@ ${PY} -c "import fastapi, httpx, pydantic; print('  python deps importable')" \
 # ----------------------------------------------------------------------
 step "3. Clean prior artifacts"
 # ----------------------------------------------------------------------
-rm -rf build/output dist electron/python-dist
-echo "  ✓ clean"
+# Only the Windows-side state is removed.  `build/output` is shared with
+# build_linux.sh (electron-builder.yml hardcodes `directories.output`), and
+# wiping it wholesale deleted the Linux .deb/.AppImage from a previous run —
+# an ordering trap that cost a full rebuild to notice.
+#
+# So: drop the staging dir (always regenerated in step 4) and the auto-update
+# metadata this script owns, and leave foreign artifacts alone.  To get a
+# truly clean output dir, remove it by hand.
+rm -rf build/output/win-unpacked dist electron/python-dist
+rm -f  build/output/latest.yml build/output/latest-linux.yml
+echo "  ✓ clean (build/output/win-unpacked + auto-update metadata; other"
+echo "    platforms' artifacts left in place — see comment above)"
 
 export ELECTRON_BUILDER_BINARIES_MIRROR="${ELECTRON_BUILDER_BINARIES_MIRROR:-https://cdn.npmmirror.com/binaries/electron-builder-binaries/}"
 export CSC_IDENTITY_AUTO_DISCOVERY=false
@@ -365,7 +375,18 @@ npx --yes electron-builder --win zip --x64 --publish never \
   || fail "electron-builder (zip) failed"
 
 if [ ! -f "${EXPECTED_ZIP}" ]; then
-  CANDIDATE_ZIP="$(ls -1 build/output/*.zip 2>/dev/null | head -1 || true)"
+  # Fallback must stay Windows-shaped.  build/output is shared with the Linux
+  # script and now intentionally keeps its artifacts, so a bare `*.zip` glob
+  # can pick up something that is not a portable Windows build and then verify
+  # (or worse, publish) it as one.  A glob is also fragile here: `ls | head -1`
+  # returns dictionary order, so a stray lowercase name would win.  Match the
+  # exact expected filename case-sensitively instead, and report what is
+  # actually present so a naming change is visible rather than silent.
+  if [ -z "$(ls -1 build/output/Kevrai-Omni-"*"-x64.zip 2>/dev/null || true)" ]; then
+    echo "  (expected ${EXPECTED_ZIP}; build/output contains:)"
+    ls -1 build/output/ 2>/dev/null | sed 's/^/    /' || echo "    (empty)"
+  fi
+  CANDIDATE_ZIP="$(ls -1 build/output/Kevrai-Omni-"*"-x64.zip 2>/dev/null | head -1 || true)"
   [ -n "${CANDIDATE_ZIP}" ] || fail "no portable .zip produced"
   EXPECTED_ZIP="${CANDIDATE_ZIP}"
 fi
@@ -658,13 +679,14 @@ fi
 step "10. Report the resulting artifacts"
 # ----------------------------------------------------------------------
 if [ "${NSIS_OK}" -eq 1 ] && [ ! -f "${EXPECTED_EXE}" ]; then
-  CANDIDATE="$(ls -1 build/output/*.exe 2>/dev/null | head -1 || true)"
+  # Same reasoning as the .zip fallback: only accept the Windows-shaped name.
+  CANDIDATE="$(ls -1 build/output/Kevrai-Omni-"*"-x64.exe 2>/dev/null | head -1 || true)"
   [ -n "${CANDIDATE}" ] || fail "no .exe installer produced at ${EXPECTED_EXE}"
   EXPECTED_EXE="${CANDIDATE}"
 fi
 
 if [ ! -f "${EXPECTED_ZIP}" ]; then
-  CANDIDATE_ZIP="$(ls -1 build/output/*.zip 2>/dev/null | head -1 || true)"
+  CANDIDATE_ZIP="$(ls -1 build/output/Kevrai-Omni-"*"-x64.zip 2>/dev/null | head -1 || true)"
   [ -n "${CANDIDATE_ZIP}" ] || fail "no portable .zip produced at ${EXPECTED_ZIP} (zip target missing?)"
   EXPECTED_ZIP="${CANDIDATE_ZIP}"
 fi
