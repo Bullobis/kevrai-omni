@@ -86,6 +86,9 @@
         <button class="pane-tab" data-tab="ltx" title="LTX-2.5 视频" data-i18n-title="nav.ltx">
           <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span> <span class="tab-label" data-i18n="nav.ltx">LTX-2.5 视频</span>
         </button>
+        <button class="pane-tab" data-tab="asr" title="语音转写" data-i18n-title="nav.asr">
+          <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg></span> <span class="tab-label" data-i18n="nav.asr">语音转写</span>
+        </button>
         <button class="pane-tab" data-tab="local" title="本地模型" data-i18n-title="nav.local">
           <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 16h.01"/><path d="M2.212 11.577a2 2 0 0 0-.212.896V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.527a2 2 0 0 0-.212-.896L18.55 5.11A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><path d="M21.946 12.013H2.054"/><path d="M6 16h.01"/></svg></span> <span class="tab-label" data-i18n="nav.local">本地模型</span>
         </button>
@@ -300,6 +303,62 @@
             <div id="ltx-gallery" class="ltx-gallery"></div>
           </div>
         </div>
+      </section>
+
+      <!-- ASR (Faster Whisper) pane -->
+      <section id="pane-asr" class="pane" aria-label="语音转写">
+        <div class="pane-head">
+          <h2 data-i18n="asr.title">语音转写</h2>
+          <p class="muted" id="asr-engine-status" data-i18n="asr.engineMissing">引擎未安装</p>
+        </div>
+
+        <div class="asr-engine-missing" id="asr-missing-card">
+          <p class="muted" data-i18n="asr.missingHint">需要安装 Faster Whisper（CTranslate2）语音识别引擎。</p>
+          <button class="primary" id="asr-install" data-i18n="asr.install">安装引擎</button>
+        </div>
+
+        <div class="asr-form card">
+          <div class="form-row">
+            <label for="asr-file" data-i18n="asr.audioFile">音频文件</label>
+            <input type="file" id="asr-file" accept="audio/*,video/*" />
+            <span class="muted" id="asr-file-name"></span>
+          </div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label for="asr-model" data-i18n="asr.model">模型</label>
+              <select id="asr-model">
+                <option value="Systran/faster-whisper-large-v3">Faster Whisper Large v3</option>
+                <option value="dropbox-dash/faster-whisper-large-v3-turbo">Large v3 Turbo</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="asr-language" data-i18n="asr.language">语言</label>
+              <select id="asr-language"></select>
+            </div>
+            <div class="form-row">
+              <label for="asr-task" data-i18n="asr.task">任务</label>
+              <select id="asr-task">
+                <option value="transcribe" data-i18n="asr.taskTranscribe">转写</option>
+                <option value="translate" data-i18n="asr.taskTranslate">译为英文</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="asr-format" data-i18n="asr.format">输出格式</label>
+              <select id="asr-format">
+                <option value="verbose_json" data-i18n="asr.fmtVerbose">详细 JSON</option>
+                <option value="json">JSON</option>
+                <option value="text">Text</option>
+                <option value="srt">SRT</option>
+                <option value="vtt">VTT</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="primary" id="asr-run" data-i18n="asr.run">开始转写</button>
+          </div>
+        </div>
+
+        <div class="asr-result" id="asr-result"></div>
       </section>
 
       <!-- Environments pane -->

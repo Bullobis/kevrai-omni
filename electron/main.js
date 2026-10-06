@@ -533,13 +533,37 @@ function sidecarFetch(p, opts = {}) {
     });
     req.on("timeout", () => req.destroy(new Error("sidecar timeout")));
     req.on("error", reject);
-    if (opts.body) req.write(JSON.stringify(opts.body));
+    if (opts.rawBody != null) req.write(opts.rawBody);
+    else if (opts.body) req.write(JSON.stringify(opts.body));
     req.end();
   });
 }
 
-async function waitForSidecar(timeoutMs = SIDECAR_HEALTH_TIMEOUT_MS) {
-  const deadline = Date.now() + timeoutMs;
+// Build a multipart/form-data body (one file + scalar fields) as a Buffer.
+// Used by the ASR route so the renderer can upload audio through IPC without
+// the main process needing a third-party multipart dependency.
+function buildMultipart(fields, file) {
+  const boundary = "----kevrai" + crypto.randomBytes(12).toString("hex");
+  const parts = [];
+  for (const [name, value] of Object.entries(fields || {})) {
+    if (value === null || value === undefined || value === "") continue;
+    parts.push(Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`
+    ));
+  }
+  parts.push(Buffer.from(
+    `--${boundary}\r\nContent-Disposition: form-data; name="file"; ` +
+    `filename="${file.filename}"\r\nContent-Type: ${file.contentType || "application/octet-stream"}\r\n\r\n`
+  ));
+  parts.push(Buffer.from(file.data));
+  parts.push(Buffer.from(`\r\n--${boundary}--\r\n`));
+  return {
+    body: Buffer.concat(parts),
+    contentType: `multipart/form-data; boundary=${boundary}`,
+  };
+}
+
+async function waitForSidecar(timeoutMs = SIDECAR_HEALTH_TIMEOUT_MS) {  const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     try {
       const r = await sidecarFetch("/api/health");
@@ -836,6 +860,39 @@ function registerIpc() {
   // and calls clawdchat.cn; the API key never reaches the renderer.
   ipcMain.handle("api:clawdchat-heartbeat", () =>
     sidecarFetch("/api/clawdchat/heartbeat", { method: "POST", timeoutMs: 30_000 }));
+  // Faster Whisper: forward audio (multipart) to the sidecar transcription or
+  // translation route. File data crosses IPC as a Uint8Array/Buffer.
+  ipcMain.handle("api:asr", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.model, 128), "model: invalid");
+    const data = payload.file && payload.file.data;
+    assert(data && data.length, "file: invalid");
+    const file = {
+      filename: isString(payload.file.filename, 256) ? payload.file.filename : "audio",
+      contentType: isString(payload.file.contentType, 128) ? payload.file.contentType : "application/octet-stream",
+      data: Buffer.from(data),
+    };
+    const fields = {
+      model: payload.model,
+      language: isString(payload.language, 16) ? payload.language : null,
+      response_format: isString(payload.response_format, 32) ? payload.response_format : "json",
+      beam_size: Number.isFinite(Number(payload.beam_size)) ? Number(payload.beam_size) : 5,
+      vad_filter: payload.vad_filter === false ? "false" : "true",
+      word_timestamps: payload.word_timestamps ? "true" : null,
+    };
+    const mp = buildMultipart(fields, file);
+    const route = payload.task === "translate"
+      ? "/v1/audio/translations"
+      : "/v1/audio/transcriptions";
+    return sidecarFetch(route, {
+      method: "POST",
+      rawBody: mp.body,
+      headers: { "Content-Type": mp.contentType },
+      timeoutMs: 120_000,
+    });
+  });
+  ipcMain.handle("api:asr:capabilities", async () =>
+    sidecarFetch("/api/asr/capabilities"));
   ipcMain.handle("api:categories",   async () => sidecarFetch("/api/categories"));
   ipcMain.handle("api:models", async (_e, params) => {
     const p = (params && typeof params === "object") ? params : {};

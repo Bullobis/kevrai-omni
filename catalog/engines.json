@@ -563,6 +563,33 @@
         "https://github.com/RVC-Boss/GPT-SoVITS/releases/latest",
         "https://github.com/RVC-Boss/GPT-SoVITS"
       ]
+    },
+    {
+      "id": "faster-whisper",
+      "name": "Faster Whisper",
+      "category": "general",
+      "description": "CTranslate2 后端的 Whisper 语音识别（CPU/CUDA，比原版更快、更省显存）。",
+      "github": "SYSTRAN/faster-whisper",
+      "install": "pip",
+      "pypi": "faster-whisper",
+      "license": "MIT",
+      "size_mb": 120,
+      "platforms": {
+        "linux-x64": "https://github.com/SYSTRAN/faster-whisper/releases/latest",
+        "windows-x64": "https://github.com/SYSTRAN/faster-whisper/releases/latest",
+        "darwin-arm64": "https://github.com/SYSTRAN/faster-whisper/releases/latest",
+        "darwin-x64": "https://github.com/SYSTRAN/faster-whisper/releases/latest"
+      },
+      "trending": true,
+      "sources": [
+        "https://pypi.org/simple/faster-whisper/",
+        "https://mirrors.aliyun.com/pypi/simple/faster-whisper/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/faster-whisper/",
+        "https://mirrors.huaweicloud.com/repository/pypi/simple/faster-whisper/",
+        "https://mirrors.cloud.tencent.com/pypi/simple/faster-whisper/",
+        "https://github.com/SYSTRAN/faster-whisper/releases/latest",
+        "https://github.com/SYSTRAN/faster-whisper"
+      ]
     }
   ]
 }

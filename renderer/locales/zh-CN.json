@@ -24,7 +24,8 @@
     "gguf": "GGUF 仓库",
     "pending": "待官方开源",
     "environments": "环境管理",
-    "settings": "设置"
+    "settings": "设置",
+    "asr": "语音转写"
   },
   "header": {
     "downloads": "下载",
@@ -802,5 +803,24 @@
       "sidecarHealth": "Sidecar 健康检查",
       "clawdchatHeartbeat": "虾聊（ClawdChat）心跳"
     }
+  },
+  "asr": {
+    "title": "语音转写",
+    "engineReady": "引擎就绪 {ver}",
+    "engineMissing": "引擎未安装",
+    "missingHint": "需要安装 Faster Whisper（CTranslate2）语音识别引擎。",
+    "install": "安装引擎",
+    "audioFile": "音频文件",
+    "model": "模型",
+    "language": "语言",
+    "task": "任务",
+    "taskTranscribe": "转写",
+    "taskTranslate": "译为英文",
+    "format": "输出格式",
+    "fmtVerbose": "详细 JSON",
+    "run": "开始转写",
+    "pickFirst": "请先选择音频文件",
+    "failed": "转写失败：{err}",
+    "engineInstalled": "引擎已安装"
   }
 }

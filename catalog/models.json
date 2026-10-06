@@ -13862,6 +13862,88 @@
         "图生视频",
         "经典"
       ]
+    },
+    {
+      "id": "whisper-large-v3",
+      "category": "audio",
+      "name": "Faster Whisper Large v3",
+      "repo": "Systran/faster-whisper-large-v3",
+      "size_gb": 3.09,
+      "engine": [
+        "faster-whisper"
+      ],
+      "license": "mit",
+      "trending": true,
+      "description": "Whisper Large v3 的 CTranslate2 版本（Systran 官方），多语言语音识别 + 翻译，CPU/CUDA 高效转写。",
+      "sources": [
+        "https://huggingface.co/Systran/faster-whisper-large-v3/",
+        "https://hf-mirror.com/Systran/faster-whisper-large-v3/"
+      ],
+      "primary_url": "https://huggingface.co/Systran/faster-whisper-large-v3/",
+      "hardware": {
+        "vram_gb": 4,
+        "min_vram_gb": 2,
+        "ram_gb": 8,
+        "disk_gb": 4
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "audio"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "Whisper",
+        "语音识别",
+        "ASR",
+        "多语言",
+        "CTranslate2"
+      ]
+    },
+    {
+      "id": "whisper-large-v3-turbo",
+      "category": "audio",
+      "name": "Faster Whisper Large v3 Turbo",
+      "repo": "dropbox-dash/faster-whisper-large-v3-turbo",
+      "size_gb": 1.62,
+      "engine": [
+        "faster-whisper"
+      ],
+      "license": "mit",
+      "trending": true,
+      "description": "Whisper Large v3 Turbo 的 CTranslate2 版本，速度更快、体积更小的多语言语音识别（Dropbox 发布的 CT2 转制，MIT）。",
+      "sources": [
+        "https://huggingface.co/dropbox-dash/faster-whisper-large-v3-turbo/",
+        "https://hf-mirror.com/dropbox-dash/faster-whisper-large-v3-turbo/"
+      ],
+      "primary_url": "https://huggingface.co/dropbox-dash/faster-whisper-large-v3-turbo/",
+      "hardware": {
+        "vram_gb": 3,
+        "min_vram_gb": 1,
+        "ram_gb": 8,
+        "disk_gb": 2
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "audio"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "Whisper",
+        "语音识别",
+        "ASR",
+        "Turbo",
+        "CTranslate2",
+        "快速"
+      ],
+      "notes": "该仓为 Dropbox 发布的 OpenAI turbo CTranslate2 转制（非 OpenAI/Systran 官方 CT2 仓），权重与许可经核验。"
     }
   ],
   "gguf_repos": [

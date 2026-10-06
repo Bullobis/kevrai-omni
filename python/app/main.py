@@ -30,9 +30,12 @@ from typing import Any
 
 from fastapi import (
     FastAPI,
+    File,
+    Form,
     HTTPException,
     Request,
     Response,
+    UploadFile,
     WebSocket,
     WebSocketDisconnect,
 )
@@ -43,7 +46,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, ValidationError
 
-from . import USER_AGENT, __version__, ltx_runtime, mnn_runtime
+from . import USER_AGENT, __version__, asr_runtime, ltx_runtime, mnn_runtime
 from . import clawdchat as clawdchat_mod
 from . import converter as converter_service
 from . import drama as drama_agent
@@ -249,6 +252,8 @@ async def _lifespan(app: FastAPI):
     converter_service.configure_tools_dir(APP_ROOT / "tools")
     # LTX-2.5 video generation manager (outputs to data_root/outputs/ltx)
     app.state.ltx = LtxManager(APP_ROOT / "outputs" / "ltx")
+    # Faster Whisper speech recognition manager (models cached in-process).
+    app.state.asr = asr_runtime.AsrManager(APP_ROOT)
     # Dual-source hub registry (HF + ModelScope + curated). Adapters own their
     # httpx clients, so the lifespan must aclose() them on shutdown. Wire the
     # lifespan handle to the *process singleton* (get_registry), NOT a fresh
@@ -3041,6 +3046,122 @@ def ltx_outputs(request: Request) -> dict[str, Any]:
                     "mtime": st.st_mtime,
                 })
     return {"outputs": items, "count": len(items), "dir": str(root)}
+
+
+# ===========================================================================
+# v3.16.0 — Faster Whisper speech recognition (CTranslate2)
+# ===========================================================================
+
+
+def _asr_manager(request: Request) -> asr_runtime.AsrManager:
+    mgr = getattr(request.app.state, "asr", None)
+    if mgr is None:
+        mgr = asr_runtime.AsrManager(APP_ROOT)
+        request.app.state.asr = mgr
+    return mgr
+
+
+def _asr_status_for(exc: Exception) -> int:
+    if isinstance(exc, asr_runtime.AsrEngineMissing):
+        return 503
+    if isinstance(exc, asr_runtime.AsrParamError):
+        return 400
+    return 422
+
+
+@app.get("/api/asr/capabilities")
+def asr_capabilities(request: Request) -> dict[str, Any]:
+    return asr_runtime.capabilities(APP_ROOT)
+
+
+class AsrLocalReq(BaseModel):
+    model: str
+    audio_path: str
+    language: str | None = None
+    task: str = "transcribe"
+    response_format: str = "verbose_json"
+    beam_size: int = 5
+    vad_filter: bool = True
+    word_timestamps: bool = False
+
+
+@app.post("/api/asr/transcribe")
+def asr_transcribe_local(request: Request, req: AsrLocalReq) -> Response:
+    mgr = _asr_manager(request)
+    try:
+        result = mgr.transcribe(
+            req.model, req.audio_path, language=req.language, task=req.task,
+            beam_size=req.beam_size, vad_filter=req.vad_filter,
+            word_timestamps=req.word_timestamps,
+        )
+        body, media = asr_runtime.render_response(result, req.response_format)
+    except asr_runtime.AsrError as e:
+        raise HTTPException(status_code=_asr_status_for(e), detail=str(e)) from e
+    return Response(content=body, media_type=media)
+
+
+async def _run_multipart_asr(
+    request: Request, *, file: UploadFile, model: str, language: str | None,
+    task: str, response_format: str, temperature: float, beam_size: int,
+    vad_filter: bool, word_timestamps: bool,
+) -> Response:
+    if not file or not file.filename:
+        raise HTTPException(status_code=400, detail="audio file required")
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="empty audio file")
+    mgr = _asr_manager(request)
+    try:
+        result = mgr.transcribe(
+            model, data, language=language, task=task, beam_size=beam_size,
+            temperature=temperature, vad_filter=vad_filter,
+            word_timestamps=word_timestamps,
+        )
+        body, media = asr_runtime.render_response(result, response_format)
+    except asr_runtime.AsrError as e:
+        raise HTTPException(status_code=_asr_status_for(e), detail=str(e)) from e
+    return Response(content=body, media_type=media)
+
+
+@app.post("/v1/audio/transcriptions")
+async def asr_transcriptions(
+    request: Request,
+    file: UploadFile = File(...),
+    model: str = Form(...),
+    language: str | None = Form(None),
+    prompt: str | None = Form(None),  # accepted for API compatibility
+    response_format: str = Form("json"),
+    temperature: float = Form(0.0),
+    beam_size: int = Form(5),
+    vad_filter: bool = Form(True),
+    word_timestamps: bool = Form(False),
+) -> Response:
+    return await _run_multipart_asr(
+        request, file=file, model=model, language=language, task="transcribe",
+        response_format=response_format, temperature=temperature,
+        beam_size=beam_size, vad_filter=vad_filter,
+        word_timestamps=word_timestamps,
+    )
+
+
+@app.post("/v1/audio/translations")
+async def asr_translations(
+    request: Request,
+    file: UploadFile = File(...),
+    model: str = Form(...),
+    prompt: str | None = Form(None),  # noqa: ARG001 — API compatibility
+    response_format: str = Form("json"),
+    temperature: float = Form(0.0),
+    beam_size: int = Form(5),
+    vad_filter: bool = Form(True),
+    word_timestamps: bool = Form(False),
+) -> Response:
+    return await _run_multipart_asr(
+        request, file=file, model=model, language=None, task="translate",
+        response_format=response_format, temperature=temperature,
+        beam_size=beam_size, vad_filter=vad_filter,
+        word_timestamps=word_timestamps,
+    )
 
 
 # ===========================================================================
