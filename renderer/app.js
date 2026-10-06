@@ -29,6 +29,7 @@ import { wireDragDrop } from "./modules/dragdrop.js";
 import { wireOnboarding } from "./modules/onboarding.js";
 import { wireUpdate } from "./modules/update.js";
 import { initCommandPalette, registerAction } from "./modules/command-palette.js";
+import { initNotificationCenter, togglePanel } from "./modules/notification-center.js";
 import { initI18n, t } from "./modules/i18n.js";
 import { createEmptyState } from "./modules/empty-state.js";
 import { whenIdle } from "./modules/idle.js";
@@ -454,9 +455,13 @@ async function bootstrap() {
   // 命令面板构建时会读取占位文案，须在字典加载完成后再初始化，避免占位符显示原始 key。
   i18nReady.then(() => {
     initCommandPalette();
+    initNotificationCenter();
     registerAction("openCompare", () => t("compare.title"),
       () => { try { openCompare(); } catch (_) {} },
       ["compare", "对比", "比较", "models"], "columns", "操作");
+    registerAction("openNotifications", () => t("notif.title"),
+      () => { try { togglePanel(); } catch (_) {} },
+      ["notifications", "通知", "铃铛", "消息"], "bell", "操作");
   });
   // logo / 头像的加载失败降级（替代此前被 CSP 拦截的内联 onerror）
   wireLogoFallbacks();

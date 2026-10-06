@@ -33,7 +33,8 @@
     "refresh": "刷新",
     "openDownloads": "打开下载面板",
     "sidecarBusy": "sidecar: …",
-    "sidecarDown": "sidecar: ✗ {msg}"
+    "sidecarDown": "sidecar: ✗ {msg}",
+    "notifications": "通知"
   },
   "market": {
     "allCategories": "全部分类",
@@ -757,5 +758,12 @@
       "trending": "热门",
       "tags": "标签"
     }
+  },
+  "notif": {
+    "title": "通知",
+    "empty": "暂无通知",
+    "markAllRead": "全部已读",
+    "clear": "清空",
+    "delete": "删除"
   }
 }
