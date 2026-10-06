@@ -1831,7 +1831,7 @@
       "name": "APISR (Anime/Photo)",
       "repo": "camenduru/APISR",
       "gguf_repo": "",
-      "size_gb": 0.5,
+      "size_gb": 0.1,
       "engine": [
         "diffusers"
       ],
@@ -4500,7 +4500,7 @@
       "name": "MiniMax-Music3（W4A8 低显存 ComfyUI）",
       "repo": "NidAll/MiniMax-Music3-W4A8",
       "gguf_repo": "",
-      "size_gb": 13,
+      "size_gb": 2,
       "engine": [
         "comfyui"
       ],
@@ -4539,7 +4539,8 @@
           "audio"
         ],
         "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
-      }
+      },
+      "notes": "W4A8 量化 DiT 约 1.3GB；全精度 MiniMax-Music3 体积更大。"
     },
     {
       "id": "minimax-music3-lora-fiona-crapple",
@@ -6863,7 +6864,18 @@
         "多模态",
         "热门",
         "语言模型"
-      ]
+      ],
+      "quantizations": [
+        {
+          "id": "Q2_K",
+          "label": "Q2_K",
+          "file_quant": "Q2_K",
+          "size_gb": 340.6,
+          "vram_gb": 391.7,
+          "recommended": true
+        }
+      ],
+      "notes": "GGUF 含 Q2 主权重(340.6GB)与独立 Vision 编码器(0.9GB)，需一并下载。"
     },
     {
       "id": "glm-5.3-flash",
@@ -7216,6 +7228,16 @@
         "对话",
         "热门",
         "语言模型"
+      ],
+      "quantizations": [
+        {
+          "id": "LOSSLESS",
+          "label": "LOSSLESS",
+          "file_quant": "LOSSLESS",
+          "size_gb": 18.22,
+          "vram_gb": 21.0,
+          "recommended": true
+        }
       ]
     },
     {
@@ -7265,6 +7287,16 @@
         "对话",
         "热门",
         "语言模型"
+      ],
+      "quantizations": [
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 18.72,
+          "vram_gb": 21.5,
+          "recommended": true
+        }
       ]
     },
     {
@@ -10396,7 +10428,7 @@
       "category": "llm",
       "name": "Nex N2.5 Pro (Agent)",
       "repo": "nex-agi/Nex-N2.5-Pro",
-      "gguf_repo": "bartowski/nex-agi_Nex-N2.5-mini-GGUF",
+      "gguf_repo": "bartowski/Nex-N2.5-Pro-GGUF",
       "size_gb": 379,
       "engine": [
         "llama.cpp"
@@ -10438,42 +10470,42 @@
       "quantizations": [
         {
           "id": "Q3_K_M",
-          "label": "Q3_K_M（极致压缩）",
+          "label": "Q3_K_M",
           "file_quant": "Q3_K_M",
-          "size_gb": 16.15,
-          "vram_gb": 18.6,
+          "size_gb": 176.91,
+          "vram_gb": 203.4,
           "recommended": false
         },
         {
           "id": "Q4_K_M",
-          "label": "Q4_K_M（推荐）",
+          "label": "Q4_K_M",
           "file_quant": "Q4_K_M",
-          "size_gb": 20.79,
-          "vram_gb": 23.9,
+          "size_gb": 233.61,
+          "vram_gb": 268.7,
           "recommended": true
         },
         {
           "id": "Q5_K_M",
           "label": "Q5_K_M",
           "file_quant": "Q5_K_M",
-          "size_gb": 25.13,
-          "vram_gb": 28.9,
+          "size_gb": 284.62,
+          "vram_gb": 327.3,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 325.78,
+          "vram_gb": 374.6,
           "recommended": false
         },
         {
           "id": "Q8_0",
-          "label": "Q8_0（高保真）",
+          "label": "Q8_0",
           "file_quant": "Q8_0",
-          "size_gb": 34.38,
-          "vram_gb": 39.5,
-          "recommended": false
-        },
-        {
-          "id": "F16",
-          "label": "F16（全精度）",
-          "file_quant": "F16",
-          "size_gb": 66.29,
-          "vram_gb": 76.2,
+          "size_gb": 392.62,
+          "vram_gb": 451.5,
           "recommended": false
         }
       ]

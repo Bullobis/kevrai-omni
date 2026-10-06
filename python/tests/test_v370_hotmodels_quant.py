@@ -119,7 +119,7 @@ def test_flash_next_is_multimodal():
 # ---------------------------------------------------------------------------
 # quantizations data structure
 # ---------------------------------------------------------------------------
-QUANT_ORDER = ["Q3_K_M", "Q4_K", "Q4_K_M", "Q5_K_M", "Q6_K", "Q8_0", "F16"]
+QUANT_ORDER = ["Q2_K", "Q3_K_M", "IQ4_NL", "Q4_K", "Q4_K_M", "Q5_K_M", "Q6_K", "Q8_0", "F16", "LOSSLESS"]
 
 
 def test_at_least_30_models_declare_quantizations():
