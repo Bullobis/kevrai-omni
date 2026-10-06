@@ -64,7 +64,7 @@ MODEL_ID_RE = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
 # The 9 legacy categories plus the new "other" bucket (§1.6 of the design).
 CATEGORIES: tuple[str, ...] = (
     "llm", "tts", "video", "image", "superres",
-    "audio", "3d", "vision", "pending", "other",
+    "audio", "embedding", "3d", "vision", "pending", "other",
 )
 
 SORTS: tuple[str, ...] = ("relevance", "downloads", "likes", "recent", "name_asc")

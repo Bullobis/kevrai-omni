@@ -35,6 +35,7 @@ ALLOWED_CATEGORIES: tuple[str, ...] = (
     "image",
     "superres",
     "audio",
+    "embedding",
     "3d",
     "vision",
     "pending",

@@ -25,7 +25,8 @@
     "pending": "Awaiting Open Weights",
     "environments": "Environments",
     "settings": "Settings",
-    "asr": "Speech to Text"
+    "asr": "Speech to Text",
+    "embeddings": "Embeddings"
   },
   "header": {
     "downloads": "Downloads",
@@ -166,6 +167,7 @@
     "category_image": "Image generation",
     "category_superres": "Super-resolution",
     "category_audio": "Audio understanding",
+    "category_embedding": "Embeddings",
     "category_3d": "3D generation",
     "category_vision": "Multimodal",
     "category_pending": "Pending",
@@ -821,6 +823,25 @@
     "run": "Transcribe",
     "pickFirst": "Please choose an audio file first",
     "failed": "Transcription failed: {err}",
+    "engineInstalled": "Engine installed"
+  },
+  "embeddings": {
+    "title": "Embeddings",
+    "engineReady": "Engine ready {ver}",
+    "engineMissing": "Engine not installed",
+    "missingHint": "Install the Sentence Transformers embedding engine.",
+    "install": "Install engine",
+    "model": "Model",
+    "input": "Texts to embed (one per line)",
+    "normalize": "Normalize vectors (for similarity search)",
+    "run": "Generate embeddings",
+    "copy": "Copy full JSON",
+    "dims": "dims",
+    "count": "Generated {n} vectors",
+    "tokens": "Input tokens {n}",
+    "enterFirst": "Please enter text to embed first",
+    "failed": "Embedding failed: {err}",
+    "copied": "Copied",
     "engineInstalled": "Engine installed"
   }
 }

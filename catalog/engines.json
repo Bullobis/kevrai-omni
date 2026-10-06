@@ -593,6 +593,31 @@
       "pip_extra": [
         "av>=13,<19"
       ]
+    },
+    {
+      "id": "sentence-transformers",
+      "name": "Sentence Transformers",
+      "category": "general",
+      "description": "基于 Transformers 的文本向量嵌入（sentence-transformers），用于语义检索、相似度计算与 RAG，CPU/CUDA 均可。",
+      "github": "huggingface/sentence-transformers",
+      "install": "pip",
+      "pypi": "sentence-transformers==6.1.0",
+      "license": "Apache-2.0",
+      "size_mb": 120,
+      "platforms": {
+        "linux-x64": "https://github.com/huggingface/sentence-transformers/releases/latest",
+        "windows-x64": "https://github.com/huggingface/sentence-transformers/releases/latest",
+        "darwin-arm64": "https://github.com/huggingface/sentence-transformers/releases/latest",
+        "darwin-x64": "https://github.com/huggingface/sentence-transformers/releases/latest"
+      },
+      "trending": true,
+      "sources": [
+        "https://pypi.org/simple/sentence-transformers/",
+        "https://mirrors.aliyun.com/pypi/simple/sentence-transformers/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/sentence-transformers/",
+        "https://mirrors.cloud.tencent.com/pypi/simple/sentence-transformers/",
+        "https://github.com/huggingface/sentence-transformers"
+      ]
     }
   ]
 }

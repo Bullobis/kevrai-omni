@@ -304,7 +304,8 @@ function renderCard(m) {
 // data/state — only the display text is localized).
 const CATEGORY_LABELS = {
   llm: "category_llm", tts: "category_tts", video: "category_video", image: "category_image",
-  superres: "category_superres", audio: "category_audio", "3d": "category_3d", vision: "category_vision",
+  superres: "category_superres", audio: "category_audio", embedding: "category_embedding",
+  "3d": "category_3d", vision: "category_vision",
   pending: "category_pending", other: "category_other",
 };
 
