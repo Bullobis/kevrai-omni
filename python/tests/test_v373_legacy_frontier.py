@@ -13,8 +13,8 @@ _MODELS = json.loads((_ROOT / "catalog" / "models.json").read_text(encoding="utf
 _BY_ID = {m["id"]: m for m in _MODELS}
 
 
-def test_total_grew_to_205():
-    assert len(_MODELS) == 205
+def test_total_at_least_205():
+    assert len(_MODELS) >= 205
 
 
 # --- legacy corrections ------------------------------------------------------

@@ -6381,7 +6381,7 @@
       "category": "llm",
       "name": "Gemma 4 31B IT",
       "repo": "google/gemma-4-31B-it",
-      "gguf_repo": "",
+      "gguf_repo": "unsloth/gemma-4-31B-it-GGUF",
       "size_gb": 62,
       "engine": [
         "llama.cpp",
@@ -6422,6 +6422,48 @@
         "对话",
         "热门",
         "语言模型"
+      ],
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M（极致压缩）",
+          "file_quant": "Q3_K_M",
+          "size_gb": 13.72,
+          "vram_gb": 15.8,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M（推荐）",
+          "file_quant": "Q4_K_M",
+          "size_gb": 17.07,
+          "vram_gb": 19.6,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 20.17,
+          "vram_gb": 23.2,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 23.47,
+          "vram_gb": 27.0,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0（高保真）",
+          "file_quant": "Q8_0",
+          "size_gb": 30.39,
+          "vram_gb": 34.9,
+          "recommended": false
+        }
       ]
     },
     {
@@ -6429,7 +6471,7 @@
       "category": "llm",
       "name": "Gemma 4 26B A4B IT",
       "repo": "google/gemma-4-26B-A4B-it",
-      "gguf_repo": "",
+      "gguf_repo": "unsloth/gemma-4-26B-A4B-it-GGUF",
       "size_gb": 52,
       "engine": [
         "llama.cpp"
@@ -6466,6 +6508,48 @@
         "大语言模型",
         "对话",
         "语言模型"
+      ],
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M（极致压缩）",
+          "file_quant": "Q3_K_M",
+          "size_gb": 11.85,
+          "vram_gb": 13.6,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M（推荐）",
+          "file_quant": "Q4_K_M",
+          "size_gb": 15.78,
+          "vram_gb": 18.1,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 19.7,
+          "vram_gb": 22.7,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 21.58,
+          "vram_gb": 24.8,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0（高保真）",
+          "file_quant": "Q8_0",
+          "size_gb": 25.02,
+          "vram_gb": 28.8,
+          "recommended": false
+        }
       ]
     },
     {
@@ -6473,7 +6557,7 @@
       "category": "llm",
       "name": "Gemma 4 12B IT",
       "repo": "google/gemma-4-12B-it",
-      "gguf_repo": "",
+      "gguf_repo": "unsloth/gemma-4-12b-it-GGUF",
       "size_gb": 24,
       "engine": [
         "llama.cpp"
@@ -6508,6 +6592,56 @@
         "大语言模型",
         "对话",
         "语言模型"
+      ],
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M（极致压缩）",
+          "file_quant": "Q3_K_M",
+          "size_gb": 5.3,
+          "vram_gb": 6.1,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M（推荐）",
+          "file_quant": "Q4_K_M",
+          "size_gb": 6.63,
+          "vram_gb": 7.6,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 7.84,
+          "vram_gb": 9.0,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 9.11,
+          "vram_gb": 10.5,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0（高保真）",
+          "file_quant": "Q8_0",
+          "size_gb": 11.8,
+          "vram_gb": 13.6,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16（全精度）",
+          "file_quant": "F16",
+          "size_gb": 22.2,
+          "vram_gb": 25.5,
+          "recommended": false
+        }
       ]
     },
     {
@@ -11004,6 +11138,199 @@
         "Microsoft",
         "MIT",
         "本地部署"
+      ]
+    },
+    {
+      "id": "gemma-4-e2b",
+      "category": "vision",
+      "name": "Gemma 4 E2B (Edge, multimodal)",
+      "repo": "google/gemma-4-E2B-it",
+      "gguf_repo": "unsloth/gemma-4-E2B-it-GGUF",
+      "size_gb": 9,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "Gemma Terms of Use (other, gemma)",
+      "trending": true,
+      "description": "Google Gemma 4 Edge E2B，端侧多模态（文本+图像+音频），含视觉/音频编码器。",
+      "sources": [
+        "https://huggingface.co/google/gemma-4-E2B-it/",
+        "https://hf-mirror.com/google/gemma-4-E2B-it/"
+      ],
+      "primary_url": "https://huggingface.co/google/gemma-4-E2B-it/",
+      "hardware": {
+        "vram_gb": 4,
+        "min_vram_gb": 3,
+        "ram_gb": 8,
+        "disk_gb": 9,
+        "notes": "Q4_K_M 约2.9GB"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "image",
+          "audio"
+        ],
+        "generate": [
+          "text",
+          "audio"
+        ],
+        "notes": "端侧多模态"
+      },
+      "tags": [
+        "Gemma",
+        "多模态",
+        "端侧",
+        "小模型",
+        "视觉",
+        "音频",
+        "热门"
+      ],
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M（极致压缩）",
+          "file_quant": "Q3_K_M",
+          "size_gb": 2.36,
+          "vram_gb": 2.7,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M（推荐）",
+          "file_quant": "Q4_K_M",
+          "size_gb": 2.89,
+          "vram_gb": 3.3,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 3.13,
+          "vram_gb": 3.6,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 4.19,
+          "vram_gb": 4.8,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0（高保真）",
+          "file_quant": "Q8_0",
+          "size_gb": 4.7,
+          "vram_gb": 5.4,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16（全精度）",
+          "file_quant": "F16",
+          "size_gb": 8.67,
+          "vram_gb": 10.0,
+          "recommended": false
+        }
+      ]
+    },
+    {
+      "id": "gemma-4-e4b",
+      "category": "vision",
+      "name": "Gemma 4 E4B (Edge, multimodal)",
+      "repo": "google/gemma-4-E4B-it",
+      "gguf_repo": "unsloth/gemma-4-E4B-it-GGUF",
+      "size_gb": 15,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "Gemma Terms of Use (other, gemma)",
+      "trending": true,
+      "description": "Google Gemma 4 Edge E4B，端侧多模态（文本+图像+音频），能力强于 E2B。",
+      "sources": [
+        "https://huggingface.co/google/gemma-4-E4B-it/",
+        "https://hf-mirror.com/google/gemma-4-E4B-it/"
+      ],
+      "primary_url": "https://huggingface.co/google/gemma-4-E4B-it/",
+      "hardware": {
+        "vram_gb": 6,
+        "min_vram_gb": 4,
+        "ram_gb": 12,
+        "disk_gb": 15,
+        "notes": "Q4_K_M 约4.6GB"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "image",
+          "audio"
+        ],
+        "generate": [
+          "text",
+          "audio"
+        ],
+        "notes": "端侧多模态"
+      },
+      "tags": [
+        "Gemma",
+        "多模态",
+        "端侧",
+        "视觉",
+        "音频",
+        "热门"
+      ],
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M（极致压缩）",
+          "file_quant": "Q3_K_M",
+          "size_gb": 3.78,
+          "vram_gb": 4.3,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M（推荐）",
+          "file_quant": "Q4_K_M",
+          "size_gb": 4.64,
+          "vram_gb": 5.3,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 5.11,
+          "vram_gb": 5.9,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 6.59,
+          "vram_gb": 7.6,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0（高保真）",
+          "file_quant": "Q8_0",
+          "size_gb": 7.63,
+          "vram_gb": 8.8,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16（全精度）",
+          "file_quant": "F16",
+          "size_gb": 14.02,
+          "vram_gb": 16.1,
+          "recommended": false
+        }
       ]
     }
   ],
