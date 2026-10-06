@@ -11374,6 +11374,196 @@
         "SortFormer",
         "NVIDIA"
       ]
+    },
+    {
+      "id": "llama-4-scout",
+      "category": "llm",
+      "name": "Llama 4 Scout 17B-16E Instruct",
+      "repo": "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+      "gguf_repo": "unsloth/Llama-4-Scout-17B-16E-Instruct-GGUF",
+      "size_gb": 217,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "other",
+      "trending": true,
+      "description": "Meta Llama 4 Scout：原生多模态 MoE，17B 激活 / 16 专家，长上下文与工具调用。基座需在 HF 接受 Llama 4 社区许可（gated），亦可经 GGUF 本地运行。",
+      "sources": [
+        "https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E-Instruct/",
+        "https://hf-mirror.com/meta-llama/Llama-4-Scout-17B-16E-Instruct/"
+      ],
+      "primary_url": "https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E-Instruct/",
+      "hardware": {
+        "vram_gb": 66,
+        "min_vram_gb": 52,
+        "ram_gb": 96,
+        "disk_gb": 218,
+        "notes": "Q4_K_M 约65GB；多卡可分布；含视觉投影"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "原生多模态 MoE（Llama 4 社区许可，需接受许可）"
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 51.8,
+          "vram_gb": 51.8,
+          "recommended": false
+        },
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 61.0,
+          "vram_gb": 61.0,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 65.4,
+          "vram_gb": 65.4,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 76.5,
+          "vram_gb": 76.5,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 114.5,
+          "vram_gb": 114.5,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 217.3,
+          "vram_gb": 217.3,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "Llama4",
+        "多模态",
+        "MoE",
+        "旗舰",
+        "Meta",
+        "热门"
+      ]
+    },
+    {
+      "id": "llama-4-maverick",
+      "category": "llm",
+      "name": "Llama 4 Maverick 17B-128E Instruct",
+      "repo": "meta-llama/Llama-4-Maverick-17B-128E-Instruct",
+      "gguf_repo": "unsloth/Llama-4-Maverick-17B-128E-Instruct-GGUF",
+      "size_gb": 803,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "other",
+      "trending": true,
+      "description": "Meta Llama 4 Maverick：原生多模态 MoE，17B 激活 / 128 专家，旗舰级能力。基座 gated（Llama 4 社区许可），亦可经 GGUF 本地运行。",
+      "sources": [
+        "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct/",
+        "https://hf-mirror.com/meta-llama/Llama-4-Maverick-17B-128E-Instruct/"
+      ],
+      "primary_url": "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct/",
+      "hardware": {
+        "vram_gb": 243,
+        "min_vram_gb": 191,
+        "ram_gb": 512,
+        "disk_gb": 804,
+        "notes": "Q4_K_M 约243GB；建议多卡；含视觉投影"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "原生多模态 MoE（Llama 4 社区许可，需接受许可）"
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 191.1,
+          "vram_gb": 191.1,
+          "recommended": false
+        },
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 225.8,
+          "vram_gb": 225.8,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 242.8,
+          "vram_gb": 242.8,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 284.5,
+          "vram_gb": 284.5,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 425.8,
+          "vram_gb": 425.8,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 803.2,
+          "vram_gb": 803.2,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "Llama4",
+        "多模态",
+        "MoE",
+        "旗舰",
+        "Meta",
+        "热门"
+      ]
     }
   ],
   "gguf_repos": [
