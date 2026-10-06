@@ -3308,11 +3308,11 @@
       "trending": true,
       "description": "2026-04-20 开源：1T 参数 MoE / 激活 32B，原生多模态（MoonViT 视觉编码器），256K 上下文，编程与 Agent 能力较强。",
       "hardware": {
-        "vram_gb": 640,
-        "min_vram_gb": 320,
-        "ram_gb": 896,
-        "disk_gb": 554,
-        "notes": "Q4 约 620GB；多卡服务器起步；MLX 量化版可在 M3 Ultra 512GB 上运行"
+        "vram_gb": 584,
+        "min_vram_gb": 340,
+        "ram_gb": 640,
+        "disk_gb": 585,
+        "notes": "万亿级 MoE；GGUF 为 unsloth UD-Q2/Q4/Q8_K_XL 动态量化（映射到标准 id），BF16 全量约 2.05TB；Q4_K_M 推荐"
       },
       "sources": [
         "https://huggingface.co/unsloth/Kimi-K2.6-GGUF/",
@@ -3348,12 +3348,36 @@
       ],
       "quantizations": [
         {
-          "id": "F16",
-          "label": "F16（全精度）",
-          "file_quant": "F16",
-          "size_gb": 1913.93,
-          "vram_gb": 2201.0,
+          "id": "Q2_K",
+          "label": "Q2_K",
+          "file_quant": "Q2_K",
+          "size_gb": 340.48,
+          "vram_gb": 340.48,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 583.71,
+          "vram_gb": 583.71,
           "recommended": true
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 594.54,
+          "vram_gb": 594.54,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 2053.16,
+          "vram_gb": 2053.16,
+          "recommended": false
         }
       ]
     },
