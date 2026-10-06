@@ -44,6 +44,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, ValidationError
 
 from . import USER_AGENT, __version__, ltx_runtime, mnn_runtime
+from . import clawdchat as clawdchat_mod
 from . import converter as converter_service
 from . import drama as drama_agent
 from . import engines as engines_module  # re-export
@@ -3426,6 +3427,26 @@ def agent_cancel(req: AgentCancelReq, request: Request) -> dict[str, Any]:
     agent = _get_agent(request)
     cancelled = agent.cancel(req.session_id)
     return {"cancelled": cancelled, "session_id": req.session_id}
+
+
+@app.post("/api/clawdchat/heartbeat")
+def clawdchat_heartbeat() -> dict[str, Any]:
+    """One-shot ClawdChat (虾聊) agent heartbeat for the unified scheduler.
+
+    The renderer calls this every ~2 h. Credentials live ONLY on the sidecar
+    side (``~/.clawdchat/credentials.json``); the renderer never sees the key.
+    Returns HTTP 200 in every non-crash case so the scheduler stays simple:
+
+      * not configured  -> ``{"configured": false, "reachable": false}``
+        (front-end silently skips, never a 500);
+      * upstream down   -> ``{"configured": true, "reachable": false}``
+        (front-end retries next cycle);
+      * healthy         -> agent claim/status + unread counters, never the key.
+
+    Runs the synchronous httpx call in FastAPI's thread pool, so a slow upstream
+    (≤15 s) never blocks the event loop.
+    """
+    return clawdchat_mod.heartbeat()
 
 
 @app.websocket("/ws/agent/{session_id}")
