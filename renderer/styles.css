@@ -17,6 +17,7 @@
  */
 
 :root {
+  color-scheme: dark;
   /* ── 表面色阶（深色：越上层越亮，对齐 Cherry Studio 的层级直觉）── */
   --stack-0: #0d0e11;   /* 应用底 */
   --stack-1: #131418;   /* 面板 / 侧栏 */
@@ -832,6 +833,11 @@ html[data-theme="light"] .mnn-msg.user { color: #fff; }
 .ltx-form .field { display: flex; flex-direction: column; gap: 4px; }
 .ltx-form .field.grow { flex: 1; }
 .ltx-form .field > span { font-size: 12px; color: var(--mut, #999); }
+.ltx-form input, .ltx-form select, .ltx-form textarea {
+  background: var(--card); border: 1px solid var(--bord); border-radius: 10px;
+  color: var(--fg); padding: 8px 10px; font-size: 13px; outline: none;
+}
+.ltx-form input:focus, .ltx-form select:focus, .ltx-form textarea:focus { box-shadow: var(--focus); border-color: var(--acc); }
 .ltx-form textarea { resize: vertical; min-height: 56px; }
 .ltx-form textarea:focus-visible { outline: none; border-color: var(--acc); box-shadow: var(--focus); }
 .ltx-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
