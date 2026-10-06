@@ -196,6 +196,8 @@ class TestBuiltinPreserved:
                          "drama_storyboard", "drama_render_plan"},
         "writing_studio": None,          # 只在下方断言存在
         "media_prompt_studio": None,
+        "media_engines": {"asr_transcribe", "embed_text", "separate_audio",
+                          "tts_speak", "vision_ask", "gen_image"},
     }
     EXPECTED_IDS = set(EXPECTED)
 

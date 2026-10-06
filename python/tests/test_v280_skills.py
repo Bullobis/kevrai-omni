@@ -218,10 +218,11 @@ class TestSkillManager:
 # Built-in bundles
 # ===========================================================================
 class TestBuiltinSkills:
-    def test_six_builtin_skills(self):
+    def test_seven_builtin_skills(self):
         ids = [s.id for s in BUILTIN_SKILLS]
         assert ids == ["core", "model_catalog", "local_system",
-                       "drama_studio", "writing_studio", "media_prompt_studio"]
+                       "drama_studio", "writing_studio", "media_prompt_studio",
+                       "media_engines"]
 
     def test_default_active_count(self):
         sm = build_skill_manager()
@@ -229,13 +230,14 @@ class TestBuiltinSkills:
         assert len(sm.active_tool_names()) == 16
         assert not sm.is_enabled("writing_studio")
         assert not sm.is_enabled("media_prompt_studio")
+        assert not sm.is_enabled("media_engines")
 
-    def test_all_enabled_is_23(self):
+    def test_all_enabled_is_29(self):
         sm = build_skill_manager()
-        for sid in ("writing_studio", "media_prompt_studio"):
+        for sid in ("writing_studio", "media_prompt_studio", "media_engines"):
             sm.enable(sid)
-        assert len(sm.active_tool_names()) == 23
-        assert len(all_skill_tools()) == 23
+        assert len(sm.active_tool_names()) == 29
+        assert len(all_skill_tools()) == 29
 
     def test_global_tool_name_uniqueness(self):
         names = [t.name for t in all_skill_tools()]
@@ -494,7 +496,7 @@ class TestSkillsAPI:
         r = client.get("/api/agent/skills")
         assert r.status_code == 200
         d = r.json()
-        assert d["count"] == 6 and d["active_count"] == 4
+        assert d["count"] == 7 and d["active_count"] == 4
         assert d["active_tool_count"] == 16
 
     def test_toggle_changes_tool_count(self, client):
