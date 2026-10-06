@@ -12159,6 +12159,395 @@
         "编程",
         "Apache"
       ]
+    },
+    {
+      "id": "phi-4-multimodal",
+      "category": "llm",
+      "name": "Phi-4-multimodal Instruct",
+      "repo": "microsoft/Phi-4-multimodal-instruct",
+      "size_gb": 12.81,
+      "engine": [
+        "transformers"
+      ],
+      "license": "mit",
+      "trending": true,
+      "description": "微软 Phi-4-multimodal（约5.6B），统一处理文本、图像与音频（含语音识别/翻译），MIT，需 transformers 加载。",
+      "sources": [
+        "https://huggingface.co/microsoft/Phi-4-multimodal-instruct/",
+        "https://hf-mirror.com/microsoft/Phi-4-multimodal-instruct/"
+      ],
+      "primary_url": "https://huggingface.co/microsoft/Phi-4-multimodal-instruct/",
+      "hardware": {
+        "vram_gb": 13,
+        "min_vram_gb": 8,
+        "ram_gb": 32,
+        "disk_gb": 14
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image",
+          "audio"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "Phi4",
+        "多模态",
+        "音频",
+        "视觉",
+        "微软",
+        "MIT",
+        "热门"
+      ]
+    },
+    {
+      "id": "mistral-small-3.2-24b",
+      "category": "llm",
+      "name": "Mistral Small 3.2 24B Instruct",
+      "repo": "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
+      "gguf_repo": "unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF",
+      "size_gb": 48.03,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "apache-2.0",
+      "trending": true,
+      "description": "Mistral Small 3.2（24B，2506），图文理解、长上下文与函数调用，Apache-2.0。",
+      "sources": [
+        "https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506/",
+        "https://huggingface.co/unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF/",
+        "https://hf-mirror.com/unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506/",
+      "hardware": {
+        "vram_gb": 15,
+        "min_vram_gb": 11.5,
+        "ram_gb": 32,
+        "disk_gb": 49,
+        "notes": "视觉需 mmproj 0.88GB"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 11.47,
+          "vram_gb": 11.47,
+          "recommended": false
+        },
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 13.47,
+          "vram_gb": 13.47,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 14.33,
+          "vram_gb": 14.33,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 16.76,
+          "vram_gb": 16.76,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 25.05,
+          "vram_gb": 25.05,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 48.03,
+          "vram_gb": 48.03,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "Mistral",
+        "Small",
+        "视觉理解",
+        "多模态",
+        "Apache",
+        "热门"
+      ]
+    },
+    {
+      "id": "gemma-3n-e4b",
+      "category": "llm",
+      "name": "Gemma 3n E4B",
+      "repo": "google/gemma-3n-E4B-it",
+      "gguf_repo": "unsloth/gemma-3n-E4B-it-GGUF",
+      "size_gb": 7.35,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "gemma",
+      "trending": true,
+      "description": "Google Gemma 3n E4B，面向移动/端侧的多模态（音视频/图文），MatFormer 结构，基座 gated（Gemma 许可）。",
+      "sources": [
+        "https://huggingface.co/google/gemma-3n-E4B-it/",
+        "https://huggingface.co/unsloth/gemma-3n-E4B-it-GGUF/",
+        "https://hf-mirror.com/unsloth/gemma-3n-E4B-it-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/google/gemma-3n-E4B-it/",
+      "hardware": {
+        "vram_gb": 5,
+        "min_vram_gb": 3.7,
+        "ram_gb": 8,
+        "disk_gb": 8
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image",
+          "audio"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 3.69,
+          "vram_gb": 3.69,
+          "recommended": false
+        },
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 4.39,
+          "vram_gb": 4.39,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 4.54,
+          "vram_gb": 4.54,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 5.02,
+          "vram_gb": 5.02,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 7.35,
+          "vram_gb": 7.35,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "Gemma3n",
+        "端侧",
+        "多模态",
+        "MatFormer",
+        "移动",
+        "低资源"
+      ]
+    },
+    {
+      "id": "qwen2.5-vl-72b",
+      "category": "llm",
+      "name": "Qwen2.5-VL 72B Instruct",
+      "repo": "Qwen/Qwen2.5-VL-72B-Instruct",
+      "gguf_repo": "unsloth/Qwen2.5-VL-72B-Instruct-GGUF",
+      "size_gb": 146.83,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "other",
+      "trending": true,
+      "description": "阿里 Qwen2.5-VL 72B，大规模视觉理解/文档解析，许可为 Qwen 研究许可（other）。",
+      "sources": [
+        "https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct/",
+        "https://huggingface.co/unsloth/Qwen2.5-VL-72B-Instruct-GGUF/",
+        "https://hf-mirror.com/unsloth/Qwen2.5-VL-72B-Instruct-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct/",
+      "hardware": {
+        "vram_gb": 48,
+        "min_vram_gb": 38,
+        "ram_gb": 96,
+        "disk_gb": 148,
+        "notes": "视觉需 mmproj 1.41GB"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 37.7,
+          "vram_gb": 37.7,
+          "recommended": false
+        },
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 41.32,
+          "vram_gb": 41.32,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 47.42,
+          "vram_gb": 47.42,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 54.45,
+          "vram_gb": 54.45,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 146.83,
+          "vram_gb": 146.83,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "Qwen2.5",
+        "VL",
+        "视觉理解",
+        "大模型",
+        "多模态"
+      ]
+    },
+    {
+      "id": "codestral-22b",
+      "category": "llm",
+      "name": "Codestral 22B",
+      "repo": "mistralai/Codestral-22B-v0.1",
+      "gguf_repo": "bartowski/Codestral-22B-v0.1-GGUF",
+      "size_gb": 23.64,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "other",
+      "trending": true,
+      "description": "Mistral Codestral 22B，代码补全与生成，80+ 语言；许可为非生产许可（MNPL，商用受限）。",
+      "sources": [
+        "https://huggingface.co/mistralai/Codestral-22B-v0.1/",
+        "https://huggingface.co/bartowski/Codestral-22B-v0.1-GGUF/",
+        "https://hf-mirror.com/bartowski/Codestral-22B-v0.1-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/mistralai/Codestral-22B-v0.1/",
+      "hardware": {
+        "vram_gb": 14,
+        "min_vram_gb": 10.8,
+        "ram_gb": 32,
+        "disk_gb": 24,
+        "notes": "许可为 Codestral/MNPL，商用受限"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 10.76,
+          "vram_gb": 10.76,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 13.34,
+          "vram_gb": 13.34,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 15.72,
+          "vram_gb": 15.72,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 23.64,
+          "vram_gb": 23.64,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "Codestral",
+        "Mistral",
+        "代码",
+        "编程",
+        "补全"
+      ]
     }
   ],
   "gguf_repos": [
