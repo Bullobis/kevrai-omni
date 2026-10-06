@@ -571,7 +571,7 @@
       "description": "CTranslate2 后端的 Whisper 语音识别（CPU/CUDA，比原版更快、更省显存）。",
       "github": "SYSTRAN/faster-whisper",
       "install": "pip",
-      "pypi": "faster-whisper",
+      "pypi": "faster-whisper==1.2.1",
       "license": "MIT",
       "size_mb": 120,
       "platforms": {
@@ -589,6 +589,9 @@
         "https://mirrors.cloud.tencent.com/pypi/simple/faster-whisper/",
         "https://github.com/SYSTRAN/faster-whisper/releases/latest",
         "https://github.com/SYSTRAN/faster-whisper"
+      ],
+      "pip_extra": [
+        "av>=13,<19"
       ]
     }
   ]

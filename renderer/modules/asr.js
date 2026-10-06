@@ -37,7 +37,8 @@ async function refresh() {
   if (!root) return;
   let cap = { installed: false };
   try {
-    cap = await api.asrCapabilities();
+    const r = await api.asrCapabilities();
+    cap = (r && r.body) ? r.body : r;
   } catch (_) { /* bridge error already toasted */ }
   root.classList.toggle("engine-missing", !cap.installed);
   const status = $("#asr-engine-status", root);
@@ -53,7 +54,8 @@ async function populateModels() {
   const sel = $("#asr-model");
   if (!sel) return;
   try {
-    const all = await api.models({ category: "audio" });
+    const r = await api.models({ category: "audio" });
+    const all = (r && r.body) ? r.body : r;
     const items = (all.items || all).filter(
       (m) => (m.engine || []).includes("faster-whisper")
     );
@@ -154,6 +156,13 @@ export async function initAsr() {
   lang.innerHTML = LANGUAGES.map(
     ([v, l]) => `<option value="${v}">${l}</option>`
   ).join("");
-  await populateModels();
   await refresh();
+  await populateModels();
+  // Re-check engine status every time the pane is shown (engine may have been
+  // installed from the engines page or after a restart).
+  window.addEventListener("kevrai:view-change", (e) => {
+    if (e.detail && e.detail.view === "asr") {
+      refresh().catch(() => {});
+    }
+  });
 }
