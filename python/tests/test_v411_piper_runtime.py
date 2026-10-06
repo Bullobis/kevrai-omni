@@ -4,6 +4,7 @@ Piper/onnxruntime are faked and injected through ``import_piper`` and
 ``_download``; covers voice resolution, the output manifest, parameter
 validation, the JSON route, the stream route and its job-id validation.
 """
+
 from __future__ import annotations
 
 import sys
@@ -48,8 +49,7 @@ class FakeVoice:
 FAKE_PIPER = types.SimpleNamespace(
     __version__="1.8.0",
     config=types.SimpleNamespace(SynthesisConfig=lambda **k: object()),
-    PiperVoice=types.SimpleNamespace(
-        load=lambda *a, **k: FakeVoice()),
+    PiperVoice=types.SimpleNamespace(load=lambda *a, **k: FakeVoice()),
 )
 
 
@@ -139,7 +139,8 @@ def test_synthesize_failure(monkeypatch, tmp_path):
 
     piper = types.SimpleNamespace(
         config=types.SimpleNamespace(SynthesisConfig=lambda **k: object()),
-        PiperVoice=types.SimpleNamespace(load=lambda *a, **k: BoomVoice()))
+        PiperVoice=types.SimpleNamespace(load=lambda *a, **k: BoomVoice()),
+    )
     mgr = _mgr(monkeypatch, tmp_path)
     monkeypatch.setattr(prt, "import_piper", lambda data_root=None: piper)
     with pytest.raises(prt.PiperVoiceError):
@@ -175,8 +176,9 @@ def test_route_capabilities(client):
 
 
 def test_route_synthesize(client):
-    r = client.post("/api/tts-piper/synthesize", json={
-        "voice_id": "en_US-lessac-medium", "text": "Hello there."})
+    r = client.post(
+        "/api/tts-piper/synthesize", json={"voice_id": "en_US-lessac-medium", "text": "Hello there."}
+    )
     assert r.status_code == 200 and r.json()["sample_rate"] == 22050
 
 
@@ -189,8 +191,7 @@ def test_route_stream(monkeypatch, tmp_path):
     d = tmp_path / "tts" / "piper"
     d.mkdir(parents=True)
     (d / "job1.wav").write_bytes(b"RIFF")
-    r = TestClient(main.app).get(
-        "/api/tts-piper/stream", params={"job_id": "job1"})
+    r = TestClient(main.app).get("/api/tts-piper/stream", params={"job_id": "job1"})
     assert r.status_code == 200 and r.headers["content-type"] == "audio/wav"
 
 
@@ -199,8 +200,7 @@ def test_route_stream_bad_job(monkeypatch, tmp_path):
 
     from app import main
 
-    r = TestClient(main.app).get(
-        "/api/tts-piper/stream", params={"job_id": "../../etc"})
+    r = TestClient(main.app).get("/api/tts-piper/stream", params={"job_id": "../../etc"})
     assert r.status_code == 400
 
 
@@ -214,6 +214,7 @@ def test_route_engine_missing(monkeypatch, tmp_path):
 
     monkeypatch.setattr(prt, "import_piper", boom)
     main.app.state.piper = prt.PiperManager(tmp_path)
-    r = TestClient(main.app).post("/api/tts-piper/synthesize", json={
-        "voice_id": "en_US-lessac-medium", "text": "hi"})
+    r = TestClient(main.app).post(
+        "/api/tts-piper/synthesize", json={"voice_id": "en_US-lessac-medium", "text": "hi"}
+    )
     assert r.status_code == 503
