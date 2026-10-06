@@ -1,0 +1,58 @@
+/* ---------- Appearance personalization — styles/appearance.css ----------
+   强调色（按主题覆盖 --acc）+ 界面密度（网格几何 CSS 变量 + 卡片密度）。 */
+
+/* 强调色 · 深色主题 */
+html[data-accent="green"]  { --acc: #4ca97a; }
+html[data-accent="blue"]   { --acc: #4f9cf9; }
+html[data-accent="violet"] { --acc: #9b8afb; }
+html[data-accent="orange"] { --acc: #f5a356; }
+html[data-accent="pink"]   { --acc: #f072a6; }
+html[data-accent="cyan"]   { --acc: #3fc6c2; }
+/* 强调色 · 浅色主题（取更深一档以保证文字/控件对比度） */
+html[data-theme="light"][data-accent="green"]  { --acc: #2f7d55; }
+html[data-theme="light"][data-accent="blue"]   { --acc: #2563c9; }
+html[data-theme="light"][data-accent="violet"] { --acc: #6d5bd0; }
+html[data-theme="light"][data-accent="orange"] { --acc: #c4762c; }
+html[data-theme="light"][data-accent="pink"]   { --acc: #d2477f; }
+html[data-theme="light"][data-accent="cyan"]   { --acc: #1f9490; }
+
+/* 界面密度 → 虚拟网格几何（virtual-grid.js 读取这两个变量） */
+:root { --grid-min-w: 280px; --grid-item-h: 168px; }
+html[data-density="compact"] { --grid-min-w: 236px; --grid-item-h: 134px; }
+/* 紧凑模式：卡片内边距/间距收紧，描述少一行，信息更密 */
+html[data-density="compact"] .vgrid-item { padding: 10px; gap: 6px; }
+html[data-density="compact"] .card-desc { -webkit-line-clamp: 2; }
+html[data-density="compact"] .card-pills { gap: 4px; }
+html[data-density="compact"] .card-pills .pill { padding: 1px 6px; }
+
+/* ── 设置控件 ── */
+.appearance-block { margin-top: 18px; display: flex; flex-direction: column; gap: 9px; }
+.appearance-label { font-size: 13px; font-weight: 600; }
+
+.accent-swatches { display: flex; gap: 11px; flex-wrap: wrap; }
+.swatch {
+  width: 26px; height: 26px; border-radius: 50%; padding: 0;
+  border: 2px solid var(--bord); background: var(--sw); cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.swatch:hover { transform: scale(1.12); }
+.swatch.is-active {
+  border-color: var(--stack-3);
+  box-shadow: 0 0 0 2px var(--fg);
+}
+
+.density-toggle {
+  display: inline-flex; gap: 2px; padding: 2px; width: max-content;
+  background: var(--stack-2); border: 1px solid var(--bord); border-radius: var(--r-2);
+}
+.density-opt {
+  border: 0; background: none; color: var(--mut); cursor: pointer;
+  padding: 5px 15px; border-radius: 6px; font-size: 12.5px;
+  transition: background .12s ease, color .12s ease;
+}
+.density-opt.is-active { background: var(--acc); color: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .swatch, .density-opt { transition: none; }
+  .swatch:hover { transform: none; }
+}

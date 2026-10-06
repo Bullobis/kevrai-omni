@@ -30,6 +30,7 @@ import { wireOnboarding } from "./modules/onboarding.js";
 import { wireUpdate } from "./modules/update.js";
 import { initCommandPalette, registerAction } from "./modules/command-palette.js";
 import { initNotificationCenter, togglePanel } from "./modules/notification-center.js";
+import { initAppearance, setAccent, setDensity } from "./modules/appearance.js";
 import { initI18n, t } from "./modules/i18n.js";
 import { createEmptyState } from "./modules/empty-state.js";
 import { whenIdle } from "./modules/idle.js";
@@ -450,6 +451,7 @@ async function bootstrap() {
   wireGlobalUI();
   wireWindowControls();
   wireThemeListener();
+  initAppearance();
   const i18nReady = initI18n();
   wirePaletteEvents();
   // 命令面板构建时会读取占位文案，须在字典加载完成后再初始化，避免占位符显示原始 key。
@@ -462,6 +464,23 @@ async function bootstrap() {
     registerAction("openNotifications", () => t("notif.title"),
       () => { try { togglePanel(); } catch (_) {} },
       ["notifications", "通知", "铃铛", "消息"], "bell", "操作");
+    // 外观：密度切换（rows 图标）
+    registerAction("densityComfortable", () => t("cmdpal.actions.densityComfortable"),
+      () => setDensity("comfortable"), ["comfortable", "舒适", "density", "密度"], "rows", "主题");
+    registerAction("densityCompact", () => t("cmdpal.actions.densityCompact"),
+      () => setDensity("compact"), ["compact", "紧凑", "density", "密度"], "rows", "主题");
+    // 外观：强调色（droplet 图标）
+    const ACCENT_CMDS = [
+      ["Green", "green", ["green", "绿色", "accent", "强调色"]],
+      ["Blue", "blue", ["blue", "蓝色", "accent", "强调色"]],
+      ["Violet", "violet", ["violet", "紫色", "accent", "强调色"]],
+      ["Orange", "orange", ["orange", "橙色", "accent", "强调色"]],
+      ["Pink", "pink", ["pink", "粉色", "accent", "强调色"]],
+      ["Cyan", "cyan", ["cyan", "青色", "accent", "强调色"]],
+    ];
+    ACCENT_CMDS.forEach(([cap, id, kws]) =>
+      registerAction("accent" + cap, () => t("cmdpal.actions.accent" + cap),
+        () => setAccent(id), kws, "droplet", "主题"));
   });
   // logo / 头像的加载失败降级（替代此前被 CSP 拦截的内联 onerror）
   wireLogoFallbacks();
