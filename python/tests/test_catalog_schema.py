@@ -185,7 +185,7 @@ def test_every_gguf_repo_owner_repo_is_safe_hf_slug(models_data):
 
 
 def test_every_model_has_known_category(models_data):
-    allowed = {"llm", "tts", "video", "image", "superres", "audio", "3d", "vision", "pending"}
+    allowed = {"llm", "tts", "video", "image", "superres", "audio", "embedding", "3d", "vision", "pending"}
     bad = [(m.get("id", "?"), m.get("category")) for m in models_data["models"]
            if m.get("category") not in allowed]
     assert not bad, f"models with unknown category: {bad[:5]}"

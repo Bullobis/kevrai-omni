@@ -46,7 +46,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, ValidationError
 
-from . import USER_AGENT, __version__, asr_runtime, ltx_runtime, mnn_runtime
+from . import USER_AGENT, __version__, asr_runtime, embedding_runtime, ltx_runtime, mnn_runtime
 from . import clawdchat as clawdchat_mod
 from . import converter as converter_service
 from . import drama as drama_agent
@@ -254,6 +254,8 @@ async def _lifespan(app: FastAPI):
     app.state.ltx = LtxManager(APP_ROOT / "outputs" / "ltx")
     # Faster Whisper speech recognition manager (models cached in-process).
     app.state.asr = asr_runtime.AsrManager(APP_ROOT)
+    # Sentence-transformers embedding manager (models cached in-process).
+    app.state.emb = embedding_runtime.EmbeddingManager(APP_ROOT)
     # Dual-source hub registry (HF + ModelScope + curated). Adapters own their
     # httpx clients, so the lifespan must aclose() them on shutdown. Wire the
     # lifespan handle to the *process singleton* (get_registry), NOT a fresh
@@ -766,6 +768,7 @@ def categories() -> dict[str, Any]:
         {"id": "image",     "label": "图像生成 / Image"},
         {"id": "superres",  "label": "超分辨率 / Super-Resolution"},
         {"id": "audio",     "label": "音频生成 / Audio"},
+        {"id": "embedding", "label": "向量嵌入 / Embeddings"},
         {"id": "3d",        "label": "3D 生成 / 3D"},
         {"id": "vision",    "label": "视觉工具 / Vision"},
         {"id": "pending",   "label": "待官方开源 / Pending"},
@@ -3098,6 +3101,71 @@ def asr_transcribe_local(request: Request, req: AsrLocalReq) -> Response:
     except asr_runtime.AsrError as e:
         raise HTTPException(status_code=_asr_status_for(e), detail=str(e)) from e
     return Response(content=body, media_type=media)
+
+
+def _emb_manager(request: Request) -> embedding_runtime.EmbeddingManager:
+    mgr = getattr(request.app.state, "emb", None)
+    if mgr is None:
+        mgr = embedding_runtime.EmbeddingManager(APP_ROOT)
+        request.app.state.emb = mgr
+    return mgr
+
+
+def _emb_status_for(exc: Exception) -> int:
+    if isinstance(exc, embedding_runtime.EmbeddingEngineMissing):
+        return 503
+    if isinstance(exc, embedding_runtime.EmbeddingParamError):
+        return 400
+    return 422
+
+
+@app.get("/api/embeddings/capabilities")
+def embeddings_capabilities(request: Request) -> dict[str, Any]:
+    return embedding_runtime.capabilities(APP_ROOT)
+
+
+class EmbeddingsReq(BaseModel):
+    model: str
+    input: str | list[str]
+    encoding_format: str = "float"
+    dimensions: int | None = None
+    normalize_embeddings: bool = False
+
+
+@app.post("/v1/embeddings")
+def create_embeddings(request: Request, req: EmbeddingsReq) -> dict[str, Any]:
+    mgr = _emb_manager(request)
+    if req.encoding_format not in {"float", "base64"}:
+        raise HTTPException(
+            status_code=400,
+            detail=f"unsupported encoding_format: {req.encoding_format!r}",
+        )
+    texts = [req.input] if isinstance(req.input, str) else req.input
+    try:
+        result = mgr.embed(
+            req.model, texts, normalize_embeddings=req.normalize_embeddings
+        )
+        if req.dimensions is not None and req.dimensions != result["dimensions"]:
+            # Do not silently truncate a non-Matryoshka model (would produce
+            # meaningless vectors); report that the model has a fixed size.
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"model {req.model!r} exposes {result['dimensions']} dimensions;"
+                    f" requested {req.dimensions}"
+                ),
+            )
+        payload = embedding_runtime.render_openai(result)
+        if req.encoding_format == "base64":
+            import base64
+            import struct
+
+            for item in payload["data"]:
+                buf = struct.pack(f"{len(item['embedding'])}f", *item["embedding"])
+                item["embedding"] = base64.b64encode(buf).decode("ascii")
+    except embedding_runtime.EmbeddingError as e:
+        raise HTTPException(status_code=_emb_status_for(e), detail=str(e)) from e
+    return payload
 
 
 async def _run_multipart_asr(

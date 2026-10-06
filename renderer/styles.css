@@ -1202,3 +1202,38 @@ html[data-theme="light"] .skeleton-card::after {
 #pane-asr .asr-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 #pane-asr .asr-table td { padding: 6px 8px; border-top: 1px solid var(--line); vertical-align: top; }
 #pane-asr .asr-td-time { white-space: nowrap; color: var(--mut); font-variant-numeric: tabular-nums; }
+
+/* ===== Embeddings pane (v3.17.0) ===== */
+#pane-embeddings { display: none; }
+#pane-embeddings.active { display: flex; flex-direction: column; gap: 14px; }
+#pane-embeddings .pane-head h2 { margin: 0 0 2px; font-size: var(--fs-xl); }
+#pane-embeddings .asr-form { display: flex; flex-direction: column; gap: 12px; }
+#pane-embeddings .form-row { display: flex; flex-direction: column; gap: 5px; }
+#pane-embeddings .form-row > label { font-size: var(--fs-xs); color: var(--mut); }
+#pane-embeddings select, #pane-embeddings textarea {
+  background: var(--bg-1); color: var(--fg); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: 8px 10px; font-size: var(--fs-sm);
+  font-family: inherit; resize: vertical;
+}
+#pane-embeddings .form-actions { display: flex; gap: 10px; justify-content: flex-start; }
+#pane-embeddings .emb-check { flex-direction: row; align-items: center; gap: 7px; color: var(--fg); font-size: var(--fs-sm); }
+#pane-embeddings .asr-engine-missing {
+  display: none; flex-direction: column; gap: 10px; align-items: flex-start;
+}
+#pane-embeddings.engine-missing .asr-engine-missing { display: flex; }
+#pane-embeddings.engine-missing .asr-form,
+#pane-embeddings.engine-missing .asr-result { display: none; }
+#pane-embeddings .emb-meta {
+  display: flex; gap: 10px; font-size: var(--fs-xs); color: var(--mut);
+}
+#pane-embeddings .emb-card {
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--bg-1); padding: 10px 12px; margin-top: 10px;
+}
+#pane-embeddings .emb-card-h {
+  font-size: var(--fs-xs); color: var(--mut); margin-bottom: 6px;
+}
+#pane-embeddings .emb-pre {
+  margin: 0; white-space: pre-wrap; word-break: break-word;
+  font-size: var(--fs-sm); line-height: 1.5;
+}

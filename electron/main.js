@@ -893,6 +893,29 @@ function registerIpc() {
   });
   ipcMain.handle("api:asr:capabilities", async () =>
     sidecarFetch("/api/asr/capabilities"));
+  // Sentence-transformers embeddings (JSON) -> OpenAI-compatible /v1/embeddings.
+  ipcMain.handle("api:embeddings", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.model, 128), "model: invalid");
+    const input = payload.input;
+    const okInput = (isString(input, 65_536) && input.length)
+      || (Array.isArray(input) && input.length <= 2048
+        && input.every((x) => isString(x, 65_536) && x.length));
+    assert(okInput, "input: invalid");
+    return sidecarFetch("/v1/embeddings", {
+      method: "POST",
+      body: {
+        model: payload.model,
+        input,
+        encoding_format: isString(payload.encoding_format, 16)
+          ? payload.encoding_format : "float",
+        normalize_embeddings: payload.normalize_embeddings === true,
+      },
+      timeoutMs: 120_000,
+    });
+  });
+  ipcMain.handle("api:embeddings:capabilities", async () =>
+    sidecarFetch("/api/embeddings/capabilities"));
   ipcMain.handle("api:categories",   async () => sidecarFetch("/api/categories"));
   ipcMain.handle("api:models", async (_e, params) => {
     const p = (params && typeof params === "object") ? params : {};

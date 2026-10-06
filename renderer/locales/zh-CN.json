@@ -25,7 +25,8 @@
     "pending": "待官方开源",
     "environments": "环境管理",
     "settings": "设置",
-    "asr": "语音转写"
+    "asr": "语音转写",
+    "embeddings": "向量嵌入"
   },
   "header": {
     "downloads": "下载",
@@ -166,6 +167,7 @@
     "category_image": "图片生成",
     "category_superres": "超分辨率",
     "category_audio": "音频理解",
+    "category_embedding": "向量嵌入",
     "category_3d": "3D 生成",
     "category_vision": "多模态",
     "category_pending": "待定",
@@ -821,6 +823,25 @@
     "run": "开始转写",
     "pickFirst": "请先选择音频文件",
     "failed": "转写失败：{err}",
+    "engineInstalled": "引擎已安装"
+  },
+  "embeddings": {
+    "title": "向量嵌入",
+    "engineReady": "引擎就绪 {ver}",
+    "engineMissing": "引擎未安装",
+    "missingHint": "需要安装 Sentence Transformers 向量嵌入引擎。",
+    "install": "安装引擎",
+    "model": "模型",
+    "input": "待嵌入文本（每行一条）",
+    "normalize": "归一化向量（用于相似度检索）",
+    "run": "生成嵌入",
+    "copy": "复制完整 JSON",
+    "dims": "维",
+    "count": "已生成 {n} 条向量",
+    "tokens": "输入词元 {n}",
+    "enterFirst": "请先输入待嵌入文本",
+    "failed": "生成嵌入失败：{err}",
+    "copied": "已复制",
     "engineInstalled": "引擎已安装"
   }
 }

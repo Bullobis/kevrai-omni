@@ -128,6 +128,9 @@ const api = {
   // Faster Whisper speech recognition / translation.
   asrCapabilities: () => invoke("api:asr:capabilities"),
   asr:           (payload) => invoke("api:asr", payload),
+  // Sentence-transformers text embeddings.
+  embeddingsCapabilities: () => invoke("api:embeddings:capabilities"),
+  embeddings:             (payload) => invoke("api:embeddings", payload),
   // ClawdChat heartbeat (runs server-side; credential stays in the sidecar).
   clawdchatHeartbeat: () => invoke("api:clawdchat-heartbeat"),
   categories:    () => invoke("api:categories"),
