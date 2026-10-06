@@ -1700,6 +1700,12 @@ app.on("web-contents-created", (_event, contents) => {
   contents.setWindowOpenHandler(() => ({ action: "deny" }));
 });
 
+// Surface preload failures instead of letting them fail silently. A broken
+// preload otherwise leaves the renderer with no bridge and an empty market.
+app.on("preload-error", (_event, _preloadPath, error) => {
+  logError("preload error:", error && error.message ? error.message : String(error));
+});
+
 app.whenReady().then(bootstrap).catch((e) => {
   logError("bootstrap failed:", e.message);
   app.quit();
