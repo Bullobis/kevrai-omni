@@ -12668,6 +12668,354 @@
         "文档解析",
         "Apache"
       ]
+    },
+    {
+      "id": "r1-distill-llama-8b",
+      "category": "llm",
+      "name": "DeepSeek-R1-Distill-Llama-8B",
+      "repo": "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+      "gguf_repo": "unsloth/DeepSeek-R1-Distill-Llama-8B-GGUF",
+      "size_gb": 16.06,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "mit",
+      "trending": true,
+      "description": "DeepSeek-R1 蒸馏到 Llama-3.1-8B 的推理模型，中等显存可跑长链推理，MIT。",
+      "sources": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-8B/",
+        "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Llama-8B-GGUF/",
+        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Llama-8B-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-8B/",
+      "hardware": {
+        "vram_gb": 5,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 17
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 4.02,
+          "vram_gb": 4.02,
+          "recommended": false
+        },
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 4.68,
+          "vram_gb": 4.68,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 4.92,
+          "vram_gb": 4.92,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 5.73,
+          "vram_gb": 5.73,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 8.54,
+          "vram_gb": 8.54,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 16.07,
+          "vram_gb": 16.07,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "DeepSeek",
+        "R1",
+        "蒸馏",
+        "推理",
+        "思考链",
+        "MIT"
+      ]
+    },
+    {
+      "id": "r1-distill-qwen-7b",
+      "category": "llm",
+      "name": "DeepSeek-R1-Distill-Qwen-7B",
+      "repo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+      "gguf_repo": "unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF",
+      "size_gb": 15.23,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "mit",
+      "trending": true,
+      "description": "DeepSeek-R1 蒸馏到 Qwen2.5-7B 的推理模型，体积小、推理能力保留，MIT。",
+      "sources": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B/",
+        "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF/",
+        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B/",
+      "hardware": {
+        "vram_gb": 5,
+        "min_vram_gb": 3.8,
+        "ram_gb": 16,
+        "disk_gb": 16
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 3.81,
+          "vram_gb": 3.81,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 4.68,
+          "vram_gb": 4.68,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 5.44,
+          "vram_gb": 5.44,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 8.1,
+          "vram_gb": 8.1,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "DeepSeek",
+        "R1",
+        "蒸馏",
+        "推理",
+        "思考链",
+        "MIT"
+      ]
+    },
+    {
+      "id": "r1-distill-qwen-1.5b",
+      "category": "llm",
+      "name": "DeepSeek-R1-Distill-Qwen-1.5B",
+      "repo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+      "gguf_repo": "unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF",
+      "size_gb": 3.55,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "mit",
+      "trending": true,
+      "description": "DeepSeek-R1 蒸馏到 Qwen2.5-1.5B 的轻量推理模型，端侧可跑，MIT。",
+      "sources": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B/",
+        "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/",
+        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B/",
+      "hardware": {
+        "vram_gb": 1.2,
+        "min_vram_gb": 0.9,
+        "ram_gb": 8,
+        "disk_gb": 4
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 0.92,
+          "vram_gb": 0.92,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 1.12,
+          "vram_gb": 1.12,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 1.29,
+          "vram_gb": 1.29,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 1.89,
+          "vram_gb": 1.89,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 3.56,
+          "vram_gb": 3.56,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "DeepSeek",
+        "R1",
+        "蒸馏",
+        "推理",
+        "思考链",
+        "MIT"
+      ]
+    },
+    {
+      "id": "r1-distill-llama-70b",
+      "category": "llm",
+      "name": "DeepSeek-R1-Distill-Llama-70B",
+      "repo": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+      "gguf_repo": "unsloth/DeepSeek-R1-Distill-Llama-70B-GGUF",
+      "size_gb": 141.11,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "mit",
+      "trending": true,
+      "description": "DeepSeek-R1 蒸馏到 Llama-3.3-70B 的推理模型，旗舰级开源推理，MIT。",
+      "sources": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B/",
+        "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Llama-70B-GGUF/",
+        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Llama-70B-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B/",
+      "hardware": {
+        "vram_gb": 43,
+        "min_vram_gb": 34,
+        "ram_gb": 64,
+        "disk_gb": 142
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 34.27,
+          "vram_gb": 34.27,
+          "recommended": false
+        },
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 40.05,
+          "vram_gb": 40.05,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 42.52,
+          "vram_gb": 42.52,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 49.95,
+          "vram_gb": 49.95,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 74.98,
+          "vram_gb": 74.98,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 141.12,
+          "vram_gb": 141.12,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "DeepSeek",
+        "R1",
+        "蒸馏",
+        "推理",
+        "思考链",
+        "MIT"
+      ]
     }
   ],
   "gguf_repos": [
