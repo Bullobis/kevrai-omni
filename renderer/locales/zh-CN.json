@@ -757,5 +757,24 @@
       "trending": "热门",
       "tags": "标签"
     }
+  },
+  "scheduler": {
+    "nav": "计划任务",
+    "desc": "统一管理后台周期性任务：启停、调整周期即时生效并保存。虾聊心跳与 sidecar 健康检查共用同一调度器，不再各自独立计时。",
+    "enabled": "启用",
+    "interval": "周期",
+    "disabledNote": "已停用",
+    "empty": "暂无计划任务",
+    "saved": "已保存",
+    "inSeconds": "{n} 秒后",
+    "inMinutes": "{n} 分钟后",
+    "unitSecond": "秒",
+    "unitMinute": "分钟",
+    "unitHour": "小时",
+    "unitDay": "天",
+    "tasks": {
+      "sidecarHealth": "Sidecar 健康检查",
+      "clawdchatHeartbeat": "虾聊（ClawdChat）心跳"
+    }
   }
 }

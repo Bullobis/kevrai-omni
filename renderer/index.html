@@ -369,6 +369,10 @@
             <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
             <span data-i18n="settings.navData">数据管理</span>
           </button>
+          <button type="button" class="settings-nav-btn" data-section="scheduler">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9.5V13l2.5 2.5"/><path d="M9 2h6"/></svg>
+            <span data-i18n="scheduler.nav">计划任务</span>
+          </button>
           <button type="button" class="settings-nav-btn" data-section="about">
             <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
             <span data-i18n="settings.navAbout">关于</span>
@@ -476,6 +480,12 @@
               </div>
               <p class="mut tiny" data-i18n="settings.importModeHint">「合并」会把备份数据追加到现有数据（去重）；「替换」会用备份数据覆盖现有收藏与设置。</p>
             </div>
+          </section>
+
+          <section class="settings-section" data-section="scheduler" aria-label="计划任务" hidden>
+            <h3 class="settings-group-title" data-i18n="scheduler.nav">计划任务</h3>
+            <p class="mut tiny" data-i18n="scheduler.desc">统一管理后台周期性任务：启停、调整周期即时生效并保存。虾聊心跳与 sidecar 健康检查共用同一调度器，不再各自独立计时。</p>
+            <div id="scheduler-task-list" class="scheduler-list"></div>
           </section>
 
           <section class="settings-section" data-section="about" aria-label="关于" hidden>
