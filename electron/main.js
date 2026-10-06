@@ -832,6 +832,10 @@ function installUpdate() {
 function registerIpc() {
   // Original / first-party surface (kept stable so renderer/app.js style wiring still works).
   ipcMain.handle("api:health",       async () => sidecarFetch("/api/health"));
+  // ClawdChat heartbeat: sidecar reads ~/.clawdchat/credentials.json (mode 600)
+  // and calls clawdchat.cn; the API key never reaches the renderer.
+  ipcMain.handle("api:clawdchat-heartbeat", () =>
+    sidecarFetch("/api/clawdchat/heartbeat", { method: "POST", timeoutMs: 30_000 }));
   ipcMain.handle("api:categories",   async () => sidecarFetch("/api/categories"));
   ipcMain.handle("api:models", async (_e, params) => {
     const p = (params && typeof params === "object") ? params : {};
