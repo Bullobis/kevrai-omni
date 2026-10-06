@@ -8222,6 +8222,684 @@
         "多视图",
         "图生3d"
       ]
+    },
+    {
+      "id": "qwen3-1.7b",
+      "category": "llm",
+      "name": "Qwen3 1.7B",
+      "repo": "Qwen/Qwen3-1.7B",
+      "gguf_repo": "unsloth/Qwen3-1.7B-GGUF",
+      "size_gb": 4,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "Qwen3 小尺寸，平衡能力与体积，适合低配设备。",
+      "sources": [
+        "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/",
+        "https://hf-mirror.com/unsloth/Qwen3-1.7B-GGUF/",
+        "https://modelscope.cn/models/Qwen/Qwen3-1.7B/",
+        "https://modelscope.cn/models/unsloth/Qwen3-1.7B-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/",
+      "hardware": {
+        "vram_gb": 3,
+        "min_vram_gb": 2,
+        "ram_gb": 8,
+        "disk_gb": 4,
+        "notes": "1.7B，2GB 显存可跑"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "纯文本小模型"
+      },
+      "tags": [
+        "LLM",
+        "chat",
+        "llama.cpp",
+        "trending",
+        "小模型",
+        "端侧",
+        "语言模型"
+      ],
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M（极致压缩）",
+          "file_quant": "Q3_K_M",
+          "size_gb": 0.88,
+          "vram_gb": 1.0,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M（推荐）",
+          "file_quant": "Q4_K_M",
+          "size_gb": 1.03,
+          "vram_gb": 1.2,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 1.17,
+          "vram_gb": 1.3,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 1.32,
+          "vram_gb": 1.5,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0（高保真）",
+          "file_quant": "Q8_0",
+          "size_gb": 1.71,
+          "vram_gb": 2.0,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16（全精度）",
+          "file_quant": "F16",
+          "size_gb": 3.21,
+          "vram_gb": 3.7,
+          "recommended": false
+        }
+      ]
+    },
+    {
+      "id": "qwen3-14b",
+      "category": "llm",
+      "name": "Qwen3 14B",
+      "repo": "Qwen/Qwen3-14B",
+      "gguf_repo": "unsloth/Qwen3-14B-GGUF",
+      "size_gb": 28,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "Qwen3 中尺寸，350 万月下载，单卡主流选择。",
+      "sources": [
+        "https://huggingface.co/unsloth/Qwen3-14B-GGUF/",
+        "https://hf-mirror.com/unsloth/Qwen3-14B-GGUF/",
+        "https://modelscope.cn/models/Qwen/Qwen3-14B/",
+        "https://modelscope.cn/models/unsloth/Qwen3-14B-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/unsloth/Qwen3-14B-GGUF/",
+      "hardware": {
+        "vram_gb": 12,
+        "min_vram_gb": 8,
+        "ram_gb": 32,
+        "disk_gb": 28,
+        "notes": "14B，8GB 显存可跑"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "纯文本模型"
+      },
+      "tags": [
+        "LLM",
+        "chat",
+        "llama.cpp",
+        "trending",
+        "语言模型"
+      ],
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M（极致压缩）",
+          "file_quant": "Q3_K_M",
+          "size_gb": 6.82,
+          "vram_gb": 7.8,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M（推荐）",
+          "file_quant": "Q4_K_M",
+          "size_gb": 8.38,
+          "vram_gb": 9.6,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 9.79,
+          "vram_gb": 11.3,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 11.29,
+          "vram_gb": 13.0,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0（高保真）",
+          "file_quant": "Q8_0",
+          "size_gb": 14.62,
+          "vram_gb": 16.8,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16（全精度）",
+          "file_quant": "F16",
+          "size_gb": 27.51,
+          "vram_gb": 31.6,
+          "recommended": false
+        }
+      ]
+    },
+    {
+      "id": "kolibri-1",
+      "category": "llm",
+      "name": "Kolibri 1 (Aleph Alpha)",
+      "repo": "Aleph-Alpha/Kolibri-1",
+      "gguf_repo": "Hob-forge/Kolibri-1-GGUF",
+      "size_gb": 79,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "Aleph Alpha 开源推理 MoE，面向欧洲主权部署，德语/英语强，2026-10 发布。",
+      "sources": [
+        "https://huggingface.co/Hob-forge/Kolibri-1-GGUF/",
+        "https://hf-mirror.com/Hob-forge/Kolibri-1-GGUF/",
+        "https://huggingface.co/Aleph-Alpha/Kolibri-1/",
+        "https://modelscope.cn/models/Aleph-Alpha/Kolibri-1/"
+      ],
+      "primary_url": "https://huggingface.co/Aleph-Alpha/Kolibri-1/",
+      "hardware": {
+        "vram_gb": 28,
+        "min_vram_gb": 16,
+        "ram_gb": 96,
+        "disk_gb": 73,
+        "notes": "推理 MoE，16GB 显存可跑量化"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "主权推理模型"
+      },
+      "tags": [
+        "LLM",
+        "reasoning",
+        "推理",
+        "llama.cpp",
+        "trending",
+        "欧洲",
+        "主权"
+      ],
+      "quantizations": [
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M（推荐）",
+          "file_quant": "Q4_K_M",
+          "size_gb": 44.2,
+          "vram_gb": 50.8,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 51.77,
+          "vram_gb": 59.5,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 59.82,
+          "vram_gb": 68.8,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0（高保真）",
+          "file_quant": "Q8_0",
+          "size_gb": 77.43,
+          "vram_gb": 89.0,
+          "recommended": false
+        }
+      ]
+    },
+    {
+      "id": "nex-n2.5-mini",
+      "category": "llm",
+      "name": "Nex N2.5 Mini (Agent)",
+      "repo": "nex-agi/Nex-N2.5-mini",
+      "gguf_repo": "bartowski/nex-agi_Nex-N2.5-mini-GGUF",
+      "size_gb": 65,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "Nex 开源 Agent 模型小型版，工具调用与计算机使用，2026-09 发布。",
+      "sources": [
+        "https://huggingface.co/bartowski/nex-agi_Nex-N2.5-mini-GGUF/",
+        "https://hf-mirror.com/bartowski/nex-agi_Nex-N2.5-mini-GGUF/",
+        "https://huggingface.co/nex-agi/Nex-N2.5-mini/",
+        "https://modelscope.cn/models/nex-agi/Nex-N2.5-mini/"
+      ],
+      "primary_url": "https://huggingface.co/bartowski/nex-agi_Nex-N2.5-mini-GGUF/",
+      "hardware": {
+        "vram_gb": 24,
+        "min_vram_gb": 16,
+        "ram_gb": 48,
+        "disk_gb": 65,
+        "notes": "Agent 模型，16GB 显存可跑"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "多模态理解 + Agent/工具调用（image-text-to-text）"
+      },
+      "tags": [
+        "LLM",
+        "agent",
+        "智能体",
+        "llama.cpp",
+        "trending",
+        "工具调用",
+        "computer-use"
+      ],
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M（极致压缩）",
+          "file_quant": "Q3_K_M",
+          "size_gb": 16.15,
+          "vram_gb": 18.6,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M（推荐）",
+          "file_quant": "Q4_K_M",
+          "size_gb": 20.79,
+          "vram_gb": 23.9,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 25.13,
+          "vram_gb": 28.9,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0（高保真）",
+          "file_quant": "Q8_0",
+          "size_gb": 34.38,
+          "vram_gb": 39.5,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16（全精度）",
+          "file_quant": "F16",
+          "size_gb": 66.29,
+          "vram_gb": 76.2,
+          "recommended": false
+        }
+      ]
+    },
+    {
+      "id": "nex-n2.5-pro",
+      "category": "llm",
+      "name": "Nex N2.5 Pro (Agent)",
+      "repo": "nex-agi/Nex-N2.5-Pro",
+      "gguf_repo": "bartowski/nex-agi_Nex-N2.5-mini-GGUF",
+      "size_gb": 407,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "Nex 开源 Agent 旗舰，397B，复杂 Agent 工作流与编码，2026-09 发布。",
+      "sources": [
+        "https://huggingface.co/nex-agi/Nex-N2.5-Pro/",
+        "https://hf-mirror.com/nex-agi/Nex-N2.5-Pro/",
+        "https://huggingface.co/bartowski/nex-agi_Nex-N2.5-mini-GGUF/",
+        "https://modelscope.cn/models/nex-agi/Nex-N2.5-Pro/"
+      ],
+      "primary_url": "https://huggingface.co/nex-agi/Nex-N2.5-Pro/",
+      "hardware": {
+        "vram_gb": 160,
+        "min_vram_gb": 80,
+        "ram_gb": 512,
+        "disk_gb": 407,
+        "notes": "397B MoE Agent 旗舰，实测权重约 407GB；需服务器级多卡，单机消费级显存不可行（vram 为经验估算）"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "多模态 Agent 旗舰（image-text-to-text）"
+      },
+      "tags": [
+        "LLM",
+        "agent",
+        "智能体",
+        "llama.cpp",
+        "trending",
+        "编码",
+        "computer-use"
+      ]
+    },
+    {
+      "id": "hemmingway-1",
+      "category": "llm",
+      "name": "Hemmingway 1 (写作)",
+      "repo": "Altworld/Hemmingway-1",
+      "gguf_repo": "bartowski/Altworld_Hemmingway-1-GGUF",
+      "size_gb": 51,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "CC-BY-NC-4.0",
+      "trending": true,
+      "description": "Altworld 开源写作模型，27B，基于 Qwen3.8-27B 微调，长上下文，2026-09 发布。",
+      "sources": [
+        "https://huggingface.co/bartowski/Altworld_Hemmingway-1-GGUF/",
+        "https://hf-mirror.com/bartowski/Altworld_Hemmingway-1-GGUF/",
+        "https://huggingface.co/Altworld/Hemmingway-1/",
+        "https://modelscope.cn/models/Altworld/Hemmingway-1/"
+      ],
+      "primary_url": "https://huggingface.co/Altworld/Hemmingway-1/",
+      "hardware": {
+        "vram_gb": 20,
+        "min_vram_gb": 12,
+        "ram_gb": 64,
+        "disk_gb": 51,
+        "notes": "写作模型，12GB 显存可跑（非商用许可）"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "写作专用，非商用"
+      },
+      "tags": [
+        "LLM",
+        "writing",
+        "写作",
+        "llama.cpp",
+        "trending",
+        "长文本"
+      ],
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M（极致压缩）",
+          "file_quant": "Q3_K_M",
+          "size_gb": 12.48,
+          "vram_gb": 14.4,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M（推荐）",
+          "file_quant": "Q4_K_M",
+          "size_gb": 16.24,
+          "vram_gb": 18.7,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 19.49,
+          "vram_gb": 22.4,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0（高保真）",
+          "file_quant": "Q8_0",
+          "size_gb": 27.12,
+          "vram_gb": 31.2,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16（全精度）",
+          "file_quant": "F16",
+          "size_gb": 50.9,
+          "vram_gb": 58.5,
+          "recommended": false
+        }
+      ]
+    },
+    {
+      "id": "xing4.0-29b-a4b",
+      "category": "llm",
+      "name": "Xing4.0 29B-A4B (腾讯星辰)",
+      "repo": "XingChen-AGI/Xing4.0-29B-A4B",
+      "gguf_repo": "XingChen-AGI/Xing4.0-29B-A4B-GGUF",
+      "size_gb": 62,
+      "engine": [
+        "llama.cpp",
+        "vllm"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "腾讯星辰 Xing4.0：29B 总参 / 4B 激活 MoE，对话与代码能力，Apache-2.0 可商用，官方提供 GGUF。",
+      "sources": [
+        "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/",
+        "https://hf-mirror.com/XingChen-AGI/Xing4.0-29B-A4B/",
+        "https://modelscope.cn/models/XingChen-AGI/Xing4.0-29B-A4B/"
+      ],
+      "primary_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/",
+      "hardware": {
+        "vram_gb": 24,
+        "min_vram_gb": 12,
+        "ram_gb": 48,
+        "disk_gb": 62,
+        "notes": "Q4_K_M 约 17GB；24GB 显卡推荐"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "纯文本对话/代码"
+      },
+      "tags": [
+        "LLM",
+        "MoE",
+        "chat",
+        "llama.cpp",
+        "vllm",
+        "trending",
+        "大模型",
+        "腾讯",
+        "热门",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "spark-x2.5-4b",
+      "category": "llm",
+      "name": "Spark X2.5 4B (端侧 Agent)",
+      "repo": "XHToken/Spark-X2.5-4B",
+      "gguf_repo": "",
+      "size_gb": 8,
+      "engine": [
+        "llama.cpp",
+        "transformers"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "讯飞星火 Spark-X 2.5：4B 端侧小钢炮，Agent / 工具调用 / 对话，Apache-2.0。",
+      "sources": [
+        "https://huggingface.co/XHToken/Spark-X2.5-4B/",
+        "https://hf-mirror.com/XHToken/Spark-X2.5-4B/"
+      ],
+      "primary_url": "https://huggingface.co/XHToken/Spark-X2.5-4B/",
+      "hardware": {
+        "vram_gb": 8,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 8,
+        "notes": "4B；Q4 约 3GB，消费级显卡 / CPU 可跑"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "纯文本，Agent 工具调用"
+      },
+      "tags": [
+        "LLM",
+        "agent",
+        "llama.cpp",
+        "trending",
+        "小模型",
+        "端侧",
+        "工具调用",
+        "热门"
+      ]
+    },
+    {
+      "id": "breeze-tts-2",
+      "category": "tts",
+      "name": "Breeze TTS 2",
+      "repo": "BreezeBlue/Breeze-TTS-2",
+      "gguf_repo": "",
+      "size_gb": 8,
+      "engine": [
+        "transformers"
+      ],
+      "license": "other（非商用许可）",
+      "trending": true,
+      "description": "Breeze TTS 2：开源权重 TTS 榜单前列，情感 / 停顿 / 自然口语，语音克隆与音色设计，中英双语。",
+      "sources": [
+        "https://huggingface.co/BreezeBlue/Breeze-TTS-2/",
+        "https://hf-mirror.com/BreezeBlue/Breeze-TTS-2/"
+      ],
+      "primary_url": "https://huggingface.co/BreezeBlue/Breeze-TTS-2/",
+      "hardware": {
+        "vram_gb": 6,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 8,
+        "notes": "语音克隆 / 音色设计；非商用许可"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "文本 -> 语音"
+      },
+      "tags": [
+        "tts",
+        "text to speech",
+        "voice cloning",
+        "trending",
+        "语音合成",
+        "语音克隆",
+        "热门",
+        "配音"
+      ]
+    },
+    {
+      "id": "auk-flash",
+      "category": "tts",
+      "name": "AuK Flash (腾讯)",
+      "repo": "tencent/AuK-Flash",
+      "gguf_repo": "audio-cpp/AuK-Base-and-Flash-GGUF",
+      "size_gb": 7,
+      "engine": [
+        "transformers",
+        "diffusers"
+      ],
+      "license": "MIT",
+      "trending": true,
+      "description": "腾讯 AuK-Flash：扩散蒸馏 TTS，零样本语音克隆 / 语音编辑 / 语音增强 / 声源分离，少步推理，中英双语。",
+      "sources": [
+        "https://huggingface.co/tencent/AuK-Flash/",
+        "https://hf-mirror.com/tencent/AuK-Flash/",
+        "https://modelscope.cn/models/tencent/AuK-Flash/"
+      ],
+      "primary_url": "https://huggingface.co/tencent/AuK-Flash/",
+      "hardware": {
+        "vram_gb": 6,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 7,
+        "notes": "扩散蒸馏；少步推理"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "文本 -> 语音，兼语音编辑 / 分离"
+      },
+      "tags": [
+        "tts",
+        "audio",
+        "voice cloning",
+        "diffusers",
+        "trending",
+        "语音合成",
+        "腾讯",
+        "热门"
+      ]
     }
   ],
   "gguf_repos": [
