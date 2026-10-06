@@ -14470,7 +14470,7 @@
       ],
       "license": "mit",
       "trending": true,
-      "description": "DeepSeek Janus-Pro 7B 统一多模态模型（解耦视觉编码），支持图像理解；transformers 原生支持。该模型亦具备自回归图像生成能力，本运行时当前接通的是图像理解对话，图像生成将在后续版本接入。",
+      "description": "DeepSeek Janus-Pro 7B 统一多模态模型（解耦视觉编码），支持图像理解与文生图；transformers 原生支持。",
       "sources": [
         "https://huggingface.co/deepseek-ai/Janus-Pro-7B/",
         "https://hf-mirror.com/deepseek-ai/Janus-Pro-7B/"
@@ -14490,12 +14490,57 @@
           "image"
         ],
         "generate": [
-          "text"
+          "text",
+          "image"
         ]
       },
       "tags": [
         "Janus",
         "视觉理解",
+        "多模态",
+        "统一模型",
+        "MIT"
+      ]
+    },
+    {
+      "id": "janus-pro-1b",
+      "category": "llm",
+      "name": "Janus-Pro 1B",
+      "repo": "deepseek-ai/Janus-Pro-1B",
+      "size_gb": 4.18,
+      "engine": [
+        "transformers"
+      ],
+      "license": "mit",
+      "trending": true,
+      "description": "DeepSeek Janus-Pro 1B 统一多模态模型，支持图像理解与文生图，显存占用更小；transformers 原生支持。",
+      "sources": [
+        "https://huggingface.co/deepseek-ai/Janus-Pro-1B/",
+        "https://hf-mirror.com/deepseek-ai/Janus-Pro-1B/"
+      ],
+      "primary_url": "https://huggingface.co/deepseek-ai/Janus-Pro-1B/",
+      "hardware": {
+        "vram_gb": 3,
+        "min_vram_gb": 2,
+        "ram_gb": 6,
+        "disk_gb": 5,
+        "notes": "FP16 约2.1GB"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text",
+          "image"
+        ]
+      },
+      "tags": [
+        "Janus",
+        "视觉理解",
+        "文生图",
         "多模态",
         "统一模型",
         "MIT"

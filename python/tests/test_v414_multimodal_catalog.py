@@ -36,7 +36,12 @@ def test_multimodal_models_present():
         mod = m["modality"]
         assert mod["multimodal"] is True
         assert "image" in mod["understand"]
-        assert mod["generate"] == ["text"]
+        assert "text" in mod["generate"]
+        # Janus additionally generates images; SmolVLM/MiniCPM do not.
+        if mid == "janus-pro-7b":
+            assert "image" in mod["generate"]
+        else:
+            assert mod["generate"] == ["text"]
         assert len(m["sources"]) >= 2
         assert m["primary_url"].startswith("https://huggingface.co/")
 

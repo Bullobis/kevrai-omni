@@ -495,6 +495,12 @@
           <button class="primary" id="mm-install" data-i18n="multimodal.install">安装引擎</button>
         </div>
 
+        <div class="mm-seg" id="mm-seg" role="tablist">
+          <button type="button" id="mm-tab-understand" class="mm-seg-btn active" role="tab" aria-selected="true" data-i18n="multimodal.modeUnderstand">图片理解</button>
+          <button type="button" id="mm-tab-image" class="mm-seg-btn" role="tab" aria-selected="false" data-i18n="multimodal.modeImage">文生图</button>
+        </div>
+
+        <div id="mm-mode-understand">
         <div class="asr-form card">
           <div class="form-grid">
             <div class="form-row">
@@ -526,6 +532,43 @@
         <div class="asr-result card">
           <h3 class="mm-answer-title" data-i18n="multimodal.answerTitle">回答</h3>
           <div id="mm-answer" class="mm-answer"></div>
+        </div>
+        </div>
+
+        <div id="mm-mode-image" hidden>
+        <div class="asr-form card">
+          <div class="form-grid">
+            <div class="form-row">
+              <label for="mm-img-model" data-i18n="multimodal.model">模型</label>
+              <select id="mm-img-model"></select>
+            </div>
+            <div class="form-row">
+              <label for="mm-img-count" data-i18n="multimodal.imgCount">生成数量</label>
+              <input id="mm-img-count" type="number" min="1" max="4" value="1">
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label for="mm-guidance" data-i18n="multimodal.guidance">引导强度（CFG）</label>
+              <input id="mm-guidance" type="number" min="1" max="10" step="0.1" value="5">
+            </div>
+            <div class="form-row">
+              <label for="mm-seed" data-i18n="multimodal.seed">随机种子（可空）</label>
+              <input id="mm-seed" type="number" min="0" placeholder="">
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="mm-img-prompt" data-i18n="multimodal.imgPrompt">画面描述</label>
+            <textarea id="mm-img-prompt" rows="4" maxlength="4000"></textarea>
+          </div>
+          <div class="form-actions">
+            <button class="primary" id="mm-img-run" data-i18n="multimodal.imgRun">生成图片</button>
+          </div>
+        </div>
+        <div class="asr-result card">
+          <h3 class="mm-answer-title" data-i18n="multimodal.imgResult">生成结果</h3>
+          <div id="mm-img-result" class="mm-img-grid"></div>
+        </div>
         </div>
       </section>
 

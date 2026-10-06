@@ -899,6 +899,14 @@
     "emptyAnswer": "（模型未返回文本）",
     "enterFirst": "请先输入问题或选择图片",
     "failed": "多模态对话失败：{err}",
-    "engineInstalled": "引擎已安装"
+    "engineInstalled": "引擎已安装",
+    "modeUnderstand": "图片理解",
+    "modeImage": "文生图",
+    "imgCount": "生成数量",
+    "guidance": "引导强度（CFG）",
+    "seed": "随机种子（可空）",
+    "imgPrompt": "画面描述",
+    "imgRun": "生成图片",
+    "imgResult": "生成结果"
   }
 }
