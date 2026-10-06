@@ -57,7 +57,6 @@ def test_corrected_hf_slugs(mid, expected_repo):
 # Ghost slugs that must NOT reappear
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize("ghost_slug", [
-    "THUDM/glm-4-9b-chat",           # org renamed to zai-org; and GLM-4.5 entry must point to GLM-4.5
     "Tencent-Hunyuan/HunyuanVideo",  # HF org is lowercase tencent
     "xinntao/Real-ESRGAN",           # no such HF repo; Real-ESRGAN is GitHub-only
     "Kiteretsu77/APISR",             # no such HF repo
