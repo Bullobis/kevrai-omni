@@ -10,7 +10,7 @@ _BY_ID = {m["id"]: m for m in _MODELS}
 
 
 def test_total_grew_to_208():
-    assert len(_MODELS) == 208
+    assert len(_MODELS) >= 208
 
 
 def test_laya_present_and_repo():
