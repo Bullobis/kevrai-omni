@@ -29,14 +29,15 @@ import { wireDragDrop } from "./modules/dragdrop.js";
 import { wireOnboarding } from "./modules/onboarding.js";
 import { wireUpdate } from "./modules/update.js";
 import { initCommandPalette, registerAction } from "./modules/command-palette.js";
+import { initNotificationCenter, togglePanel } from "./modules/notification-center.js";
+import { initAppearance, setAccent, setDensity } from "./modules/appearance.js";
 import { initI18n, t } from "./modules/i18n.js";
 import { createEmptyState } from "./modules/empty-state.js";
 import { whenIdle } from "./modules/idle.js";
+import { scheduler } from "./modules/scheduler.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
-
-let healthTimer = null;
 
 // Logo fallback: if the brand image is missing, show the text glyph instead.
 // (Wired here instead of an inline onerror="" attribute — inline event
@@ -375,11 +376,41 @@ function wireGlobalUI() {
   // Reload event from dragdrop
   window.addEventListener("kevrai:models-changed", () => loadAll());
 
-  // Health polling (every 15s)
-  healthTimer = setInterval(() => {
-    api.health().then((h) => setHealthOk(`sidecar v${h?.body?.version || "?"} · ${h?.body?.app_root || ""}`))
-                 .catch((e) => setHealthErr(String(e?.message || e)));
-  }, 15_000);
+  // ── 统一周期性任务调度（renderer/modules/scheduler.js）──────────────────
+  // 原先这里是独立的 healthTimer setInterval；现在健康检查与虾聊心跳都注册进
+  // 同一个调度器，由单一主 tick 按 nextRunAt 触发，不再各自 setInterval。
+  // 周期/开关在「设置 → 计划任务」里可改，持久化到 localStorage。
+  const sched = scheduler();
+
+  // sidecar 健康检查（默认 15s）：轮询 /api/health，刷新状态点与版本行。
+  // label 存 i18n key，由设置面板渲染时 t() 解析（注册可能早于字典加载）。
+  sched.register({
+    id: "sidecarHealth",
+    label: "scheduler.tasks.sidecarHealth",
+    intervalMs: 15_000,
+    enabled: true,
+    run: () => {
+      api.health().then((h) => setHealthOk(`sidecar v${h?.body?.version || "?"} · ${h?.body?.app_root || ""}`))
+                   .catch((e) => setHealthErr(String(e?.message || e)));
+    },
+  });
+
+  // 虾聊（ClawdChat）心跳（默认 2h）：保持社区活跃。
+  // 凭证在 sidecar 侧的 ~/.clawdchat/credentials.json（权限 600），renderer 不接触；
+  // 这里只触发 sidecar 的 POST /api/clawdchat/heartbeat。老 preload 没有该桥接方法时静默跳过。
+  sched.register({
+    id: "clawdchatHeartbeat",
+    label: "scheduler.tasks.clawdchatHeartbeat",
+    intervalMs: 2 * 60 * 60 * 1000,
+    enabled: true,
+    run: async () => {
+      const bridge = window.kevrai;
+      if (!bridge || typeof bridge.clawdchatHeartbeat !== "function") return;
+      try { await api.clawdchatHeartbeat(); } catch (_) { /* 下一个周期再试 */ }
+    },
+  });
+
+  sched.start();
 }
 
 function wirePaletteEvents() {
@@ -449,14 +480,36 @@ async function bootstrap() {
   wireGlobalUI();
   wireWindowControls();
   wireThemeListener();
+  initAppearance();
   const i18nReady = initI18n();
   wirePaletteEvents();
   // 命令面板构建时会读取占位文案，须在字典加载完成后再初始化，避免占位符显示原始 key。
   i18nReady.then(() => {
     initCommandPalette();
+    initNotificationCenter();
     registerAction("openCompare", () => t("compare.title"),
       () => { try { openCompare(); } catch (_) {} },
       ["compare", "对比", "比较", "models"], "columns", "操作");
+    registerAction("openNotifications", () => t("notif.title"),
+      () => { try { togglePanel(); } catch (_) {} },
+      ["notifications", "通知", "铃铛", "消息"], "bell", "操作");
+    // 外观：密度切换（rows 图标）
+    registerAction("densityComfortable", () => t("cmdpal.actions.densityComfortable"),
+      () => setDensity("comfortable"), ["comfortable", "舒适", "density", "密度"], "rows", "主题");
+    registerAction("densityCompact", () => t("cmdpal.actions.densityCompact"),
+      () => setDensity("compact"), ["compact", "紧凑", "density", "密度"], "rows", "主题");
+    // 外观：强调色（droplet 图标）
+    const ACCENT_CMDS = [
+      ["Green", "green", ["green", "绿色", "accent", "强调色"]],
+      ["Blue", "blue", ["blue", "蓝色", "accent", "强调色"]],
+      ["Violet", "violet", ["violet", "紫色", "accent", "强调色"]],
+      ["Orange", "orange", ["orange", "橙色", "accent", "强调色"]],
+      ["Pink", "pink", ["pink", "粉色", "accent", "强调色"]],
+      ["Cyan", "cyan", ["cyan", "青色", "accent", "强调色"]],
+    ];
+    ACCENT_CMDS.forEach(([cap, id, kws]) =>
+      registerAction("accent" + cap, () => t("cmdpal.actions.accent" + cap),
+        () => setAccent(id), kws, "droplet", "主题"));
   });
   // logo / 头像的加载失败降级（替代此前被 CSP 拦截的内联 onerror）
   wireLogoFallbacks();

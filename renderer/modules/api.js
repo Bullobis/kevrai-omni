@@ -40,6 +40,7 @@ function safeOn(name) {
 
 export const api = {
   health:        wrap("health",        () => k().health()),
+  clawdchatHeartbeat: wrap("clawdchatHeartbeat", () => k().clawdchatHeartbeat()),
   categories:    wrap("categories",    () => k().categories()),
   models:        wrap("models",        (f) => k().listModels(f)),
   modelDetail:   wrap("modelDetail",   (id) => k().getModelDetail(id)),

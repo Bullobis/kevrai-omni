@@ -33,7 +33,8 @@
     "refresh": "Refresh",
     "openDownloads": "Open downloads panel",
     "sidecarBusy": "sidecar: …",
-    "sidecarDown": "sidecar: ✗ {msg}"
+    "sidecarDown": "sidecar: ✗ {msg}",
+    "notifications": "Notifications"
   },
   "market": {
     "allCategories": "All categories",
@@ -358,7 +359,17 @@
     "genWaitCaption4": "Refining details…",
     "genWaitCaption5": "Almost done…",
     "genWaitCanceled": "Generation canceled",
-    "genWaitDone": "Demo complete"
+    "genWaitDone": "Demo complete",
+    "accentColor": "Accent color",
+    "density": "Density",
+    "accentGreen": "Green",
+    "accentBlue": "Blue",
+    "accentViolet": "Violet",
+    "accentOrange": "Orange",
+    "accentPink": "Pink",
+    "accentCyan": "Cyan",
+    "densityComfortable": "Comfortable",
+    "densityCompact": "Compact"
   },
   "onboarding": {
     "title": "Welcome to Kevrai Omni — three steps to get started",
@@ -476,7 +487,15 @@
       "themeSystem": "Match system theme",
       "openDataDir": "Open data folder",
       "toggleSidebar": "Toggle sidebar",
-      "showShortcuts": "Keyboard shortcuts"
+      "showShortcuts": "Keyboard shortcuts",
+      "densityComfortable": "Density: Comfortable",
+      "densityCompact": "Density: Compact",
+      "accentGreen": "Accent: Green",
+      "accentBlue": "Accent: Blue",
+      "accentViolet": "Accent: Violet",
+      "accentOrange": "Accent: Orange",
+      "accentPink": "Accent: Pink",
+      "accentCyan": "Accent: Cyan"
     }
   },
   "downloads": {
@@ -756,6 +775,32 @@
       "description": "Description",
       "trending": "Trending",
       "tags": "Tags"
+    }
+  },
+  "notif": {
+    "title": "Notifications",
+    "empty": "No notifications",
+    "markAllRead": "Mark all read",
+    "clear": "Clear",
+    "delete": "Delete"
+  },
+  "scheduler": {
+    "nav": "Scheduled tasks",
+    "desc": "Manage background periodic tasks in one place: toggle them on/off and adjust intervals with immediate effect and persistence. ClawdChat heartbeat and sidecar health share one scheduler instead of separate timers.",
+    "enabled": "Enabled",
+    "interval": "Interval",
+    "disabledNote": "Disabled",
+    "empty": "No scheduled tasks",
+    "saved": "Saved",
+    "inSeconds": "in {n}s",
+    "inMinutes": "in {n} min",
+    "unitSecond": "s",
+    "unitMinute": "min",
+    "unitHour": "h",
+    "unitDay": "d",
+    "tasks": {
+      "sidecarHealth": "Sidecar health check",
+      "clawdchatHeartbeat": "ClawdChat heartbeat"
     }
   }
 }
