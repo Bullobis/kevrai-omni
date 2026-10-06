@@ -11375,6 +11375,166 @@
         "System One",
         "热门"
       ]
+    },
+    {
+      "id": "ternary-bonsai-2-27b",
+      "category": "llm",
+      "name": "Ternary Bonsai 2 27B",
+      "repo": "prism-ml/Ternary-Bonsai-2-27B-gguf",
+      "gguf_repo": "prism-ml/Ternary-Bonsai-2-27B-gguf",
+      "size_gb": 8,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "Qwen3.6-27B 的亚 2-bit 压缩（PTQ1_0 二进制 / PQ2_0 三进制），保留约九成基准表现，262K 上下文；含视觉投影。注意：需 PrismML 版 llama.cpp，官方上游 llama.cpp 暂不能直接运行。",
+      "sources": [
+        "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/",
+        "https://hf-mirror.com/prism-ml/Ternary-Bonsai-2-27B-gguf/"
+      ],
+      "primary_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/",
+      "hardware": {
+        "vram_gb": 8,
+        "min_vram_gb": 6,
+        "ram_gb": 12,
+        "disk_gb": 9,
+        "notes": "PQ2_0 约 7.2GB + mmproj；需 PrismML 版 llama.cpp"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "亚2-bit，mmproj 提供视觉"
+      },
+      "quantizations": [
+        {
+          "id": "PTQ1_0",
+          "label": "1-bit 二进制",
+          "file_quant": "PTQ1_0",
+          "size_gb": 6.6,
+          "vram_gb": 6.6,
+          "recommended": false
+        },
+        {
+          "id": "PQ2_0",
+          "label": "三进制",
+          "file_quant": "PQ2_0",
+          "size_gb": 7.84,
+          "vram_gb": 7.84,
+          "recommended": true
+        },
+        {
+          "id": "F16",
+          "label": "全精度",
+          "file_quant": "F16",
+          "size_gb": 54.7,
+          "vram_gb": 54.7,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "端侧",
+        "2-bit",
+        "三进制",
+        "压缩",
+        "Qwen3.6",
+        "视觉",
+        "热门"
+      ]
+    },
+    {
+      "id": "auk-flash",
+      "category": "audio",
+      "name": "AuK-Flash",
+      "repo": "tencent/AuK-Flash",
+      "size_gb": 7,
+      "engine": [
+        "python",
+        "comfyui"
+      ],
+      "license": "MIT",
+      "trending": true,
+      "description": "腾讯混元开源的 1.5B 语音基础模型的 4 步蒸馏快速版，单一自然语言指令即可完成零样本 TTS、音色克隆、语音/内容编辑、降噪去混响与人声分离。",
+      "sources": [
+        "https://huggingface.co/tencent/AuK-Flash/",
+        "https://modelscope.cn/models/Tencent-Hunyuan/AuK-Flash"
+      ],
+      "primary_url": "https://huggingface.co/tencent/AuK-Flash/",
+      "hardware": {
+        "vram_gb": 4,
+        "min_vram_gb": 0,
+        "ram_gb": 8,
+        "disk_gb": 8,
+        "notes": "4 步推理，CPU 亦可"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "audio"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "语音生成/编辑/增强/分离"
+      },
+      "tags": [
+        "TTS",
+        "音色克隆",
+        "语音编辑",
+        "降噪",
+        "人声分离",
+        "腾讯",
+        "热门"
+      ]
+    },
+    {
+      "id": "nemotron-3-diarization",
+      "category": "audio",
+      "name": "Nemotron 3 Diarization",
+      "repo": "nvidia/Nemotron-3-Diarization",
+      "size_gb": 1,
+      "engine": [
+        "python"
+      ],
+      "license": "other",
+      "trending": false,
+      "description": "NVIDIA 基于 NeMo SortFormer 的流式说话人分离与语音活动检测模型，输出说话人分段与标签，可与 ASR 串联。",
+      "sources": [
+        "https://huggingface.co/nvidia/Nemotron-3-Diarization/",
+        "https://hf-mirror.com/nvidia/Nemotron-3-Diarization/"
+      ],
+      "primary_url": "https://huggingface.co/nvidia/Nemotron-3-Diarization/",
+      "hardware": {
+        "vram_gb": 1,
+        "min_vram_gb": 0,
+        "ram_gb": 4,
+        "disk_gb": 1,
+        "notes": "约 0.7GB，CPU 可跑"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "audio"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "输入音频，输出说话人分段"
+      },
+      "tags": [
+        "说话人分离",
+        "VAD",
+        "NeMo",
+        "SortFormer",
+        "NVIDIA"
+      ]
     }
   ],
   "gguf_repos": [
