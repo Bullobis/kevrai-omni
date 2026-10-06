@@ -79,8 +79,16 @@ export function groupFiles(files) {
 //   { error }                 → enumeration failed
 export async function pickQuantization(item, api) {
   let resp;
+  const ggufRepo = item.gguf_repo || "";
   try {
-    resp = await api.modelGgufFiles(item.id);
+    if (item.remote || !ggufRepo) {
+      // 远程 hub 模型没有 curated id 映射，直接列该仓库文件。
+      resp = await api.hubFiles({
+        hub: "hf", repo: item.repo, revision: item.revision || "",
+      });
+    } else {
+      resp = await api.modelGgufFiles(item.id);
+    }
   } catch (e) {
     return { error: String((e && e.message) || e) };
   }
@@ -148,7 +156,7 @@ export async function pickQuantization(item, api) {
       }
       if (e.target.closest(".quant-ok") && selected != null) {
         const g = groups[selected];
-        done({ files: g.files, repo: body.repo });
+        done({ files: g.files, repo: body.repo || ggufRepo || item.gguf_repo || item.repo });
       }
     });
     // Click on the dim backdrop acts as cancel.

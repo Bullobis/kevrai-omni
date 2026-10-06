@@ -589,8 +589,8 @@ function createWindow(bootstrapMode = false) {
   // saved/valid state → these are empty and the defaults below apply.
   const savedWindow = windowState.load();
   mainWindow = new BrowserWindow({
-    width: 1380,
-    height: 900,
+    width: 1280,
+    height: 860,
     ...(savedWindow.rect
       ? {
           x: savedWindow.rect.x,

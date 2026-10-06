@@ -167,13 +167,13 @@ html[data-theme="light"] .skip-link { color: #fff; }
   -webkit-app-region: drag;
 }
 
-.brand { display: flex; align-items: center; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; flex: 1 1 auto; min-width: 0; }
 .logo { width: 26px; height: 26px; border-radius: var(--r-1); display: block; }
 .logo-fallback { color: var(--acc); font-size: 20px; line-height: 26px; display: inline-block; }
 .logo-fallback[hidden] { display: none; }
 .title { margin: 0; font-weight: 700; font-size: 15px; letter-spacing: 0.2px; }
-.subtitle { color: var(--mut); font-size: 12px; margin: 0; }
-.header-actions { display: flex; align-items: center; gap: 8px; -webkit-app-region: no-drag; }
+.subtitle { color: var(--mut); font-size: 12px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.header-actions { display: flex; align-items: center; gap: 8px; -webkit-app-region: no-drag; flex: 0 0 auto; }
 .status { display: flex; align-items: center; gap: 8px; color: var(--mut); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
 .dot.ok { background: var(--ok); }
@@ -1003,7 +1003,7 @@ button.ghost.icon svg.ic { width: 16px; height: 16px; }
    which uses native traffic lights (titleBarStyle hiddenInset). */
 .win-ctl {
   display: flex; align-items: center; gap: 2px; margin-left: 10px;
-  -webkit-app-region: no-drag;
+  -webkit-app-region: no-drag; flex: 0 0 auto;
 }
 .win-btn {
   width: 40px; height: 32px; display: inline-flex; align-items: center;
@@ -1011,7 +1011,7 @@ button.ghost.icon svg.ic { width: 16px; height: 16px; }
   color: var(--fg); opacity: 0.9; border-radius: var(--r-2, 8px);
   transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
-.win-btn .ic { width: 16px; height: 16px; }
+.win-btn .ic { width: 16px; height: 16px; flex: 0 0 auto; display: block; }
 .win-btn:hover { background: var(--card-hover, rgba(0,0,0,0.09)); color: var(--fg); opacity: 1; }
 .win-btn:active { background: var(--card-active, rgba(0,0,0,0.14)); }
 .win-btn-close:hover { background: var(--win-close, #e81123); color: #fff; opacity: 1; }

@@ -360,7 +360,39 @@ function syncSelectedCards() {
   });
 }
 
-async function installItem(item) {
+// 远程 hub 模型没有显式 engine 时，按 library/frameworks/category 推断。
+function inferEngines(item) {
+  const explicit = (Array.isArray(item.engine) ? item.engine : [item.engine])
+    .filter(Boolean).map(String);
+  if (explicit.length) return explicit;
+  const blob = [item.library, ...(item.frameworks || []), ...(item.tags || []),
+    item.category, item.task].filter(Boolean).join(" ").toLowerCase();
+  const out = new Set();
+  if (/gguf|llama/.test(blob)) out.add("llama.cpp");
+  if (/mnn/.test(blob)) out.add("mnn");
+  if (/onnx/.test(blob)) out.add("onnx");
+  if (/diffus/.test(blob)) out.add("diffusers");
+  if (/vllm/.test(blob)) out.add("vllm");
+  if (/transformers|text-generation|image-text|^llm$/.test(blob)) out.add("transformers");
+  if (!out.size) out.add("llama.cpp");
+  return [...out];
+}
+// 远程模型本身即 GGUF 仓库时返回该 repo（否则空串）。
+function ggufSource(item) {
+  if (item.gguf_repo) return item.gguf_repo;
+  const blob = [item.library, ...(item.frameworks || []), ...(item.tags || []),
+    item.name, item.repo].filter(Boolean).join(" ").toLowerCase();
+  return /gguf/.test(blob) && item.repo ? item.repo : "";
+}
+
+async function installItem(rawItem) {
+  // 远程 hub 模型缺少 engine/gguf_repo，先按 library/frameworks 规范化。
+  let item = rawItem;
+  if (rawItem.remote) {
+    const gguf = ggufSource(rawItem);
+    item = { ...rawItem, engine: inferEngines(rawItem),
+             ...(gguf ? { gguf_repo: gguf } : {}) };
+  }
   const engines = Array.isArray(item.engine) ? item.engine
                 : (item.engine ? [item.engine] : []);
   if (!engines.length) {
@@ -383,7 +415,7 @@ async function installItem(item) {
       try {
         await api.hubDownload({
           hub: "hf", repo: pick.repo || item.gguf_repo,
-          files: pick.files, auto_pick: false,
+          files: pick.files, revision: item.revision || "", auto_pick: false,
         });
         toast(t("toast.downloadStarted", { file: item.name || item.id }),
               { kind: "ok" });
