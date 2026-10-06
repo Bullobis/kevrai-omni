@@ -77,10 +77,10 @@ export function groupFiles(files) {
 //   { files, repo }           → chosen shard paths + gguf repo
 //   { files: [] }             → no quantizable files found (caller may default)
 //   { error }                 → enumeration failed
-export async function pickQuantization(item, api) {
+export async function pickQuantization(item, api, revision) {
   let resp;
   try {
-    resp = await api.modelGgufFiles(item.id);
+    resp = await api.modelGgufFiles(item.id, revision || "");
   } catch (e) {
     return { error: String((e && e.message) || e) };
   }
