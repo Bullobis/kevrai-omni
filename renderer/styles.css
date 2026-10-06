@@ -1145,6 +1145,25 @@ html[data-theme="light"] .skeleton-card::after {
   font-size: 13px; color: var(--mut); font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+/* Hardware fit indicator: green = runs on GPU, yellow = offload/CPU/tight,
+   red = does not fit in RAM. */
+.quant-opt.fit-ok   { border-left: 3px solid var(--ok); }
+.quant-opt.fit-warn { border-left: 3px solid var(--warn); }
+.quant-opt.fit-no   { border-left: 3px solid var(--err); opacity: 0.72; }
+.quant-opt.fit-no.is-sel { opacity: 1; }
+.quant-fit {
+  font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.quant-fit.lvl-ok {
+  color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent);
+}
+.quant-fit.lvl-warn {
+  color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+.quant-fit.lvl-no {
+  color: var(--err); border-color: color-mix(in srgb, var(--err) 45%, transparent);
+}
 .quant-foot {
   display: flex; align-items: center; gap: 10px; padding: 12px 16px;
   border-top: 1px solid var(--bord);
