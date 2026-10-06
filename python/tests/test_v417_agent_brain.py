@@ -93,7 +93,7 @@ def test_transformers_chat(router, monkeypatch):
         def __init__(self):
             pass
 
-        def generate(self, repo, prompt, *, system="", max_new_tokens=1024):
+        def generate(self, repo, prompt, *, system="", max_new_tokens=1024, should_stop=None):
             assert repo == "o/r"
             return "planned answer"
 
@@ -109,7 +109,7 @@ def test_transformers_empty_output(router, monkeypatch):
     router.configure("transformers:o/r")
 
     class FakeManager:
-        def generate(self, repo, prompt, *, system="", max_new_tokens=1024):
+        def generate(self, repo, prompt, *, system="", max_new_tokens=1024, should_stop=None):
             return "   "
 
     import app.llm_runtime as brain_mod
@@ -123,7 +123,7 @@ def test_transformers_brain_error(router, monkeypatch):
     router.configure("transformers:o/r")
 
     class FakeManager:
-        def generate(self, repo, prompt, *, system="", max_new_tokens=1024):
+        def generate(self, repo, prompt, *, system="", max_new_tokens=1024, should_stop=None):
             raise brain_mod.BrainModelError("boom")
 
     import app.llm_runtime as brain_mod

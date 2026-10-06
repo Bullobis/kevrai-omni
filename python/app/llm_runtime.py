@@ -38,6 +38,23 @@ class BrainParamError(BrainError):
     """Invalid parameters supplied to the brain."""
 
 
+class _StopOnSignal:
+    """Transformers StoppingCriteria that trips when a cancel signal is set."""
+
+    def __init__(self, signal) -> None:
+        self._signal = signal
+        self.tripped = False
+
+    def __call__(self, input_ids, scores, **kwargs) -> bool:
+        try:
+            if self._signal():
+                self.tripped = True
+                return True
+        except Exception as e:  # noqa: BLE001  never let a faulty signal stall decode
+            log.debug("brain stop signal raised, ignoring: %s", e)
+        return False
+
+
 # Curated, verified small instruct models suitable as an on-device brain.
 # (repo -> human label). Sizes are the published safetensors totals.
 BRAIN_MODELS: dict[str, str] = {
@@ -56,6 +73,7 @@ class TextBrainManager:
         self._model: Any = None
         self._tokenizer: Any = None
         self._torch: Any = None
+        self._tf: Any = None
         # Loading and generation are not safe to run concurrently on one model;
         # serialize brain use across agent sessions/threads.
         self._lock = threading.Lock()
@@ -82,6 +100,7 @@ class TextBrainManager:
         except Exception as e:  # noqa: BLE001
             raise BrainModelError(f"无法加载大脑模型 {repo}: {e}") from e
         self._torch = torch
+        self._tf = tf
         self._tokenizer = tokenizer
         self._model = model
         self._repo = repo
@@ -113,6 +132,7 @@ class TextBrainManager:
         *,
         system: str = "",
         max_new_tokens: int = 1024,
+        should_stop=None,
     ) -> str:
         if not prompt or not str(prompt).strip():
             raise BrainParamError("prompt is empty")
@@ -154,6 +174,12 @@ class TextBrainManager:
                         len(ids),
                     )
                 input_ids = torch.tensor([ids], dtype=torch.long)
+                # Cooperative mid-generation stop: check the cancel signal after
+                # each token so Stop is responsive even within one long CPU turn.
+                stopping = None
+                if should_stop is not None:
+                    criteria = _StopOnSignal(should_stop)
+                    stopping = self._tf.StoppingCriteriaList([criteria])
                 # The agent pre-assembles a full ReAct prompt (system
                 # instructions + scratchpad, ending in "Thought: "), so we
                 # continue it as a raw completion. Wrapping an instruct model's
@@ -165,6 +191,7 @@ class TextBrainManager:
                         input_ids,
                         max_new_tokens=max_new_tokens,
                         do_sample=False,
+                        stopping_criteria=stopping,
                         repetition_penalty=1.1,
                     )
                 generated = output[0][len(ids):]

@@ -258,7 +258,7 @@ class _FinalRouter:
     def is_ready(self):
         return True, "mock"
 
-    def chat(self, prompt, system="", max_new_tokens=2048):
+    def chat(self, prompt, system="", max_new_tokens=2048, should_stop=None):
         return {"ok": True, "text": "最终答案：这是一个算好的答案", "model_name": "mock"}
 
 
@@ -266,7 +266,7 @@ class _NotReadyRouter:
     def is_ready(self):
         return False, ""
 
-    def chat(self, prompt, system="", max_new_tokens=2048):  # pragma: no cover
+    def chat(self, prompt, system="", max_new_tokens=2048, should_stop=None):  # pragma: no cover
         return {"ok": False, "error": "not ready"}
 
 
@@ -276,7 +276,7 @@ class _LoopingRouter:
     def is_ready(self):
         return True, "mock"
 
-    def chat(self, prompt, system="", max_new_tokens=2048):
+    def chat(self, prompt, system="", max_new_tokens=2048, should_stop=None):
         return {"ok": True, "text": 'Action: no_such_tool|{"q": "x"}', "model_name": "mock"}
 
 

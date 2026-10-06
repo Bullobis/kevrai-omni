@@ -141,6 +141,7 @@ class ModelRouter:
         prompt: str,
         system: str = "",
         max_new_tokens: int = 2048,
+        should_stop=None,
     ) -> dict[str, Any]:
         """Invoke the reasoning LLM; returns ``{"ok": ..., "text": ...}``."""
         kind, repo = self._backend
@@ -150,7 +151,8 @@ class ModelRouter:
             try:
                 manager = self._brain()
                 text = (manager.generate(repo or "", prompt, system=system,
-                                         max_new_tokens=max_new_tokens)
+                                         max_new_tokens=max_new_tokens,
+                                         should_stop=should_stop)
                         or "").strip()
                 if not text:
                     return {"ok": False, "error": "LLM returned empty text",

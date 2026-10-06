@@ -443,7 +443,7 @@ class MockModelRouter:
     def is_ready(self):
         return True, "mock-model"
 
-    def chat(self, prompt, system="", max_new_tokens=2048):
+    def chat(self, prompt, system="", max_new_tokens=2048, should_stop=None):
         self.calls.append(prompt)
         if self._idx < len(self._responses):
             text = self._responses[self._idx]

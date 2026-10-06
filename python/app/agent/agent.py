@@ -620,7 +620,10 @@ class Agent:
             prompt = "\n".join(prompt_parts)
 
             # Call LLM
-            llm_res = self.router.chat(prompt, system="", max_new_tokens=REACT_TURN_TOKENS)
+            llm_res = self.router.chat(
+                prompt, system="", max_new_tokens=REACT_TURN_TOKENS,
+                should_stop=lambda: self._is_cancelled(session_id),
+            )
             # Checkpoint (after LLM call): a cancel may have landed while this
             # blocking inference was running. We cannot interrupt the call
             # itself, but as soon as it returns we honour the request instead

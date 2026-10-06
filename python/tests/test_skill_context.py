@@ -36,7 +36,7 @@ class _CaptureRouter:
     def is_ready(self) -> tuple[bool, str]:
         return True, "mock"
 
-    def chat(self, prompt, system="", max_new_tokens=2048):
+    def chat(self, prompt, system="", max_new_tokens=2048, should_stop=None):
         self.prompts.append(prompt)
         return {"ok": True, "text": self.text, "model_name": "mock"}
 
@@ -132,7 +132,7 @@ class TestSkillRuntime:
             def is_ready(self):
                 return True, "mock"
 
-            def chat(self, prompt, system="", max_new_tokens=2048):
+            def chat(self, prompt, system="", max_new_tokens=2048, should_stop=None):
                 self.n += 1
                 if self.n == 1:
                     return {"ok": True, "text": 'Action: boom_tool|{"x": 1}', "model_name": "mock"}
@@ -392,7 +392,7 @@ def test_ws_agent_disconnect_mid_run_no_unhandled_exception(hub_client):
         def is_ready(self):
             return True, "slow"
 
-        def chat(self, prompt, system="", max_new_tokens=2048):
+        def chat(self, prompt, system="", max_new_tokens=2048, should_stop=None):
             time.sleep(0.5)  # a bounded local LLM inference
             return {"ok": True, "text": "最终答案：slow", "model_name": "slow"}
 

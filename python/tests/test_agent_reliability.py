@@ -31,7 +31,7 @@ class _NoneTextRouter:
     def is_ready(self):
         return True, "mock-bad"
 
-    def chat(self, prompt, system="", max_new_tokens=2048):
+    def chat(self, prompt, system="", max_new_tokens=2048, should_stop=None):
         return {"ok": True, "text": None, "model_name": "mock-bad"}
 
 
@@ -41,7 +41,7 @@ class _NonDictRouter:
     def is_ready(self):
         return True, "mock-bad"
 
-    def chat(self, prompt, system="", max_new_tokens=2048):
+    def chat(self, prompt, system="", max_new_tokens=2048, should_stop=None):
         return None  # type: ignore[return-value]
 
 
@@ -51,7 +51,7 @@ class _NumberTextRouter:
     def is_ready(self):
         return True, "mock-bad"
 
-    def chat(self, prompt, system="", max_new_tokens=2048):
+    def chat(self, prompt, system="", max_new_tokens=2048, should_stop=None):
         return {"ok": True, "text": 12345, "model_name": "mock-bad"}  # type: ignore[dict-item]
 
 
