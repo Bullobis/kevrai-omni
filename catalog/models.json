@@ -11332,6 +11332,49 @@
           "recommended": false
         }
       ]
+    },
+    {
+      "id": "laya-decision",
+      "category": "llm",
+      "name": "Laya",
+      "repo": "convaiinnovations/laya",
+      "size_gb": 2,
+      "engine": [
+        "python"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "非自回归决策模型（System One），单次前向给出校准概率，提供 choice/score/noul 三类原语，约 33–40ms，可用于路由、评分与护栏判断。",
+      "sources": [
+        "https://huggingface.co/convaiinnovations/laya/",
+        "https://hf-mirror.com/convaiinnovations/laya/"
+      ],
+      "primary_url": "https://huggingface.co/convaiinnovations/laya/",
+      "hardware": {
+        "vram_gb": 0,
+        "min_vram_gb": 0,
+        "ram_gb": 4,
+        "disk_gb": 3,
+        "notes": "CPU 即可，单次前向约 33ms"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "文本分类/决策，非逐 token 生成"
+      },
+      "tags": [
+        "决策模型",
+        "路由",
+        "护栏",
+        "文本分类",
+        "System One",
+        "热门"
+      ]
     }
   ],
   "gguf_repos": [

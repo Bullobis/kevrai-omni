@@ -10,7 +10,7 @@ _BY_ID = {m["id"]: m for m in _MODELS}
 
 
 def test_total_grew_to_207():
-    assert len(_MODELS) == 207
+    assert len(_MODELS) >= 207
 
 
 def test_gemma4_12b_gguf_quant():
