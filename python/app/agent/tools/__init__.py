@@ -24,6 +24,7 @@ from .catalog_tools import (
     search_models,
 )
 from .drama_tools import DRAMA_TOOLS
+from .media_engine_tools import MEDIA_ENGINE_TOOLS
 from .media_prompt_tools import MEDIA_PROMPT_TOOLS
 from .system_tools import (
     check_hardware,
@@ -156,6 +157,22 @@ MEDIA_PROMPT_SKILL = Skill(
 )
 
 # Registration order = display order in the skill library UI.
+MEDIA_ENGINE_SKILL = Skill(
+    id="media_engines",
+    name="本地媒体引擎",
+    description="直接运行本机媒体能力：语音转写、向量嵌入、音源分离、语音合成、图片问答与文生图，可串联成工作流。",
+    icon="🧰",
+    category="media",
+    default_enabled=False,  # opt-in
+    tools=MEDIA_ENGINE_TOOLS,
+    guidance=(
+        "需要真正执行（而非规划）媒体任务时启用本技能：asr_transcribe 转写音频、embed_text 生成向量"
+        "（向量存为 JSON，返回路径）、separate_audio 分离音轨、tts_speak 合成语音、vision_ask 图片问答、"
+        "gen_image 文生图。可串联：例如先 asr_transcribe 得到文字，再 embed_text 入库；或生成文本后 tts_speak 朗读。"
+        "产物以文件路径返回，传给下一个工具时直接使用该路径；引擎未安装时按提示到对应页面安装。"
+    ),
+)
+
 BUILTIN_SKILLS: list[Skill] = [
     CORE_SKILL,
     CATALOG_SKILL,
@@ -163,6 +180,7 @@ BUILTIN_SKILLS: list[Skill] = [
     DRAMA_SKILL,
     WRITING_SKILL,
     MEDIA_PROMPT_SKILL,
+    MEDIA_ENGINE_SKILL,
 ]
 
 
