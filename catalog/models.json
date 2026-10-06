@@ -13781,6 +13781,87 @@
         "MIT",
         "快速"
       ]
+    },
+    {
+      "id": "sd15-base",
+      "category": "image",
+      "name": "Stable Diffusion 1.5",
+      "repo": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+      "size_gb": 4.27,
+      "engine": [
+        "diffusers"
+      ],
+      "license": "creativeml-openrail-m",
+      "trending": false,
+      "description": "Stable Diffusion 1.5 经典基座，512x512 文生图，LoRA/插件生态最庞大，OpenRAIL-M 许可。",
+      "sources": [
+        "https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5/",
+        "https://hf-mirror.com/stable-diffusion-v1-5/stable-diffusion-v1-5/"
+      ],
+      "primary_url": "https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5/",
+      "hardware": {
+        "vram_gb": 4,
+        "min_vram_gb": 2,
+        "ram_gb": 8,
+        "disk_gb": 5
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "image"
+        ]
+      },
+      "tags": [
+        "SD15",
+        "StableDiffusion",
+        "文生图",
+        "经典",
+        "LoRA生态"
+      ]
+    },
+    {
+      "id": "svd-xt",
+      "category": "video",
+      "name": "Stable Video Diffusion XT",
+      "repo": "stabilityai/stable-video-diffusion-img2vid-xt",
+      "size_gb": 9.56,
+      "engine": [
+        "diffusers"
+      ],
+      "license": "other",
+      "trending": false,
+      "description": "Stability AI Stable Video Diffusion XT，单张图片生成短视频（约25帧），经典图生视频，SVD 研究许可（other）。",
+      "sources": [
+        "https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt/",
+        "https://hf-mirror.com/stabilityai/stable-video-diffusion-img2vid-xt/"
+      ],
+      "primary_url": "https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt/",
+      "hardware": {
+        "vram_gb": 8,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 10,
+        "notes": "图生视频（约25帧）；fp16 约5GB"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "video"
+        ]
+      },
+      "tags": [
+        "SVD",
+        "StableVideo",
+        "图生视频",
+        "经典"
+      ]
     }
   ],
   "gguf_repos": [
