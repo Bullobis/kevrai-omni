@@ -85,6 +85,7 @@ from .importer import (
     annotate_registry_engines,
     import_local,
     list_gguf_files,
+    list_repo_revisions,
     load_local_registry,
     snapshot_progress,
 )
@@ -815,18 +816,46 @@ def model_detail(
 
 
 @app.get("/api/models/{model_id}/gguf-files")
-def model_gguf_files(model_id: str) -> dict[str, Any]:
-    """Lazy GGUF file enumeration for a model (called after the panel shows)."""
+def model_gguf_files(model_id: str, revision: str = "main") -> dict[str, Any]:
+    """Lazy GGUF file enumeration for a model (called after the panel shows).
+
+    ``?revision=`` selects the branch / tag / commit to list (defaults to
+    ``"main"``); it is forwarded verbatim to the HF Hub tree API.
+    """
     model_id = _validate_model_id(model_id)
     for m in CATALOG.models:
         if m.id == model_id:
             if not m.gguf_repo:
                 return {"files": [], "count": 0}
             try:
-                files = list_gguf_files(m.gguf_repo, "*.gguf")
-                return {"files": files, "count": len(files), "repo": m.gguf_repo}
+                files = list_gguf_files(m.gguf_repo, "*.gguf", revision=revision)
+                return {"files": files, "count": len(files),
+                        "repo": m.gguf_repo, "revision": revision}
             except Exception as e:
                 raise HTTPException(status_code=502, detail=f"GGUF 仓库枚举失败：{e}") from e
+    raise HTTPException(status_code=404, detail=f"model {model_id} not found")
+
+
+@app.get("/api/models/{model_id}/revisions")
+def model_revisions(model_id: str) -> dict[str, Any]:
+    """Return a model's GGUF repo branches / tags (refs) for the version picker.
+
+    A model without a ``gguf_repo`` yields an empty structure (the picker has
+    nothing to choose from) rather than a 404; an unknown ``model_id`` still
+    404s, and an upstream Hub failure surfaces as 502.
+    """
+    model_id = _validate_model_id(model_id)
+    for m in CATALOG.models:
+        if m.id == model_id:
+            if not m.gguf_repo:
+                return {"repo": "", "branches": [], "tags": []}
+            try:
+                refs = list_repo_revisions(m.gguf_repo)
+            except Exception as e:
+                raise HTTPException(status_code=502, detail=f"GGUF 仓库 refs 枚举失败：{e}") from e
+            return {"repo": m.gguf_repo,
+                    "branches": refs.get("branches", []),
+                    "tags": refs.get("tags", [])}
     raise HTTPException(status_code=404, detail=f"model {model_id} not found")
 
 

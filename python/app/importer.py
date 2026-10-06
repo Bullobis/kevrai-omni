@@ -465,21 +465,34 @@ _HF_API_MIRRORS: tuple[str, ...] = (
 )
 
 
-def list_gguf_files(repo: str, pattern: str = "*.gguf") -> list[dict[str, Any]]:
+def list_gguf_files(
+    repo: str,
+    pattern: str = "*.gguf",
+    revision: str = "main",
+) -> list[dict[str, Any]]:
     """Enumerate files in a HF repo (paginated), filter by pattern.
+
+    ``revision`` selects the branch / tag / commit to list (defaults to
+    ``"main"``). It is URL-quoted before being spliced into the tree path so
+    refs containing ``/`` (e.g. ``refs/heads/dev``) or other unsafe characters
+    cannot inject extra path segments. An empty / whitespace-only revision
+    falls back to ``"main"``.
 
     Mirrors are tried in order (12s each) — the first reachable one wins.
     Raises the last error only when every mirror fails.
     """
     import fnmatch
+    from urllib.parse import quote
 
     import httpx
 
     if not repo:
         return []
+    ref = (revision or "main").strip() or "main"
+    ref_seg = quote(ref, safe="")
     last_err: Exception | None = None
     for base in _HF_API_MIRRORS:
-        url = f"{base}/models/{repo}/tree/main?recursive=true"
+        url = f"{base}/models/{repo}/tree/{ref_seg}?recursive=true"
         out: list[dict[str, Any]] = []
         try:
             next_cursor: str | None = None
@@ -503,6 +516,67 @@ def list_gguf_files(repo: str, pattern: str = "*.gguf") -> list[dict[str, Any]]:
     if last_err is not None:
         raise last_err
     return []
+
+
+def _normalize_refs(payload: Any, key: str) -> list[dict[str, str]]:
+    """Extract ``[{name, ref}, ...]`` from one of the refs JSON arrays.
+
+    Tolerant of the shapes seen in the wild: a missing / non-list field yields
+    ``[]`` instead of raising, and entries that are not mappings (or lack a
+    ``name``) are skipped so a single malformed row cannot break the whole
+    picker.
+    """
+    raw = payload.get(key) if isinstance(payload, dict) else None
+    if not isinstance(raw, list):
+        return []
+    out: list[dict[str, str]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        name = item.get("name")
+        if not name:
+            continue
+        out.append({"name": str(name), "ref": str(item.get("ref", ""))})
+    return out
+
+
+def list_repo_revisions(repo: str) -> dict[str, list[dict[str, str]]]:
+    """Enumerate a HF repo's branches and tags (refs).
+
+    Hits ``GET {api}/models/{repo}/refs`` (verified live shape: a dict with
+    ``branches`` / ``tags`` / ``converts`` arrays; each entry is
+    ``{"name": ..., "ref": "refs/heads/...", "targetCommit": "<sha>"}``). The
+    legacy ``/refs/branches`` and ``/refs/tags`` sub-paths return 404 on both
+    hf.co and hf-mirror, so the single aggregate ``/refs`` route is used.
+
+    Mirrors are tried in order (12s each); one reachable mirror wins. A single
+    mirror failing (network error, bad JSON, non-2xx) is non-fatal — we fall
+    through to the next mirror — but when *every* mirror fails the last error
+    is re-raised.
+    """
+    import httpx
+
+    if not repo:
+        return {"branches": [], "tags": []}
+    last_err: Exception | None = None
+    for base in _HF_API_MIRRORS:
+        url = f"{base}/models/{repo}/refs"
+        try:
+            with httpx.Client(timeout=12.0, follow_redirects=True,
+                              headers={"User-Agent": USER_AGENT}) as client:
+                r = client.get(url)
+                r.raise_for_status()
+                payload = r.json()
+            return {
+                "branches": _normalize_refs(payload, "branches"),
+                "tags": _normalize_refs(payload, "tags"),
+            }
+        except Exception as e:  # noqa: BLE001 — try next mirror
+            last_err = e
+            continue
+    if last_err is not None:
+        raise last_err
+    return {"branches": [], "tags": []}
 
 
 def _huggingface_headers(token: str | None = None) -> dict[str, str]:
