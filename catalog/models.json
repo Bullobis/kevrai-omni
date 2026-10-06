@@ -11564,6 +11564,259 @@
         "Meta",
         "热门"
       ]
+    },
+    {
+      "id": "phi-4-mini",
+      "category": "llm",
+      "name": "Phi-4-mini Instruct",
+      "repo": "microsoft/Phi-4-mini-instruct",
+      "size_gb": 7.67,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "mit",
+      "trending": true,
+      "description": "微软 Phi-4-mini（3.8B），MIT 许可，注重指令遵循与函数调用，适合端侧。",
+      "sources": [
+        "https://huggingface.co/microsoft/Phi-4-mini-instruct/",
+        "https://huggingface.co/unsloth/Phi-4-mini-instruct-GGUF/",
+        "https://hf-mirror.com/unsloth/Phi-4-mini-instruct-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/microsoft/Phi-4-mini-instruct/",
+      "hardware": {
+        "vram_gb": 3,
+        "min_vram_gb": 2.1,
+        "ram_gb": 8,
+        "disk_gb": 8
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "Phi4",
+        "微软",
+        "小尺寸",
+        "端侧",
+        "MIT",
+        "热门"
+      ],
+      "gguf_repo": "unsloth/Phi-4-mini-instruct-GGUF",
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 2.12,
+          "vram_gb": 2.12,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 2.49,
+          "vram_gb": 2.49,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 2.85,
+          "vram_gb": 2.85,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 4.08,
+          "vram_gb": 4.08,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 7.68,
+          "vram_gb": 7.68,
+          "recommended": false
+        }
+      ]
+    },
+    {
+      "id": "llama-3.3-70b",
+      "category": "llm",
+      "name": "Llama 3.3 70B Instruct",
+      "repo": "meta-llama/Llama-3.3-70B-Instruct",
+      "size_gb": 141.12,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "llama3.3",
+      "trending": true,
+      "description": "Meta Llama 3.3 70B 指令模型，强通用与对话能力。基座 gated（Llama 3.3 许可），亦可经 GGUF 运行。",
+      "sources": [
+        "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct/",
+        "https://huggingface.co/unsloth/Llama-3.3-70B-Instruct-GGUF/",
+        "https://hf-mirror.com/unsloth/Llama-3.3-70B-Instruct-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct/",
+      "hardware": {
+        "vram_gb": 43,
+        "min_vram_gb": 34,
+        "ram_gb": 64,
+        "disk_gb": 142
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "Llama3",
+        "Meta",
+        "旗舰",
+        "密集",
+        "热门"
+      ],
+      "gguf_repo": "unsloth/Llama-3.3-70B-Instruct-GGUF",
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 34.27,
+          "vram_gb": 34.27,
+          "recommended": false
+        },
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 40.05,
+          "vram_gb": 40.05,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 42.52,
+          "vram_gb": 42.52,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 49.95,
+          "vram_gb": 49.95,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 74.98,
+          "vram_gb": 74.98,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 141.12,
+          "vram_gb": 141.12,
+          "recommended": false
+        }
+      ]
+    },
+    {
+      "id": "mistral-nemo-12b",
+      "category": "llm",
+      "name": "Mistral Nemo 12B Instruct",
+      "repo": "mistralai/Mistral-Nemo-Instruct-2407",
+      "size_gb": 24.5,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "apache-2.0",
+      "trending": true,
+      "description": "Mistral 与 NVIDIA 合作的 Nemo 12B，Apache-2.0，长上下文、多语言、函数调用。",
+      "sources": [
+        "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407/",
+        "https://huggingface.co/bartowski/Mistral-Nemo-Instruct-2407-GGUF/",
+        "https://hf-mirror.com/bartowski/Mistral-Nemo-Instruct-2407-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407/",
+      "hardware": {
+        "vram_gb": 8,
+        "min_vram_gb": 6,
+        "ram_gb": 16,
+        "disk_gb": 25
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "Mistral",
+        "Nemo",
+        "密集",
+        "多语言",
+        "热门"
+      ],
+      "gguf_repo": "bartowski/Mistral-Nemo-Instruct-2407-GGUF",
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 6.08,
+          "vram_gb": 6.08,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 7.48,
+          "vram_gb": 7.48,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 8.73,
+          "vram_gb": 8.73,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 13.02,
+          "vram_gb": 13.02,
+          "recommended": false
+        }
+      ]
     }
   ],
   "gguf_repos": [
