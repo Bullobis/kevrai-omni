@@ -7137,11 +7137,11 @@
       ],
       "primary_url": "https://huggingface.co/zai-org/GLM-5.3-Flash/",
       "hardware": {
-        "vram_gb": 512,
-        "min_vram_gb": 128,
-        "ram_gb": 1024,
-        "disk_gb": 657,
-        "notes": "BF16 约 657GB；GGUF/FP8 量化后可在大显存单卡或多卡运行"
+        "vram_gb": 200,
+        "min_vram_gb": 109,
+        "ram_gb": 642,
+        "disk_gb": 642,
+        "notes": "unsloth UD 动态量化映射到规范 id；Q4_K_M 推荐；BF16 全量约 642GB"
       },
       "modality": {
         "multimodal": true,
@@ -7170,27 +7170,59 @@
       ],
       "quantizations": [
         {
-          "id": "Q4_K",
-          "label": "Q4_K（推荐）",
-          "file_quant": "Q4_K",
-          "size_gb": 185.99,
-          "vram_gb": 213.9,
+          "id": "Q2_K",
+          "label": "Q2_K",
+          "file_quant": "Q2_K",
+          "size_gb": 108.72,
+          "vram_gb": 108.72,
+          "recommended": false
+        },
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 147.54,
+          "vram_gb": 147.54,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 199.71,
+          "vram_gb": 199.71,
           "recommended": true
         },
         {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 240.31,
+          "vram_gb": 240.31,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 291.83,
+          "vram_gb": 291.83,
+          "recommended": false
+        },
+        {
           "id": "Q8_0",
-          "label": "Q8_0（高保真）",
+          "label": "Q8_0",
           "file_quant": "Q8_0",
-          "size_gb": 317.56,
-          "vram_gb": 365.2,
+          "size_gb": 340.98,
+          "vram_gb": 340.98,
           "recommended": false
         },
         {
           "id": "F16",
-          "label": "F16（全精度）",
+          "label": "F16",
           "file_quant": "F16",
-          "size_gb": 599.71,
-          "vram_gb": 689.7,
+          "size_gb": 641.64,
+          "vram_gb": 641.64,
           "recommended": false
         }
       ]
