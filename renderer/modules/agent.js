@@ -27,6 +27,7 @@ export async function initAgent() {
   if (!root) return;
   root.innerHTML = _renderShell();
   _wireEvents(root);
+  _wireMessageActions(document.getElementById("agent-messages"));
   await _refreshStatus();
   _loadSkills();
   _loadSessionList();
@@ -383,7 +384,7 @@ async function _loadSessionMessages() {
   try {
     const res = unwrap(await api.agentSessionMessages(_sessionId, 100));
     for (const msg of res.messages || []) {
-      _appendMessage(msg.role, msg.content, false);
+      _appendMessage(msg.role, msg.content, false, msg.tools_used || [], msg.id);
     }
     container.scrollTop = container.scrollHeight;
   } catch (e) {
@@ -445,11 +446,12 @@ async function _sendMessage() {
 // ---------------------------------------------------------------------------
 // 消息渲染
 // ---------------------------------------------------------------------------
-function _appendMessage(role, content, animate = false, tools = []) {
+function _appendMessage(role, content, animate = false, tools = [], msgId = null) {
   const container = document.getElementById("agent-messages");
   if (!container) return;
   const div = document.createElement("div");
   div.className = `agent-msg agent-msg-${role}`;
+  if (msgId != null) div.dataset.msgId = String(msgId);
   const label = role === "user" ? "你" : "Kevrai Agent";
   const toolsHtml = tools && tools.length
     ? `<div class="agent-tools-used">工具: ${tools.map((t) => `<span class="agent-tool-tag">${esc(t)}</span>`).join("")}</div>`
@@ -457,19 +459,139 @@ function _appendMessage(role, content, animate = false, tools = []) {
   const regenBtn = role === "assistant"
     ? `<button type="button" class="agent-msg-btn" data-msg-action="regen" title="重新生成">↻ 重新生成</button>`
     : "";
+  // Delete is offered on every persisted message; edit only on user messages
+  // (and only when we know its row id — optimistic sends have no id yet).
+  const canDelete = msgId != null;
+  const canEdit = role === "user" && msgId != null;
+  const editBtn = canEdit
+    ? `<button type="button" class="agent-msg-btn" data-msg-action="edit-msg" title="编辑并重新发送">✎ 编辑</button>`
+    : "";
+  const deleteBtn = canDelete
+    ? `<button type="button" class="agent-msg-btn agent-msg-btn-danger" data-msg-action="delete-msg" title="删除此条及之后消息">🗑 删除</button>`
+    : "";
   div.innerHTML = `
     <div class="agent-msg-label">${esc(label)}</div>
     <div class="agent-msg-content">${esc(content).replace(/\n/g, "<br>")}</div>
     ${toolsHtml}
     <div class="agent-msg-actions">
       <button type="button" class="agent-msg-btn" data-msg-action="copy" title="复制">⧉ 复制</button>
+      ${editBtn}
       ${regenBtn}
+      ${deleteBtn}
     </div>
   `;
   container.appendChild(div);
   div.querySelector('[data-msg-action="copy"]').addEventListener("click", () => _copyText(content));
   div.querySelector('[data-msg-action="regen"]')?.addEventListener("click", () => _regenerate());
   container.scrollTop = container.scrollHeight;
+}
+
+// Delegated handlers for delete / edit (wired once on the messages container).
+function _wireMessageActions(container) {
+  if (!container) return;
+  container.addEventListener("click", async (e) => {
+    const delBtn = e.target.closest('[data-msg-action="delete-msg"]');
+    if (delBtn) { await _deleteMessage(delBtn); return; }
+    const editBtn = e.target.closest('[data-msg-action="edit-msg"]');
+    if (editBtn) { _startInlineEdit(editBtn); return; }
+  });
+}
+
+async function _deleteMessage(btn) {
+  if (_busy) return;
+  const div = btn.closest(".agent-msg");
+  const mid = Number(div && div.dataset.msgId);
+  if (!mid) return;
+  if (!window.confirm("删除这条消息及其之后的所有消息？此操作不可撤销。")) return;
+  try {
+    _busy = true;
+    btn.disabled = true;
+    await api.agentDeleteMessage(_sessionId, mid);
+    await Promise.all([_loadSessionMessages(), _loadSessionList()]);
+    toast("已删除消息", { kind: "ok" });
+  } catch (err) {
+    toast(`删除失败：${err.message || err}`, { kind: "err" });
+  } finally {
+    _busy = false;
+  }
+}
+
+// Turn a user message into an inline editor (save / cancel).
+function _startInlineEdit(editBtn) {
+  if (_busy) return;
+  const div = editBtn.closest(".agent-msg");
+  if (!div || div.dataset.editing === "1") return;
+  const mid = Number(div.dataset.msgId);
+  const contentEl = div.querySelector(".agent-msg-content");
+  const actionsEl = div.querySelector(".agent-msg-actions");
+  if (!contentEl || !mid) return;
+
+  const originalHtml = contentEl.innerHTML;
+  const originalText = (contentEl.textContent || "").trim();
+  div.dataset.editing = "1";
+  contentEl.innerHTML = "";
+  const ta = document.createElement("textarea");
+  ta.className = "agent-edit-input";
+  ta.value = originalText;
+  contentEl.appendChild(ta);
+  actionsEl.innerHTML = "";
+
+  const saveBtn = document.createElement("button");
+  saveBtn.type = "button";
+  saveBtn.className = "agent-msg-btn";
+  saveBtn.textContent = "保存并重发";
+  const cancelBtn = document.createElement("button");
+  cancelBtn.type = "button";
+  cancelBtn.className = "agent-msg-btn";
+  cancelBtn.textContent = "取消";
+  actionsEl.appendChild(saveBtn);
+  actionsEl.appendChild(cancelBtn);
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+
+  const cancel = () => {
+    delete div.dataset.editing;
+    contentEl.innerHTML = originalHtml;
+    _loadSessionMessages();
+  };
+  cancelBtn.addEventListener("click", cancel);
+  saveBtn.addEventListener("click", async () => {
+    const newText = ta.value.trim();
+    if (!newText) { toast("内容不能为空", { kind: "err" }); return; }
+    saveBtn.disabled = true;
+    cancelBtn.disabled = true;
+    await _editAndResend(mid, newText);
+  });
+}
+
+// Cherry-Studio "edit & resend": persist the edited user turn (which also
+// suffix-trims everything after it), then have the agent re-answer it.
+async function _editAndResend(mid, newText) {
+  if (_busy) return;
+  const thinking = document.getElementById("agent-thinking");
+  const thinkingText = document.getElementById("agent-thinking-text");
+  try {
+    _busy = true;
+    // 1) Persist the edited user turn + drop everything after it.
+    await api.agentEditMessage(_sessionId, mid, newText);
+    // 2) The edited row is now the pending (last) user message. The normal chat
+    //    path re-adds a user turn, so drop this pending row first — otherwise we
+    //    would end up with two identical user bubbles. This mirrors how
+    //    `regenerate` trims the user turn before re-running it.
+    await api.agentDeleteMessage(_sessionId, mid);
+    // 3) Re-send via the normal chat path (fresh user turn + assistant answer).
+    if (thinking) { thinking.style.display = "flex"; thinkingText.textContent = "思考中…"; }
+    const res = unwrap(await api.agentChat({ message: newText, session_id: _sessionId }));
+    await _loadSessionMessages();
+    await _loadSessionList();
+    if (!res.ok) toast(res.error || "重新发送失败", { kind: "err" });
+  } catch (e) {
+    toast(`编辑重发失败：${e.message || e}`, { kind: "err" });
+    await _loadSessionMessages();
+  } finally {
+    _busy = false;
+    if (thinking) thinking.style.display = "none";
+  }
 }
 
 async function _copyText(text) {

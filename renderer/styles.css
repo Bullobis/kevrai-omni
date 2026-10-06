@@ -907,6 +907,13 @@ html[data-theme="light"] .agent-msg-user { color: #fff; }
   background: transparent; color: inherit; border: 1px solid currentColor; opacity: 0.75;
 }
 .agent-msg-btn:hover { opacity: 1; background: rgba(128, 128, 128, 0.2); }
+.agent-msg-btn-danger:hover { background: rgba(220, 80, 80, 0.25); border-color: rgba(220, 80, 80, 0.6); }
+.agent-edit-input {
+  width: 100%; background: var(--card, #1b1c1f); color: var(--fg, #ccc);
+  border: 1px solid var(--accent, #4a7dff); border-radius: 8px;
+  padding: 8px 10px; font-size: 13px; font-family: inherit; line-height: 1.5;
+  resize: vertical; min-height: 60px; box-sizing: border-box;
+}
 .agent-input-area { display: flex; gap: 8px; align-items: flex-end; }
 .agent-input { flex: 1; background: var(--card, #1b1c1f); color: var(--fg, #ccc); border: 1px solid var(--border, #333); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; resize: none; font-family: inherit; line-height: 1.5; }
 .agent-input:focus-visible { outline: none; border-color: var(--accent, #4a7dff); box-shadow: var(--focus); }

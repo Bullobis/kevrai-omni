@@ -206,6 +206,66 @@ class AgentMemory:
         self.touch_session(session_id)
         return user_content
 
+    def delete_message_from(self, session_id: str, message_id: int) -> int:
+        """Suffix-delete: remove the message with ``message_id`` and every
+        message that follows it in the same session (``id >= message_id``).
+
+        Trimming from an explicit id down guarantees the session always ends on
+        a clean turn boundary (a complete user→assistant pair) and never leaves
+        an orphaned half-turn. Returns the number of deleted rows, or ``0`` when
+        no message in this session has that id.
+        """
+        with self._conn() as conn:
+            target = conn.execute(
+                "SELECT id FROM messages WHERE session_id=? AND id=?",
+                (session_id, message_id),
+            ).fetchone()
+            if not target:
+                return 0
+            cur = conn.execute(
+                "DELETE FROM messages WHERE session_id=? AND id >= ?",
+                (session_id, message_id),
+            )
+            conn.commit()
+            deleted = cur.rowcount
+        self.touch_session(session_id)
+        return int(deleted)
+
+    def edit_user_message(
+        self, session_id: str, message_id: int, new_content: str
+    ) -> bool | None:
+        """Edit a user message in place, then suffix-trim everything after it.
+
+        The edited message becomes the latest (pending) turn of the session so
+        the agent can re-respond to it. Returns:
+
+        - ``True``  — message found, role was ``user``; content updated and all
+                      later messages removed.
+        - ``False`` — no message with this id exists in the session.
+        - ``None``  — the message exists but its role is not ``user`` (editing
+                      an assistant/system/tool turn is semantically illegal).
+        """
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT id, role FROM messages WHERE session_id=? AND id=?",
+                (session_id, message_id),
+            ).fetchone()
+            if not row:
+                return False
+            if row["role"] != "user":
+                return None
+            conn.execute(
+                "UPDATE messages SET content=? WHERE session_id=? AND id=?",
+                (new_content, session_id, message_id),
+            )
+            conn.execute(
+                "DELETE FROM messages WHERE session_id=? AND id > ?",
+                (session_id, message_id),
+            )
+            conn.commit()
+        self.touch_session(session_id)
+        return True
+
     # ------------------------------------------------------------------
     # Preferences
     # ------------------------------------------------------------------

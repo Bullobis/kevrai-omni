@@ -118,6 +118,8 @@ export const api = {
   agentSessions:        wrap("agentSessions",        (limit) => k().agentSessions(limit)),
   agentSessionMessages: wrap("agentSessionMessages", (id, limit) => k().agentSessionMessages(id, limit)),
   agentRegenerate:      wrap("agentRegenerate",      (id) => k().agentRegenerate(id)),
+  agentDeleteMessage:   wrap("agentDeleteMessage",   (id, mid) => k().agentDeleteMessage(id, mid)),
+  agentEditMessage:     wrap("agentEditMessage",     (id, mid, content) => k().agentEditMessage(id, mid, content)),
   agentGetPreferences:  wrap("agentGetPreferences",  () => k().agentGetPreferences()),
   agentSetPreference:   wrap("agentSetPreference",   (key, value) => k().agentSetPreference(key, value)),
   // v2.8.0 — 可插拔技能库
