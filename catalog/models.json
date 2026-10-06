@@ -12548,6 +12548,126 @@
         "编程",
         "补全"
       ]
+    },
+    {
+      "id": "r1-distill-qwen-14b",
+      "category": "llm",
+      "name": "DeepSeek-R1-Distill-Qwen-14B",
+      "repo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
+      "gguf_repo": "unsloth/DeepSeek-R1-Distill-Qwen-14B-GGUF",
+      "size_gb": 29.54,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "mit",
+      "trending": true,
+      "description": "DeepSeek-R1 蒸馏到 Qwen2.5-14B 的推理模型，保留长链推理能力，本地中等显存可跑，MIT。",
+      "sources": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B/",
+        "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-14B-GGUF/",
+        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Qwen-14B-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B/",
+      "hardware": {
+        "vram_gb": 9,
+        "min_vram_gb": 7.3,
+        "ram_gb": 32,
+        "disk_gb": 30
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 7.34,
+          "vram_gb": 7.34,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 8.99,
+          "vram_gb": 8.99,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 10.51,
+          "vram_gb": 10.51,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 15.7,
+          "vram_gb": 15.7,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "DeepSeek",
+        "R1",
+        "蒸馏",
+        "推理",
+        "思考链",
+        "MIT",
+        "热门"
+      ]
+    },
+    {
+      "id": "ovis2-16b",
+      "category": "llm",
+      "name": "Ovis2 16B",
+      "repo": "ATH-MaaS/Ovis2-16B",
+      "size_gb": 32.38,
+      "engine": [
+        "transformers"
+      ],
+      "license": "apache-2.0",
+      "trending": true,
+      "description": "阿里 Ovis2 16B 视觉语言模型，强图像/文档理解；组织已由 AIDC-AI 迁至 ATH-MaaS（旧链接自动重定向），transformers 原生支持。",
+      "sources": [
+        "https://huggingface.co/ATH-MaaS/Ovis2-16B/",
+        "https://hf-mirror.com/ATH-MaaS/Ovis2-16B/"
+      ],
+      "primary_url": "https://huggingface.co/ATH-MaaS/Ovis2-16B/",
+      "hardware": {
+        "vram_gb": 33,
+        "min_vram_gb": 12,
+        "ram_gb": 32,
+        "disk_gb": 33,
+        "notes": "BF16 约32GB；4bit 量化约12GB"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "Ovis2",
+        "视觉理解",
+        "多模态",
+        "文档解析",
+        "Apache"
+      ]
     }
   ],
   "gguf_repos": [
