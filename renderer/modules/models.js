@@ -12,7 +12,7 @@ import {
 } from "./compare.js";
 import { t } from "./i18n.js";
 import {
-  supportsVersionSelect, openVersionSelector,
+  supportsVersionSelect, openVersionSelector, resolveFileTreeSource,
 } from "./version-select.js";
 
 const $  = (s) => document.querySelector(s);
@@ -392,10 +392,12 @@ async function installItem(item) {
   } catch (_) { /* toast shown */ }
 
   // 用户选定了具体量化文件：带文件名走 hub 下载（失败由 api 包装弹 toast）。
+  // 下载源用 resolveFileTreeSource（curated 目录模型走 gguf_repo，而非 item.repo）。
   if (pickedFile) {
+    const src = resolveFileTreeSource(item);
     try {
       await api.hubDownload({
-        hub: item.hub, repo: item.repo, files: [pickedFile], auto_pick: true,
+        hub: src.hub, repo: src.repo, files: [pickedFile], auto_pick: true,
       });
       toast(t("version.downloadStarted", { file: pickedFile }), { kind: "ok" });
     } catch (_) { /* toast shown */ }

@@ -1,6 +1,6 @@
 {
-  "version": "3.6.1",
-  "updated": "2026-09-24",
+  "version": "3.7.0",
+  "updated": "2026-10-06",
   "engines": [
     {
       "id": "llama.cpp",
@@ -67,7 +67,7 @@
         "https://gitcode.com/alibaba/MNN",
         "https://gitcode.com/GitHub_Trending/mn/MNN"
       ],
-      "version": "3.6.1",
+      "version": "3.7.0",
       "runtime": "python-llm",
       "model_source": {
         "huggingface": "https://huggingface.co/taobao-mnn",

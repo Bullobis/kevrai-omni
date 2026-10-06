@@ -111,13 +111,25 @@ export function sortVersions(list) {
   });
 }
 
-// 该模型是否支持「安装前选版本」：远程 hub（hf/modelscope）且有合法 repo。
-// curated 目录模型、MNN、引擎本身一律不支持，调用方走原有逻辑。
+// 解析一个模型「文件树应从哪个 hub/repo 拉」。
+//   · 直接来自 hf/modelscope 检索的模型：用其 hub + repo；
+//   · curated 目录模型（hub="curated"）：目录条目带 gguf_repo（指向 HF 上的
+//     GGUF 仓库），文件树从 hf + gguf_repo 拉；
+//   · 其余（MNN、引擎本身、无任何远程仓库）：返回 null。
+export function resolveFileTreeSource(item) {
+  if (!item || typeof item !== "object") return null;
+  if (SELECTABLE_HUBS.has(item.hub)) {
+    const repo = String(item.repo || "");
+    if (repo.includes("/") && repo.length <= 200) return { hub: item.hub, repo };
+  }
+  const gguf = String(item.gguf_repo || "");
+  if (gguf.includes("/") && gguf.length <= 220) return { hub: "hf", repo: gguf };
+  return null;
+}
+
+// 该模型是否支持「安装前选版本」：能解析出远程文件树来源即支持。
 export function supportsVersionSelect(item) {
-  if (!item || typeof item !== "object") return false;
-  if (!SELECTABLE_HUBS.has(item.hub)) return false;
-  const repo = String(item.repo || "");
-  return repo.includes("/") && repo.length <= 200;
+  return resolveFileTreeSource(item) !== null;
 }
 
 // ── 网络：拉文件树 ──────────────────────────────────────────────────────────
@@ -255,8 +267,11 @@ export function openVersionSelector(model) {
     });
     detachTrap = trapFocus(el);
 
+    // 解析文件树来源（curated 目录模型走 gguf_repo）。
+    const source = resolveFileTreeSource(model);
+
     // 拉文件树：面板已可见，加载态在面板内呈现，失败就地回退。
-    fetchVersions(model.hub, model.repo)
+    fetchVersions(source.hub, source.repo)
       .then((versions) => { if (!settled) renderList(versions); })
       .catch(() => { if (!settled) renderError(); });
   });

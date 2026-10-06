@@ -122,3 +122,31 @@ test("supportsVersionSelect：远程 hub+repo 才支持，其余回退原行为"
   assert.equal(vs.supportsVersionSelect({ hub: "hf", repo: "not-a-repo" }), false);
   assert.equal(vs.supportsVersionSelect(null), false);
 });
+
+// ── resolveFileTreeSource（curated 目录模型走 gguf_repo）────────────────────
+
+test("resolveFileTreeSource：直接 hf/modelscope 模型用其 hub+repo", () => {
+  assert.deepEqual(vs.resolveFileTreeSource({ hub: "hf", repo: "org/model" }),
+    { hub: "hf", repo: "org/model" });
+  assert.deepEqual(vs.resolveFileTreeSource({ hub: "modelscope", repo: "org/model" }),
+    { hub: "modelscope", repo: "org/model" });
+});
+
+test("resolveFileTreeSource：curated 模型带 gguf_repo → hf + gguf_repo", () => {
+  const item = { hub: "curated", repo: "Qwen/Qwen3-32B", gguf_repo: "unsloth/Qwen3-32B-GGUF" };
+  assert.deepEqual(vs.resolveFileTreeSource(item),
+    { hub: "hf", repo: "unsloth/Qwen3-32B-GGUF" });
+});
+
+test("resolveFileTreeSource：curated 无 gguf_repo、MNN、空值 → null", () => {
+  assert.equal(vs.resolveFileTreeSource({ hub: "curated", repo: "org/model" }), null);
+  assert.equal(vs.resolveFileTreeSource({ hub: "mnn", repo: "org/model" }), null);
+  assert.equal(vs.resolveFileTreeSource(null), null);
+  assert.equal(vs.resolveFileTreeSource({}), null);
+});
+
+test("supportsVersionSelect：curated 带 gguf_repo 也支持选择", () => {
+  assert.equal(vs.supportsVersionSelect({
+    hub: "curated", repo: "Qwen/Qwen3-32B", gguf_repo: "unsloth/Qwen3-32B-GGUF",
+  }), true);
+});
