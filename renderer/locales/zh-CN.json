@@ -588,7 +588,20 @@
     "noSkills": "暂无技能",
     "loadFailed": "加载失败",
     "historyPlaceholder": "— 历史会话 —",
-    "sessionLabel": "{id} ({n} 条)"
+    "sessionLabel": "{id} ({n} 条)",
+    "brain": "大脑",
+    "brainTitle": "选择驱动 Agent 自主规划的本地模型",
+    "stop": "中断",
+    "stopSent": "已请求中断",
+    "ruleAuto": "规则模式（自动 · 不加载大脑）",
+    "brainNote": "自主模式：由本地模型规划并串联工具，首次对话会下载并加载模型。",
+    "brainSelected": "已选择大脑：{model}",
+    "ruleSelected": "已切换为规则模式",
+    "brainWillLoad": "大脑将在首次对话时加载，请稍候。",
+    "brainFailed": "大脑设置失败：{err}",
+    "callingTool": "调用工具",
+    "reasoningTrace": "推理与工具过程（{n} 步）",
+    "openFailed": "无法打开：{err}"
   },
   "mnn": {
     "title": "⬢ MNN 推理引擎（阿里巴巴开源）",

@@ -588,7 +588,20 @@
     "noSkills": "No skills",
     "loadFailed": "Load failed",
     "historyPlaceholder": "— History —",
-    "sessionLabel": "{id} ({n} msgs)"
+    "sessionLabel": "{id} ({n} msgs)",
+    "brain": "Brain",
+    "brainTitle": "Choose the local model that drives autonomous planning",
+    "stop": "Stop",
+    "stopSent": "Stop requested",
+    "ruleAuto": "Rule mode (auto · no brain)",
+    "brainNote": "Autonomous mode: a local model plans and chains tools; it downloads and loads on the first chat.",
+    "brainSelected": "Brain selected: {model}",
+    "ruleSelected": "Switched to rule mode",
+    "brainWillLoad": "The brain loads on the first chat; please wait.",
+    "brainFailed": "Brain setup failed: {err}",
+    "callingTool": "Calling tool",
+    "reasoningTrace": "Reasoning & tools ({n} steps)",
+    "openFailed": "Cannot open: {err}"
   },
   "mnn": {
     "title": "⬢ MNN inference engine (Alibaba open-source)",

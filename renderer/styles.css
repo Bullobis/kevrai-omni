@@ -921,6 +921,33 @@ html[data-theme="light"] .agent-msg-user { color: #fff; }
 .agent-thinking { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--mut, #999); }
 .agent-spinner { width: 14px; height: 14px; border: 2px solid var(--border, #333); border-top-color: var(--accent, #4a7dff); border-radius: 50%; animation: agent-spin 0.7s linear infinite; }
 @keyframes agent-spin { to { transform: rotate(360deg); } }
+
+/* v3.23.0 — brain selector, cancel, reasoning trace */
+.agent-brain-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  border: 1px solid var(--border, #333); border-radius: 10px; padding: 8px 12px;
+  background: var(--card, #1b1c1f); margin-bottom: 10px; }
+.agent-brain-label { font-size: 13px; font-weight: 600; }
+.agent-brain-select { flex: 1; min-width: 180px; max-width: 320px; background: var(--bg, #141518);
+  color: var(--fg, #ccc); border: 1px solid var(--border, #333); border-radius: 8px;
+  padding: 6px 8px; font-size: 12.5px; }
+.agent-brain-bar .hint { font-size: 11.5px; }
+.agent-cancel-btn { height: 42px; padding: 0 16px; font-size: 13px;
+  border-color: rgba(255, 120, 120, 0.5); color: #ff8a8a; }
+.agent-trace { margin: 8px 0 2px; border: 1px solid var(--border, #333);
+  border-radius: 8px; background: var(--bg, #141518); padding: 6px 10px; }
+.agent-trace > summary { cursor: pointer; font-size: 12px; color: var(--mut, #999); user-select: none; }
+.agent-trace-step { margin: 6px 0; padding-left: 4px; border-left: 2px solid var(--border, #333); padding: 2px 0 2px 8px; }
+.agent-trace-head { font-size: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.agent-trace-idx { display: inline-flex; width: 17px; height: 17px; border-radius: 50%;
+  background: var(--accent, #4a7dff); color: #fff; font-size: 10px; align-items: center; justify-content: center; }
+.agent-trace-head code { font-size: 11.5px; color: var(--accent, #7aa2ff); }
+.agent-trace-params { font-size: 11px; color: var(--mut, #999); }
+.agent-trace-obs { font-size: 11px; color: var(--mut, #999); margin: 2px 0; }
+.agent-trace-artifacts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.agent-artifact { font-size: 11px; background: var(--card, #1b1c1f); color: var(--fg, #ccc);
+  border: 1px solid var(--border, #333); border-radius: 7px; padding: 3px 8px; cursor: pointer; }
+.agent-artifact:hover { border-color: var(--accent, #4a7dff); }
+
 @media (max-width: 768px) {
   .agent-container { height: calc(100vh - 140px); }
   .agent-msg { max-width: 92%; }

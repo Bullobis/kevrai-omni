@@ -400,6 +400,16 @@ const api = {
     return invoke("kevrai:agent-toggle-skill", skillId, enabled);
   },
   agentResetSkills: () => invoke("kevrai:agent-reset-skills"),
+  // ----- v3.23.0: 本地大脑选择 + 中断 -----
+  agentBrain: () => invoke("kevrai:agent-brain"),
+  agentSetBrain: (backend) => {
+    assertString(backend, "backend", 200);
+    return invoke("kevrai:agent-set-brain", backend);
+  },
+  agentCancel: (sessionId) => {
+    assertString(sessionId, "sessionId", 128);
+    return invoke("kevrai:agent-cancel", sessionId);
+  },
   // ----- v2.9.0: skill hub（导入外部 SKILL.md 技能）-----
   skillHubList: () => invoke("kevrai:skill-hub-list"),
   skillHubImportDir: (dirPath) => {
