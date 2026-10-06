@@ -1,5 +1,5 @@
 {
-  "version": "3.7.1",
+  "version": "3.7.2",
   "updated": "2026-09-24",
   "engines": [
     {
@@ -67,7 +67,7 @@
         "https://gitcode.com/alibaba/MNN",
         "https://gitcode.com/GitHub_Trending/mn/MNN"
       ],
-      "version": "3.7.1",
+      "version": "3.7.2",
       "runtime": "python-llm",
       "model_source": {
         "huggingface": "https://huggingface.co/taobao-mnn",
