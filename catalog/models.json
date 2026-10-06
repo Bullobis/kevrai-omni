@@ -13016,6 +13016,244 @@
         "思考链",
         "MIT"
       ]
+    },
+    {
+      "id": "glm-4-9b",
+      "category": "llm",
+      "name": "GLM-4-9B-Chat",
+      "repo": "THUDM/glm-4-9b-chat",
+      "gguf_repo": "legraphista/glm-4-9b-chat-IMat-GGUF",
+      "size_gb": 18.81,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "other",
+      "trending": true,
+      "description": "智谱 GLM-4-9B-Chat，长上下文、工具调用与对齐，许可为 GLM 自定义许可（other）。",
+      "sources": [
+        "https://huggingface.co/THUDM/glm-4-9b-chat/",
+        "https://huggingface.co/legraphista/glm-4-9b-chat-IMat-GGUF/",
+        "https://hf-mirror.com/legraphista/glm-4-9b-chat-IMat-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/THUDM/glm-4-9b-chat/",
+      "hardware": {
+        "vram_gb": 6.3,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 19
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q2_K",
+          "label": "Q2_K",
+          "file_quant": "Q2_K",
+          "size_gb": 3.99,
+          "vram_gb": 3.99,
+          "recommended": false
+        },
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 5.46,
+          "vram_gb": 5.46,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K",
+          "label": "Q4_K",
+          "file_quant": "Q4_K",
+          "size_gb": 6.25,
+          "vram_gb": 6.25,
+          "recommended": true
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 9.99,
+          "vram_gb": 9.99,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 18.81,
+          "vram_gb": 18.81,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "GLM4",
+        "智谱",
+        "工具调用",
+        "对话",
+        "9B"
+      ]
+    },
+    {
+      "id": "qwen2.5-coder-7b",
+      "category": "llm",
+      "name": "Qwen2.5-Coder-7B-Instruct",
+      "repo": "Qwen/Qwen2.5-Coder-7B-Instruct",
+      "gguf_repo": "unsloth/Qwen2.5-Coder-7B-Instruct-GGUF",
+      "size_gb": 15.23,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "apache-2.0",
+      "trending": true,
+      "description": "阿里 Qwen2.5-Coder-7B-Instruct，代码生成/补全/修复，Apache-2.0，本地轻量。",
+      "sources": [
+        "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct/",
+        "https://huggingface.co/unsloth/Qwen2.5-Coder-7B-Instruct-GGUF/",
+        "https://hf-mirror.com/unsloth/Qwen2.5-Coder-7B-Instruct-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct/",
+      "hardware": {
+        "vram_gb": 4.7,
+        "min_vram_gb": 3.8,
+        "ram_gb": 16,
+        "disk_gb": 16
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 3.81,
+          "vram_gb": 3.81,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 4.68,
+          "vram_gb": 4.68,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 5.44,
+          "vram_gb": 5.44,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 8.1,
+          "vram_gb": 8.1,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "Qwen2.5",
+        "Coder",
+        "代码",
+        "编程",
+        "Apache",
+        "热门"
+      ]
+    },
+    {
+      "id": "aya-expanse-8b",
+      "category": "llm",
+      "name": "Aya Expanse 8B",
+      "repo": "CohereForAI/aya-expanse-8b",
+      "gguf_repo": "bartowski/aya-expanse-8b-GGUF",
+      "size_gb": 16.06,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "cc-by-nc-4.0",
+      "trending": true,
+      "description": "Cohere For AI Aya Expanse 8B，覆盖多语言的指令模型；许可 CC BY-NC 4.0（非商业，已注明）。",
+      "sources": [
+        "https://huggingface.co/CohereForAI/aya-expanse-8b/",
+        "https://huggingface.co/bartowski/aya-expanse-8b-GGUF/",
+        "https://hf-mirror.com/bartowski/aya-expanse-8b-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/CohereForAI/aya-expanse-8b/",
+      "hardware": {
+        "vram_gb": 5.1,
+        "min_vram_gb": 4.2,
+        "ram_gb": 16,
+        "disk_gb": 17,
+        "notes": "CC BY-NC 4.0，仅限非商业用途"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 4.22,
+          "vram_gb": 4.22,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 5.06,
+          "vram_gb": 5.06,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 5.8,
+          "vram_gb": 5.8,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 8.54,
+          "vram_gb": 8.54,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "Aya",
+        "Cohere",
+        "多语言",
+        "cc-by-nc",
+        "非商业"
+      ]
     }
   ],
   "gguf_repos": [
