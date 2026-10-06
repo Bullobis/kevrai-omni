@@ -1,6 +1,5 @@
 # Kevrai Omni
 
-> 版本：**v3.8.0**
 > 一键本地 AI 工作站：LLM / TTS / 图像 / 视频 / 3D / 音频 / 超分辨率，llama.cpp + MNN 双引擎，硬件感知推荐，内置 LTX-2.5 视频生成、Agent 助手与超级搜索。
 
 Kevrai Omni 是一个 **Electron + 原生 HTML/CSS/JS** 的桌面应用，搭配一个本地 Python（FastAPI）sidecar 负责模型目录、下载、引擎与推理。所有数据默认落在本机，不依赖远程服务即可使用已下载的模型。
