@@ -89,6 +89,7 @@
   --bg: var(--stack-0);
   --sel: rgba(255, 255, 255, 0.08);
   --radius-md: var(--radius-sm);
+  color-scheme: dark; /* native controls (select options, checkbox, scrollbar) follow dark */
 }
 
 /* Light theme override (theme="light") */
@@ -832,6 +833,16 @@ html[data-theme="light"] .mnn-msg.user { color: #fff; }
 .ltx-form .field { display: flex; flex-direction: column; gap: 4px; }
 .ltx-form .field.grow { flex: 1; }
 .ltx-form .field > span { font-size: 12px; color: var(--mut, #999); }
+/* dark-theme form controls (were falling back to the browser's white default) */
+.ltx-form input, .ltx-form select, .ltx-form textarea {
+  background: var(--card); border: 1px solid var(--bord); border-radius: var(--r-2);
+  color: var(--fg); padding: 7px 9px; font-size: 12.5px; outline: none;
+  font-family: inherit;
+}
+.ltx-form select { cursor: pointer; }
+.ltx-form input:focus, .ltx-form select:focus, .ltx-form textarea:focus {
+  border-color: var(--acc); box-shadow: var(--focus);
+}
 .ltx-form textarea { resize: vertical; min-height: 56px; }
 .ltx-form textarea:focus-visible { outline: none; border-color: var(--acc); box-shadow: var(--focus); }
 .ltx-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
