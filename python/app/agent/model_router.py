@@ -29,13 +29,13 @@ class ModelRouter:
         self._state_path = Path(state_path) if state_path else None
         # brain spec: None (auto → MNN) or ("mnn", None) /
         # ("transformers", "owner/repo").
-        self._backend: tuple[str, str | None] = self._load_state()
+        self._backend: tuple[str | None, str | None] = self._load_state()
         self._last_model_name: str = ""
 
     # ------------------------------------------------------------------
     # State persistence
     # ------------------------------------------------------------------
-    def _load_state(self) -> tuple[str, str | None]:
+    def _load_state(self) -> tuple[str | None, str | None]:
         if not self._state_path or not self._state_path.exists():
             return (None, None)
         try:
