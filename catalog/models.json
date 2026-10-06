@@ -2836,11 +2836,11 @@
       "trending": true,
       "description": "2026 阿里开源旗舰 MoE：397B 总参 / 17B 激活，多项基准对标 GPT-5.2；配合 Unsloth Dynamic 2.0 量化 + 稀疏激活，多卡工作站可跑。",
       "hardware": {
-        "vram_gb": 512,
-        "min_vram_gb": 128,
-        "ram_gb": 1024,
+        "vram_gb": 244,
+        "min_vram_gb": 177,
+        "ram_gb": 751,
         "disk_gb": 751,
-        "notes": "Q4 量化约 240GB；建议 2×RTX 6000 Ada / 4×4090 起步；CPU+大内存也可 offload 运行"
+        "notes": "unsloth 子目录量化（UD/标准档映射到规范 id）；Q4_K_M 推荐"
       },
       "sources": [
         "https://huggingface.co/unsloth/Qwen3.5-397B-A17B-GGUF/",
@@ -2873,20 +2873,52 @@
       ],
       "quantizations": [
         {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 177.41,
+          "vram_gb": 177.41,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 244.09,
+          "vram_gb": 244.09,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 293.66,
+          "vram_gb": 293.66,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 326.6,
+          "vram_gb": 326.6,
+          "recommended": false
+        },
+        {
           "id": "Q8_0",
-          "label": "Q8_0（高保真）",
+          "label": "Q8_0",
           "file_quant": "Q8_0",
-          "size_gb": 392.56,
-          "vram_gb": 451.4,
+          "size_gb": 421.51,
+          "vram_gb": 421.51,
           "recommended": false
         },
         {
           "id": "F16",
-          "label": "F16（全精度）",
+          "label": "F16",
           "file_quant": "F16",
-          "size_gb": 740.22,
-          "vram_gb": 851.3,
-          "recommended": true
+          "size_gb": 792.96,
+          "vram_gb": 792.96,
+          "recommended": false
         }
       ]
     },
@@ -3102,11 +3134,11 @@
       "trending": true,
       "description": "2026-04-24 MIT 协议开源：744B MoE 架构，主打高吞吐低延迟，定位轻量版 V4。",
       "hardware": {
-        "vram_gb": 192,
-        "min_vram_gb": 256,
-        "ram_gb": 256,
-        "disk_gb": 149,
-        "notes": "Q4 量化约 420GB；建议 8×H100/8×A100 服务器或多卡 4090 阵列"
+        "vram_gb": 155,
+        "min_vram_gb": 97,
+        "ram_gb": 179,
+        "disk_gb": 179,
+        "notes": "unsloth 子目录量化（UD/标准档映射到规范 id）；Q4_K_M 推荐"
       },
       "sources": [
         "https://huggingface.co/unsloth/DeepSeek-V4-Flash-GGUF/",
@@ -3139,12 +3171,36 @@
       ],
       "quantizations": [
         {
+          "id": "Q2_K",
+          "label": "Q2_K",
+          "file_quant": "Q2_K",
+          "size_gb": 96.83,
+          "vram_gb": 96.83,
+          "recommended": false
+        },
+        {
           "id": "Q3_K_M",
-          "label": "Q3_K_M（极致压缩）",
+          "label": "Q3_K_M",
           "file_quant": "Q3_K_M",
-          "size_gb": 120.44,
-          "vram_gb": 138.5,
+          "size_gb": 129.32,
+          "vram_gb": 129.32,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 155.1,
+          "vram_gb": 155.1,
           "recommended": true
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 161.87,
+          "vram_gb": 161.87,
+          "recommended": false
         }
       ]
     },
@@ -5508,11 +5564,11 @@
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/",
       "hardware": {
-        "vram_gb": 24,
-        "min_vram_gb": 12,
-        "ram_gb": 64,
+        "vram_gb": 155,
+        "min_vram_gb": 97,
+        "ram_gb": 160,
         "disk_gb": 160,
-        "notes": "估算：MoE 激活 13B，量化后单卡可试"
+        "notes": "unsloth 子目录量化（UD/标准档映射到规范 id）；Q4_K_M 推荐"
       },
       "modality": {
         "multimodal": false,
@@ -5537,12 +5593,36 @@
       ],
       "quantizations": [
         {
-          "id": "F16",
-          "label": "F16（全精度）",
-          "file_quant": "F16",
-          "size_gb": 10.54,
-          "vram_gb": 12.1,
+          "id": "Q2_K",
+          "label": "Q2_K",
+          "file_quant": "Q2_K",
+          "size_gb": 96.83,
+          "vram_gb": 96.83,
+          "recommended": false
+        },
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 128.08,
+          "vram_gb": 128.08,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 155.1,
+          "vram_gb": 155.1,
           "recommended": true
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 161.87,
+          "vram_gb": 161.87,
+          "recommended": false
         }
       ]
     },
@@ -7645,11 +7725,11 @@
       ],
       "primary_url": "https://huggingface.co/unsloth/DeepSeek-V3-GGUF/",
       "hardware": {
-        "vram_gb": 640,
-        "min_vram_gb": 256,
-        "ram_gb": 1536,
+        "vram_gb": 404,
+        "min_vram_gb": 244,
+        "ram_gb": 1340,
         "disk_gb": 1340,
-        "notes": "BF16约1.3TB；FP8约680GB；推荐8×80GB或多节点，CPU offload可在256GB显存起步"
+        "notes": "unsloth 子目录量化（UD/标准档映射到规范 id）；Q4_K_M 推荐"
       },
       "modality": {
         "multimodal": false,
@@ -7671,6 +7751,56 @@
         "大模型",
         "DeepSeek",
         "基座"
+      ],
+      "quantizations": [
+        {
+          "id": "Q2_K",
+          "label": "Q2_K",
+          "file_quant": "Q2_K",
+          "size_gb": 244.25,
+          "vram_gb": 244.25,
+          "recommended": false
+        },
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 319.2,
+          "vram_gb": 319.2,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 404.43,
+          "vram_gb": 404.43,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 475.4,
+          "vram_gb": 475.4,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 550.8,
+          "vram_gb": 550.8,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 713.29,
+          "vram_gb": 713.29,
+          "recommended": false
+        }
       ]
     },
     {
@@ -7697,11 +7827,11 @@
       ],
       "primary_url": "https://huggingface.co/unsloth/DeepSeek-V3.1-GGUF/",
       "hardware": {
-        "vram_gb": 640,
-        "min_vram_gb": 256,
-        "ram_gb": 1536,
+        "vram_gb": 405,
+        "min_vram_gb": 246,
+        "ram_gb": 1340,
         "disk_gb": 1340,
-        "notes": "与 V3 同架构；MIT 许可商用友好；推荐多卡 8×80GB"
+        "notes": "unsloth 子目录量化（UD/标准档映射到规范 id）；Q4_K_M 推荐"
       },
       "modality": {
         "multimodal": false,
@@ -7722,6 +7852,64 @@
         "热门",
         "DeepSeek",
         "Agent"
+      ],
+      "quantizations": [
+        {
+          "id": "Q2_K",
+          "label": "Q2_K",
+          "file_quant": "Q2_K",
+          "size_gb": 245.7,
+          "vram_gb": 245.7,
+          "recommended": false
+        },
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 320.45,
+          "vram_gb": 320.45,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 405.4,
+          "vram_gb": 405.4,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 476.16,
+          "vram_gb": 476.16,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 551.31,
+          "vram_gb": 551.31,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 713.29,
+          "vram_gb": 713.29,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 1342.27,
+          "vram_gb": 1342.27,
+          "recommended": false
+        }
       ]
     },
     {
