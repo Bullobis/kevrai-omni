@@ -13466,6 +13466,208 @@
         "cc-by-nc",
         "非商业"
       ]
+    },
+    {
+      "id": "qwen2.5-32b",
+      "category": "llm",
+      "name": "Qwen2.5-32B-Instruct",
+      "repo": "Qwen/Qwen2.5-32B-Instruct",
+      "gguf_repo": "bartowski/Qwen2.5-32B-Instruct-GGUF",
+      "size_gb": 65.53,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "apache-2.0",
+      "trending": true,
+      "description": "阿里 Qwen2.5-32B-Instruct，32B 稠密强基座，长文本/推理/代码均衡，Apache-2.0。",
+      "sources": [
+        "https://huggingface.co/Qwen/Qwen2.5-32B-Instruct/",
+        "https://huggingface.co/bartowski/Qwen2.5-32B-Instruct-GGUF/",
+        "https://hf-mirror.com/bartowski/Qwen2.5-32B-Instruct-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/Qwen/Qwen2.5-32B-Instruct/",
+      "hardware": {
+        "vram_gb": 20,
+        "min_vram_gb": 16,
+        "ram_gb": 32,
+        "disk_gb": 66
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 15.94,
+          "vram_gb": 15.94,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 19.85,
+          "vram_gb": 19.85,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 23.26,
+          "vram_gb": 23.26,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 34.82,
+          "vram_gb": 34.82,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "Qwen2.5",
+        "32B",
+        "稠密",
+        "Apache",
+        "长文本",
+        "热门"
+      ]
+    },
+    {
+      "id": "internlm3-8b",
+      "category": "llm",
+      "name": "InternLM3-8B-Instruct",
+      "repo": "internlm/internlm3-8b-instruct",
+      "gguf_repo": "bartowski/internlm3-8b-instruct-GGUF",
+      "size_gb": 17.61,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "apache-2.0",
+      "trending": false,
+      "description": "上海 AI Lab InternLM3-8B-Instruct，工具调用与长上下文，Apache-2.0，中等显存。",
+      "sources": [
+        "https://huggingface.co/internlm/internlm3-8b-instruct/",
+        "https://huggingface.co/bartowski/internlm3-8b-instruct-GGUF/",
+        "https://hf-mirror.com/bartowski/internlm3-8b-instruct-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/internlm/internlm3-8b-instruct/",
+      "hardware": {
+        "vram_gb": 5.4,
+        "min_vram_gb": 4.4,
+        "ram_gb": 16,
+        "disk_gb": 18
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 4.39,
+          "vram_gb": 4.39,
+          "recommended": false
+        },
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 5.1,
+          "vram_gb": 5.1,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 5.36,
+          "vram_gb": 5.36,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 6.26,
+          "vram_gb": 6.26,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 9.36,
+          "vram_gb": 9.36,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "InternLM3",
+        "书生",
+        "工具调用",
+        "Apache",
+        "8B"
+      ]
+    },
+    {
+      "id": "qwen2-audio-7b",
+      "category": "audio",
+      "name": "Qwen2-Audio-7B-Instruct",
+      "repo": "Qwen/Qwen2-Audio-7B-Instruct",
+      "size_gb": 16.79,
+      "engine": [
+        "transformers"
+      ],
+      "license": "apache-2.0",
+      "trending": false,
+      "description": "阿里 Qwen2-Audio-7B-Instruct，语音/声音理解并转文字，支持音频问答，Apache-2.0，transformers 加载。",
+      "sources": [
+        "https://huggingface.co/Qwen/Qwen2-Audio-7B-Instruct/",
+        "https://hf-mirror.com/Qwen/Qwen2-Audio-7B-Instruct/"
+      ],
+      "primary_url": "https://huggingface.co/Qwen/Qwen2-Audio-7B-Instruct/",
+      "hardware": {
+        "vram_gb": 17,
+        "min_vram_gb": 10,
+        "ram_gb": 16,
+        "disk_gb": 17
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "audio"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "Qwen2",
+        "Audio",
+        "语音理解",
+        "音频问答",
+        "Apache"
+      ]
     }
   ],
   "gguf_repos": [
