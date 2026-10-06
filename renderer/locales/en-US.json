@@ -794,5 +794,24 @@
     "cancel": "Cancel",
     "empty": "No GGUF weight files found in this repository",
     "downloadStarted": "Download started: {file}"
+  },
+  "scheduler": {
+    "nav": "Scheduled tasks",
+    "desc": "Manage background periodic tasks in one place: toggle them on/off and adjust intervals with immediate effect and persistence. ClawdChat heartbeat and sidecar health share one scheduler instead of separate timers.",
+    "enabled": "Enabled",
+    "interval": "Interval",
+    "disabledNote": "Disabled",
+    "empty": "No scheduled tasks",
+    "saved": "Saved",
+    "inSeconds": "in {n}s",
+    "inMinutes": "in {n} min",
+    "unitSecond": "s",
+    "unitMinute": "min",
+    "unitHour": "h",
+    "unitDay": "d",
+    "tasks": {
+      "sidecarHealth": "Sidecar health check",
+      "clawdchatHeartbeat": "ClawdChat heartbeat"
+    }
   }
 }

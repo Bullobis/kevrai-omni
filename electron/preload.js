@@ -125,6 +125,8 @@ const api = {
 
   // ----- Models / catalog (legacy surface kept for renderer/app.js compat) -----
   health:        () => invoke("api:health"),
+  // ClawdChat heartbeat (runs server-side; credential stays in the sidecar).
+  clawdchatHeartbeat: () => invoke("api:clawdchat-heartbeat"),
   categories:    () => invoke("api:categories"),
   models:        (params) => {
     const p = (params == null || typeof params === "object") ? (params || {}) : {};
