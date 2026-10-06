@@ -13700,6 +13700,87 @@
         "音频问答",
         "Apache"
       ]
+    },
+    {
+      "id": "sdxl-base",
+      "category": "image",
+      "name": "Stable Diffusion XL Base 1.0",
+      "repo": "stabilityai/stable-diffusion-xl-base-1.0",
+      "size_gb": 6.94,
+      "engine": [
+        "diffusers"
+      ],
+      "license": "openrail++",
+      "trending": false,
+      "description": "Stability AI SDXL 1.0 基座，1024x1024 文生图经典，LoRA/生态最丰富，OpenRAIL++ 许可。",
+      "sources": [
+        "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/",
+        "https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/"
+      ],
+      "primary_url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/",
+      "hardware": {
+        "vram_gb": 6,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 8
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "image"
+        ]
+      },
+      "tags": [
+        "SDXL",
+        "StableDiffusion",
+        "文生图",
+        "经典",
+        "LoRA生态"
+      ]
+    },
+    {
+      "id": "hidream-i1-fast",
+      "category": "image",
+      "name": "HiDream-I1-Fast",
+      "repo": "HiDream-ai/HiDream-I1-Fast",
+      "size_gb": 47.18,
+      "engine": [
+        "diffusers"
+      ],
+      "license": "mit",
+      "trending": false,
+      "description": "HiDream-I1-Fast，开源图像生成 MoE（少步快速版，社区采用最广），MIT 许可。",
+      "sources": [
+        "https://huggingface.co/HiDream-ai/HiDream-I1-Fast/",
+        "https://hf-mirror.com/HiDream-ai/HiDream-I1-Fast/"
+      ],
+      "primary_url": "https://huggingface.co/HiDream-ai/HiDream-I1-Fast/",
+      "hardware": {
+        "vram_gb": 24,
+        "min_vram_gb": 16,
+        "ram_gb": 64,
+        "disk_gb": 48,
+        "notes": "MIT；含3个文本编码器，可分层 offload"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "image"
+        ]
+      },
+      "tags": [
+        "HiDream",
+        "文生图",
+        "MoE",
+        "MIT",
+        "快速"
+      ]
     }
   ],
   "gguf_repos": [
