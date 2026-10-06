@@ -783,5 +783,16 @@
     "markAllRead": "全部已读",
     "clear": "清空",
     "delete": "删除"
+  },
+  "version": {
+    "title": "选择版本",
+    "loading": "正在读取仓库文件列表…",
+    "loadFailed": "无法读取远程文件列表，请检查网络后重试",
+    "useDefault": "使用默认版本",
+    "recommended": "推荐",
+    "confirm": "安装此版本",
+    "cancel": "取消",
+    "empty": "该仓库没有可用的 GGUF 权重文件",
+    "downloadStarted": "已开始下载：{file}"
   }
 }
