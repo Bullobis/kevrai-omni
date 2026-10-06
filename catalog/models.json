@@ -11817,6 +11817,348 @@
           "recommended": false
         }
       ]
+    },
+    {
+      "id": "qwen2.5-vl-7b",
+      "category": "llm",
+      "name": "Qwen2.5-VL 7B Instruct",
+      "repo": "Qwen/Qwen2.5-VL-7B-Instruct",
+      "gguf_repo": "unsloth/Qwen2.5-VL-7B-Instruct-GGUF",
+      "size_gb": 16.58,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "apache-2.0",
+      "trending": true,
+      "description": "阿里 Qwen2.5-VL 7B，视觉理解/文档解析/定位，通用多模态，本地部署广泛。",
+      "sources": [
+        "https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct/",
+        "https://huggingface.co/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/",
+        "https://hf-mirror.com/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct/",
+      "hardware": {
+        "vram_gb": 6,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 17
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 3.81,
+          "vram_gb": 3.81,
+          "recommended": false
+        },
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 4.44,
+          "vram_gb": 4.44,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 4.68,
+          "vram_gb": 4.68,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 5.44,
+          "vram_gb": 5.44,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 8.1,
+          "vram_gb": 8.1,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 16.59,
+          "vram_gb": 16.59,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "Qwen2.5",
+        "VL",
+        "视觉理解",
+        "多模态",
+        "文档解析",
+        "热门"
+      ]
+    },
+    {
+      "id": "llama-3.2-11b-vision",
+      "category": "llm",
+      "name": "Llama 3.2 11B Vision Instruct",
+      "repo": "meta-llama/Llama-3.2-11B-Vision-Instruct",
+      "gguf_repo": "leafspark/Llama-3.2-11B-Vision-Instruct-GGUF",
+      "size_gb": 21.34,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "llama3.2",
+      "trending": true,
+      "description": "Meta Llama 3.2 11B Vision，图像理解与图文对话。基座 gated（Llama 3.2 许可），GGUF 可本地运行。",
+      "sources": [
+        "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/",
+        "https://huggingface.co/leafspark/Llama-3.2-11B-Vision-Instruct-GGUF/",
+        "https://hf-mirror.com/leafspark/Llama-3.2-11B-Vision-Instruct-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/",
+      "hardware": {
+        "vram_gb": 8,
+        "min_vram_gb": 6,
+        "ram_gb": 16,
+        "disk_gb": 22,
+        "notes": "另需视觉投影 mmproj（约1.5GB）"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 5.96,
+          "vram_gb": 5.96,
+          "recommended": true
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 10.39,
+          "vram_gb": 10.39,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "Llama3.2",
+        "Vision",
+        "视觉理解",
+        "多模态",
+        "Meta"
+      ]
+    },
+    {
+      "id": "phi-4-reasoning",
+      "category": "llm",
+      "name": "Phi-4 Reasoning",
+      "repo": "microsoft/Phi-4-reasoning",
+      "gguf_repo": "unsloth/Phi-4-reasoning-GGUF",
+      "size_gb": 29.32,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "mit",
+      "trending": true,
+      "description": "微软 Phi-4-reasoning（14B），显式推理/思考链，擅长数学与代码等多步任务。MIT。",
+      "sources": [
+        "https://huggingface.co/microsoft/Phi-4-reasoning/",
+        "https://huggingface.co/unsloth/Phi-4-reasoning-GGUF/",
+        "https://hf-mirror.com/unsloth/Phi-4-reasoning-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/microsoft/Phi-4-reasoning/",
+      "hardware": {
+        "vram_gb": 10,
+        "min_vram_gb": 7.4,
+        "ram_gb": 32,
+        "disk_gb": 30
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 7.36,
+          "vram_gb": 7.36,
+          "recommended": false
+        },
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 8.38,
+          "vram_gb": 8.38,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 9.05,
+          "vram_gb": 9.05,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 10.6,
+          "vram_gb": 10.6,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 15.58,
+          "vram_gb": 15.58,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 29.32,
+          "vram_gb": 29.32,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "Phi4",
+        "Reasoning",
+        "推理",
+        "思考链",
+        "微软",
+        "MIT"
+      ]
+    },
+    {
+      "id": "devstral-small-2-24b",
+      "category": "llm",
+      "name": "Devstral Small 2 24B Instruct",
+      "repo": "mistralai/Devstral-Small-2-24B-Instruct-2512",
+      "gguf_repo": "unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF",
+      "size_gb": 48.03,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "apache-2.0",
+      "trending": true,
+      "description": "Mistral Devstral Small 2（24B，2512），代码智能体，函数调用与仓库级任务，Apache-2.0。",
+      "sources": [
+        "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/",
+        "https://huggingface.co/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/",
+        "https://hf-mirror.com/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/"
+      ],
+      "primary_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/",
+      "hardware": {
+        "vram_gb": 15,
+        "min_vram_gb": 11.5,
+        "ram_gb": 32,
+        "disk_gb": 49
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "quantizations": [
+        {
+          "id": "Q3_K_M",
+          "label": "Q3_K_M",
+          "file_quant": "Q3_K_M",
+          "size_gb": 11.47,
+          "vram_gb": 11.47,
+          "recommended": false
+        },
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 13.47,
+          "vram_gb": 13.47,
+          "recommended": false
+        },
+        {
+          "id": "Q4_K_M",
+          "label": "Q4_K_M",
+          "file_quant": "Q4_K_M",
+          "size_gb": 14.33,
+          "vram_gb": 14.33,
+          "recommended": true
+        },
+        {
+          "id": "Q5_K_M",
+          "label": "Q5_K_M",
+          "file_quant": "Q5_K_M",
+          "size_gb": 16.76,
+          "vram_gb": 16.76,
+          "recommended": false
+        },
+        {
+          "id": "Q8_0",
+          "label": "Q8_0",
+          "file_quant": "Q8_0",
+          "size_gb": 25.06,
+          "vram_gb": 25.06,
+          "recommended": false
+        },
+        {
+          "id": "F16",
+          "label": "F16",
+          "file_quant": "F16",
+          "size_gb": 48.03,
+          "vram_gb": 48.03,
+          "recommended": false
+        }
+      ],
+      "tags": [
+        "Devstral",
+        "Mistral",
+        "代码",
+        "Agent",
+        "编程",
+        "Apache"
+      ]
     }
   ],
   "gguf_repos": [
