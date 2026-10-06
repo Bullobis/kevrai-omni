@@ -3126,7 +3126,7 @@ async def _run_multipart_asr(
 @app.post("/v1/audio/transcriptions")
 async def asr_transcriptions(
     request: Request,
-    file: UploadFile = File(...),
+    file: UploadFile = File(...),  # noqa: B008 — FastAPI dependency-injection pattern
     model: str = Form(...),
     language: str | None = Form(None),
     prompt: str | None = Form(None),  # accepted for API compatibility
@@ -3147,7 +3147,7 @@ async def asr_transcriptions(
 @app.post("/v1/audio/translations")
 async def asr_translations(
     request: Request,
-    file: UploadFile = File(...),
+    file: UploadFile = File(...),  # noqa: B008 — FastAPI dependency-injection pattern
     model: str = Form(...),
     prompt: str | None = Form(None),  # noqa: ARG001 — API compatibility
     response_format: str = Form("json"),

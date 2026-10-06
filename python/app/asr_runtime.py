@@ -14,6 +14,7 @@ control plane starts even before the engine is installed.
 """
 from __future__ import annotations
 
+import contextlib
 import logging
 import os
 import threading
@@ -116,7 +117,7 @@ def _hub_model_dir(repo: str, data_root: Path | None = None,
 
 
 def resolve_model_source(repo: str, data_root: Path | None = None,
-                         download_dir: Path | None = None) -> "str | Path":
+                         download_dir: Path | None = None) -> str | Path:
     """Return a local model directory when the weights exist, else ``repo``.
 
     A CTranslate2 directory is considered complete when it has both
@@ -135,8 +136,8 @@ def _default_compute_type(faster_whisper: Any) -> str:
 
         if "cuda" in ctranslate2.get_supported_compute_types("cuda"):
             return "float16"
-    except Exception:  # noqa: BLE001
-        pass
+    except Exception:  # noqa: BLE001 — CUDA probe is best-effort, fall through to CPU
+        log.debug("cuda compute-type probe failed; defaulting to int8", exc_info=True)
     return "int8"
 
 
@@ -206,7 +207,7 @@ class AsrManager:
                 self._cache[key] = model
         return model, fw, str(source), compute_type
 
-    def transcribe(self, repo: str, audio: "str | Path | bytes", *,
+    def transcribe(self, repo: str, audio: str | Path | bytes, *,
                    language: str | None = None, task: str = "transcribe",
                    beam_size: int = 5, temperature: float | list[float] = 0.0,
                    vad_filter: bool = True, word_timestamps: bool = False,
@@ -259,10 +260,8 @@ class AsrManager:
             raise AsrModelError(f"转写失败：{e}") from e
         finally:
             if tmp_path is not None:
-                try:
+                with contextlib.suppress(OSError):
                     tmp_path.unlink()
-                except OSError:
-                    pass
 
         text = "".join(s.text for s in segs).strip()
         return {
@@ -279,7 +278,7 @@ class AsrManager:
         }
 
 
-def render_response(result: dict[str, Any], response_format: str) -> "tuple[str, str]":
+def render_response(result: dict[str, Any], response_format: str) -> tuple[str, str]:
     """Render a transcription result into ``(body, media_type)``."""
     segs = [Segment(**{k: s[k] for k in ("id", "start", "end", "text")})
             for s in result["segments"]]
@@ -318,8 +317,8 @@ def capabilities(data_root: Path | None = None) -> dict[str, Any]:
             cuda = ctranslate2.get_cuda_device_count() > 0
             if cuda:
                 compute_types = sorted(ctranslate2.get_supported_compute_types("cuda"))
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception:  # noqa: BLE001 — capability probe must stay non-fatal
+            log.debug("faster-whisper capability probe failed", exc_info=True)
     return {
         "engine": ENGINE_ID,
         "installed": installed,
