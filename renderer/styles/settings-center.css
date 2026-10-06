@@ -134,3 +134,18 @@
   font-weight: 600;
 }
 .settings-about a { color: var(--acc, #4ca97a); }
+
+/* 计划任务面板（scheduler）：任务卡片 + 启停/周期行 */
+.scheduler-list { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.sched-row {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 12px; border: 1px solid var(--border, rgba(128,128,128,.25));
+  border-radius: 10px;
+}
+.sched-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sched-name { font-weight: 600; }
+.sched-enable { margin: 0; }
+.sched-interval { display: flex; align-items: center; gap: 10px; }
+.sched-interval > span { flex: 0 0 auto; }
+.sched-interval select { min-width: 120px; }
+.sched-meta { margin: 0; }

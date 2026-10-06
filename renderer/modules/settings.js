@@ -11,6 +11,7 @@ import {
   downloadExport, parseImport, importData, applyImportedPreferences,
 } from "./data-portability.js";
 import { t, getLocale, setLocale } from "./i18n.js";
+import { scheduler, INTERVAL_PRESETS_MS, formatInterval } from "./scheduler.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -43,6 +44,7 @@ export async function openSettings() {
   const fresh = await api.getSettings();
   setState({ settings: fresh });
   fillForm(fresh);
+  renderSchedulerPanel();
   trapFocus(overlay);
 }
 
@@ -63,6 +65,99 @@ export function switchSettingsSection(name) {
   if (!navBtns.length || !sections.length) return;
   navBtns.forEach((b) => b.classList.toggle("active", b.dataset.section === name));
   sections.forEach((s) => { s.hidden = s.dataset.section !== name; });
+}
+
+// ── 计划任务面板：列出调度器中的任务，可启停、改周期（即时生效+持久化）─────────
+export function renderSchedulerPanel() {
+  const list = $("#scheduler-task-list");
+  if (!list) return;
+  const sched = scheduler();
+  const tasks = sched.getTasks();
+  list.replaceChildren();
+
+  if (!tasks.length) {
+    const p = document.createElement("p");
+    p.className = "mut tiny";
+    p.textContent = t("scheduler.empty");
+    list.appendChild(p);
+    return;
+  }
+
+  // 当前周期不在预设里时，把它补成一个被选中的额外选项。
+  const presets = [...new Set(INTERVAL_PRESETS_MS)];
+  for (const task of tasks) {
+    const row = document.createElement("div");
+    row.className = "sched-row";
+
+    const head = document.createElement("div");
+    head.className = "sched-head";
+    const name = document.createElement("span");
+    name.className = "sched-name";
+    name.textContent = t(task.label);
+    head.appendChild(name);
+
+    const enableLabel = document.createElement("label");
+    enableLabel.className = "field inline sched-enable";
+    const enableBox = document.createElement("input");
+    enableBox.type = "checkbox";
+    enableBox.checked = !!task.enabled;
+    enableBox.setAttribute("data-sched-enable", task.id);
+    const enableText = document.createElement("span");
+    enableText.textContent = t("scheduler.enabled");
+    enableLabel.append(enableBox, enableText);
+    head.appendChild(enableLabel);
+    row.appendChild(head);
+
+    const intervalField = document.createElement("label");
+    intervalField.className = "field sched-interval";
+    const intervalSpan = document.createElement("span");
+    intervalSpan.textContent = t("scheduler.interval");
+    const select = document.createElement("select");
+    select.setAttribute("data-sched-interval", task.id);
+    const optionsMs = presets.includes(task.intervalMs)
+      ? presets
+      : [...presets, task.intervalMs].sort((a, b) => a - b);
+    for (const ms of optionsMs) {
+      const opt = document.createElement("option");
+      opt.value = String(ms);
+      opt.textContent = formatInterval(ms, t);
+      if (ms === task.intervalMs) opt.selected = true;
+      select.appendChild(opt);
+    }
+    intervalSpan && intervalField.append(intervalSpan, select);
+    row.appendChild(intervalField);
+
+    const meta = document.createElement("p");
+    meta.className = "mut tiny sched-meta";
+    meta.textContent = describeNextRun(task);
+    row.appendChild(meta);
+
+    list.appendChild(row);
+
+    // 事件：启停 / 改周期——即时写回调度器并持久化，toast 反馈。
+    enableBox.addEventListener("change", () => {
+      sched.setEnabled(task.id, enableBox.checked);
+      meta.textContent = describeNextRun(sched.getTask(task.id));
+      toast(t("scheduler.saved"), { kind: "ok" });
+    });
+    select.addEventListener("change", () => {
+      sched.setIntervalMs(task.id, Number(select.value));
+      meta.textContent = describeNextRun(sched.getTask(task.id));
+      toast(t("scheduler.saved"), { kind: "ok" });
+    });
+  }
+}
+
+function describeNextRun(task) {
+  if (!task) return "";
+  if (!task.enabled) return t("scheduler.disabledNote");
+  const interval = formatInterval(task.intervalMs, t);
+  if (!task.nextRunAt || !Number.isFinite(task.nextRunAt)) return interval;
+  const secs = Math.max(0, Math.round((task.nextRunAt - Date.now()) / 1000));
+  const when = secs < 60
+    ? t("scheduler.inSeconds", { n: secs })
+    : t("scheduler.inMinutes", { n: Math.round(secs / 60) });
+  return `${interval} · ${when}`;
 }
 
 function fillForm(s) {
@@ -151,6 +246,9 @@ export function wireSettings() {
   });
 
   $("#btn-settings-cancel").addEventListener("click", closeSettings);
+  // 右上角 ×（data-action=close-settings）此前无任何绑定、是死按钮，补接线。
+  const xClose = $('[data-action=close-settings]');
+  if (xClose) xClose.addEventListener("click", closeSettings);
   $("#btn-settings-save").addEventListener("click", async () => {
     const next = readForm();
     try {
