@@ -14299,6 +14299,123 @@
         "人声提取",
         "Stems"
       ]
+    },
+    {
+      "id": "piper-en-lessac",
+      "category": "tts",
+      "name": "Piper 英语 Lessac（美音）",
+      "repo": "piper-en-lessac",
+      "size_gb": 0.063,
+      "engine": [
+        "piper"
+      ],
+      "license": "gpl-3.0",
+      "trending": true,
+      "description": "Piper 美式英语女声 Lessac，medium 质量，CPU 实时合成、发音自然。",
+      "sources": [
+        "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/piper-en-lessac.onnx",
+        "https://github.com/rhasspy/piper"
+      ],
+      "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/piper-en-lessac.onnx",
+      "hardware": {
+        "vram_gb": 1,
+        "min_vram_gb": 0,
+        "ram_gb": 2,
+        "disk_gb": 1
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "speech"
+        ]
+      },
+      "tags": [
+        "语音合成",
+        "Piper",
+        "离线TTS",
+        "ONNX"
+      ]
+    },
+    {
+      "id": "piper-en-amy",
+      "category": "tts",
+      "name": "Piper 英语 Amy（美音）",
+      "repo": "piper-en-amy",
+      "size_gb": 0.063,
+      "engine": [
+        "piper"
+      ],
+      "license": "gpl-3.0",
+      "trending": false,
+      "description": "Piper 美式英语女声 Amy，medium 质量。",
+      "sources": [
+        "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/piper-en-amy.onnx",
+        "https://github.com/rhasspy/piper"
+      ],
+      "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/piper-en-amy.onnx",
+      "hardware": {
+        "vram_gb": 1,
+        "min_vram_gb": 0,
+        "ram_gb": 2,
+        "disk_gb": 1
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "speech"
+        ]
+      },
+      "tags": [
+        "语音合成",
+        "Piper",
+        "离线TTS",
+        "ONNX"
+      ]
+    },
+    {
+      "id": "piper-zh-huayan",
+      "category": "tts",
+      "name": "Piper 中文 华颜（普通话）",
+      "repo": "piper-zh-huayan",
+      "size_gb": 0.063,
+      "engine": [
+        "piper"
+      ],
+      "license": "gpl-3.0",
+      "trending": false,
+      "description": "Piper 普通话女声 华颜，medium 质量，可完全离线合成中文语音。",
+      "sources": [
+        "https://huggingface.co/rhasspy/piper-voices/resolve/main/zh/zh_CN/huayan/medium/piper-zh-huayan.onnx",
+        "https://github.com/rhasspy/piper"
+      ],
+      "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/zh/zh_CN/huayan/medium/piper-zh-huayan.onnx",
+      "hardware": {
+        "vram_gb": 1,
+        "min_vram_gb": 0,
+        "ram_gb": 2,
+        "disk_gb": 1
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "speech"
+        ]
+      },
+      "tags": [
+        "语音合成",
+        "Piper",
+        "离线TTS",
+        "ONNX"
+      ]
     }
   ],
   "gguf_repos": [

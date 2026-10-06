@@ -643,6 +643,31 @@
         "https://github.com/facebookresearch/demucs",
         "https://dl.fbaipublicfiles.com/demucs/"
       ]
+    },
+    {
+      "id": "piper",
+      "name": "Piper",
+      "category": "tts",
+      "description": "快速的本地神经语音合成（ONNX Runtime），CPU 即可实时运行、可完全离线，支持多种语言与发音人。",
+      "github": "rhasspy/piper",
+      "install": "pip",
+      "pypi": "piper-tts==1.8.0",
+      "license": "GPL-3.0",
+      "size_mb": 70,
+      "platforms": {
+        "linux-x64": "https://github.com/rhasspy/piper/releases",
+        "windows-x64": "https://github.com/rhasspy/piper/releases",
+        "darwin-arm64": "https://github.com/rhasspy/piper/releases",
+        "darwin-x64": "https://github.com/rhasspy/piper/releases"
+      },
+      "trending": true,
+      "sources": [
+        "https://pypi.org/simple/piper-tts/",
+        "https://mirrors.aliyun.com/pypi/simple/piper-tts/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/piper-tts/",
+        "https://github.com/rhasspy/piper",
+        "https://huggingface.co/rhasspy/piper-voices"
+      ]
     }
   ]
 }

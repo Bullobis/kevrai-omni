@@ -54,6 +54,7 @@ from . import (
     embedding_runtime,
     ltx_runtime,
     mnn_runtime,
+    piper_runtime,
 )
 from . import clawdchat as clawdchat_mod
 from . import converter as converter_service
@@ -266,6 +267,8 @@ async def _lifespan(app: FastAPI):
     app.state.emb = embedding_runtime.EmbeddingManager(APP_ROOT)
     # Demucs music source-separation manager (separators cached in-process).
     app.state.demucs = demucs_runtime.DemucsManager(APP_ROOT)
+    # Piper lightweight neural TTS manager (ONNX voices cached in-process).
+    app.state.piper = piper_runtime.PiperManager(APP_ROOT)
     # Dual-source hub registry (HF + ModelScope + curated). Adapters own their
     # httpx clients, so the lifespan must aclose() them on shutdown. Wire the
     # lifespan handle to the *process singleton* (get_registry), NOT a fresh
@@ -3269,6 +3272,63 @@ def separation_stream(job_id: str, stem: str) -> FileResponse:
     if not str(target).startswith(str(base)) or target.suffix != ".wav" \
             or not target.is_file():
         raise HTTPException(status_code=404, detail="stem not found")
+    return FileResponse(target, media_type="audio/wav", filename=target.name)
+
+
+# ---------------------------------------------------------------------------
+# Piper lightweight neural TTS (v3.19.0)
+# ---------------------------------------------------------------------------
+
+
+def _piper_manager(request: Request) -> piper_runtime.PiperManager:
+    mgr = getattr(request.app.state, "piper", None)
+    if mgr is None:
+        mgr = piper_runtime.PiperManager(APP_ROOT)
+        request.app.state.piper = mgr
+    return mgr
+
+
+class PiperSynthReq(BaseModel):
+    voice_id: str = "en_US-lessac-medium"
+    text: str
+    length_scale: float | None = 1.0
+    use_cuda: bool = False
+
+
+@app.get("/api/tts-piper/capabilities")
+def piper_capabilities_route() -> dict[str, Any]:
+    return piper_runtime.capabilities(APP_ROOT)
+
+
+@app.post("/api/tts-piper/synthesize")
+def piper_synthesize_route(
+    request: Request, req: PiperSynthReq
+) -> Response:
+    mgr = _piper_manager(request)
+    try:
+        return JSONResponse(
+            mgr.synthesize(
+                req.voice_id,
+                req.text,
+                length_scale=req.length_scale,
+                use_cuda=req.use_cuda,
+            )
+        )
+    except piper_runtime.PiperError as e:
+        code = 503 if isinstance(e, piper_runtime.PiperEngineMissing) else (
+            400 if isinstance(e, piper_runtime.PiperParamError) else 422)
+        raise HTTPException(status_code=code, detail=str(e)) from e
+
+
+@app.get("/api/tts-piper/stream")
+def piper_stream_route(job_id: str) -> FileResponse:
+    # Hard-bound to data_root/tts/piper/<job_id>.wav to prevent traversal.
+    tts_root = (APP_ROOT / "tts" / "piper").resolve()
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", job_id):
+        raise HTTPException(status_code=400, detail="bad job id")
+    target = (tts_root / f"{job_id}.wav").resolve()
+    if not str(target).startswith(str(tts_root)) or not target.is_file():
+        raise HTTPException(status_code=404, detail="audio not found")
     return FileResponse(target, media_type="audio/wav", filename=target.name)
 
 

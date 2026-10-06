@@ -135,6 +135,9 @@ const api = {
   separationCapabilities: () => invoke("api:separation:capabilities"),
   separation:             (payload) => invoke("api:separation", payload),
   separationStream:       (params) => invoke("api:separation:stream", params),
+  piperCapabilities:      () => invoke("api:tts-piper:capabilities"),
+  piperSynthesize:        (payload) => invoke("api:tts-piper:synthesize", payload),
+  piperStream:            (params) => invoke("api:tts-piper:stream", params),
   // ClawdChat heartbeat (runs server-side; credential stays in the sidecar).
   clawdchatHeartbeat: () => invoke("api:clawdchat-heartbeat"),
   categories:    () => invoke("api:categories"),

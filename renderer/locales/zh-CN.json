@@ -27,7 +27,8 @@
     "settings": "设置",
     "asr": "语音转写",
     "embeddings": "向量嵌入",
-    "separation": "音源分离"
+    "separation": "音源分离",
+    "piper": "本地语音合成"
   },
   "header": {
     "downloads": "下载",
@@ -859,6 +860,24 @@
     "failed": "音源分离失败：{err}",
     "engineInstalled": "引擎已安装",
     "outputDir": "输出目录",
+    "openDir": "打开输出目录"
+  },
+  "piper": {
+    "title": "本地语音合成",
+    "engineReady": "引擎就绪 {ver}",
+    "engineMissing": "引擎未安装",
+    "missingHint": "需要安装 Piper 本地语音合成引擎，合成速度快、可完全离线运行。",
+    "install": "安装引擎",
+    "text": "合成文本",
+    "voice": "发音人",
+    "speed": "语速",
+    "fast": "偏快",
+    "normal": "正常",
+    "slow": "偏慢",
+    "run": "开始合成",
+    "enterFirst": "请先输入合成文本",
+    "failed": "语音合成失败：{err}",
+    "engineInstalled": "引擎已安装",
     "openDir": "打开输出目录"
   }
 }
