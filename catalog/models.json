@@ -7598,72 +7598,6 @@
       ]
     },
     {
-      "id": "bonsai-2-27b",
-      "category": "llm",
-      "name": "Ternary-Bonsai-2-27B",
-      "repo": "prism-ml/Ternary-Bonsai-2-27B-gguf",
-      "gguf_repo": "prism-ml/Ternary-Bonsai-2-27B-gguf",
-      "size_gb": 8,
-      "engine": [
-        "llama.cpp"
-      ],
-      "license": "Apache-2.0",
-      "trending": true,
-      "description": "PrismML Ternary-Bonsai-2-27B（2026-09）：Bonsai-2 的三值/2-bit 端侧量化，27B 底座压缩至数 GB，HF 周下载 410 万，本周开源模型榜前列。",
-      "sources": [
-        "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/",
-        "https://hf-mirror.com/prism-ml/Ternary-Bonsai-2-27B-gguf/",
-        "https://modelscope.cn/models/prism-ml/Ternary-Bonsai-2-27B-gguf/"
-      ],
-      "primary_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/",
-      "hardware": {
-        "vram_gb": 16,
-        "min_vram_gb": 0,
-        "ram_gb": 32,
-        "disk_gb": 8,
-        "notes": "三值量化后极小，CPU/手机可跑"
-      },
-      "modality": {
-        "multimodal": false,
-        "understand": [],
-        "generate": [
-          "text"
-        ],
-        "notes": "纯文本端侧量化模型"
-      },
-      "tags": [
-        "LLM",
-        "chat",
-        "llama.cpp",
-        "trending",
-        "on-device",
-        "prismml",
-        "端侧",
-        "大语言模型",
-        "热门",
-        "小模型",
-        "语言模型"
-      ],
-      "quantizations": [
-        {
-          "id": "Q8_0",
-          "label": "Q8_0（高保真）",
-          "file_quant": "Q8_0",
-          "size_gb": 0.59,
-          "vram_gb": 1,
-          "recommended": false
-        },
-        {
-          "id": "F16",
-          "label": "F16（全精度）",
-          "file_quant": "F16",
-          "size_gb": 50.98,
-          "vram_gb": 58.6,
-          "recommended": true
-        }
-      ]
-    },
-    {
       "id": "deepseek-v3",
       "category": "llm",
       "name": "DeepSeek V3 (671B MoE 基座)",
@@ -9110,57 +9044,6 @@
       ]
     },
     {
-      "id": "flux2-klein-4b",
-      "category": "image",
-      "name": "FLUX.2 Klein 4B",
-      "repo": "black-forest-labs/FLUX.2-klein-4B",
-      "gguf_repo": "",
-      "size_gb": 24,
-      "engine": [
-        "diffusers",
-        "comfyui"
-      ],
-      "license": "Apache-2.0",
-      "trending": true,
-      "description": "Black Forest Labs 2026-01 推出的 FLUX.2 系列轻量消费级模型（Flux2KleinPipeline）：4B 参数、Apache-2.0 完全开源可商用，主打本地 RTX 级显卡实时/交互式生成，4 步快速推理，保留 FLUX.2 多参考一致性与文字渲染能力。HF 39.4 万下载 / 1000+ likes。同系列另有 9B（FLUX.2-klein-9B）。",
-      "sources": [
-        "https://huggingface.co/black-forest-labs/FLUX.2-klein-4B/",
-        "https://hf-mirror.com/black-forest-labs/FLUX.2-klein-4B/"
-      ],
-      "primary_url": "https://huggingface.co/black-forest-labs/FLUX.2-klein-4B/",
-      "hardware": {
-        "vram_gb": 12,
-        "min_vram_gb": 8,
-        "ram_gb": 24,
-        "disk_gb": 24,
-        "notes": "4B；仓库约 24GB（transformer 7.75GB + 文本编码器），8–12GB 显存可跑，Apache-2.0 可商用。"
-      },
-      "modality": {
-        "multimodal": true,
-        "understand": [
-          "text",
-          "image"
-        ],
-        "generate": [
-          "image"
-        ],
-        "notes": "文生图 + 多参考图编辑，Apache-2.0。"
-      },
-      "tags": [
-        "diffusers",
-        "comfyui",
-        "image",
-        "text to image",
-        "trending",
-        "图像生成",
-        "文生图",
-        "热门",
-        "FLUX",
-        "Apache-2.0",
-        "轻量"
-      ]
-    },
-    {
       "id": "qwen-image-edit-2511",
       "category": "image",
       "name": "Qwen-Image-Edit (2511)",
@@ -9490,51 +9373,6 @@
         "comfyui",
         "音乐生成",
         "歌曲生成",
-        "热门"
-      ]
-    },
-    {
-      "id": "nemotron3-diarization",
-      "category": "audio",
-      "name": "Nemotron-3 Diarization (NVIDIA)",
-      "repo": "nvidia/Nemotron-3-Diarization",
-      "gguf_repo": "",
-      "size_gb": 1,
-      "engine": [
-        "transformers"
-      ],
-      "license": "OpenMDW-1.1",
-      "trending": true,
-      "description": "NVIDIA Nemotron-3 说话人日志/分离模型（streaming sortformer + speaker tagging，语音活动检测）。HF 5.5 万下载、701 赞，2026-09 更新；权重仅约 0.5GB（含 q8_0 GGUF）。用于多人会议转写前置分段。",
-      "sources": [
-        "https://huggingface.co/nvidia/Nemotron-3-Diarization/",
-        "https://hf-mirror.com/nvidia/Nemotron-3-Diarization/"
-      ],
-      "primary_url": "https://huggingface.co/nvidia/Nemotron-3-Diarization/",
-      "hardware": {
-        "vram_gb": 4,
-        "min_vram_gb": 2,
-        "ram_gb": 8,
-        "disk_gb": 1,
-        "notes": "model.safetensors 397M + q8_0 GGUF 107M；极轻量"
-      },
-      "modality": {
-        "multimodal": false,
-        "understand": [
-          "audio"
-        ],
-        "generate": [
-          "text"
-        ],
-        "notes": "音频→说话人分段/时间戳标签（diarization/VAD），不直接合成语音"
-      },
-      "tags": [
-        "audio",
-        "asr",
-        "diarization",
-        "transformers",
-        "说话人分离",
-        "语音识别",
         "热门"
       ]
     },
@@ -11391,7 +11229,8 @@
       "description": "Qwen3.6-27B 的亚 2-bit 压缩（PTQ1_0 二进制 / PQ2_0 三进制），保留约九成基准表现，262K 上下文；含视觉投影。注意：需 PrismML 版 llama.cpp，官方上游 llama.cpp 暂不能直接运行。",
       "sources": [
         "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/",
-        "https://hf-mirror.com/prism-ml/Ternary-Bonsai-2-27B-gguf/"
+        "https://hf-mirror.com/prism-ml/Ternary-Bonsai-2-27B-gguf/",
+        "https://modelscope.cn/models/prism-ml/Ternary-Bonsai-2-27B-gguf/"
       ],
       "primary_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/",
       "hardware": {
