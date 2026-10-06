@@ -48,7 +48,7 @@ class _GateRouter:
     def is_ready(self):
         return True, "gate-mock"
 
-    def chat(self, prompt: str, system: str = "", max_new_tokens: int = 2048):
+    def chat(self, prompt: str, system: str = "", max_new_tokens: int = 2048, should_stop=None):
         with self._cond:
             idx = self.calls
             self.calls += 1
@@ -189,7 +189,7 @@ def test_cancel_one_session_does_not_affect_the_other(tmp_path):
     # Both sessions share one router; its chat() inspects the prompt (which
     # embeds the user message) to return an appropriate final answer.
     class _SharingRouter(_GateRouter):
-        def chat(self, prompt, system="", max_new_tokens=2048):
+        def chat(self, prompt, system="", max_new_tokens=2048, should_stop=None):
             with self._cond:
                 self.calls += 1
                 self._cond.notify_all()

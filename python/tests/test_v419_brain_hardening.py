@@ -78,7 +78,7 @@ class FakeModel:
         return self
 
     def generate(self, input_ids, max_new_tokens, do_sample,
-                 repetition_penalty):
+                 repetition_penalty, stopping_criteria=None):
         self._rec["input_len"] = input_ids.shape[1]
         self._rec["generate_calls"] += 1
         new = list(range(900, 900 + max_new_tokens))
@@ -186,7 +186,7 @@ def test_router_shared_brain(tmp_path, monkeypatch):
             instances.append(self)
             self.calls = 0
 
-        def generate(self, repo, prompt, *, system="", max_new_tokens=1024):
+        def generate(self, repo, prompt, *, system="", max_new_tokens=1024, should_stop=None):
             self.calls += 1
             return f"turn {self.calls}"
 

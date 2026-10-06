@@ -33,7 +33,7 @@ class FakeRouter:
     def is_ready(self):
         return True, "fake-brain"
 
-    def chat(self, prompt, system="", max_new_tokens=1024):
+    def chat(self, prompt, system="", max_new_tokens=1024, should_stop=None):
         text = self._scripts[min(self._i, len(self._scripts) - 1)]
         self._i += 1
         return {"ok": True, "text": text}
