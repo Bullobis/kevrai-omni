@@ -363,6 +363,17 @@ const api = {
     assertString(sessionId, "sessionId", 128);
     return invoke("kevrai:agent-regenerate", sessionId);
   },
+  agentDeleteMessage: (sessionId, messageId) => {
+    assertString(sessionId, "sessionId", 128);
+    assert(Number.isInteger(messageId) && messageId > 0, "messageId: must be a positive integer");
+    return invoke("kevrai:agent-delete-message", sessionId, messageId);
+  },
+  agentEditMessage: (sessionId, messageId, content) => {
+    assertString(sessionId, "sessionId", 128);
+    assert(Number.isInteger(messageId) && messageId > 0, "messageId: must be a positive integer");
+    assertString(content, "content", 5000);
+    return invoke("kevrai:agent-edit-message", sessionId, messageId, content);
+  },
   agentGetPreferences: () => invoke("kevrai:agent-prefs-get"),
   agentSetPreference: (key, value) => invoke("kevrai:agent-prefs-set", key, value),
   // ----- v2.8.0: 可插拔技能库 -----

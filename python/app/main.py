@@ -3388,6 +3388,57 @@ async def agent_regenerate(request: Request, session_id: str = PathParam(...)) -
     }
 
 
+@app.delete("/api/agent/sessions/{session_id}/messages/{message_id}")
+def agent_delete_message(
+    request: Request,
+    session_id: str = PathParam(...),
+    message_id: int = PathParam(...),
+) -> dict[str, Any]:
+    """Suffix-delete a single message and everything after it in the session.
+
+    Trimming from ``message_id`` down keeps the session ending on a clean turn
+    boundary (no orphaned half-turn). 404 when no such message exists.
+    """
+    agent = _get_agent(request)
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", session_id or ""):
+        raise HTTPException(status_code=400, detail="invalid session_id")
+    deleted = agent.memory.delete_message_from(session_id, int(message_id))
+    if deleted == 0:
+        raise HTTPException(status_code=404, detail="message not found")
+    return {"ok": True, "session_id": session_id, "deleted": deleted}
+
+
+class AgentEditMessageReq(BaseModel):
+    content: str = Field(min_length=1, max_length=5000)
+
+
+@app.post("/api/agent/sessions/{session_id}/messages/{message_id}/edit")
+def agent_edit_message(
+    req: AgentEditMessageReq,
+    request: Request,
+    session_id: str = PathParam(...),
+    message_id: int = PathParam(...),
+) -> dict[str, Any]:
+    """Edit a user message in place and suffix-trim everything after it.
+
+    The edited message becomes the latest pending turn so the renderer can
+    re-send it (Cherry Studio "edit & resend"). 404 when the message does not
+    exist; 400 when the target message is not a user message.
+    """
+    agent = _get_agent(request)
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", session_id or ""):
+        raise HTTPException(status_code=400, detail="invalid session_id")
+    content = req.content.strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="content must not be empty")
+    result = agent.memory.edit_user_message(session_id, int(message_id), content)
+    if result is False:
+        raise HTTPException(status_code=404, detail="message not found")
+    if result is None:
+        raise HTTPException(status_code=400, detail="only user messages can be edited")
+    return {"ok": True, "session_id": session_id, "edited": True, "content": content}
+
+
 @app.get("/api/agent/preferences")
 def agent_get_preferences(request: Request) -> dict[str, Any]:
     """Get all stored agent preferences."""

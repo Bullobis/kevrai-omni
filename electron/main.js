@@ -1279,6 +1279,21 @@ function registerIpc() {
       `/api/agent/sessions/${encodeURIComponent(sessionId)}/regenerate`,
       { method: "POST", body: {} });
   });
+  ipcMain.handle("kevrai:agent-delete-message", async (_e, sessionId, messageId) => {
+    assert(typeof sessionId === "string" && sessionId.length > 0, "sessionId: invalid");
+    assert(Number.isInteger(messageId) && messageId > 0, "messageId: invalid");
+    return sidecarFetch(
+      `/api/agent/sessions/${encodeURIComponent(sessionId)}/messages/${messageId}`,
+      { method: "DELETE" });
+  });
+  ipcMain.handle("kevrai:agent-edit-message", async (_e, sessionId, messageId, content) => {
+    assert(typeof sessionId === "string" && sessionId.length > 0, "sessionId: invalid");
+    assert(Number.isInteger(messageId) && messageId > 0, "messageId: invalid");
+    assert(typeof content === "string" && content.trim().length > 0, "content: invalid");
+    return sidecarFetch(
+      `/api/agent/sessions/${encodeURIComponent(sessionId)}/messages/${messageId}/edit`,
+      { method: "POST", body: { content } });
+  });
   ipcMain.handle("kevrai:agent-prefs-get", async () => sidecarFetch("/api/agent/preferences"));
   ipcMain.handle("kevrai:agent-prefs-set", async (_e, key, value) => {
     assert(typeof key === "string" && key.length > 0, "key: invalid");
