@@ -72,6 +72,44 @@ export function groupFiles(files) {
   );
 }
 
+// Classify whether a quantization of `needGB` can run on this machine.
+//   hw: the object returned by GET /api/hardware
+// Returns { level, label } where level is "ok" (fits on GPU), "warn" (runs via
+// multi-GPU / partial offload / CPU, slower) or "no" (does not fit in RAM).
+export function classifyFit(needGB, hw) {
+  if (!hw) return { level: "", label: "" };
+  const vram = Number(hw.gpu_best_vram_gb || 0);   // largest single GPU
+  const totalVram = Number(hw.gpu_total_vram_gb || 0);
+  const ram = Number(hw.ram_total_gb || 0);
+  const need = Number(needGB) || 0;
+  // Reserve headroom for the KV cache, context window and OS.
+  if (vram > 0 && need <= Math.max(0, vram - 1.5))
+    return { level: "ok", label: "显存可容纳" };
+  if (vram > 0 && totalVram > vram && need <= Math.max(0, totalVram - 1.5))
+    return { level: "warn", label: "需多卡分布" };
+  if (need <= ram * 0.7)
+    return { level: "warn", label: vram > 0 ? "需部分卸载" : "CPU 运行较慢" };
+  if (need <= ram * 0.9) return { level: "warn", label: "内存吃紧" };
+  return { level: "no", label: "内存不足" };
+}
+
+// Pick the option the user is most likely to want: a recommended quant that
+// still fits, otherwise the best-fitting one. Never auto-pick a "no" option.
+export function defaultIndex(groups, fits) {
+  const isRec = (i) => {
+    const m = META_BY_KEY.get(groups[i].key);
+    return !!(m && m.rec);
+  };
+  const rec = groups.findIndex((_, i) => isRec(i) && fits[i].level !== "no");
+  if (rec >= 0) return rec;
+  for (const lvl of ["ok", "warn"]) {
+    const i = fits.findIndex((f) => f.level === lvl);
+    if (i >= 0) return i;
+  }
+  const anyRec = groups.findIndex((_, i) => isRec(i));
+  return anyRec >= 0 ? anyRec : 0;
+}
+
 // Open the picker. Resolves to one of:
 //   null                      → user cancelled
 //   { files, repo }           → chosen shard paths + gguf repo
@@ -89,6 +127,17 @@ export async function pickQuantization(item, api, revision) {
   const groups = groupFiles(files);
   if (!groups.length) return { files: [] };
 
+  // Best-effort hardware snapshot for the green/yellow/red fit indicator.
+  let hw = null;
+  try {
+    const hr = await api.hardware();
+    const hb = (hr && hr.body) || hr;
+    hw = hb && hb.hardware ? hb.hardware : hb;
+  } catch (e) {
+    hw = null; // without hardware info the picker still works, just uncolored
+  }
+  const fits = groups.map((g) => classifyFit(g.size / 1e9, hw));
+
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
     overlay.className = "overlay";
@@ -104,12 +153,18 @@ export async function pickQuantization(item, api, revision) {
           ${groups
             .map((g, i) => {
               const meta = META_BY_KEY.get(g.key);
-              return `<button type="button" class="quant-opt${meta && meta.rec ? " is-rec" : ""}" data-i="${i}">
+              const fit = fits[i];
+              const fitCls = fit.level ? ` fit-${fit.level}` : "";
+              return `<button type="button" class="quant-opt${meta && meta.rec ? " is-rec" : ""}${fitCls}" data-i="${i}">
                 <span class="quant-radio" aria-hidden="true"></span>
                 <span class="quant-main">
                   <span class="quant-label">${esc(g.key)}${
                     meta && meta.rec
                       ? '<span class="quant-badge">推荐</span>'
+                      : ""
+                  }${
+                    fit.label
+                      ? `<span class="quant-fit ${fit.level ? "lvl-" + fit.level : ""}">${esc(fit.label)}</span>`
                       : ""
                   }</span>
                   <span class="quant-note">${esc((meta && meta.note) || "")}</span>
@@ -127,7 +182,15 @@ export async function pickQuantization(item, api, revision) {
         </footer>
       </div>`;
 
-    let selected = null;
+    let selected = defaultIndex(groups, fits);
+    const applySel = () => {
+      const opts = overlay.querySelectorAll(".quant-opt");
+      opts.forEach((o) =>
+        o.classList.toggle("is-sel", parseInt(o.dataset.i, 10) === selected),
+      );
+      overlay.querySelector(".quant-ok").disabled = false;
+    };
+    applySel();
     const done = (val) => {
       overlay.remove();
       resolve(val);
@@ -136,10 +199,7 @@ export async function pickQuantization(item, api, revision) {
       const opt = e.target.closest(".quant-opt");
       if (opt) {
         selected = parseInt(opt.dataset.i, 10);
-        overlay.querySelectorAll(".quant-opt").forEach((o) =>
-          o.classList.toggle("is-sel", o === opt),
-        );
-        overlay.querySelector(".quant-ok").disabled = false;
+        applySel();
         return;
       }
       if (e.target.closest(".quant-cancel, .quant-x")) {
