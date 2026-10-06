@@ -129,6 +129,18 @@ export function wireSettings() {
     setLocale(e.target.value);
   });
 
+  // 主题切换即时生效（无需再点保存），与语言切换一致。
+  $("#set-theme")?.addEventListener("change", async (e) => {
+    try {
+      const saved = await api.putSettings({
+        ...(state.settings || {}),
+        theme: e.target.value,
+      });
+      setState({ settings: saved });
+      applyTheme();
+    } catch (_) { /* 错误提示已由 api 层弹出 toast */ }
+  });
+
   $("#btn-pick-model-dir").addEventListener("click", async () => {
     const p = await api.pickFolder();
     if (p) $("#set-model-dir").value = p;

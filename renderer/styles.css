@@ -1021,8 +1021,10 @@ button.ghost.icon svg.ic { width: 16px; height: 16px; }
   transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
 /* display:block is required: without it an inline SVG collapses to a dot
-   inside the flex button (the root cause of the "buttons invisible" bug). */
-.win-btn .ic { display: block; width: 16px; height: 16px; }
+   inside the flex button (the root cause of the "buttons invisible" bug).
+   flex:none is also required: the SVG is a flex item and flex-shrink otherwise
+   squeezes it to ~8px wide even with an explicit width (verified in-app). */
+.win-btn .ic { display: block; width: 16px; height: 16px; flex: none; }
 .win-btn:hover { background: var(--card-hover, rgba(255,255,255,0.08)); color: var(--fg); opacity: 1; }
 .win-btn:active { background: var(--card-active, rgba(127,127,127,0.18)); }
 .win-btn-close:hover { background: var(--win-close, #e81123); color: #fff; opacity: 1; }
