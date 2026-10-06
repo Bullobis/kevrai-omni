@@ -899,6 +899,14 @@
     "emptyAnswer": "(no text returned)",
     "enterFirst": "Please enter a question or choose an image",
     "failed": "Vision chat failed: {err}",
-    "engineInstalled": "Engine installed"
+    "engineInstalled": "Engine installed",
+    "modeUnderstand": "Understand",
+    "modeImage": "Text-to-Image",
+    "imgCount": "Number of images",
+    "guidance": "Guidance scale (CFG)",
+    "seed": "Seed (optional)",
+    "imgPrompt": "Image description",
+    "imgRun": "Generate",
+    "imgResult": "Generated images"
   }
 }

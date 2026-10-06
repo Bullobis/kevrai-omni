@@ -1024,6 +1024,25 @@ function registerIpc() {
       headers: { "Content-Type": "application/json" }, timeoutMs: 300_000,
     });
   });
+  ipcMain.handle("api:multimodal:generate-image", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.prompt, 2000), "prompt: invalid");
+    const body = {
+      model: isString(payload.model, 128) ? payload.model : "janus-pro-7b",
+      prompt: payload.prompt,
+      guidance_scale: Number.isFinite(Number(payload.guidance_scale))
+        ? Number(payload.guidance_scale) : 5.0,
+      seed: Number.isFinite(Number(payload.seed))
+        ? Number(payload.seed) : null,
+      num_images: Number.isFinite(Number(payload.num_images))
+        ? Math.min(4, Math.max(1, Number(payload.num_images))) : 1,
+      do_sample: payload.do_sample === true,
+    };
+    return sidecarFetch("/api/multimodal/generate-image", {
+      method: "POST", rawBody: Buffer.from(JSON.stringify(body)),
+      headers: { "Content-Type": "application/json" }, timeoutMs: 600_000,
+    });
+  });
   ipcMain.handle("api:categories",   async () => sidecarFetch("/api/categories"));
   ipcMain.handle("api:models", async (_e, params) => {
     const p = (params && typeof params === "object") ? params : {};

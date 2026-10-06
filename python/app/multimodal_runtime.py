@@ -36,9 +36,14 @@ _PIP_DIR = "pip-transformers"
 # used purely for the capabilities report and to resolve a catalog id to a repo.
 KNOWN_MODELS: dict[str, str] = {
     "smolvlm-256": "HuggingFaceTB/SmolVLM-256M-Instruct",
+    "janus-pro-1b": "deepseek-ai/Janus-Pro-1B",
     "janus-pro-7b": "deepseek-ai/Janus-Pro-7B",
     "minicpm-v-4.6": "openbmb/MiniCPM-V-4.6",
 }
+
+# Catalog ids whose autoregressive image-generation path (VQVAE decode) this
+# runtime can drive. Kept in sync with the catalog ``modality.generate`` field.
+IMAGE_GEN_CAPABLE: frozenset[str] = frozenset({"janus-pro-1b", "janus-pro-7b"})
 
 # Auto classes tried in order when loading a model; the first that recognises
 # the checkpoint wins, keeping the loader open to future architectures.
@@ -346,6 +351,109 @@ class MultimodalManager:
             if piece:
                 yield piece
 
+    # -- image generation ---------------------------------------------------
+
+    @staticmethod
+    def _pixels_to_pil(decoded: Any) -> list[Any]:
+        """Convert decoded pixel frames (torch tensor or numpy) to PIL images.
+
+        Accepts a ``(B, H, W, C)`` or single ``(H, W, C)`` array of floats in
+        ``[0, 1]``. Written to be torch-independent (numpy + Pillow) so the
+        pixel-assembly step can be unit-tested without a native backend.
+        """
+        import numpy as np
+        from PIL import Image
+
+        arr = decoded.cpu().numpy() if hasattr(decoded, "cpu") else decoded
+        arr = np.asarray(arr)
+        if arr.ndim == 3:
+            arr = arr[None, ...]
+        images: list[Any] = []
+        for frame in arr:
+            frame = np.clip(frame, 0.0, 1.0)
+            images.append(Image.fromarray((frame * 255.0).round().astype("uint8")))
+        return images
+
+    def _decode_generated_images(self, model: Any, processor: Any,
+                                 image_tokens: Any) -> list[Any]:
+        """Decode autoregressive image tokens into PIL images.
+
+        Prefers the processor's purpose-built multimodal post-processing
+        (correct denormalisation); falls back to ``decode_image_tokens`` plus a
+        direct pixel conversion if the processor helper is unavailable.
+        """
+        try:
+            images = processor.post_process_multimodal_output(
+                image_tokens, generation_mode="image"
+            )
+            return list(images)
+        except Exception:  # noqa: BLE001 — use the explicit decode fallback
+            log.debug("multimodal image postprocess failed", exc_info=True)
+            decoded = model.decode_image_tokens(image_tokens)
+            return self._pixels_to_pil(decoded)
+
+    def generate_image(
+        self,
+        model_id_or_repo: str,
+        prompt: str,
+        *,
+        guidance_scale: float = 5.0,
+        seed: int | None = None,
+        num_images: int = 1,
+        do_sample: bool = False,
+    ) -> dict[str, Any]:
+        """Generate images from a text prompt via an autoregressive VQ model.
+
+        Returns a dict with PIL ``images``, the resolved ``repo`` and timing.
+        Only models in :data:`IMAGE_GEN_CAPABLE` expose this path.
+        """
+        import time
+
+        prompt = (prompt or "").strip()
+        if not prompt:
+            raise MultimodalParamError("prompt 不能为空")
+        mid = (model_id_or_repo or "").strip()
+        if not mid:
+            raise MultimodalParamError("model 不能为空")
+        # Resolve a catalog id or repo slug to its catalog id when known, and
+        # reject known models that do not expose the image-generation path.
+        catalog_id = mid if mid in KNOWN_MODELS else next(
+            (k for k, v in KNOWN_MODELS.items() if v == mid), None
+        )
+        if catalog_id is not None and catalog_id not in IMAGE_GEN_CAPABLE:
+            raise MultimodalParamError(
+                f"模型 {mid} 不支持文生图（当前仅 Janus 系列支持）"
+            )
+
+        started = time.monotonic()
+        model, processor, _ = self.load(mid)
+        inputs = processor(
+            text=[prompt], generation_mode="image", return_tensors="pt"
+        )
+        if seed is not None:
+            import torch
+
+            torch.manual_seed(int(seed))
+        gen_kwargs = dict(
+            generation_mode="image",
+            guidance_scale=float(guidance_scale),
+            do_sample=bool(do_sample),
+            num_return_sequences=max(1, int(num_images)),
+        )
+        try:
+            image_tokens = model.generate(**inputs, **gen_kwargs)
+            images = self._decode_generated_images(model, processor, image_tokens)
+        except MultimodalError:
+            raise
+        except Exception as e:  # noqa: BLE001
+            raise MultimodalModelError(f"图像生成失败：{e}") from e
+        return {
+            "images": images,
+            "repo": self.resolve_repo(mid),
+            "count": len(images),
+            "elapsed_s": round(time.monotonic() - started, 3),
+        }
+
 
 def capabilities(data_root: Path | None = None) -> dict[str, Any]:
     """Report engine availability and the multimodal models it can run."""
@@ -367,6 +475,8 @@ def capabilities(data_root: Path | None = None) -> dict[str, Any]:
         "version": version,
         "engine_dir": str(target),
         "models": [
-            {"id": mid, "repo": repo} for mid, repo in KNOWN_MODELS.items()
+            {"id": mid, "repo": repo,
+             "image_generation": mid in IMAGE_GEN_CAPABLE}
+            for mid, repo in KNOWN_MODELS.items()
         ],
     }

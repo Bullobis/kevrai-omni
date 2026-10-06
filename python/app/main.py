@@ -3356,6 +3356,15 @@ class MultimodalChatReq(BaseModel):
     stream: bool = False
 
 
+class MultimodalImageReq(BaseModel):
+    model: str = "janus-pro-7b"
+    prompt: str = ""
+    guidance_scale: float = 5.0
+    seed: int | None = None
+    num_images: int = 1
+    do_sample: bool = False
+
+
 async def _extract_multimodal(
     messages: list[dict[str, Any]],
 ) -> tuple[str, list[dict[str, str]], list[str], list[str]]:
@@ -3489,6 +3498,53 @@ async def multimodal_chat_route(
             "elapsed_s": res.get("elapsed_s"),
             "multimodal": bool(res.get("multimodal")),
         },
+    })
+
+
+@app.post("/api/multimodal/generate-image")
+async def multimodal_generate_image_route(
+    request: Request, req: MultimodalImageReq
+) -> JSONResponse:
+    if not (req.prompt or "").strip():
+        raise HTTPException(status_code=400, detail="prompt 不能为空")
+    mgr = _multimodal_manager(request)
+    try:
+        res = await asyncio.to_thread(
+            mgr.generate_image, req.model, req.prompt,
+            guidance_scale=req.guidance_scale, seed=req.seed,
+            num_images=req.num_images, do_sample=req.do_sample,
+        )
+    except multimodal_runtime.MultimodalEngineMissing as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except multimodal_runtime.MultimodalParamError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except multimodal_runtime.MultimodalError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+
+    outdir = APP_ROOT / "generated" / "multimodal"
+    outdir.mkdir(parents=True, exist_ok=True)
+    import base64
+    import io
+
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    items: list[dict[str, Any]] = []
+    for idx, img in enumerate(res.get("images", [])):
+        name = f"{stamp}-{idx}.png"
+        img.save(outdir / name, format="PNG")
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        data_url = (
+            "data:image/png;base64,"
+            + base64.b64encode(buf.getvalue()).decode("ascii")
+        )
+        items.append({"file": name, "data_url": data_url})
+    return JSONResponse({
+        "model": req.model,
+        "repo": res.get("repo"),
+        "count": len(items),
+        "elapsed_s": res.get("elapsed_s"),
+        "output_dir": str(outdir),
+        "images": items,
     })
 
 

@@ -38,6 +38,67 @@ async function refresh() {
     ).join("");
     if (current) sel.value = current;
   }
+  const imgSel = $("#mm-img-model");
+  if (imgSel) {
+    const imgModels = (cap.models || []).filter((m) => m.image_generation);
+    const current = imgSel.value;
+    imgSel.innerHTML = imgModels.map(
+      (m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.id)}</option>`
+    ).join("");
+    if (current) imgSel.value = current;
+    else if (imgModels.length) imgSel.value = imgModels[imgModels.length - 1].id;
+  }
+}
+
+function setMode(mode) {
+  const isImage = mode === "image";
+  $("#mm-mode-understand").hidden = isImage;
+  $("#mm-mode-image").hidden = !isImage;
+  const bu = $("#mm-tab-understand");
+  const bi = $("#mm-tab-image");
+  bu.classList.toggle("active", !isImage);
+  bi.classList.toggle("active", isImage);
+  bu.setAttribute("aria-selected", String(!isImage));
+  bi.setAttribute("aria-selected", String(isImage));
+}
+
+async function generateImage() {
+  const prompt = $("#mm-img-prompt").value.trim();
+  if (!prompt) {
+    toast(t("multimodal.enterFirst"), { kind: "warn" });
+    return;
+  }
+  const seedRaw = $("#mm-seed").value.trim();
+  const btn = $("#mm-img-run");
+  btn.disabled = true;
+  const result = $("#mm-img-result");
+  result.textContent = t("multimodal.thinking");
+  try {
+    const r = await api.multimodalGenerateImage({
+      model: $("#mm-img-model").value,
+      prompt,
+      guidance_scale: Number($("#mm-guidance").value) || 5,
+      seed: seedRaw === "" ? null : Number(seedRaw),
+      num_images: Number($("#mm-img-count").value) || 1,
+    });
+    const body = (r && r.body) ? r.body : r;
+    const items = body.images || [];
+    if (!items.length) {
+      result.textContent = t("multimodal.emptyAnswer");
+      return;
+    }
+    result.innerHTML = items.map(
+      (it) => `<figure class="mm-img-item">
+        <img alt="${escapeHtml(it.file)}" src="${it.data_url}">
+        <figcaption>${escapeHtml(it.file)}</figcaption>
+      </figure>`
+    ).join("");
+  } catch (e) {
+    result.textContent = "";
+    toast(t("multimodal.failed", { err: e.message }), { kind: "err" });
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function onPickFile(e) {
@@ -116,6 +177,9 @@ export async function initMultimodal() {
   $("#mm-pick-btn").addEventListener("click", () => $("#mm-file").click());
   $("#mm-run").addEventListener("click", ask);
   $("#mm-install").addEventListener("click", installEngine);
+  $("#mm-tab-understand").addEventListener("click", () => setMode("understand"));
+  $("#mm-tab-image").addEventListener("click", () => setMode("image"));
+  $("#mm-img-run").addEventListener("click", generateImage);
   await refresh();
   window.addEventListener("kevrai:view-change", (e) => {
     if (e.detail && e.detail.view === "multimodal") refresh().catch(() => {});
