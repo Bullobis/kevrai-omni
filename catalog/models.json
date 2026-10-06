@@ -14179,6 +14179,126 @@
         "Qwen",
         "指令式"
       ]
+    },
+    {
+      "id": "htdemucs",
+      "category": "audio",
+      "name": "HTDemucs 音源分离",
+      "repo": "demucs/htdemucs",
+      "size_gb": 0.08,
+      "engine": [
+        "demucs"
+      ],
+      "license": "mit",
+      "trending": true,
+      "description": "默认混合 Transformer 模型，将歌曲分离为鼓/贝斯/其他/人声 4 轨，速度与质量均衡。",
+      "sources": [
+        "https://github.com/facebookresearch/demucs/blob/main/demucs/remote/htdemucs.yaml",
+        "https://github.com/facebookresearch/demucs",
+        "https://pypi.org/project/demucs/"
+      ],
+      "primary_url": "https://github.com/facebookresearch/demucs/blob/main/demucs/remote/htdemucs.yaml",
+      "hardware": {
+        "vram_gb": 2,
+        "min_vram_gb": 1,
+        "ram_gb": 4,
+        "disk_gb": 1
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "audio"
+        ],
+        "generate": [
+          "audio"
+        ]
+      },
+      "tags": [
+        "音源分离",
+        "Demucs",
+        "人声提取",
+        "Stems"
+      ]
+    },
+    {
+      "id": "htdemucs-ft",
+      "category": "audio",
+      "name": "HTDemucs FT 音源分离",
+      "repo": "demucs/htdemucs_ft",
+      "size_gb": 0.32,
+      "engine": [
+        "demucs"
+      ],
+      "license": "mit",
+      "trending": false,
+      "description": "4 个微调模型的组合，分离质量最高，需下载约 320MB、运行较慢。",
+      "sources": [
+        "https://github.com/facebookresearch/demucs/blob/main/demucs/remote/htdemucs_ft.yaml",
+        "https://github.com/facebookresearch/demucs",
+        "https://pypi.org/project/demucs/"
+      ],
+      "primary_url": "https://github.com/facebookresearch/demucs/blob/main/demucs/remote/htdemucs_ft.yaml",
+      "hardware": {
+        "vram_gb": 2,
+        "min_vram_gb": 1,
+        "ram_gb": 4,
+        "disk_gb": 1
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "audio"
+        ],
+        "generate": [
+          "audio"
+        ]
+      },
+      "tags": [
+        "音源分离",
+        "Demucs",
+        "人声提取",
+        "Stems"
+      ]
+    },
+    {
+      "id": "htdemucs-6s",
+      "category": "audio",
+      "name": "HTDemucs 6S 音源分离",
+      "repo": "demucs/htdemucs_6s",
+      "size_gb": 0.17,
+      "engine": [
+        "demucs"
+      ],
+      "license": "mit",
+      "trending": false,
+      "description": "6 音轨模型，在 4 轨基础上额外分离钢琴与吉他。",
+      "sources": [
+        "https://github.com/facebookresearch/demucs/blob/main/demucs/remote/htdemucs_6s.yaml",
+        "https://github.com/facebookresearch/demucs",
+        "https://pypi.org/project/demucs/"
+      ],
+      "primary_url": "https://github.com/facebookresearch/demucs/blob/main/demucs/remote/htdemucs_6s.yaml",
+      "hardware": {
+        "vram_gb": 2,
+        "min_vram_gb": 1,
+        "ram_gb": 4,
+        "disk_gb": 1
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "audio"
+        ],
+        "generate": [
+          "audio"
+        ]
+      },
+      "tags": [
+        "音源分离",
+        "Demucs",
+        "人声提取",
+        "Stems"
+      ]
     }
   ],
   "gguf_repos": [
