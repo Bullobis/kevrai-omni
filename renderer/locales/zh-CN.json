@@ -28,7 +28,8 @@
     "asr": "语音转写",
     "embeddings": "向量嵌入",
     "separation": "音源分离",
-    "piper": "本地语音合成"
+    "piper": "本地语音合成",
+    "multimodal": "多模态对话"
   },
   "header": {
     "downloads": "下载",
@@ -879,5 +880,25 @@
     "failed": "语音合成失败：{err}",
     "engineInstalled": "引擎已安装",
     "openDir": "打开输出目录"
+  },
+  "multimodal": {
+    "title": "多模态对话",
+    "engineReady": "引擎就绪 {ver}",
+    "engineMissing": "引擎未安装",
+    "missingHint": "需要安装 Transformers 引擎，可对图片提问，完全本地运行。",
+    "install": "安装引擎",
+    "model": "模型",
+    "maxTokens": "最大生成长度",
+    "image": "图片（可选）",
+    "chooseImage": "选择图片",
+    "clearImage": "移除图片",
+    "question": "提问",
+    "run": "发送",
+    "answerTitle": "回答",
+    "thinking": "正在分析图片并生成回答…",
+    "emptyAnswer": "（模型未返回文本）",
+    "enterFirst": "请先输入问题或选择图片",
+    "failed": "多模态对话失败：{err}",
+    "engineInstalled": "引擎已安装"
   }
 }

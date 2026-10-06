@@ -534,7 +534,7 @@
       "description": "huggingface/transformers — HuggingFace 官方推理运行时，LLM/TTS/音频/视觉全类模型的 pipeline 加载器，模型目录中 transformers-only 条目的通用后端。",
       "github": "huggingface/transformers",
       "install": "pip",
-      "pypi": "transformers",
+      "pypi": "transformers==5.18.0",
       "license": "Apache-2.0",
       "size_mb": 60,
       "trending": true,
@@ -547,6 +547,12 @@
         "https://pypi.tuna.tsinghua.edu.cn/simple/transformers/",
         "https://github.com/huggingface/transformers/releases/latest",
         "https://github.com/huggingface/transformers"
+      ],
+      "pip_extra": [
+        "torch",
+        "accelerate>=0.34",
+        "pillow",
+        "scikit-learn"
       ]
     },
     {

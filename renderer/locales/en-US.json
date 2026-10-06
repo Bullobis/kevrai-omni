@@ -28,7 +28,8 @@
     "asr": "Speech to Text",
     "embeddings": "Embeddings",
     "separation": "Source Separation",
-    "piper": "Local Speech"
+    "piper": "Local Speech",
+    "multimodal": "Vision Chat"
   },
   "header": {
     "downloads": "Downloads",
@@ -879,5 +880,25 @@
     "failed": "Synthesis failed: {err}",
     "engineInstalled": "Engine installed",
     "openDir": "Open output directory"
+  },
+  "multimodal": {
+    "title": "Vision Chat",
+    "engineReady": "Engine ready {ver}",
+    "engineMissing": "Engine not installed",
+    "missingHint": "Install the Transformers engine to ask questions about an image, fully on-device.",
+    "install": "Install engine",
+    "model": "Model",
+    "maxTokens": "Max new tokens",
+    "image": "Image (optional)",
+    "chooseImage": "Choose image",
+    "clearImage": "Remove image",
+    "question": "Question",
+    "run": "Send",
+    "answerTitle": "Answer",
+    "thinking": "Analyzing the image and generating an answer…",
+    "emptyAnswer": "(no text returned)",
+    "enterFirst": "Please enter a question or choose an image",
+    "failed": "Vision chat failed: {err}",
+    "engineInstalled": "Engine installed"
   }
 }

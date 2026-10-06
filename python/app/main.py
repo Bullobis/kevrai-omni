@@ -54,6 +54,7 @@ from . import (
     embedding_runtime,
     ltx_runtime,
     mnn_runtime,
+    multimodal_runtime,
     piper_runtime,
 )
 from . import clawdchat as clawdchat_mod
@@ -269,6 +270,8 @@ async def _lifespan(app: FastAPI):
     app.state.demucs = demucs_runtime.DemucsManager(APP_ROOT)
     # Piper lightweight neural TTS manager (ONNX voices cached in-process).
     app.state.piper = piper_runtime.PiperManager(APP_ROOT)
+    # Generic transformers vision-language manager (image+text chat).
+    app.state.multimodal = multimodal_runtime.MultimodalManager(APP_ROOT)
     # Dual-source hub registry (HF + ModelScope + curated). Adapters own their
     # httpx clients, so the lifespan must aclose() them on shutdown. Wire the
     # lifespan handle to the *process singleton* (get_registry), NOT a fresh
@@ -3330,6 +3333,163 @@ def piper_stream_route(job_id: str) -> FileResponse:
     if not str(target).startswith(str(tts_root)) or not target.is_file():
         raise HTTPException(status_code=404, detail="audio not found")
     return FileResponse(target, media_type="audio/wav", filename=target.name)
+
+
+# ---------------------------------------------------------------------------
+# Generic transformers multimodal (image + text) chat
+# ---------------------------------------------------------------------------
+
+def _multimodal_manager(request: Request) -> multimodal_runtime.MultimodalManager:
+    mgr = getattr(request.app.state, "multimodal", None)
+    if mgr is None:
+        mgr = multimodal_runtime.MultimodalManager(APP_ROOT)
+        request.app.state.multimodal = mgr
+    return mgr
+
+
+class MultimodalChatReq(BaseModel):
+    model: str = ""
+    # OpenAI-style messages; content may be a string or a list of parts
+    # (type=text / image_url).
+    messages: list[dict[str, Any]] = []
+    max_tokens: int | None = 512
+    stream: bool = False
+
+
+async def _extract_multimodal(
+    messages: list[dict[str, Any]],
+) -> tuple[str, list[dict[str, str]], list[str], list[str]]:
+    """Parse OpenAI-style messages into (prompt, hist, images, temp_files)."""
+    history: list[dict[str, str]] = []
+    images: list[str] = []
+    created: list[str] = []
+    for msg in messages:
+        role = str(msg.get("role", "user"))
+        content = msg.get("content")
+        text_parts: list[str] = []
+        if isinstance(content, list):
+            for part in content:
+                if not isinstance(part, dict):
+                    continue
+                ptype = str(part.get("type", ""))
+                if ptype == "text":
+                    text_parts.append(str(part.get("text", "") or ""))
+                elif ptype == "image_url":
+                    url = part.get("image_url")
+                    if isinstance(url, dict):
+                        url = url.get("url", "")
+                    img = await _media_to_local(str(url or ""), "image", created)
+                    if img:
+                        images.append(img)
+            content = "\n".join(text_parts) if text_parts else ""
+        content = str(content or "").strip()
+        if not content:
+            continue
+        history.append({
+            "role": role if role in ("user", "assistant") else "user",
+            "content": content,
+        })
+    if not history and not images:
+        for p in created:
+            with contextlib.suppress(OSError):
+                os.unlink(p)
+        raise HTTPException(status_code=400, detail="messages 中没有可用内容")
+    prompt = history[-1]["content"] if history else ""
+    return prompt, history[:-1], images, created
+
+
+def _cleanup_temp(paths: list[str]) -> None:
+    for p in paths:
+        with contextlib.suppress(OSError):
+            os.unlink(p)
+
+
+@app.get("/api/multimodal/capabilities")
+def multimodal_capabilities_route() -> dict[str, Any]:
+    return multimodal_runtime.capabilities(APP_ROOT)
+
+
+@app.post("/api/multimodal/chat")
+async def multimodal_chat_route(
+    request: Request, req: MultimodalChatReq
+) -> Response:
+    if not req.messages:
+        raise HTTPException(status_code=400, detail="messages 不能为空")
+    prompt, hist, images, created = await _extract_multimodal(req.messages)
+    mgr = _multimodal_manager(request)
+    model_id = req.model or "smolvlm-256"
+    max_tokens = req.max_tokens or 512
+
+    if req.stream:
+        def gen():
+            try:
+                for delta in mgr.chat_stream(
+                    model_id, prompt, hist, images, max_tokens
+                ):
+                    chunk = {
+                        "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
+                        "object": "chat.completion.chunk",
+                        "created": int(time.time()),
+                        "model": model_id,
+                        "choices": [{"index": 0,
+                                     "delta": {"content": delta},
+                                     "finish_reason": None}],
+                    }
+                    yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
+                final = {
+                    "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
+                    "object": "chat.completion.chunk",
+                    "created": int(time.time()),
+                    "model": model_id,
+                    "choices": [{"index": 0, "delta": {},
+                                 "finish_reason": "stop"}],
+                }
+                yield f"data: {json.dumps(final, ensure_ascii=False)}\n\n"
+            except multimodal_runtime.MultimodalError as e:
+                etype = "engine_missing" if isinstance(
+                    e, multimodal_runtime.MultimodalEngineMissing) else (
+                    "invalid_request" if isinstance(
+                        e, multimodal_runtime.MultimodalParamError)
+                    else "model_error")
+                yield f"data: {json.dumps({'error': {'message': str(e), 'type': etype}})}\n\n"
+            finally:
+                yield "data: [DONE]\n\n"
+                _cleanup_temp(created)
+
+        return StreamingResponse(
+            gen(), media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
+    try:
+        res = await asyncio.to_thread(
+            mgr.chat, model_id, prompt, hist, images, max_tokens
+        )
+    except multimodal_runtime.MultimodalEngineMissing as e:
+        _cleanup_temp(created)
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except multimodal_runtime.MultimodalParamError as e:
+        _cleanup_temp(created)
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except multimodal_runtime.MultimodalError as e:
+        _cleanup_temp(created)
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    _cleanup_temp(created)
+    return JSONResponse({
+        "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
+        "object": "chat.completion",
+        "created": int(time.time()),
+        "model": model_id,
+        "choices": [{
+            "index": 0,
+            "message": {"role": "assistant", "content": res.get("text", "")},
+            "finish_reason": "stop",
+        }],
+        "kevrai": {
+            "elapsed_s": res.get("elapsed_s"),
+            "multimodal": bool(res.get("multimodal")),
+        },
+    })
 
 
 async def _run_multipart_asr(

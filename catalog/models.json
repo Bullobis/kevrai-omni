@@ -14416,6 +14416,132 @@
         "离线TTS",
         "ONNX"
       ]
+    },
+    {
+      "id": "smolvlm-256",
+      "category": "llm",
+      "name": "SmolVLM 256M",
+      "repo": "HuggingFaceTB/SmolVLM-256M-Instruct",
+      "size_gb": 0.52,
+      "engine": [
+        "transformers"
+      ],
+      "license": "apache-2.0",
+      "trending": false,
+      "description": "Hugging Face SmolVLM 256M 轻量视觉语言模型，可对图片提问；运行时仅加载 PyTorch 权重（仓库另含多种 ONNX 变体，不计入安装足迹）。",
+      "sources": [
+        "https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct/",
+        "https://hf-mirror.com/HuggingFaceTB/SmolVLM-256M-Instruct/"
+      ],
+      "primary_url": "https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct/",
+      "hardware": {
+        "vram_gb": 1,
+        "min_vram_gb": 1,
+        "ram_gb": 2,
+        "disk_gb": 1,
+        "notes": "CPU fp32 约0.6GB 权重，普通电脑可运行"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "SmolVLM",
+        "视觉理解",
+        "多模态",
+        "轻量",
+        "Apache"
+      ]
+    },
+    {
+      "id": "janus-pro-7b",
+      "category": "llm",
+      "name": "Janus-Pro 7B",
+      "repo": "deepseek-ai/Janus-Pro-7B",
+      "size_gb": 14.85,
+      "engine": [
+        "transformers"
+      ],
+      "license": "mit",
+      "trending": true,
+      "description": "DeepSeek Janus-Pro 7B 统一多模态模型（解耦视觉编码），支持图像理解；transformers 原生支持。该模型亦具备自回归图像生成能力，本运行时当前接通的是图像理解对话，图像生成将在后续版本接入。",
+      "sources": [
+        "https://huggingface.co/deepseek-ai/Janus-Pro-7B/",
+        "https://hf-mirror.com/deepseek-ai/Janus-Pro-7B/"
+      ],
+      "primary_url": "https://huggingface.co/deepseek-ai/Janus-Pro-7B/",
+      "hardware": {
+        "vram_gb": 16,
+        "min_vram_gb": 8,
+        "ram_gb": 16,
+        "disk_gb": 16,
+        "notes": "FP16 约15GB；8bit 约8GB"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "Janus",
+        "视觉理解",
+        "多模态",
+        "统一模型",
+        "MIT"
+      ]
+    },
+    {
+      "id": "minicpm-v-4.6",
+      "category": "llm",
+      "name": "MiniCPM-V 4.6",
+      "repo": "openbmb/MiniCPM-V-4.6",
+      "size_gb": 2.62,
+      "engine": [
+        "transformers"
+      ],
+      "license": "apache-2.0",
+      "trending": true,
+      "description": "面壁 MiniCPM-V 4.6 高效视觉语言模型，单文件权重，可对图片提问；transformers 原生支持。",
+      "sources": [
+        "https://huggingface.co/openbmb/MiniCPM-V-4.6/",
+        "https://hf-mirror.com/openbmb/MiniCPM-V-4.6/"
+      ],
+      "primary_url": "https://huggingface.co/openbmb/MiniCPM-V-4.6/",
+      "hardware": {
+        "vram_gb": 3,
+        "min_vram_gb": 2,
+        "ram_gb": 6,
+        "disk_gb": 3,
+        "notes": "单 safetensors 约2.6GB"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ]
+      },
+      "tags": [
+        "MiniCPM",
+        "视觉理解",
+        "多模态",
+        "高效",
+        "Apache"
+      ]
     }
   ],
   "gguf_repos": [

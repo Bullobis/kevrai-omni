@@ -25,6 +25,7 @@ import { initAsr } from "./modules/asr.js";
 import { initEmbeddings } from "./modules/embeddings.js";
 import { initSeparation } from "./modules/separation.js";
 import { initPiper } from "./modules/piper.js";
+import { initMultimodal } from "./modules/multimodal.js";
 import { renderEngines, wireEngineUpdates } from "./modules/engines.js";
 import { wireSettings, openSettings, closeSettings } from "./modules/settings.js";
 import { wireCompare, openCompare } from "./modules/compare.js";
@@ -286,6 +287,13 @@ function switchView(name) {
     if (root && !root.dataset.rendered) {
       root.dataset.rendered = "1";
       initPiper().catch((e) => toast(t("piper.failed", { err: e.message }), { kind: "err" }));
+    }
+  }
+  if (name === "multimodal") {
+    const root = document.getElementById("pane-multimodal");
+    if (root && !root.dataset.rendered) {
+      root.dataset.rendered = "1";
+      initMultimodal().catch((e) => toast(t("multimodal.failed", { err: e.message }), { kind: "err" }));
     }
   }
   // v2.7.0 — Kevrai Agent page (init once).
