@@ -129,6 +129,10 @@
 
 /* 关于页：版本号 + 链接 */
 .settings-about { display: flex; flex-direction: column; gap: 10px; }
+.settings-about .about-logo {
+  width: 72px; height: 72px; border-radius: 16px; display: block;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.28); margin-bottom: 2px;
+}
 .settings-about .about-version {
   font-size: var(--fs-lg, 18px);
   font-weight: 600;
