@@ -11,6 +11,9 @@ import {
   toggleCompare, isInCompare, registerModel,
 } from "./compare.js";
 import { t } from "./i18n.js";
+import {
+  supportsVersionSelect, openVersionSelector,
+} from "./version-select.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -360,6 +363,20 @@ function syncSelectedCards() {
 }
 
 async function installItem(item) {
+  // 远程 hub 模型（hf/modelscope + repo）：安装前先弹版本/量化选择面板。
+  //   · 用户取消（Esc/×/遮罩）→ 直接返回，什么都不装；
+  //   · 选定具体 .gguf → 原安装流程之上追加该文件的下载（现有下载浮层展示进度）；
+  //   · 拉文件树失败 / 空列表 / 选「使用默认版本」→ 落回原有默认安装行为；
+  //   · 不支持选择的模型（curated / MNN / 引擎本身）→ 直接走原行为。
+  let pickedFile = null;
+  if (supportsVersionSelect(item)) {
+    try {
+      const sel = await openVersionSelector(item);
+      if (sel === null) return;                 // 用户取消：中止安装
+      if (sel && typeof sel.file === "string" && sel.file) pickedFile = sel.file;
+    } catch (_) { /* 面板异常：落回默认安装 */ }
+  }
+
   const engines = Array.isArray(item.engine) ? item.engine
                 : (item.engine ? [item.engine] : []);
   if (!engines.length) {
@@ -373,6 +390,16 @@ async function installItem(item) {
       ? t("toast.installingEngineAlt", { engine: engines[0], alt: engines.slice(1).join("/") })
       : t("toast.installingEngine", { engine: engines[0] }), { kind: "ok" });
   } catch (_) { /* toast shown */ }
+
+  // 用户选定了具体量化文件：带文件名走 hub 下载（失败由 api 包装弹 toast）。
+  if (pickedFile) {
+    try {
+      await api.hubDownload({
+        hub: item.hub, repo: item.repo, files: [pickedFile], auto_pick: true,
+      });
+      toast(t("version.downloadStarted", { file: pickedFile }), { kind: "ok" });
+    } catch (_) { /* toast shown */ }
+  }
 }
 
 export function populateCategoryFilter() {

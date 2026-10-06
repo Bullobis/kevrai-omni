@@ -783,5 +783,16 @@
     "markAllRead": "Mark all read",
     "clear": "Clear",
     "delete": "Delete"
+  },
+  "version": {
+    "title": "Choose version",
+    "loading": "Reading repository file list…",
+    "loadFailed": "Could not read the remote file list. Check your network and retry.",
+    "useDefault": "Use default version",
+    "recommended": "Recommended",
+    "confirm": "Install this version",
+    "cancel": "Cancel",
+    "empty": "No GGUF weight files found in this repository",
+    "downloadStarted": "Download started: {file}"
   }
 }
