@@ -36,7 +36,7 @@
       "sources": [
         "https://pypi.org/simple/vllm/",
         "https://mirrors.aliyun.com/pypi/simple/vllm/",
-        "https://mirrors.tuna.tsinghua.edu.cn/pypi/simple/vllm/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/vllm/",
         "https://mirrors.huaweicloud.com/repository/pypi/simple/vllm/",
         "https://mirrors.cloud.tencent.com/pypi/simple/vllm/",
         "https://pypi.tuna.tsinghua.edu.cn/simple/vllm/",
@@ -58,7 +58,7 @@
       "sources": [
         "https://pypi.org/simple/mnn/",
         "https://mirrors.aliyun.com/pypi/simple/mnn/",
-        "https://mirrors.tuna.tsinghua.edu.cn/pypi/simple/mnn/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/mnn/",
         "https://mirrors.huaweicloud.com/repository/pypi/simple/mnn/",
         "https://mirrors.cloud.tencent.com/pypi/simple/mnn/",
         "https://pypi.tuna.tsinghua.edu.cn/simple/mnn/",
@@ -90,7 +90,7 @@
       "sources": [
         "https://pypi.org/simple/onnxruntime-gpu/",
         "https://mirrors.aliyun.com/pypi/simple/onnxruntime-gpu/",
-        "https://mirrors.tuna.tsinghua.edu.cn/pypi/simple/onnxruntime-gpu/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/onnxruntime-gpu/",
         "https://mirrors.huaweicloud.com/repository/pypi/simple/onnxruntime-gpu/",
         "https://mirrors.cloud.tencent.com/pypi/simple/onnxruntime-gpu/",
         "https://pypi.tuna.tsinghua.edu.cn/simple/onnxruntime-gpu/",
@@ -112,7 +112,7 @@
       "sources": [
         "https://pypi.org/simple/diffusers/",
         "https://mirrors.aliyun.com/pypi/simple/diffusers/",
-        "https://mirrors.tuna.tsinghua.edu.cn/pypi/simple/diffusers/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/diffusers/",
         "https://mirrors.huaweicloud.com/repository/pypi/simple/diffusers/",
         "https://mirrors.cloud.tencent.com/pypi/simple/diffusers/",
         "https://pypi.tuna.tsinghua.edu.cn/simple/diffusers/",
@@ -179,7 +179,7 @@
       "sources": [
         "https://pypi.org/simple/kokoro/",
         "https://mirrors.aliyun.com/pypi/simple/kokoro/",
-        "https://mirrors.tuna.tsinghua.edu.cn/pypi/simple/kokoro/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/kokoro/",
         "https://mirrors.huaweicloud.com/repository/pypi/simple/kokoro/",
         "https://mirrors.cloud.tencent.com/pypi/simple/kokoro/",
         "https://pypi.tuna.tsinghua.edu.cn/simple/kokoro/",
@@ -369,7 +369,7 @@
       "sources": [
         "https://pypi.org/simple/insightface/",
         "https://mirrors.aliyun.com/pypi/simple/insightface/",
-        "https://mirrors.tuna.tsinghua.edu.cn/pypi/simple/insightface/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/insightface/",
         "https://mirrors.huaweicloud.com/repository/pypi/simple/insightface/",
         "https://mirrors.cloud.tencent.com/pypi/simple/insightface/",
         "https://pypi.tuna.tsinghua.edu.cn/simple/insightface/",
@@ -541,7 +541,7 @@
       "sources": [
         "https://pypi.org/simple/transformers/",
         "https://mirrors.aliyun.com/pypi/simple/transformers/",
-        "https://mirrors.tuna.tsinghua.edu.cn/pypi/simple/transformers/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/transformers/",
         "https://mirrors.huaweicloud.com/repository/pypi/simple/transformers/",
         "https://mirrors.cloud.tencent.com/pypi/simple/transformers/",
         "https://pypi.tuna.tsinghua.edu.cn/simple/transformers/",

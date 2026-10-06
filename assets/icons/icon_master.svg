@@ -1,57 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="Kevrai Omni">
   <!--
-    Kevrai Omni - icon master 3.6.1 (vector source of truth)
+    Kevrai Omni - icon master (vector source of truth)
 
-    3.6.1 重新设计：在原「六边形 + K」识别基础上做精致化 ——
-      * 深藏蓝径向底（午夜蓝 → 深蓝黑），扁平中带微妙层次
-      * 六边形与 K 使用 cyan→teal 柔和渐变（#22d3ee → #34d399），带克制辉光
-      * 外围 4 个节点 + 细连线，暗示本地神经网络 / 多模态连接
-    栅格化产物由本文件派生（rasterize.sh 需要 rsvg-convert；无头环境用 PIL
-    从导出的 1024 PNG 重采样，流程等价）：
+    栅格化产物全部由本文件派生，请勿直接编辑那些文件：
       assets/icons/icon-{16,24,32,48,64,128,256,512,1024}.png
       assets/icons/icon.ico
       assets/icons/icon-preview-on-white.png
 
-    几何为手工矢量：六边形为尖顶（上下顶点），中心 (512,512)，外接半径 300。
+    几何由 logo-final.png (1024x1024) 轮廓追踪得到，不是手工估算：
+      主形状  cv2.findContours(RETR_CCOMP) + approxPolyDP(eps=0.002*周长)
+      内六边形 逐顶点定位（实测线宽 1px，峰值亮度 87/255，约 #2E5A78）
+    fill-rule="evenodd" 用来挖空笔画之间的封闭区域。
+
+    注意：外六边形并非正六边形。实测顶点横向 209..815、纵向 169..849，
+    高宽比约 1.12 —— 不要"顺手修正"成正六边形，那是错的。
   -->
   <defs>
-    <radialGradient id="bg" cx="0.5" cy="0.42" r="0.82">
-      <stop offset="0" stop-color="#0e2a52"/>
-      <stop offset="0.55" stop-color="#071c3d"/>
-      <stop offset="1" stop-color="#04102a"/>
+    <radialGradient id="bg" cx="0.5" cy="0.44" r="0.78">
+      <stop offset="0" stop-color="#0B2350"/>
+      <stop offset="0.55" stop-color="#061A3C"/>
+      <stop offset="1" stop-color="#030D24"/>
     </radialGradient>
-    <linearGradient id="accent" x1="0.15" y1="0" x2="0.85" y2="1">
-      <stop offset="0" stop-color="#22d3ee"/>
-      <stop offset="0.55" stop-color="#2dd4e6"/>
-      <stop offset="1" stop-color="#34d399"/>
+    <linearGradient id="accent" x1="0" y1="0" x2="0.2" y2="1">
+      <stop offset="0" stop-color="#22F7F8"/>
+      <stop offset="0.5" stop-color="#00F4F5"/>
+      <stop offset="1" stop-color="#00D8E4"/>
     </linearGradient>
-    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="10" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
   </defs>
-
   <rect width="1024" height="1024" fill="url(#bg)"/>
 
-  <!-- 外围节点 + 细连线（本地网络 / 多模态，克制点缀） -->
-  <g stroke="#2fb6d4" stroke-width="3" opacity="0.55" fill="none">
-    <path d="M330 330 L250 300 M694 330 L774 300 M300 690 L232 730 M724 690 L792 730"/>
-  </g>
-  <g fill="#38d6ef" opacity="0.9">
-    <circle cx="250" cy="300" r="9"/>
-    <circle cx="774" cy="300" r="9"/>
-    <circle cx="232" cy="730" r="9"/>
-    <circle cx="792" cy="730" r="9"/>
-  </g>
+  <!-- 内层装饰六边形：1px 细线 -->
+  <path d="M511 237 L756 375 L756 619 L515 781 L270 651 L270 369 Z"
+        fill="none" stroke="#2E5A78" stroke-width="1.6" stroke-linejoin="round" opacity="0.85"/>
 
-  <!-- 主六边形 + K（渐变描边，带轻微辉光） -->
-  <g filter="url(#glow)" fill="none" stroke="url(#accent)" stroke-width="42"
-     stroke-linejoin="round" stroke-linecap="round">
-    <!-- 尖顶六边形：中心 512,512，外接半径 300 -->
-    <path d="M512 212 L772 362 L772 662 L512 812 L252 662 L252 362 Z"/>
-    <!-- K 笔画：竖干 + 上斜 + 下斜 -->
-    <path d="M410 360 L410 664"/>
-    <path d="M410 512 L612 360"/>
-    <path d="M410 512 L612 664"/>
+  <!-- 主形状 -->
+  <g fill="url(#accent)" fill-rule="evenodd">
+    <!-- area=51776 px, bbox x208..815 y168..849 -->
+    <path d="M511 168 L211 333 L208 674 L217 688 L495 843 L517 849 L813 681 L815 339 L804 326 ZM511 195 L790 348 L790 667 L513 823 L233 667 L233 348 Z"/>
+    <!-- area=45983 px, bbox x344..700 y349..666 -->
+    <path d="M698 356 L693 352 L593 352 L586 369 L472 484 L469 355 L361 353 L357 387 L344 405 L347 420 L357 429 L357 561 L345 576 L345 589 L357 603 L359 659 L463 662 L469 658 L472 532 L586 645 L592 663 L694 661 L700 650 L698 615 L581 500 L640 440 L653 441 L665 434 L671 422 L668 405 L699 374 ZM446 526 L447 527 L447 637 L446 638 L381 638 L380 637 L380 603 L388 597 L393 587 L393 578 L392 575 ZM492 520 L493 519 L550 519 L554 523 L559 525 L566 525 L571 523 L676 626 L676 637 L675 638 L615 638 L609 632 L603 631 ZM671 376 L654 394 L643 393 L636 395 L629 400 L623 411 L624 425 L561 488 L554 490 L548 497 L493 497 L492 496 L603 383 L609 381 L614 375 L670 375 ZM446 375 L447 376 L447 493 L441 498 L439 502 L438 513 L384 563 L382 563 L379 560 L380 559 L380 465 L379 464 L380 432 L379 430 L389 421 L393 412 L393 404 L389 395 L380 387 L380 376 L381 375 Z"/>
   </g>
 </svg>
