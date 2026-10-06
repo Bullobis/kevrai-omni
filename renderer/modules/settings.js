@@ -139,6 +139,9 @@ export function wireSettings() {
   });
 
   $("#btn-settings-cancel").addEventListener("click", closeSettings);
+  // 右上角 ×（data-action=close-settings）此前无任何绑定、是死按钮，补接线。
+  const xClose = $('[data-action=close-settings]');
+  if (xClose) xClose.addEventListener("click", closeSettings);
   $("#btn-settings-save").addEventListener("click", async () => {
     const next = readForm();
     try {

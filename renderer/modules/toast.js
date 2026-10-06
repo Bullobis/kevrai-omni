@@ -14,6 +14,8 @@
 //   options.msg:   optional body text when called as toast(null, { title, msg })
 "use strict";
 
+import { recordNotification } from "./notification-center.js";
+
 const STACK = [];
 const MAX = 4;
 let hostEl = null;
@@ -74,6 +76,9 @@ export function toast(msg, options = {}) {
   // Body text: positional msg wins (legacy callers), else options.msg.
   const hasPositional = msg !== undefined && msg !== null && msg !== "";
   const body = String(hasPositional ? msg : (opts.msg || ""));
+
+  // 同步到通知中心历史（即使该 toast 之后被 MAX 裁剪，历史仍保留）。
+  recordNotification({ kind, title, body });
 
   ensureHost();
   const el = document.createElement("div");
