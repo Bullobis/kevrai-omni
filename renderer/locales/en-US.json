@@ -24,7 +24,8 @@
     "gguf": "GGUF Repos",
     "pending": "Awaiting Open Weights",
     "environments": "Environments",
-    "settings": "Settings"
+    "settings": "Settings",
+    "asr": "Speech to Text"
   },
   "header": {
     "downloads": "Downloads",
@@ -802,5 +803,24 @@
       "sidecarHealth": "Sidecar health check",
       "clawdchatHeartbeat": "ClawdChat heartbeat"
     }
+  },
+  "asr": {
+    "title": "Speech to Text",
+    "engineReady": "Engine ready {ver}",
+    "engineMissing": "Engine not installed",
+    "missingHint": "Install the Faster Whisper (CTranslate2) speech recognition engine.",
+    "install": "Install engine",
+    "audioFile": "Audio file",
+    "model": "Model",
+    "language": "Language",
+    "task": "Task",
+    "taskTranscribe": "Transcribe",
+    "taskTranslate": "Translate to English",
+    "format": "Output format",
+    "fmtVerbose": "Verbose JSON",
+    "run": "Transcribe",
+    "pickFirst": "Please choose an audio file first",
+    "failed": "Transcription failed: {err}",
+    "engineInstalled": "Engine installed"
   }
 }

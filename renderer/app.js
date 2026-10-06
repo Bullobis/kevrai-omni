@@ -21,6 +21,7 @@ import { initModels, renderModelGrid, populateCategoryFilter,
          wireLogoFallbacks, getVgrid, hideGridSkeleton } from "./modules/models.js";
 import { initSearch, runSearch } from "./modules/search.js";
 import { initLtx } from "./modules/ltx.js";
+import { initAsr } from "./modules/asr.js";
 import { renderEngines, wireEngineUpdates } from "./modules/engines.js";
 import { wireSettings, openSettings, closeSettings } from "./modules/settings.js";
 import { wireCompare, openCompare } from "./modules/compare.js";
@@ -253,6 +254,14 @@ function switchView(name) {
     if (root && !root.dataset.rendered) {
       root.dataset.rendered = "1";
       initLtx().catch((e) => toast(t("toast.ltxPageFailed", { err: e.message }), { kind: "err" }));
+    }
+  }
+  // v3.16.0 — Faster Whisper speech recognition page (init once).
+  if (name === "asr") {
+    const root = document.getElementById("pane-asr");
+    if (root && !root.dataset.rendered) {
+      root.dataset.rendered = "1";
+      initAsr().catch((e) => toast(t("asr.failed", { err: e.message }), { kind: "err" }));
     }
   }
   // v2.7.0 — Kevrai Agent page (init once).

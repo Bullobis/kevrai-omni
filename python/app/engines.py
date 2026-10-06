@@ -705,10 +705,17 @@ def save_status(root: Path, status: dict[str, Any]) -> None:
 
 
 @_serialized_install
-def install_pip_engine(name: str, root: Path) -> InstallResult:
-    target = engine_install_dir(root) / f"pip-{name}"
+def install_pip_engine(
+    name: str,
+    root: Path,
+    eid: str | None = None,
+    extra: list[str] | None = None,
+) -> InstallResult:
+    dirname = eid or name
+    target = engine_install_dir(root) / f"pip-{dirname}"
     target.mkdir(parents=True, exist_ok=True)
-    cmd = [sys.executable, "-m", "pip", "install", "--target", str(target), name]
+    requirements = [name, *list(extra or [])]
+    cmd = [sys.executable, "-m", "pip", "install", "--target", str(target), *requirements]
     idx = _pip_index()
     if idx:
         cmd += ["-i", idx, "--extra-index-url", "https://pypi.org/simple"]
@@ -719,11 +726,11 @@ def install_pip_engine(name: str, root: Path) -> InstallResult:
         ok = proc.returncode == 0
         msg = (proc.stdout[-500:] if ok else proc.stderr[-500:]) or ""
         return InstallResult(
-            engine_id=name, path=str(target), ok=ok,
+            engine_id=dirname, path=str(target), ok=ok,
             message=msg.strip() or ("installed" if ok else "install failed"),
         )
     except Exception as e:
-        return InstallResult(engine_id=name, path=str(target), ok=False, message=f"exception: {e}")
+        return InstallResult(engine_id=dirname, path=str(target), ok=False, message=f"exception: {e}")
 
 
 @_serialized_install
@@ -775,7 +782,9 @@ def download_zip_engine(url: str, root: Path, engine_id: str) -> InstallResult:
 def install_engine(engine: dict[str, Any], root: Path) -> InstallResult:
     eid = engine.get("id", "")
     if engine.get("install") == "pip" and engine.get("pypi"):
-        return install_pip_engine(engine["pypi"], root)
+        return install_pip_engine(
+            engine["pypi"], root, eid=eid, extra=engine.get("pip_extra")
+        )
 
     plat = _platform_key()
     platforms = engine.get("platforms", {})
