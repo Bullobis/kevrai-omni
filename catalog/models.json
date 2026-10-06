@@ -10810,6 +10810,169 @@
           "recommended": false
         }
       ]
+    },
+    {
+      "id": "pyannote-diarization-community-1",
+      "category": "audio",
+      "name": "pyannote speaker-diarization community-1",
+      "repo": "pyannote/speaker-diarization-community-1",
+      "size_gb": 0.5,
+      "engine": [
+        "python"
+      ],
+      "license": "CC-BY-4.0",
+      "trending": true,
+      "description": "pyannote 说话人分离流水线社区版，按说话人切分音频；首次运行会拉取分段/嵌入子模型。",
+      "sources": [
+        "https://huggingface.co/pyannote/speaker-diarization-community-1/",
+        "https://hf-mirror.com/pyannote/speaker-diarization-community-1/"
+      ],
+      "primary_url": "https://huggingface.co/pyannote/speaker-diarization-community-1/",
+      "hardware": {
+        "vram_gb": 0,
+        "min_vram_gb": 0,
+        "ram_gb": 4,
+        "disk_gb": 1,
+        "notes": "CPU 可跑，子模型合计约百MB级"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "audio"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "输入音频，输出说话人分段"
+      },
+      "tags": [
+        "音频",
+        "说话人分离",
+        "diarization",
+        "pyannote",
+        "热门"
+      ]
+    },
+    {
+      "id": "gliner2.5",
+      "category": "llm",
+      "name": "GLiNER 2.5 Decide",
+      "repo": "fastino/GLiNER2.5-Decide",
+      "size_gb": 2,
+      "engine": [
+        "python",
+        "llama.cpp"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "GLiNER 2.5 命名实体识别，可用任意自然语言类型标签零样本抽取实体。",
+      "sources": [
+        "https://huggingface.co/fastino/GLiNER2.5-Decide/",
+        "https://hf-mirror.com/fastino/GLiNER2.5-Decide/"
+      ],
+      "primary_url": "https://huggingface.co/fastino/GLiNER2.5-Decide/",
+      "hardware": {
+        "vram_gb": 2,
+        "min_vram_gb": 0,
+        "ram_gb": 8,
+        "disk_gb": 2,
+        "notes": "GPU 加速，CPU 亦可"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "文本 NER"
+      },
+      "tags": [
+        "NER",
+        "命名实体识别",
+        "GLiNER",
+        "信息抽取",
+        "热门"
+      ]
+    },
+    {
+      "id": "clm-v0.1-8b",
+      "category": "llm",
+      "name": "CLM v0.1 (8B reranker/verifier)",
+      "repo": "Contrastive-LM/CLM-v0.1-8B",
+      "size_gb": 0.1,
+      "engine": [
+        "python"
+      ],
+      "license": "Apache-2.0",
+      "trending": false,
+      "description": "对比学习重排序/验证器，仅含状态与动作投影头；需搭配冻结的 Qwen3-8B 编码器使用。",
+      "sources": [
+        "https://huggingface.co/Contrastive-LM/CLM-v0.1-8B/",
+        "https://hf-mirror.com/Contrastive-LM/CLM-v0.1-8B/"
+      ],
+      "primary_url": "https://huggingface.co/Contrastive-LM/CLM-v0.1-8B/",
+      "hardware": {
+        "vram_gb": 16,
+        "min_vram_gb": 8,
+        "ram_gb": 32,
+        "disk_gb": 16,
+        "notes": "投影头仅0.07GB，但需 Qwen3-8B 编码器（约15GB）"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "重排序/验证，依赖 Qwen3-8B"
+      },
+      "tags": [
+        "reranker",
+        "重排序",
+        "verifier",
+        "对比学习",
+        "Agent"
+      ]
+    },
+    {
+      "id": "frognano-4b",
+      "category": "llm",
+      "name": "Microsoft FrogNano 4B (2609)",
+      "repo": "microsoft/FrogNano-4B-2609",
+      "size_gb": 9,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "MIT",
+      "trending": false,
+      "description": "微软 4B 小型模型，MIT 许可，适合本地轻量部署。",
+      "sources": [
+        "https://huggingface.co/microsoft/FrogNano-4B-2609/",
+        "https://hf-mirror.com/microsoft/FrogNano-4B-2609/"
+      ],
+      "primary_url": "https://huggingface.co/microsoft/FrogNano-4B-2609/",
+      "hardware": {
+        "vram_gb": 8,
+        "min_vram_gb": 6,
+        "ram_gb": 16,
+        "disk_gb": 9,
+        "notes": "FP16 约8.7GB"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "纯文本"
+      },
+      "tags": [
+        "LLM",
+        "小模型",
+        "Microsoft",
+        "MIT",
+        "本地部署"
+      ]
     }
   ],
   "gguf_repos": [

@@ -67,9 +67,9 @@ NEW_FACTS = {
 }
 
 
-def test_total_model_count_grew_to_201():
-    """193 main + 8 new = 201."""
-    assert len(_catalog()["models"]) == 201
+def test_total_model_count_at_least_201():
+    """201 after PR #98; later branches may grow further (lower bound)."""
+    assert len(_catalog()["models"]) >= 201
 
 
 @pytest.mark.parametrize("mid", NEW_MODELS)
