@@ -885,8 +885,11 @@ html[data-theme="light"] .mnn-msg.user { color: #fff; }
 .agent-badge-fallback { background: rgba(255, 184, 107, 0.12); color: #ffb86b; border: 1px solid rgba(255, 184, 107, 0.3); }
 .agent-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--border, #333); border-radius: 10px; background: var(--bg, #121316); margin-bottom: 10px; }
 .agent-msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; line-height: 1.55; font-size: 13.5px; }
-.agent-msg-user { align-self: flex-end; background: var(--accent, #4a7dff); color: #fff; border-bottom-right-radius: 4px; }
+.agent-msg-user { align-self: flex-end; background: var(--accent, #4a7dff); color: #0b1020; border-bottom-right-radius: 4px; }
 .agent-msg-assistant { align-self: flex-start; background: var(--card, #1b1c1f); color: var(--fg, #ccc); border: 1px solid var(--border, #333); border-bottom-left-radius: 4px; }
+/* 与 .mnn-msg.user 同一套约定：深色主题下 --acc 是亮绿，用深色字(~8:1)；
+   浅色主题下 --acc 压成深绿，改白字(~4:1)，避免白字压亮绿只有 ~2.3:1。 */
+html[data-theme="light"] .agent-msg-user { color: #fff; }
 .agent-msg-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.6; margin-bottom: 4px; }
 .agent-msg-content { word-break: break-word; white-space: pre-wrap; }
 .agent-tools-used { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
@@ -1011,11 +1014,14 @@ button.ghost.icon svg.ic { width: 16px; height: 16px; }
   color: var(--fg); opacity: 0.9; border-radius: var(--r-2, 8px);
   transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
-.win-btn .ic { width: 16px; height: 16px; }
-.win-btn:hover { background: var(--card-hover, rgba(0,0,0,0.09)); color: var(--fg); opacity: 1; }
-.win-btn:active { background: var(--card-active, rgba(0,0,0,0.14)); }
+/* display:block is required: without it an inline SVG collapses to a dot
+   inside the flex button (the root cause of the "buttons invisible" bug). */
+.win-btn .ic { display: block; width: 16px; height: 16px; }
+.win-btn:hover { background: var(--card-hover, rgba(255,255,255,0.08)); color: var(--fg); opacity: 1; }
+.win-btn:active { background: var(--card-active, rgba(127,127,127,0.18)); }
 .win-btn-close:hover { background: var(--win-close, #e81123); color: #fff; opacity: 1; }
 .win-btn-close:active { background: var(--win-close-active, #c50f1f); color: #fff; opacity: 1; }
+.win-btn-close:hover svg { stroke: #fff; }
 body.is-mac .win-ctl { display: none; }
 /* Draggable title bar on frameless builds; interactive controls stay clickable. */
 .titlebar { -webkit-app-region: drag; }
