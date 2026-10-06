@@ -31,6 +31,16 @@ class ModelRouter:
         # ("transformers", "owner/repo").
         self._backend: tuple[str | None, str | None] = self._load_state()
         self._last_model_name: str = ""
+        # A single shared brain manager so the (lazily loaded) model is loaded
+        # once and reused across ReAct turns, not reloaded on every turn.
+        self._brain_manager: Any = None
+
+    def _brain(self) -> Any:
+        if self._brain_manager is None:
+            from ..llm_runtime import TextBrainManager
+
+            self._brain_manager = TextBrainManager()
+        return self._brain_manager
 
     # ------------------------------------------------------------------
     # State persistence
@@ -138,9 +148,7 @@ class ModelRouter:
 
         if kind == "transformers":
             try:
-                from ..llm_runtime import TextBrainManager
-
-                manager = TextBrainManager()
+                manager = self._brain()
                 text = (manager.generate(repo or "", prompt, system=system,
                                          max_new_tokens=max_new_tokens)
                         or "").strip()

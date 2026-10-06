@@ -12,6 +12,7 @@ chat, never just to report readiness.
 from __future__ import annotations
 
 import logging
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +55,10 @@ class TextBrainManager:
         self._repo: str | None = None
         self._model: Any = None
         self._tokenizer: Any = None
+        self._torch: Any = None
+        # Loading and generation are not safe to run concurrently on one model;
+        # serialize brain use across agent sessions/threads.
+        self._lock = threading.Lock()
 
     # ------------------------------------------------------------------
     def _open(self, repo: str) -> None:
@@ -63,7 +68,8 @@ class TextBrainManager:
             raise BrainParamError("brain model must be an 'owner/name' repo id")
         try:
             tf = import_transformers(self.data_root)
-            torch = __import__("torch")
+            import torch  # engine torch, resolvable after the path bootstrap
+
             tokenizer = tf.AutoTokenizer.from_pretrained(repo)
             model = tf.AutoModelForCausalLM.from_pretrained(
                 repo, torch_dtype="auto"
@@ -81,6 +87,25 @@ class TextBrainManager:
         self._repo = repo
 
     # ------------------------------------------------------------------
+    def _context_size(self) -> int:
+        """Best-effort maximum context the loaded model supports."""
+        candidates: list[Any] = [
+            getattr(self._tokenizer, "model_max_length", None),
+            getattr(getattr(self._model, "config", None),
+                    "max_position_embeddings", None),
+        ]
+        for cand in candidates:
+            if cand is None:
+                continue
+            try:
+                value = int(cand)
+            except (TypeError, ValueError):
+                continue
+            # Tokenizers sometimes expose a huge sentinel (e.g. 1e30).
+            if 128 <= value <= 2_000_000:
+                return value
+        return 4096
+
     def generate(
         self,
         repo: str,
@@ -94,25 +119,59 @@ class TextBrainManager:
         max_new_tokens = int(max_new_tokens)
         if not (1 <= max_new_tokens <= 4096):
             raise BrainParamError("max_new_tokens must be within [1,4096]")
-        self._open(repo)
-        try:
-            # The agent pre-assembles a full ReAct prompt (system instructions +
-            # scratchpad, ending in "Thought: "), so we continue it as a raw
-            # completion. Wrapping an instruct model's chat template here would
-            # make it answer conversationally instead of emitting the next
-            # Thought/Action. A mild repetition penalty keeps greedy decoding
-            # from falling into token loops on weak models.
-            text = f"{system}\n\n{prompt}" if system and str(system).strip() else prompt
-            inputs = self._tokenizer(text, return_tensors="pt")
-            input_len = int(inputs["input_ids"].shape[1])
-            with self._torch.no_grad():
-                output = self._model.generate(
-                    **inputs,
-                    max_new_tokens=max_new_tokens,
-                    do_sample=False,
-                    repetition_penalty=1.1,
+        with self._lock:
+            self._open(repo)
+            try:
+                torch = self._torch
+                tokenizer = self._tokenizer
+                sys_text = (
+                    f"{system}\n\n" if system and str(system).strip() else ""
                 )
-            generated = output[0][input_len:]
-            return self._tokenizer.decode(generated, skip_special_tokens=True).strip()
-        except Exception as e:  # noqa: BLE001
-            raise BrainModelError(f"大脑生成失败: {e}") from e
+                full_text = f"{sys_text}{prompt}"
+                ids = tokenizer(full_text)["input_ids"]
+                budget = self._context_size() - max_new_tokens
+                if budget < 64:
+                    raise BrainParamError(
+                        "max_new_tokens too large for the model context window"
+                    )
+                if len(ids) > budget:
+                    # Keep the (short) system prefix plus the most recent
+                    # scratchpad — drop the oldest intermediate steps so the
+                    # trailing "Thought:" anchor survives.
+                    if sys_text:
+                        sys_ids = tokenizer(sys_text)["input_ids"]
+                        if len(sys_ids) < budget:
+                            p_ids = tokenizer(
+                                prompt, add_special_tokens=False
+                            )["input_ids"]
+                            ids = sys_ids + p_ids[-(budget - len(sys_ids)):]
+                        else:
+                            ids = sys_ids[-budget:]
+                    else:
+                        ids = ids[-budget:]
+                    log.info(
+                        "brain prompt exceeded context; truncated to %d tokens",
+                        len(ids),
+                    )
+                input_ids = torch.tensor([ids], dtype=torch.long)
+                # The agent pre-assembles a full ReAct prompt (system
+                # instructions + scratchpad, ending in "Thought: "), so we
+                # continue it as a raw completion. Wrapping an instruct model's
+                # chat template would make it answer conversationally instead
+                # of emitting the next Thought/Action. A mild repetition
+                # penalty keeps greedy decoding from falling into token loops.
+                with torch.no_grad():
+                    output = self._model.generate(
+                        input_ids,
+                        max_new_tokens=max_new_tokens,
+                        do_sample=False,
+                        repetition_penalty=1.1,
+                    )
+                generated = output[0][len(ids):]
+                return tokenizer.decode(
+                    generated, skip_special_tokens=True
+                ).strip()
+            except BrainError:
+                raise
+            except Exception as e:  # noqa: BLE001
+                raise BrainModelError(f"大脑生成失败: {e}") from e
