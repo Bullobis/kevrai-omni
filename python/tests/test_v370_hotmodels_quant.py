@@ -67,9 +67,9 @@ NEW_FACTS = {
 }
 
 
-def test_total_model_count_grew_to_201():
-    """193 main + 8 new = 201."""
-    assert len(_catalog()["models"]) == 201
+def test_total_model_count_at_least_201():
+    """201 after PR #98; later branches may grow further (lower bound)."""
+    assert len(_catalog()["models"]) >= 201
 
 
 @pytest.mark.parametrize("mid", NEW_MODELS)
@@ -119,7 +119,7 @@ def test_flash_next_is_multimodal():
 # ---------------------------------------------------------------------------
 # quantizations data structure
 # ---------------------------------------------------------------------------
-QUANT_ORDER = ["Q3_K_M", "Q4_K", "Q4_K_M", "Q5_K_M", "Q6_K", "Q8_0", "F16"]
+QUANT_ORDER = ["Q2_K", "Q3_K_M", "IQ4_NL", "Q4_K", "Q4_K_M", "Q5_K_M", "Q6_K", "Q8_0", "F16", "LOSSLESS"]
 
 
 def test_at_least_30_models_declare_quantizations():

@@ -1831,7 +1831,7 @@
       "name": "APISR (Anime/Photo)",
       "repo": "camenduru/APISR",
       "gguf_repo": "",
-      "size_gb": 0.5,
+      "size_gb": 0.1,
       "engine": [
         "diffusers"
       ],
@@ -4500,7 +4500,7 @@
       "name": "MiniMax-Music3（W4A8 低显存 ComfyUI）",
       "repo": "NidAll/MiniMax-Music3-W4A8",
       "gguf_repo": "",
-      "size_gb": 13,
+      "size_gb": 2,
       "engine": [
         "comfyui"
       ],
@@ -4539,7 +4539,8 @@
           "audio"
         ],
         "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
-      }
+      },
+      "notes": "W4A8 量化 DiT 约 1.3GB；全精度 MiniMax-Music3 体积更大。"
     },
     {
       "id": "minimax-music3-lora-fiona-crapple",
@@ -6863,7 +6864,18 @@
         "多模态",
         "热门",
         "语言模型"
-      ]
+      ],
+      "quantizations": [
+        {
+          "id": "Q2_K",
+          "label": "Q2_K",
+          "file_quant": "Q2_K",
+          "size_gb": 340.6,
+          "vram_gb": 391.7,
+          "recommended": true
+        }
+      ],
+      "notes": "GGUF 含 Q2 主权重(340.6GB)与独立 Vision 编码器(0.9GB)，需一并下载。"
     },
     {
       "id": "glm-5.3-flash",
@@ -7216,6 +7228,16 @@
         "对话",
         "热门",
         "语言模型"
+      ],
+      "quantizations": [
+        {
+          "id": "LOSSLESS",
+          "label": "LOSSLESS",
+          "file_quant": "LOSSLESS",
+          "size_gb": 18.22,
+          "vram_gb": 21.0,
+          "recommended": true
+        }
       ]
     },
     {
@@ -7265,6 +7287,16 @@
         "对话",
         "热门",
         "语言模型"
+      ],
+      "quantizations": [
+        {
+          "id": "IQ4_NL",
+          "label": "IQ4_NL",
+          "file_quant": "IQ4_NL",
+          "size_gb": 18.72,
+          "vram_gb": 21.5,
+          "recommended": true
+        }
       ]
     },
     {
@@ -10396,7 +10428,7 @@
       "category": "llm",
       "name": "Nex N2.5 Pro (Agent)",
       "repo": "nex-agi/Nex-N2.5-Pro",
-      "gguf_repo": "bartowski/nex-agi_Nex-N2.5-mini-GGUF",
+      "gguf_repo": "bartowski/Nex-N2.5-Pro-GGUF",
       "size_gb": 379,
       "engine": [
         "llama.cpp"
@@ -10438,42 +10470,42 @@
       "quantizations": [
         {
           "id": "Q3_K_M",
-          "label": "Q3_K_M（极致压缩）",
+          "label": "Q3_K_M",
           "file_quant": "Q3_K_M",
-          "size_gb": 16.15,
-          "vram_gb": 18.6,
+          "size_gb": 176.91,
+          "vram_gb": 203.4,
           "recommended": false
         },
         {
           "id": "Q4_K_M",
-          "label": "Q4_K_M（推荐）",
+          "label": "Q4_K_M",
           "file_quant": "Q4_K_M",
-          "size_gb": 20.79,
-          "vram_gb": 23.9,
+          "size_gb": 233.61,
+          "vram_gb": 268.7,
           "recommended": true
         },
         {
           "id": "Q5_K_M",
           "label": "Q5_K_M",
           "file_quant": "Q5_K_M",
-          "size_gb": 25.13,
-          "vram_gb": 28.9,
+          "size_gb": 284.62,
+          "vram_gb": 327.3,
+          "recommended": false
+        },
+        {
+          "id": "Q6_K",
+          "label": "Q6_K",
+          "file_quant": "Q6_K",
+          "size_gb": 325.78,
+          "vram_gb": 374.6,
           "recommended": false
         },
         {
           "id": "Q8_0",
-          "label": "Q8_0（高保真）",
+          "label": "Q8_0",
           "file_quant": "Q8_0",
-          "size_gb": 34.38,
-          "vram_gb": 39.5,
-          "recommended": false
-        },
-        {
-          "id": "F16",
-          "label": "F16（全精度）",
-          "file_quant": "F16",
-          "size_gb": 66.29,
-          "vram_gb": 76.2,
+          "size_gb": 392.62,
+          "vram_gb": 451.5,
           "recommended": false
         }
       ]
@@ -10809,6 +10841,169 @@
           "vram_gb": 6.1,
           "recommended": false
         }
+      ]
+    },
+    {
+      "id": "pyannote-diarization-community-1",
+      "category": "audio",
+      "name": "pyannote speaker-diarization community-1",
+      "repo": "pyannote/speaker-diarization-community-1",
+      "size_gb": 0.5,
+      "engine": [
+        "python"
+      ],
+      "license": "CC-BY-4.0",
+      "trending": true,
+      "description": "pyannote 说话人分离流水线社区版，按说话人切分音频；首次运行会拉取分段/嵌入子模型。",
+      "sources": [
+        "https://huggingface.co/pyannote/speaker-diarization-community-1/",
+        "https://hf-mirror.com/pyannote/speaker-diarization-community-1/"
+      ],
+      "primary_url": "https://huggingface.co/pyannote/speaker-diarization-community-1/",
+      "hardware": {
+        "vram_gb": 0,
+        "min_vram_gb": 0,
+        "ram_gb": 4,
+        "disk_gb": 1,
+        "notes": "CPU 可跑，子模型合计约百MB级"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "audio"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "输入音频，输出说话人分段"
+      },
+      "tags": [
+        "音频",
+        "说话人分离",
+        "diarization",
+        "pyannote",
+        "热门"
+      ]
+    },
+    {
+      "id": "gliner2.5",
+      "category": "llm",
+      "name": "GLiNER 2.5 Decide",
+      "repo": "fastino/GLiNER2.5-Decide",
+      "size_gb": 2,
+      "engine": [
+        "python",
+        "llama.cpp"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "GLiNER 2.5 命名实体识别，可用任意自然语言类型标签零样本抽取实体。",
+      "sources": [
+        "https://huggingface.co/fastino/GLiNER2.5-Decide/",
+        "https://hf-mirror.com/fastino/GLiNER2.5-Decide/"
+      ],
+      "primary_url": "https://huggingface.co/fastino/GLiNER2.5-Decide/",
+      "hardware": {
+        "vram_gb": 2,
+        "min_vram_gb": 0,
+        "ram_gb": 8,
+        "disk_gb": 2,
+        "notes": "GPU 加速，CPU 亦可"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "文本 NER"
+      },
+      "tags": [
+        "NER",
+        "命名实体识别",
+        "GLiNER",
+        "信息抽取",
+        "热门"
+      ]
+    },
+    {
+      "id": "clm-v0.1-8b",
+      "category": "llm",
+      "name": "CLM v0.1 (8B reranker/verifier)",
+      "repo": "Contrastive-LM/CLM-v0.1-8B",
+      "size_gb": 0.1,
+      "engine": [
+        "python"
+      ],
+      "license": "Apache-2.0",
+      "trending": false,
+      "description": "对比学习重排序/验证器，仅含状态与动作投影头；需搭配冻结的 Qwen3-8B 编码器使用。",
+      "sources": [
+        "https://huggingface.co/Contrastive-LM/CLM-v0.1-8B/",
+        "https://hf-mirror.com/Contrastive-LM/CLM-v0.1-8B/"
+      ],
+      "primary_url": "https://huggingface.co/Contrastive-LM/CLM-v0.1-8B/",
+      "hardware": {
+        "vram_gb": 16,
+        "min_vram_gb": 8,
+        "ram_gb": 32,
+        "disk_gb": 16,
+        "notes": "投影头仅0.07GB，但需 Qwen3-8B 编码器（约15GB）"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "重排序/验证，依赖 Qwen3-8B"
+      },
+      "tags": [
+        "reranker",
+        "重排序",
+        "verifier",
+        "对比学习",
+        "Agent"
+      ]
+    },
+    {
+      "id": "frognano-4b",
+      "category": "llm",
+      "name": "Microsoft FrogNano 4B (2609)",
+      "repo": "microsoft/FrogNano-4B-2609",
+      "size_gb": 9,
+      "engine": [
+        "llama.cpp"
+      ],
+      "license": "MIT",
+      "trending": false,
+      "description": "微软 4B 小型模型，MIT 许可，适合本地轻量部署。",
+      "sources": [
+        "https://huggingface.co/microsoft/FrogNano-4B-2609/",
+        "https://hf-mirror.com/microsoft/FrogNano-4B-2609/"
+      ],
+      "primary_url": "https://huggingface.co/microsoft/FrogNano-4B-2609/",
+      "hardware": {
+        "vram_gb": 8,
+        "min_vram_gb": 6,
+        "ram_gb": 16,
+        "disk_gb": 9,
+        "notes": "FP16 约8.7GB"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "纯文本"
+      },
+      "tags": [
+        "LLM",
+        "小模型",
+        "Microsoft",
+        "MIT",
+        "本地部署"
       ]
     }
   ],
