@@ -11,6 +11,7 @@ import {
   toggleCompare, isInCompare, registerModel,
 } from "./compare.js";
 import { t } from "./i18n.js";
+import { pickQuantization } from "./quant-picker.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -366,13 +367,37 @@ async function installItem(item) {
     toast(t("toast.engineNotSpecified"), { kind: "warn" });
     return;
   }
-  // 安装首选引擎；支持多引擎的模型（如 llama.cpp + MNN）可在详情页选择其他引擎。
+  // Make sure the preferred engine is present; multi-engine models can pick a
+  // different engine from the detail panel.
   try {
     await api.installEngine(engines[0]);
-    toast(engines.length > 1
-      ? t("toast.installingEngineAlt", { engine: engines[0], alt: engines.slice(1).join("/") })
-      : t("toast.installingEngine", { engine: engines[0] }), { kind: "ok" });
-  } catch (_) { /* toast shown */ }
+  } catch (_) { /* toast shown by api */ }
+
+  // GGUF models ship several quantizations — let the user pick one, then
+  // download exactly the chosen shard(s).
+  if (item.gguf_repo) {
+    const pick = await pickQuantization(item, api);
+    if (!pick) return;  // user cancelled
+    if (pick.error) { toast(pick.error, { kind: "warn" }); return; }
+    if (pick.files && pick.files.length) {
+      try {
+        await api.hubDownload({
+          hub: "hf", repo: pick.repo || item.gguf_repo,
+          files: pick.files, auto_pick: false,
+        });
+        toast(t("toast.downloadStarted", { file: item.name || item.id }),
+              { kind: "ok" });
+      } catch (e) {
+        toast(String((e && e.message) || e), { kind: "err" });
+      }
+    }
+    return;
+  }
+
+  // Single-format models: the engine is the prerequisite (original behaviour).
+  toast(engines.length > 1
+    ? t("toast.installingEngineAlt", { engine: engines[0], alt: engines.slice(1).join("/") })
+    : t("toast.installingEngine", { engine: engines[0] }), { kind: "ok" });
 }
 
 export function populateCategoryFilter() {

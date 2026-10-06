@@ -1006,14 +1006,16 @@ button.ghost.icon svg.ic { width: 16px; height: 16px; }
   -webkit-app-region: no-drag;
 }
 .win-btn {
-  width: 34px; height: 30px; display: inline-flex; align-items: center;
+  width: 40px; height: 32px; display: inline-flex; align-items: center;
   justify-content: center; border: none; background: transparent; cursor: pointer;
-  color: var(--fg); opacity: 0.62; border-radius: var(--r-2, 8px);
+  color: var(--fg); opacity: 0.9; border-radius: var(--r-2, 8px);
   transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
-.win-btn .ic { width: 15px; height: 15px; }
-.win-btn:hover { background: var(--card-hover, rgba(0,0,0,0.07)); color: var(--fg); opacity: 1; }
-.win-btn-close:hover { background: var(--win-close); color: #fff; opacity: 1; }
+.win-btn .ic { width: 16px; height: 16px; }
+.win-btn:hover { background: var(--card-hover, rgba(0,0,0,0.09)); color: var(--fg); opacity: 1; }
+.win-btn:active { background: var(--card-active, rgba(0,0,0,0.14)); }
+.win-btn-close:hover { background: var(--win-close, #e81123); color: #fff; opacity: 1; }
+.win-btn-close:active { background: var(--win-close-active, #c50f1f); color: #fff; opacity: 1; }
 body.is-mac .win-ctl { display: none; }
 /* Draggable title bar on frameless builds; interactive controls stay clickable. */
 .titlebar { -webkit-app-region: drag; }
@@ -1083,3 +1085,48 @@ html[data-theme="light"] .skeleton-card::after {
 }
 .import-confirm-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
 .import-confirm[hidden] { display: none; }
+
+/* ── Quantization picker (install with version/quant choice) ─────────────── */
+.quant-card { width: min(580px, 96vw); }
+.quant-list {
+  padding: 12px 16px; overflow-y: auto; display: flex; flex-direction: column;
+  gap: 8px;
+}
+.quant-opt {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 10px 12px; border: 1px solid var(--bord); border-radius: var(--r-3);
+  background: var(--card); color: var(--fg); cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.quant-opt:hover { background: var(--card-hover); }
+.quant-opt.is-sel {
+  border-color: var(--acc); background: var(--card-hover); box-shadow: var(--focus);
+}
+.quant-radio {
+  width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--mut);
+  flex: none; position: relative;
+}
+.quant-opt.is-sel .quant-radio { border-color: var(--acc); }
+.quant-opt.is-sel .quant-radio::after {
+  content: ""; position: absolute; inset: 3px; border-radius: 50%;
+  background: var(--acc);
+}
+.quant-main { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.quant-label {
+  font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px;
+}
+.quant-badge {
+  font-size: 11px; font-weight: 600; color: #fff; background: var(--acc);
+  padding: 1px 7px; border-radius: 999px;
+}
+.quant-note { font-size: 12px; color: var(--mut); }
+.quant-size {
+  font-size: 13px; color: var(--mut); font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.quant-foot {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  border-top: 1px solid var(--bord);
+}
+.quant-spacer { flex: 1; }
+.quant-x { font-size: 20px; line-height: 1; }

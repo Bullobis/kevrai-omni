@@ -377,7 +377,7 @@ function wireGlobalUI() {
 
   // Health polling (every 15s)
   healthTimer = setInterval(() => {
-    api.health().then((h) => setHealthOk(`sidecar v${h?.body?.version || "?"} · ${h?.body?.app_root || ""}`))
+    api.health().then((h) => setHealthOk(`sidecar v${h?.body?.version || "?"}`))
                  .catch((e) => setHealthErr(String(e?.message || e)));
   }, 15_000);
 }
