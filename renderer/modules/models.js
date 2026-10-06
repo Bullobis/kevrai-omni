@@ -12,6 +12,7 @@ import {
 } from "./compare.js";
 import { t } from "./i18n.js";
 import { pickQuantization } from "./quant-picker.js";
+import { pickRevision, buildDownloadArgs } from "./revision-picker.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -373,18 +374,25 @@ async function installItem(item) {
     await api.installEngine(engines[0]);
   } catch (_) { /* toast shown by api */ }
 
-  // GGUF models ship several quantizations — let the user pick one, then
-  // download exactly the chosen shard(s).
+  // GGUF models ship several revisions (branches/tags) and quantizations.
+  // First pick a revision (defaulting to main, skipped when there is no
+  // choice), then pick a quantization off that revision, then download the
+  // chosen shard(s) at the chosen revision.
   if (item.gguf_repo) {
-    const pick = await pickQuantization(item, api);
+    const rev = await pickRevision(item, api);
+    if (rev === null) return;  // user cancelled revision picker → abort install
+    const revision = (rev && rev.revision) || "main";
+
+    const pick = await pickQuantization(item, api, revision);
     if (!pick) return;  // user cancelled
     if (pick.error) { toast(pick.error, { kind: "warn" }); return; }
     if (pick.files && pick.files.length) {
       try {
-        await api.hubDownload({
-          hub: "hf", repo: pick.repo || item.gguf_repo,
-          files: pick.files, auto_pick: false,
-        });
+        await api.hubDownload(buildDownloadArgs({
+          repo: pick.repo || rev.repo || item.gguf_repo,
+          files: pick.files,
+          revision,
+        }));
         toast(t("toast.downloadStarted", { file: item.name || item.id }),
               { kind: "ok" });
       } catch (e) {

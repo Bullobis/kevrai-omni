@@ -848,9 +848,16 @@ function registerIpc() {
     assert(isString(id, 128), "id: invalid");
     return sidecarFetch(`/api/models/${encodeURIComponent(id)}`);
   });
-  ipcMain.handle("api:model:gguf-files", async (_e, id) => {
+  ipcMain.handle("api:model:revisions", async (_e, id) => {
     assert(isString(id, 128), "id: invalid");
-    return sidecarFetch(`/api/models/${encodeURIComponent(id)}/gguf-files`);
+    return sidecarFetch(`/api/models/${encodeURIComponent(id)}/revisions`);
+  });
+  ipcMain.handle("api:model:gguf-files", async (_e, id, revision) => {
+    assert(isString(id, 128), "id: invalid");
+    const qs = new URLSearchParams();
+    if (typeof revision === "string" && revision) qs.set("revision", revision.slice(0, 128));
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return sidecarFetch(`/api/models/${encodeURIComponent(id)}/gguf-files${suffix}`);
   });
   ipcMain.handle("api:gguf-repos",    async () => sidecarFetch("/api/gguf-repos"));
   ipcMain.handle("api:engines",       async () => sidecarFetch("/api/engines"));

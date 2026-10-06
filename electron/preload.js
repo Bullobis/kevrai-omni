@@ -146,7 +146,12 @@ const api = {
     return invoke("api:models", clean);
   },
   modelDetail:   (id) => { assertString(id, "id", 128); return invoke("api:model:detail", id); },
-  modelGgufFiles:(id) => { assertString(id, "id", 128); return invoke("api:model:gguf-files", id); },
+  modelRevisions:(id) => { assertString(id, "id", 128); return invoke("api:model:revisions", id); },
+  modelGgufFiles:(id, revision) => {
+    assertString(id, "id", 128);
+    assertOptionalString(revision, "revision", 128);
+    return invoke("api:model:gguf-files", id, revision || "");
+  },
   getModelDetail:(id) => { assertString(id, "id", 128); return invoke("api:model:detail", id); },
   ggufRepos:     () => invoke("api:gguf-repos"),
 
