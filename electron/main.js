@@ -982,6 +982,30 @@ function registerIpc() {
     const r = await sidecarFetchBytes(`/api/separation/stream?${q}`);
     return new Uint8Array(r.bytes);
   });
+  ipcMain.handle("api:tts-piper:capabilities", async () =>
+    sidecarFetch("/api/tts-piper/capabilities"));
+  ipcMain.handle("api:tts-piper:synthesize", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.voice_id, 64), "voice_id: invalid");
+    assert(isString(payload.text, 5000), "text: invalid");
+    const body = {
+      voice_id: payload.voice_id,
+      text: payload.text,
+      length_scale: Number.isFinite(Number(payload.length_scale))
+        ? Number(payload.length_scale) : 1.0,
+      use_cuda: Boolean(payload.use_cuda),
+    };
+    return sidecarFetch("/api/tts-piper/synthesize", {
+      method: "POST", rawBody: Buffer.from(JSON.stringify(body)),
+      headers: { "Content-Type": "application/json" }, timeoutMs: 120_000,
+    });
+  });
+  ipcMain.handle("api:tts-piper:stream", async (_e, params) => {
+    assert(params && isString(params.job_id, 80), "stream params: invalid");
+    const q = `job_id=${encodeURIComponent(params.job_id)}`;
+    const r = await sidecarFetchBytes(`/api/tts-piper/stream?${q}`);
+    return new Uint8Array(r.bytes);
+  });
   ipcMain.handle("api:categories",   async () => sidecarFetch("/api/categories"));
   ipcMain.handle("api:models", async (_e, params) => {
     const p = (params && typeof params === "object") ? params : {};
