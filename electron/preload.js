@@ -131,6 +131,10 @@ const api = {
   // Sentence-transformers text embeddings.
   embeddingsCapabilities: () => invoke("api:embeddings:capabilities"),
   embeddings:             (payload) => invoke("api:embeddings", payload),
+  // Demucs music source separation.
+  separationCapabilities: () => invoke("api:separation:capabilities"),
+  separation:             (payload) => invoke("api:separation", payload),
+  separationStream:       (params) => invoke("api:separation:stream", params),
   // ClawdChat heartbeat (runs server-side; credential stays in the sidecar).
   clawdchatHeartbeat: () => invoke("api:clawdchat-heartbeat"),
   categories:    () => invoke("api:categories"),

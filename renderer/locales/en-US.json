@@ -26,7 +26,8 @@
     "environments": "Environments",
     "settings": "Settings",
     "asr": "Speech to Text",
-    "embeddings": "Embeddings"
+    "embeddings": "Embeddings",
+    "separation": "Source Separation"
   },
   "header": {
     "downloads": "Downloads",
@@ -843,5 +844,21 @@
     "failed": "Embedding failed: {err}",
     "copied": "Copied",
     "engineInstalled": "Engine installed"
+  },
+  "separation": {
+    "title": "Source Separation",
+    "engineReady": "Engine ready {ver}",
+    "engineMissing": "Engine not installed",
+    "missingHint": "Install the Demucs engine to split a song into vocals, drums, bass and other stems.",
+    "install": "Install engine",
+    "audioFile": "Audio file",
+    "model": "Separation model",
+    "shifts": "Shifts (higher = steadier, slower)",
+    "run": "Separate",
+    "pickFirst": "Please choose an audio file first",
+    "failed": "Separation failed: {err}",
+    "engineInstalled": "Engine installed",
+    "outputDir": "Output directory",
+    "openDir": "Open output directory"
   }
 }

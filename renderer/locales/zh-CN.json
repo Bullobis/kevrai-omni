@@ -26,7 +26,8 @@
     "environments": "环境管理",
     "settings": "设置",
     "asr": "语音转写",
-    "embeddings": "向量嵌入"
+    "embeddings": "向量嵌入",
+    "separation": "音源分离"
   },
   "header": {
     "downloads": "下载",
@@ -843,5 +844,21 @@
     "failed": "生成嵌入失败：{err}",
     "copied": "已复制",
     "engineInstalled": "引擎已安装"
+  },
+  "separation": {
+    "title": "音源分离",
+    "engineReady": "引擎就绪 {ver}",
+    "engineMissing": "引擎未安装",
+    "missingHint": "需要安装 Demucs 音源分离引擎，可将歌曲分离为人声、鼓、贝斯等音轨。",
+    "install": "安装引擎",
+    "audioFile": "音频文件",
+    "model": "分离模型",
+    "shifts": "移位次数（越高越稳、越慢）",
+    "run": "开始分离",
+    "pickFirst": "请先选择音频文件",
+    "failed": "音源分离失败：{err}",
+    "engineInstalled": "引擎已安装",
+    "outputDir": "输出目录",
+    "openDir": "打开输出目录"
   }
 }

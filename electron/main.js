@@ -539,6 +539,37 @@ function sidecarFetch(p, opts = {}) {
   });
 }
 
+// Binary GET (e.g. a separated-stem WAV): collect Buffers without string
+// coercion so the bytes survive, and return a Uint8Array the renderer can wrap
+// in a Blob.
+function sidecarFetchBytes(p, timeoutMs = 60_000) {
+  const url = `http://${SIDECAR_HOST}:${SIDECAR_PORT}${p}`;
+  return new Promise((resolve, reject) => {
+    let u;
+    try { u = new URL(url); }
+    catch (e) { return reject(new Error(`bad sidecar url: ${e.message}`)); }
+    const req = http.request({
+      host: u.hostname, port: u.port, path: u.pathname + u.search,
+      method: "GET",
+      headers: sidecarSecret ? { Authorization: `Bearer ${sidecarSecret}` } : {},
+      timeout: Math.max(1_000, Math.min(timeoutMs, 120_000)),
+    }, (res) => {
+      const chunks = [];
+      res.on("data", (c) => chunks.push(Buffer.from(c)));
+      res.on("end", () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve({ status: res.statusCode, bytes: Buffer.concat(chunks) });
+        } else {
+          reject(new Error(`sidecar ${res.statusCode}`));
+        }
+      });
+    });
+    req.on("timeout", () => req.destroy(new Error("sidecar timeout")));
+    req.on("error", reject);
+    req.end();
+  });
+}
+
 // Build a multipart/form-data body (one file + scalar fields) as a Buffer.
 // Used by the ASR route so the renderer can upload audio through IPC without
 // the main process needing a third-party multipart dependency.
@@ -916,6 +947,41 @@ function registerIpc() {
   });
   ipcMain.handle("api:embeddings:capabilities", async () =>
     sidecarFetch("/api/embeddings/capabilities"));
+  // Demucs music source separation (multipart upload of one track).
+  ipcMain.handle("api:separation", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.model, 64), "model: invalid");
+    const data = payload.file && payload.file.data;
+    assert(data && data.length, "file: invalid");
+    const file = {
+      filename: isString(payload.file.filename, 256) ? payload.file.filename : "audio",
+      contentType: isString(payload.file.contentType, 128)
+        ? payload.file.contentType : "application/octet-stream",
+      data: Buffer.from(data),
+    };
+    const fields = {
+      model: payload.model,
+      device: isString(payload.device, 16) ? payload.device : "auto",
+      shifts: Number.isFinite(Number(payload.shifts)) ? Number(payload.shifts) : 1,
+      overlap: Number.isFinite(Number(payload.overlap)) ? Number(payload.overlap) : 0.25,
+      jobs: Number.isFinite(Number(payload.jobs)) ? Number(payload.jobs) : 0,
+    };
+    const mp = buildMultipart(fields, file);
+    return sidecarFetch("/api/separation/separate", {
+      method: "POST", rawBody: mp.body,
+      headers: { "Content-Type": mp.contentType }, timeoutMs: 120_000,
+    });
+  });
+  ipcMain.handle("api:separation:capabilities", async () =>
+    sidecarFetch("/api/separation/capabilities"));
+  ipcMain.handle("api:separation:stream", async (_e, params) => {
+    assert(params && isString(params.job_id, 40) && isString(params.stem, 128),
+      "stream params: invalid");
+    const q = `job_id=${encodeURIComponent(params.job_id)}` +
+      `&stem=${encodeURIComponent(params.stem)}`;
+    const r = await sidecarFetchBytes(`/api/separation/stream?${q}`);
+    return new Uint8Array(r.bytes);
+  });
   ipcMain.handle("api:categories",   async () => sidecarFetch("/api/categories"));
   ipcMain.handle("api:models", async (_e, params) => {
     const p = (params && typeof params === "object") ? params : {};

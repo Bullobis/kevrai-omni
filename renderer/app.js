@@ -23,6 +23,7 @@ import { initSearch, runSearch } from "./modules/search.js";
 import { initLtx } from "./modules/ltx.js";
 import { initAsr } from "./modules/asr.js";
 import { initEmbeddings } from "./modules/embeddings.js";
+import { initSeparation } from "./modules/separation.js";
 import { renderEngines, wireEngineUpdates } from "./modules/engines.js";
 import { wireSettings, openSettings, closeSettings } from "./modules/settings.js";
 import { wireCompare, openCompare } from "./modules/compare.js";
@@ -270,6 +271,13 @@ function switchView(name) {
     if (root && !root.dataset.rendered) {
       root.dataset.rendered = "1";
       initEmbeddings().catch((e) => toast(t("embeddings.failed", { err: e.message }), { kind: "err" }));
+    }
+  }
+  if (name === "separation") {
+    const root = document.getElementById("pane-separation");
+    if (root && !root.dataset.rendered) {
+      root.dataset.rendered = "1";
+      initSeparation().catch((e) => toast(t("separation.failed", { err: e.message }), { kind: "err" }));
     }
   }
   // v2.7.0 — Kevrai Agent page (init once).

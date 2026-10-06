@@ -618,6 +618,31 @@
         "https://mirrors.cloud.tencent.com/pypi/simple/sentence-transformers/",
         "https://github.com/huggingface/sentence-transformers"
       ]
+    },
+    {
+      "id": "demucs",
+      "name": "Demucs",
+      "category": "general",
+      "description": "Meta 开源的音源分离（混合 Transformer），将歌曲分离为人声、鼓、贝斯等音轨，CPU/CUDA 均可。项目已归档但版本稳定。",
+      "github": "facebookresearch/demucs",
+      "install": "pip",
+      "pypi": "demucs==4.1.0",
+      "license": "MIT",
+      "size_mb": 90,
+      "platforms": {
+        "linux-x64": "https://github.com/facebookresearch/demucs/releases",
+        "windows-x64": "https://github.com/facebookresearch/demucs/releases",
+        "darwin-arm64": "https://github.com/facebookresearch/demucs/releases",
+        "darwin-x64": "https://github.com/facebookresearch/demucs/releases"
+      },
+      "trending": true,
+      "sources": [
+        "https://pypi.org/simple/demucs/",
+        "https://mirrors.aliyun.com/pypi/simple/demucs/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/demucs/",
+        "https://github.com/facebookresearch/demucs",
+        "https://dl.fbaipublicfiles.com/demucs/"
+      ]
     }
   ]
 }

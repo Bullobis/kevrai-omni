@@ -43,10 +43,18 @@ from fastapi import (
     Path as PathParam,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, ValidationError
 
-from . import USER_AGENT, __version__, asr_runtime, embedding_runtime, ltx_runtime, mnn_runtime
+from . import (
+    USER_AGENT,
+    __version__,
+    asr_runtime,
+    demucs_runtime,
+    embedding_runtime,
+    ltx_runtime,
+    mnn_runtime,
+)
 from . import clawdchat as clawdchat_mod
 from . import converter as converter_service
 from . import drama as drama_agent
@@ -256,6 +264,8 @@ async def _lifespan(app: FastAPI):
     app.state.asr = asr_runtime.AsrManager(APP_ROOT)
     # Sentence-transformers embedding manager (models cached in-process).
     app.state.emb = embedding_runtime.EmbeddingManager(APP_ROOT)
+    # Demucs music source-separation manager (separators cached in-process).
+    app.state.demucs = demucs_runtime.DemucsManager(APP_ROOT)
     # Dual-source hub registry (HF + ModelScope + curated). Adapters own their
     # httpx clients, so the lifespan must aclose() them on shutdown. Wire the
     # lifespan handle to the *process singleton* (get_registry), NOT a fresh
@@ -3166,6 +3176,100 @@ def create_embeddings(request: Request, req: EmbeddingsReq) -> dict[str, Any]:
     except embedding_runtime.EmbeddingError as e:
         raise HTTPException(status_code=_emb_status_for(e), detail=str(e)) from e
     return payload
+
+
+# ---------------------------------------------------------------------------
+# Demucs music source separation
+# ---------------------------------------------------------------------------
+
+
+def _demucs_manager(request: Request) -> demucs_runtime.DemucsManager:
+    mgr = getattr(request.app.state, "demucs", None)
+    if mgr is None:
+        mgr = demucs_runtime.DemucsManager(APP_ROOT)
+        request.app.state.demucs = mgr
+    return mgr
+
+
+@app.get("/api/separation/capabilities")
+def separation_capabilities() -> dict[str, Any]:
+    return demucs_runtime.capabilities(APP_ROOT)
+
+
+def _separation_kwargs(model: str, device: str, shifts: int,
+                       overlap: float, jobs: int) -> dict[str, Any]:
+    return {
+        "model": model, "device": device or "auto",
+        "shifts": int(shifts), "overlap": float(overlap), "jobs": int(jobs),
+    }
+
+
+@app.post("/api/separation/separate")
+async def separate_upload(
+    request: Request,
+    file: UploadFile = File(...),  # noqa: B008 — FastAPI dependency-injection pattern
+    model: str = Form("htdemucs"),
+    device: str = Form("auto"),
+    shifts: int = Form(1),
+    overlap: float = Form(0.25),
+    jobs: int = Form(0),
+) -> dict[str, Any]:
+    mgr = _demucs_manager(request)
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="empty audio upload")
+    import tempfile
+
+    suffix = Path(file.filename or "audio").suffix or ".audio"
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tf:
+            tf.write(data)
+            tmp_in = Path(tf.name)
+        try:
+            return mgr.separate(input_path=tmp_in, **_separation_kwargs(
+                model, device, shifts, overlap, jobs))
+        finally:
+            tmp_in.unlink(missing_ok=True)
+    except demucs_runtime.DemucsError as e:
+        code = 503 if isinstance(e, demucs_runtime.DemucsEngineMissing) else (
+            400 if isinstance(e, demucs_runtime.DemucsParamError) else 422)
+        raise HTTPException(status_code=code, detail=str(e)) from e
+
+
+class SeparateLocalReq(BaseModel):
+    audio_path: str
+    model: str = "htdemucs"
+    device: str = "auto"
+    shifts: int = 1
+    overlap: float = 0.25
+    jobs: int = 0
+
+
+@app.post("/api/separation/separate-local")
+def separate_local(request: Request, req: SeparateLocalReq) -> dict[str, Any]:
+    mgr = _demucs_manager(request)
+    try:
+        return mgr.separate(input_path=Path(req.audio_path), **_separation_kwargs(
+            req.model, req.device, req.shifts, req.overlap, req.jobs))
+    except demucs_runtime.DemucsError as e:
+        code = 503 if isinstance(e, demucs_runtime.DemucsEngineMissing) else (
+            400 if isinstance(e, demucs_runtime.DemucsParamError) else 422)
+        raise HTTPException(status_code=code, detail=str(e)) from e
+
+
+@app.get("/api/separation/stream")
+def separation_stream(job_id: str, stem: str) -> FileResponse:
+    # Hard-bound every requested file to data_root/separated/<job_id>/ to avoid
+    # any path traversal; only .wav stems written by the runtime are served.
+    base = (APP_ROOT / "separated" / job_id).resolve()
+    sep_root = (APP_ROOT / "separated").resolve()
+    if not str(base).startswith(str(sep_root)):
+        raise HTTPException(status_code=400, detail="bad job id")
+    target = (base / stem).resolve()
+    if not str(target).startswith(str(base)) or target.suffix != ".wav" \
+            or not target.is_file():
+        raise HTTPException(status_code=404, detail="stem not found")
+    return FileResponse(target, media_type="audio/wav", filename=target.name)
 
 
 async def _run_multipart_asr(
