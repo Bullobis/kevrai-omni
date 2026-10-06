@@ -1,6 +1,6 @@
 {
   "version": "3.6.1",
-  "updated": "2026-09-29",
+  "updated": "2026-10-06",
   "notice": "v2.9.0 数据核验：修正 14 处失效/错误仓库 slug(THUDM/glm-4-9b-chat→zai-org/GLM-4.5, Tencent-Hunyuan→tencent, xinntao/Real-ESRGAN→ai-forever, Kiteretsu77/APISR→camenduru, Fanghua-Yu/SUPIR→camenduru[非官方转存], Kim2091/4x-UltraSharp→lokCX, haoheliu/audioldm2→audioldm2-full, ASLP-lab/DiffRhythm→DiffRhythm-base, VAST-AI-Research/TripoSR→stabilityai, RVC-Boss/GPT-SoVITS→lj1995, THU-MIG/yolov10→onnx-community, hpcaitech/Open-Sora→hpcai-tech, dummy9996/MiniMax-Music3-w4a8→NidAll, buffalo_l→immich-app/buffalo_l)；清除广告软文式描述；按平台分拆 sources（GitHub/HF 各用各 slug）。",
   "categories": [
     {
@@ -5627,6 +5627,570 @@
         "热门",
         "视频",
         "视频生成"
+      ]
+    },
+    {
+      "id": "deepseek-v4.1-flash",
+      "category": "llm",
+      "name": "DeepSeek V4.1 Flash (552B MoE)",
+      "repo": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "gguf_repo": "",
+      "size_gb": 510,
+      "engine": [
+        "vllm",
+        "sglang",
+        "transformers"
+      ],
+      "license": "MIT",
+      "trending": true,
+      "description": "DeepSeek V4.1：552B 总参 MoE（因果编解码，prefill 8B / decode 16B 激活），原生多模态视觉理解，FP8 + 压缩稀疏注意力 2，MIT 开源。",
+      "sources": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/",
+        "https://hf-mirror.com/deepseek-ai/DeepSeek-V4.1-Flash/",
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-V4.1-Flash/"
+      ],
+      "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/",
+      "hardware": {
+        "vram_gb": 384,
+        "min_vram_gb": 300,
+        "ram_gb": 1024,
+        "disk_gb": 510,
+        "notes": "552B MoE BF16 约 510GB；量化后方可多卡部署，单机消费级显存不可行"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "原生图像输入（image-text-to-text）"
+      },
+      "tags": [
+        "LLM",
+        "MoE",
+        "multimodal",
+        "vllm",
+        "sglang",
+        "trending",
+        "大模型",
+        "多模态",
+        "推理",
+        "热门"
+      ]
+    },
+    {
+      "id": "qwen-image-2.1",
+      "category": "image",
+      "name": "Qwen-Image 2.1",
+      "repo": "Qwen/Qwen-Image-2.1",
+      "gguf_repo": "",
+      "size_gb": 33,
+      "engine": [
+        "diffusers"
+      ],
+      "license": "other（Qwen 自定义许可）",
+      "trending": true,
+      "description": "阿里 Qwen-Image 第二代：文生图 / 图像编辑，支持 RGBA，diffusers QwenImage21Pipeline，中文渲染与排版强。",
+      "sources": [
+        "https://huggingface.co/Qwen/Qwen-Image-2.1/",
+        "https://hf-mirror.com/Qwen/Qwen-Image-2.1/",
+        "https://modelscope.cn/models/Qwen/Qwen-Image-2.1/"
+      ],
+      "primary_url": "https://huggingface.co/Qwen/Qwen-Image-2.1/",
+      "hardware": {
+        "vram_gb": 24,
+        "min_vram_gb": 16,
+        "ram_gb": 64,
+        "disk_gb": 33,
+        "notes": "约 20B MMDiT；16GB 需量化/低显存模式"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "image"
+        ]
+      },
+      "tags": [
+        "diffusers",
+        "image",
+        "text to image",
+        "trending",
+        "图像生成",
+        "文生图",
+        "热门",
+        "绘图"
+      ]
+    },
+    {
+      "id": "xing4.0-29b-a4b",
+      "category": "llm",
+      "name": "Xing4.0 29B-A4B (腾讯星辰)",
+      "repo": "XingChen-AGI/Xing4.0-29B-A4B",
+      "gguf_repo": "XingChen-AGI/Xing4.0-29B-A4B-GGUF",
+      "size_gb": 62,
+      "engine": [
+        "llama.cpp",
+        "vllm"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "腾讯星辰 Xing4.0：29B 总参 / 4B 激活 MoE，对话与代码能力，Apache-2.0 可商用，官方提供 GGUF。",
+      "sources": [
+        "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/",
+        "https://hf-mirror.com/XingChen-AGI/Xing4.0-29B-A4B/",
+        "https://modelscope.cn/models/XingChen-AGI/Xing4.0-29B-A4B/"
+      ],
+      "primary_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/",
+      "hardware": {
+        "vram_gb": 24,
+        "min_vram_gb": 12,
+        "ram_gb": 48,
+        "disk_gb": 62,
+        "notes": "Q4_K_M 约 17GB；24GB 显卡推荐"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "纯文本对话/代码"
+      },
+      "tags": [
+        "LLM",
+        "MoE",
+        "chat",
+        "llama.cpp",
+        "vllm",
+        "trending",
+        "大模型",
+        "腾讯",
+        "热门",
+        "语言模型"
+      ]
+    },
+    {
+      "id": "zdtaichu5.0-9b",
+      "category": "llm",
+      "name": "ZDTaichu 5.0 9B (VLM)",
+      "repo": "TaichuAI/ZDTaichu5.0-9B",
+      "gguf_repo": "",
+      "size_gb": 20,
+      "engine": [
+        "transformers",
+        "vllm"
+      ],
+      "license": "Apache-2.0 + NVIDIA Open Model License（双许可）",
+      "trending": true,
+      "description": "ZDTaichu 5.0：9B 多模态 VLM，主打空间推理 / 视频理解 / Agent，中英双语。",
+      "sources": [
+        "https://huggingface.co/TaichuAI/ZDTaichu5.0-9B/",
+        "https://hf-mirror.com/TaichuAI/ZDTaichu5.0-9B/"
+      ],
+      "primary_url": "https://huggingface.co/TaichuAI/ZDTaichu5.0-9B/",
+      "hardware": {
+        "vram_gb": 16,
+        "min_vram_gb": 8,
+        "ram_gb": 32,
+        "disk_gb": 20,
+        "notes": "9B VLM；Q4 约 6-8GB"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image",
+          "video"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "图像/视频理解，空间推理与 Agent"
+      },
+      "tags": [
+        "VLM",
+        "vision",
+        "agent",
+        "trending",
+        "多模态",
+        "视觉",
+        "视频理解",
+        "热门"
+      ]
+    },
+    {
+      "id": "kolibri-1",
+      "category": "llm",
+      "name": "Kolibri 1 (Aleph Alpha)",
+      "repo": "Aleph-Alpha/Kolibri-1",
+      "gguf_repo": "",
+      "size_gb": 79,
+      "engine": [
+        "vllm"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "德国 Aleph Alpha 开源主权推理 MoE，强德语 / 英语推理，Apache-2.0 可商用。",
+      "sources": [
+        "https://huggingface.co/Aleph-Alpha/Kolibri-1/",
+        "https://hf-mirror.com/Aleph-Alpha/Kolibri-1/"
+      ],
+      "primary_url": "https://huggingface.co/Aleph-Alpha/Kolibri-1/",
+      "hardware": {
+        "vram_gb": 48,
+        "min_vram_gb": 32,
+        "ram_gb": 128,
+        "disk_gb": 79,
+        "notes": "MoE BF16 约 79GB；量化后多卡部署"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "纯文本推理"
+      },
+      "tags": [
+        "LLM",
+        "reasoning",
+        "MoE",
+        "vllm",
+        "trending",
+        "推理",
+        "欧洲",
+        "主权",
+        "热门"
+      ]
+    },
+    {
+      "id": "spark-x2.5-4b",
+      "category": "llm",
+      "name": "Spark X2.5 4B (端侧 Agent)",
+      "repo": "XHToken/Spark-X2.5-4B",
+      "gguf_repo": "",
+      "size_gb": 8,
+      "engine": [
+        "llama.cpp",
+        "transformers"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "讯飞星火 Spark-X 2.5：4B 端侧小钢炮，Agent / 工具调用 / 对话，Apache-2.0。",
+      "sources": [
+        "https://huggingface.co/XHToken/Spark-X2.5-4B/",
+        "https://hf-mirror.com/XHToken/Spark-X2.5-4B/"
+      ],
+      "primary_url": "https://huggingface.co/XHToken/Spark-X2.5-4B/",
+      "hardware": {
+        "vram_gb": 8,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 8,
+        "notes": "4B；Q4 约 3GB，消费级显卡 / CPU 可跑"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "text"
+        ],
+        "notes": "纯文本，Agent 工具调用"
+      },
+      "tags": [
+        "LLM",
+        "agent",
+        "llama.cpp",
+        "trending",
+        "小模型",
+        "端侧",
+        "工具调用",
+        "热门"
+      ]
+    },
+    {
+      "id": "nex-n2.5-mini",
+      "category": "llm",
+      "name": "Nex N2.5 Mini (35B 多模态 Agent)",
+      "repo": "nex-agi/Nex-N2.5-mini",
+      "gguf_repo": "bartowski/nex-agi_Nex-N2.5-mini-GGUF",
+      "size_gb": 70,
+      "engine": [
+        "vllm",
+        "llama.cpp"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "Nex-N2.5 系列 Mini（35B）：多模态理解 + 电脑操作 / Agent，Qwen3.5-MoE 架构，Apache-2.0。",
+      "sources": [
+        "https://huggingface.co/nex-agi/Nex-N2.5-mini/",
+        "https://hf-mirror.com/nex-agi/Nex-N2.5-mini/"
+      ],
+      "primary_url": "https://huggingface.co/nex-agi/Nex-N2.5-mini/",
+      "hardware": {
+        "vram_gb": 24,
+        "min_vram_gb": 16,
+        "ram_gb": 64,
+        "disk_gb": 70,
+        "notes": "35B MoE；Q4 约 20GB"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "多模态理解 + 电脑操作 / Agent"
+      },
+      "tags": [
+        "LLM",
+        "agent",
+        "multimodal",
+        "computer-use",
+        "vllm",
+        "trending",
+        "多模态",
+        "热门",
+        "Agent"
+      ]
+    },
+    {
+      "id": "cloudflare-clef",
+      "category": "llm",
+      "name": "Cloudflare Clef (结构化输出)",
+      "repo": "Cloudflare/clef",
+      "gguf_repo": "",
+      "size_gb": 55,
+      "engine": [
+        "transformers",
+        "vllm"
+      ],
+      "license": "Apache-2.0",
+      "trending": true,
+      "description": "Cloudflare 开源 System-One 多模态模型（基于 Qwen3.5/3.8 后训练），图像 -> 类型化 JSON / 分类 / 路由 / 结构化输出。",
+      "sources": [
+        "https://huggingface.co/Cloudflare/clef/",
+        "https://hf-mirror.com/Cloudflare/clef/"
+      ],
+      "primary_url": "https://huggingface.co/Cloudflare/clef/",
+      "hardware": {
+        "vram_gb": 24,
+        "min_vram_gb": 16,
+        "ram_gb": 64,
+        "disk_gb": 55,
+        "notes": "约 27B 后训练权重；Q4 约 16GB"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "text",
+          "image"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "图像 -> 类型化输出 / 分类 / 路由"
+      },
+      "tags": [
+        "LLM",
+        "multimodal",
+        "structured-output",
+        "classification",
+        "transformers",
+        "trending",
+        "热门",
+        "结构化输出"
+      ]
+    },
+    {
+      "id": "nemotron-3-diarization",
+      "category": "audio",
+      "name": "Nemotron 3 Diarization (NVIDIA)",
+      "repo": "nvidia/Nemotron-3-Diarization",
+      "gguf_repo": "",
+      "size_gb": 0.7,
+      "engine": [
+        "transformers",
+        "llama.cpp"
+      ],
+      "license": "Open-MDW-1.1",
+      "trending": true,
+      "description": "NVIDIA Nemotron 3 说话人分离 / 分轨（streaming sortformer），含 VAD 与说话人标记，仓库自带 GGUF。",
+      "sources": [
+        "https://huggingface.co/nvidia/Nemotron-3-Diarization/",
+        "https://hf-mirror.com/nvidia/Nemotron-3-Diarization/"
+      ],
+      "primary_url": "https://huggingface.co/nvidia/Nemotron-3-Diarization/",
+      "hardware": {
+        "vram_gb": 2,
+        "min_vram_gb": 0,
+        "ram_gb": 8,
+        "disk_gb": 1,
+        "notes": "轻量约 0.7GB；CPU 可跑，支持流式"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "audio"
+        ],
+        "generate": [],
+        "notes": "说话人分离 / 分轨，非生成"
+      },
+      "tags": [
+        "audio",
+        "diarization",
+        "nvidia",
+        "trending",
+        "说话人分离",
+        "语音",
+        "热门"
+      ]
+    },
+    {
+      "id": "breeze-tts-2",
+      "category": "tts",
+      "name": "Breeze TTS 2",
+      "repo": "BreezeBlue/Breeze-TTS-2",
+      "gguf_repo": "",
+      "size_gb": 8,
+      "engine": [
+        "transformers"
+      ],
+      "license": "other（非商用许可）",
+      "trending": true,
+      "description": "Breeze TTS 2：开源权重 TTS 榜单前列，情感 / 停顿 / 自然口语，语音克隆与音色设计，中英双语。",
+      "sources": [
+        "https://huggingface.co/BreezeBlue/Breeze-TTS-2/",
+        "https://hf-mirror.com/BreezeBlue/Breeze-TTS-2/"
+      ],
+      "primary_url": "https://huggingface.co/BreezeBlue/Breeze-TTS-2/",
+      "hardware": {
+        "vram_gb": 6,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 8,
+        "notes": "语音克隆 / 音色设计；非商用许可"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "文本 -> 语音"
+      },
+      "tags": [
+        "tts",
+        "text to speech",
+        "voice cloning",
+        "trending",
+        "语音合成",
+        "语音克隆",
+        "热门",
+        "配音"
+      ]
+    },
+    {
+      "id": "auk-flash",
+      "category": "tts",
+      "name": "AuK Flash (腾讯)",
+      "repo": "tencent/AuK-Flash",
+      "gguf_repo": "audio-cpp/AuK-Base-and-Flash-GGUF",
+      "size_gb": 7,
+      "engine": [
+        "transformers",
+        "diffusers"
+      ],
+      "license": "MIT",
+      "trending": true,
+      "description": "腾讯 AuK-Flash：扩散蒸馏 TTS，零样本语音克隆 / 语音编辑 / 语音增强 / 声源分离，少步推理，中英双语。",
+      "sources": [
+        "https://huggingface.co/tencent/AuK-Flash/",
+        "https://hf-mirror.com/tencent/AuK-Flash/",
+        "https://modelscope.cn/models/tencent/AuK-Flash/"
+      ],
+      "primary_url": "https://huggingface.co/tencent/AuK-Flash/",
+      "hardware": {
+        "vram_gb": 6,
+        "min_vram_gb": 4,
+        "ram_gb": 16,
+        "disk_gb": 7,
+        "notes": "扩散蒸馏；少步推理"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "audio"
+        ],
+        "notes": "文本 -> 语音，兼语音编辑 / 分离"
+      },
+      "tags": [
+        "tts",
+        "audio",
+        "voice cloning",
+        "diffusers",
+        "trending",
+        "语音合成",
+        "腾讯",
+        "热门"
+      ]
+    },
+    {
+      "id": "phonon-2",
+      "category": "audio",
+      "name": "Phonon 2 (端侧 ASR)",
+      "repo": "FermionResearch/Phonon-2",
+      "gguf_repo": "",
+      "size_gb": 0.16,
+      "engine": [
+        "mlx"
+      ],
+      "license": "CC-BY-4.0（权重）/ Apache-2.0（代码）",
+      "trending": true,
+      "description": "基于 NVIDIA Parakeet-TDT 的低位宽端侧英文 ASR，MLX / Apple Silicon 优化，量化感知训练，权重包仅约 164MB。",
+      "sources": [
+        "https://huggingface.co/FermionResearch/Phonon-2/",
+        "https://hf-mirror.com/FermionResearch/Phonon-2/"
+      ],
+      "primary_url": "https://huggingface.co/FermionResearch/Phonon-2/",
+      "hardware": {
+        "vram_gb": 0,
+        "min_vram_gb": 0,
+        "ram_gb": 4,
+        "disk_gb": 0.2,
+        "notes": "约 164MB 低位宽包；Apple Silicon / CPU 端侧"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "audio"
+        ],
+        "generate": [
+          "text"
+        ],
+        "notes": "英文语音 -> 文本"
+      },
+      "tags": [
+        "asr",
+        "speech-to-text",
+        "mlx",
+        "on-device",
+        "trending",
+        "语音识别",
+        "端侧",
+        "热门"
       ]
     }
   ],
