@@ -29,6 +29,7 @@ export async function initAgent() {
   _wireEvents(root);
   _wireMessageActions(document.getElementById("agent-messages"));
   await _refreshStatus();
+  _loadBrain();
   _loadSkills();
   _loadSessionList();
 }
@@ -47,6 +48,11 @@ function _renderShell() {
           <button id="agent-new-btn" class="btn btn-sm" title="${t("agent.newSessionTitle")}">${t("agent.newSession")}</button>
           <select id="agent-session-select" class="agent-session-select" title="${t("agent.historyTitle")}"></select>
         </div>
+      </div>
+      <div class="agent-brain-bar">
+        <label class="agent-brain-label" for="agent-brain-select">🧠 ${t("agent.brain")}</label>
+        <select id="agent-brain-select" class="agent-brain-select" title="${t("agent.brainTitle")}"></select>
+        <span class="hint" id="agent-brain-hint"></span>
       </div>
       <details class="agent-skills-panel" id="agent-skills-panel">
         <summary>
@@ -88,6 +94,7 @@ function _renderShell() {
           placeholder="${t("agent.inputPlaceholder")}"
           maxlength="5000"></textarea>
         <button id="agent-send-btn" class="btn btn-primary agent-send-btn" disabled>${t("agent.send")}</button>
+        <button id="agent-cancel-btn" class="btn agent-cancel-btn" hidden>${t("agent.stop")}</button>
       </div>
       <div id="agent-thinking" class="agent-thinking" style="display:none;">
         <span class="agent-spinner"></span>
@@ -128,6 +135,38 @@ function _wireEvents(root) {
     if (sessionSelect.value) {
       _sessionId = sessionSelect.value;
       _loadSessionMessages();
+    }
+  });
+
+  const brainSelect = $("#agent-brain-select", root);
+  if (brainSelect) {
+    brainSelect.addEventListener("change", async () => {
+      brainSelect.disabled = true;
+      try {
+        const r = unwrap(await api.agentSetBrain(brainSelect.value));
+        toast(brainSelect.value
+          ? t("agent.brainSelected", { model: brainSelect.value })
+          : t("agent.ruleSelected"), { kind: "ok" });
+        await Promise.all([_refreshStatus(), _loadBrain()]);
+        if (!r.llm_ready && brainSelect.value) {
+          toast(t("agent.brainWillLoad"), { kind: "info" });
+        }
+      } catch (err) {
+        toast(t("agent.brainFailed", { err: err.message || err }), { kind: "err" });
+        await _loadBrain();
+      } finally {
+        brainSelect.disabled = false;
+      }
+    });
+  }
+
+  const cancelBtn = $("#agent-cancel-btn", root);
+  if (cancelBtn) cancelBtn.addEventListener("click", async () => {
+    try {
+      await api.agentCancel(_sessionId);
+      toast(t("agent.stopSent"), { kind: "info" });
+    } catch (err) {
+      toast(err.message || String(err), { kind: "err" });
     }
   });
 
@@ -316,6 +355,31 @@ async function _refreshStatus() {
 }
 
 // ---------------------------------------------------------------------------
+// 本地大脑（自主模式）
+// ---------------------------------------------------------------------------
+async function _loadBrain() {
+  const sel = document.getElementById("agent-brain-select");
+  if (!sel) return;
+  try {
+    const res = unwrap(await api.agentBrain());
+    const opts = [
+      `<option value="">${t("agent.ruleAuto")}</option>`,
+      ...(res.models || []).map((m) =>
+        `<option value="transformers:${esc(m.repo)}">${esc(m.label)}</option>`),
+    ];
+    sel.innerHTML = opts.join("");
+    sel.value = res.backend === "transformers"
+      ? `transformers:${res.repo}`
+      : "";
+    const hint = document.getElementById("agent-brain-hint");
+    if (hint) hint.textContent = res.backend === "transformers"
+      ? t("agent.brainNote") : "";
+  } catch (e) {
+    console.warn("brain load failed:", e);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // 技能库（可插拔技能，v2.8.0）
 // ---------------------------------------------------------------------------
 async function _loadSkills() {
@@ -395,6 +459,88 @@ async function _loadSessionMessages() {
 // ---------------------------------------------------------------------------
 // 发送消息
 // ---------------------------------------------------------------------------
+const _MEDIA_EXT = /\.(png|jpe?g|webp|wav|mp3|flac|ogg|m4a|json|srt|txt|npy)$/i;
+const _ARTIFACT_HINT = /(^|[/_])(agent_artifacts|generated|separated|artifacts)([/_]|$)/;
+
+function _looksLikePath(v) {
+  return typeof v === "string" && v.length < 4096
+    && (_MEDIA_EXT.test(v) || _ARTIFACT_HINT.test(v));
+}
+
+// Recursively gather file/dir paths produced by a tool observation.
+function _collectArtifacts(obs, out = [], depth = 0) {
+  if (depth > 5 || out.length > 24) return out;
+  if (_looksLikePath(obs)) {
+    if (!out.includes(obs)) out.push(obs);
+  } else if (Array.isArray(obs)) {
+    for (const it of obs.slice(0, 32)) _collectArtifacts(it, out, depth + 1);
+  } else if (obs && typeof obs === "object") {
+    for (const k of Object.keys(obs)) {
+      const v = obs[k];
+      if (_looksLikePath(v)) {
+        if (!out.includes(v)) out.push(v);
+      } else {
+        _collectArtifacts(v, out, depth + 1);
+      }
+    }
+  }
+  return out;
+}
+
+function _artifactIcon(p) {
+  if (/\.(png|jpe?g|webp)$/i.test(p)) return "🖼️";
+  if (/\.(wav|mp3|flac|ogg|m4a)$/i.test(p)) return "🎵";
+  if (/\.(json|npy)$/i.test(p)) return "🧮";
+  if (/\.(srt|txt)$/i.test(p)) return "📄";
+  return "📁";
+}
+
+function _basename(p) {
+  const m = String(p).match(/[^/\\]+$/);
+  return m ? m[0] : p;
+}
+
+function _summarizeObservation(obs) {
+  if (obs == null) return "";
+  if (typeof obs !== "object") return String(obs);
+  const keys = Object.keys(obs).slice(0, 6).join(", ");
+  return `{ ${keys}${Object.keys(obs).length > 6 ? ", …" : ""} }`;
+}
+
+// Render the autonomous reasoning trace (thoughts + tool calls + artifacts).
+function _renderTrace(steps) {
+  if (!Array.isArray(steps) || !steps.length) return "";
+  const toolSteps = steps.filter((s) => s && s.action_tool);
+  if (!toolSteps.length) return "";
+  const blocks = toolSteps.map((s, i) => {
+    const params = s.action_params && typeof s.action_params === "object"
+      ? Object.entries(s.action_params)
+        .filter(([, v]) => v != null && v !== "")
+        .map(([k, v]) => `${k}=${String(typeof v === "object"
+          ? JSON.stringify(v) : v).slice(0, 60)}`).join(" ")
+      : "";
+    const artifacts = _collectArtifacts(s.observation);
+    const chips = artifacts.map((p) =>
+      `<button type="button" class="agent-artifact" data-open="${esc(p)}"
+         title="${esc(p)}">${_artifactIcon(p)} ${esc(_basename(p))}</button>`
+    ).join("");
+    return `
+      <div class="agent-trace-step">
+        <div class="agent-trace-head">
+          <span class="agent-trace-idx">${i + 1}</span>
+          🔧 <code>${esc(s.action_tool)}</code>
+          ${params ? `<span class="agent-trace-params">${esc(params)}</span>` : ""}
+        </div>
+        <div class="agent-trace-obs">${esc(_summarizeObservation(s.observation))}</div>
+        ${chips ? `<div class="agent-trace-artifacts">${chips}</div>` : ""}
+      </div>`;
+  }).join("");
+  return `<details class="agent-trace" open>
+    <summary>${t("agent.reasoningTrace", { n: toolSteps.length })}</summary>
+    ${blocks}
+  </details>`;
+}
+
 async function _sendMessage() {
   if (_busy) return;
   const input = document.getElementById("agent-input");
@@ -407,6 +553,8 @@ async function _sendMessage() {
   _busy = true;
   sendBtn.disabled = true;
   input.disabled = true;
+  const cancelBtn = document.getElementById("agent-cancel-btn");
+  if (cancelBtn) cancelBtn.hidden = false;
   thinking.style.display = "flex";
   thinkingText.textContent = "思考中…";
 
@@ -419,17 +567,18 @@ async function _sendMessage() {
       session_id: _sessionId,
     }));
 
-    // 显示工具调用步骤
+    // Surface the live tool being invoked in the status line.
     if (res.steps && res.steps.length > 0) {
       for (const step of res.steps) {
         if (step.action_tool) {
-          thinkingText.textContent = `调用工具: ${step.action_tool}`;
-          await new Promise((r) => setTimeout(r, 200));
+          thinkingText.textContent = `${t("agent.callingTool")}: ${step.action_tool}`;
+          await new Promise((r) => setTimeout(r, 120));
         }
       }
     }
 
-    _appendMessage("assistant", res.answer, false, res.tools_used || []);
+    const traceHtml = _renderTrace(res.steps);
+    _appendMessage("assistant", res.answer, false, res.tools_used || [], null, traceHtml);
     _loadSessionList();
   } catch (e) {
     _appendMessage("assistant", `请求失败：${esc(e.message || e)}`, false);
@@ -437,6 +586,7 @@ async function _sendMessage() {
   } finally {
     _busy = false;
     thinking.style.display = "none";
+    if (cancelBtn) cancelBtn.hidden = true;
     input.disabled = false;
     sendBtn.disabled = !input.value.trim();
     input.focus();
@@ -446,7 +596,7 @@ async function _sendMessage() {
 // ---------------------------------------------------------------------------
 // 消息渲染
 // ---------------------------------------------------------------------------
-function _appendMessage(role, content, animate = false, tools = [], msgId = null) {
+function _appendMessage(role, content, animate = false, tools = [], msgId = null, traceHtml = "") {
   const container = document.getElementById("agent-messages");
   if (!container) return;
   const div = document.createElement("div");
@@ -472,6 +622,7 @@ function _appendMessage(role, content, animate = false, tools = [], msgId = null
   div.innerHTML = `
     <div class="agent-msg-label">${esc(label)}</div>
     <div class="agent-msg-content">${esc(content).replace(/\n/g, "<br>")}</div>
+    ${traceHtml || ""}
     ${toolsHtml}
     <div class="agent-msg-actions">
       <button type="button" class="agent-msg-btn" data-msg-action="copy" title="复制">⧉ 复制</button>
@@ -490,6 +641,15 @@ function _appendMessage(role, content, animate = false, tools = [], msgId = null
 function _wireMessageActions(container) {
   if (!container) return;
   container.addEventListener("click", async (e) => {
+    const openBtn = e.target.closest("[data-open]");
+    if (openBtn) {
+      try {
+        await api.openPath(openBtn.dataset.open);
+      } catch (err) {
+        toast(t("agent.openFailed", { err: err.message || err }), { kind: "err" });
+      }
+      return;
+    }
     const delBtn = e.target.closest('[data-msg-action="delete-msg"]');
     if (delBtn) { await _deleteMessage(delBtn); return; }
     const editBtn = e.target.closest('[data-msg-action="edit-msg"]');

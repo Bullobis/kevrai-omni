@@ -302,7 +302,7 @@ def test_get_agent_single_build(monkeypatch, tmp_xdg):
 
     monkeypatch.setattr(agent_mod, "AgentMemory", _FakeMemory)
     monkeypatch.setattr(agent_mod, "Agent", _FakeAgent)
-    monkeypatch.setattr(agent_mod, "ModelRouter", lambda: object())
+    monkeypatch.setattr(agent_mod, "ModelRouter", lambda *a, **k: object())
     monkeypatch.setattr(agent_mod, "ToolContext", lambda **k: object())
     monkeypatch.setattr(sh_mod, "load_imported", lambda root: [])
     monkeypatch.setattr(sh_mod, "default_library_root", lambda root: str(tmp_xdg))

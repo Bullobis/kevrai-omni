@@ -33,9 +33,44 @@ log = logging.getLogger("kevrai.agent")
 # Maximum ReAct iterations per user message (prevents infinite loops).
 MAX_ITERATIONS = 12
 
+# Token budget for a single ReAct turn. A turn is either a short Thought+Action
+# or one Final-Answer paragraph; keeping this tight bounds worst-case latency on
+# CPU where a 0.6B model generates slowly.
+REACT_TURN_TOKENS = 512
+
 # Maximum characters of tool observation to feed back into the LLM context
 # (prevents context window blowup from large catalog results).
 MAX_OBSERVATION_CHARS = 2000
+
+# How many times we nudge a model that tries to conclude before calling any
+# tool on a task that clearly needs data.
+MAX_PREMATURE_NUDGES = 2
+
+# Tool-intent markers: a request containing one of these needs real data before
+# it can be answered (used to reject a hallucinated, tool-free conclusion).
+_TOOL_INTENT_MARKERS = (
+    "搜索", "查找", "找一", "找个", "推荐", "有哪些", "硬件", "能跑", "显存",
+    "详情", "信息", "下载", "安装", "嵌入", "量化", "模型", "对比", "列出",
+    "查一下", "多少", "多大", "许可", "大小",
+    "search", "find", "recommend", "hardware", "download", "install",
+    "embed", "quant", "model", "detail", "list", "compare",
+)
+
+
+def _needs_tool(message: str) -> bool:
+    low = message.lower()
+    return any(m in low for m in _TOOL_INTENT_MARKERS)
+
+
+def _premature_correction(attempted: str) -> str:
+    """Build the scratchpad note that rejects a tool-free early conclusion."""
+    snippet = attempted.strip().replace("\n", " ")[:200]
+    return (
+        f"Thought: {snippet}\n"
+        "System: 你还没有调用任何工具，不能直接给出结论，也禁止编造数值。"
+        "请严格按格式继续：先输出 Thought，然后输出 "
+        "Action: 工具名|{...} 来获取真实信息。\n"
+    )
 
 
 _SYSTEM_PROMPT_TEMPLATE = """你是 **Kevrai Agent**，Kevrai Omni 本地 AI 工作站的智能助手。
@@ -73,6 +108,16 @@ _SYSTEM_PROMPT_TEMPLATE = """你是 **Kevrai Agent**，Kevrai Omni 本地 AI 工
 
 ## 硬件概况
 {hardware_block}
+
+## 格式示例（严格照此输出，一次只走一步）
+用户请求：先搜索嵌入模型，再告诉我 bge-m3 的详情。
+Thought: 我需要先搜索 embedding 类模型，确认 bge-m3 是否存在。
+Action: search_models|{"query": "bge embedding", "category": "embedding"}
+Observation: （系统会在此返回工具结果，你不要自己编写）
+Thought: 已找到 bge-m3，现在查看它的详细信息。
+Action: model_info|{"model_id": "bge-m3"}
+Observation: （系统返回）
+Final Answer: bge-m3 是一个双语嵌入模型，许可为 MIT，约 2.27GB，适合本地检索与语义相似度任务。
 
 现在开始处理用户请求。记住：先 Thought，再 Action（工具）或 Final Answer。"""
 
@@ -552,6 +597,7 @@ class Agent:
         steps: list[AgentStep] = []
         tools_used: list[str] = []
         scratchpad = ""  # accumulates Thought/Action/Observation for the LLM
+        nudges = 0  # how often we rejected a premature, tool-free conclusion
         final_answer = ""
         error_msg = ""
         cancelled = False  # set at a checkpoint when cancel() was requested
@@ -574,7 +620,7 @@ class Agent:
             prompt = "\n".join(prompt_parts)
 
             # Call LLM
-            llm_res = self.router.chat(prompt, system="", max_new_tokens=1500)
+            llm_res = self.router.chat(prompt, system="", max_new_tokens=REACT_TURN_TOKENS)
             # Checkpoint (after LLM call): a cancel may have landed while this
             # blocking inference was running. We cannot interrupt the call
             # itself, but as soon as it returns we honour the request instead
@@ -606,6 +652,14 @@ class Agent:
 
             # Check for final answer
             if "final answer" in raw.lower() or "最终答案" in raw or "最终回答" in raw:
+                # Reject a tool-free conclusion on a task that needs data: weak
+                # models otherwise copy the example / hallucinate numbers.
+                if (not tools_used and nudges < MAX_PREMATURE_NUDGES
+                        and _needs_tool(message)):
+                    nudges += 1
+                    scratchpad += "\n" + _premature_correction(raw)
+                    log.info("rejected premature final answer (nudge %d)", nudges)
+                    continue
                 final_answer = extract_final_answer(full_output)
                 step.is_final = True
                 step.final_answer = final_answer
@@ -617,6 +671,14 @@ class Agent:
             # Parse tool call
             tool_call = parse_tool_call(full_output)
             if tool_call is None:
+                # No tool call and no final answer. Apply the same premature-
+                # conclusion guard before treating prose as the answer.
+                if (not tools_used and nudges < MAX_PREMATURE_NUDGES
+                        and _needs_tool(message)):
+                    nudges += 1
+                    scratchpad += "\n" + _premature_correction(raw)
+                    log.info("rejected premature prose answer (nudge %d)", nudges)
+                    continue
                 # No tool call and no final answer — treat the output as the answer
                 final_answer = raw.strip()
                 step.is_final = True

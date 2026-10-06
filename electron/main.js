@@ -1519,6 +1519,14 @@ function registerIpc() {
   ipcMain.handle("kevrai:agent-reset-skills", async () =>
     sidecarFetch("/api/agent/skills/reset", { method: "POST", body: {} }));
 
+  // v3.23.0 — local brain selection + cooperative cancel
+  ipcMain.handle("kevrai:agent-brain", async () => sidecarFetch("/api/agent/brain"));
+  ipcMain.handle("kevrai:agent-set-brain", async (_e, backend) =>
+    sidecarFetch("/api/agent/brain", { method: "POST", body: { backend } }));
+  ipcMain.handle("kevrai:agent-cancel", async (_e, sessionId) =>
+    sidecarFetch("/api/agent/cancel",
+      { method: "POST", body: { session_id: sessionId } }));
+
   // v2.9.0 — skill hub（导入外部 Anthropic SKILL.md 技能）
   // 注意：/skill-hub 系列必须由 sidecar 端声明在 /skills/{skill_id} 之前，
   // 否则 "skill-hub" 会被当成 skill id 匹配掉（见 python/app/main.py）。

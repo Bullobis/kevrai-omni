@@ -3646,7 +3646,7 @@ def _get_agent(request: Request):
 
         db_path = APP_ROOT / "agent" / "memory.sqlite3"
         memory = AgentMemory(db_path)
-        router = ModelRouter()
+        router = ModelRouter(APP_ROOT / "agent" / "brain.json")
         # v2.8.0: pluggable skills; enable/disable state persists next to memory.
         skill_state = APP_ROOT / "agent" / "skills.json"
         # v2.9.0: skills imported through the skill hub are layered on top of the
@@ -3701,6 +3701,42 @@ def agent_status(request: Request) -> dict[str, Any]:
         "tool_count": len(agent.registry.list_names()),
         "mode": "llm" if ready else "rule_based",
     }
+
+
+class BrainReq(BaseModel):
+    # Compact spec: ""/"auto"/"mnn"/"transformers:owner/repo".
+    backend: str = Field(default="", max_length=200)
+
+
+@app.get("/api/agent/brain")
+def agent_brain(request: Request) -> dict[str, Any]:
+    """List selectable brain models and report the active backend."""
+    from .llm_runtime import BRAIN_MODELS
+
+    agent = _get_agent(request)
+    kind, repo = agent.router.backend
+    options = [{"repo": r, "label": label} for r, label in BRAIN_MODELS.items()]
+    return {
+        "backend": kind or "auto",
+        "repo": repo,
+        "spec": (f"transformers:{repo}" if kind == "transformers"
+                 else (kind or "auto")),
+        "models": options,
+    }
+
+
+@app.post("/api/agent/brain")
+def agent_set_brain(request: Request, req: BrainReq) -> dict[str, Any]:
+    """Select the reasoning brain (or clear it for rule-based mode)."""
+    agent = _get_agent(request)
+    try:
+        agent.router.configure(req.backend)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+    kind, repo = agent.router.backend
+    ready, model_name = agent.router.is_ready()
+    return {"ok": True, "backend": kind or "auto", "repo": repo,
+            "llm_ready": ready, "model_name": model_name}
 
 
 @app.get("/api/agent/skills")
