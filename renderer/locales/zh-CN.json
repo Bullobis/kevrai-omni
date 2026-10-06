@@ -167,7 +167,11 @@
     "category_3d": "3D 生成",
     "category_vision": "多模态",
     "category_pending": "待定",
-    "category_other": "其他"
+    "category_other": "其他",
+    "quantSelectAll": "全选",
+    "quantSelectNone": "清空选择",
+    "downloadSelected": "下载选中量化文件",
+    "quantPickFirst": "请先勾选至少一个量化文件"
   },
   "engines": {
     "title": "AI 引擎",
@@ -420,7 +424,8 @@
     "installingEngine": "正在安装引擎 {engine}",
     "installingEngineAlt": "正在安装引擎 {engine}（另可选 {alt}）",
     "uninstalledEngine": "已卸载 {id}",
-    "mnnRepoStart": "开始下载 MNN 模型（仓库直下）"
+    "mnnRepoStart": "开始下载 MNN 模型（仓库直下）",
+    "quantDownloadStarted": "已开始下载 {n} 个文件，可在“下载”页查看进度"
   },
   "cmdpal": {
     "title": "命令面板",

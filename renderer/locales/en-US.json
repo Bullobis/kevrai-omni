@@ -167,7 +167,11 @@
     "category_3d": "3D generation",
     "category_vision": "Multimodal",
     "category_pending": "Pending",
-    "category_other": "Other"
+    "category_other": "Other",
+    "quantSelectAll": "Select all",
+    "quantSelectNone": "Clear",
+    "downloadSelected": "Download selected",
+    "quantPickFirst": "Please select at least one quantized file"
   },
   "engines": {
     "title": "AI Engines",
@@ -420,7 +424,8 @@
     "installingEngine": "Installing engine {engine}",
     "installingEngineAlt": "Installing engine {engine} (alternatives: {alt})",
     "uninstalledEngine": "Uninstalled {id}",
-    "mnnRepoStart": "Starting MNN model download (direct from repo)"
+    "mnnRepoStart": "Starting MNN model download (direct from repo)",
+    "quantDownloadStarted": "Started downloading {n} file(s); see the Downloads page for progress"
   },
   "cmdpal": {
     "title": "Command palette",

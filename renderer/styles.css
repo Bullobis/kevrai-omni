@@ -385,6 +385,21 @@ html[data-theme="light"] .skip-link { color: #fff; }
 .gguf-list li:last-child { border-bottom: 0; }
 .gguf-name { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; word-break: break-all; }
 
+/* ---------- Quantization picker ---------- */
+.quant-picker { display: flex; flex-direction: column; gap: 8px; }
+.quant-tools { display: flex; gap: 6px; }
+.quant-tools .tiny { padding: 2px 8px; font-size: 11px; }
+.gguf-list.selectable { max-height: 280px; }
+.quant-item { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; cursor: pointer; }
+.quant-item .quant-check { margin: 0; flex: none; cursor: pointer; }
+.quant-tag {
+  flex: none; font-size: 10px; font-weight: 600; letter-spacing: .3px;
+  color: var(--accent, #4a7dff); background: rgba(74, 125, 255, .12);
+  border-radius: 4px; padding: 1px 5px; font-family: ui-monospace, Consolas, monospace;
+}
+.quant-item .gguf-name { font-size: 12px; }
+.quant-picker [data-action=download-quant] { align-self: flex-start; margin-top: 2px; }
+
 /* ---------- Buttons ---------- */
 button {
   font: inherit; color: var(--fg); cursor: pointer;

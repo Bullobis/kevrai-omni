@@ -510,6 +510,7 @@ export async function showDetail(item) {
       b.disabled = false;
     })
   );
+  _bindQuantPicker(host);
   host.querySelectorAll("[data-action=import-local]").forEach(() => {}); // handled below
   host.querySelector("#btn-import-local-for-detail")?.addEventListener("click", async () => {
     const p = await api.pickFile();
@@ -540,16 +541,8 @@ async function _lazyLoadGgufFiles(host, detail) {
       anchor.outerHTML = "";
       return;
     }
-    anchor.outerHTML = `
-      <h3 class="section">${t("market.quantVersions", { n: files.length })}</h3>
-      <details><summary>${t("market.expandGguf")}</summary>
-        <ul class="gguf-list">
-          ${files.map((f) => `<li>
-            <span class="gguf-name">${escapeHtml(f.path || f.name || "")}</span>
-            <span class="mut">${((f.size || 0) / 1e9).toFixed(2)} GB</span>
-          </li>`).join("")}
-        </ul>
-      </details>`;
+    anchor.outerHTML = renderQuantPicker(files, detail.gguf_repo);
+    _bindQuantPicker(host);
   } catch (_) {
     const a = host.querySelector("#gguf-lazy");
     if (a) a.outerHTML = `<p class="hint">${t("market.quantLoadFailed")}</p>`;
@@ -580,6 +573,69 @@ function fmtDate(iso) {
   const s = String(iso || "").trim();
   if (!s) return "";
   return s.replace("T", " ").replace("Z", " UTC").slice(0, 23);
+}
+
+// 从 GGUF 文件名解析量化等级标签（Q4_K_M / IQ4_XS / F16 等）。
+export function quantLabelOf(path) {
+  const base = String(path).split("/").pop() || "";
+  const m = base.match(/(IQ[0-9][A-Za-z0-9_]*|Q[0-9][A-Za-z0-9_]*|F16|F32|FP16|FP8)/);
+  return m ? m[1].toUpperCase() : "";
+}
+
+// 量化版本选择器：把 GGUF 文件变成可勾选 + 下载选中文件（走 /api/hub/download）。
+export function renderQuantPicker(files, ggufRepo) {
+  if (!Array.isArray(files) || !files.length || !ggufRepo) return "";
+  return `
+    <h3 class="section">${t("market.quantVersions", { n: files.length })}</h3>
+    <div class="quant-picker" data-repo="${escapeHtml(ggufRepo)}">
+      <div class="quant-tools">
+        <button type="button" class="ghost tiny" data-action="quant-select-all">${t("market.quantSelectAll")}</button>
+        <button type="button" class="ghost tiny" data-action="quant-select-none">${t("market.quantSelectNone")}</button>
+      </div>
+      <ul class="gguf-list selectable">
+        ${files.map((f) => {
+          const p = f.path || f.name || "";
+          const ql = quantLabelOf(p);
+          return `<li>
+            <label class="quant-item">
+              <input type="checkbox" class="quant-check" value="${escapeHtml(p)}" />
+              <span class="quant-tag">${ql ? escapeHtml(ql) : ""}</span>
+              <span class="gguf-name">${escapeHtml(p.split("/").pop())}</span>
+            </label>
+            <span class="mut">${((f.size || 0) / 1e9).toFixed(2)} GB</span>
+          </li>`;
+        }).join("")}
+      </ul>
+      <button type="button" class="primary small" data-action="download-quant">${t("market.downloadSelected")}</button>
+    </div>`;
+}
+
+// 绑定量化选择器（openDetail 与 lazy 渲染后都调用；dataset.bound 防重复绑定）。
+export function _bindQuantPicker(scope) {
+  scope.querySelectorAll(".quant-picker").forEach((pk) => {
+    if (pk.dataset.bound === "1") return;
+    pk.dataset.bound = "1";
+    pk.querySelector('[data-action=quant-select-all]')?.addEventListener("click", (e) => {
+      e.preventDefault();
+      pk.querySelectorAll(".quant-check").forEach((c) => { c.checked = true; });
+    });
+    pk.querySelector('[data-action=quant-select-none]')?.addEventListener("click", (e) => {
+      e.preventDefault();
+      pk.querySelectorAll(".quant-check").forEach((c) => { c.checked = false; });
+    });
+    pk.querySelector('[data-action=download-quant]')?.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const files = [...pk.querySelectorAll(".quant-check:checked")].map((c) => c.value);
+      if (!files.length) { toast(t("market.quantPickFirst"), { kind: "warn" }); return; }
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      try {
+        await api.hubDownload({ hub: "hf", repo: pk.dataset.repo, revision: "", files });
+        toast(t("toast.quantDownloadStarted", { n: files.length }), { kind: "ok" });
+      } catch (_) { /* 409 等错误已由调用链提示 */ }
+      btn.disabled = false;
+    });
+  });
 }
 
 function renderDetail(m, gguf) {
@@ -705,17 +761,9 @@ function renderDetail(m, gguf) {
       <p class="detail-prose">${escapeHtml(m.description)}</p>
     ` : ""}
 
-    ${ggufFiles.length > 0 ? `
-      <h3 class="section">${t("market.quantVersions", { n: ggufFiles.length })}</h3>
-      <details><summary>${t("market.expandGguf")}</summary>
-        <ul class="gguf-list">
-          ${ggufFiles.map((f) => `<li>
-            <span class="gguf-name">${escapeHtml(f.path || f.name || "")}</span>
-            <span class="mut">${((f.size || 0) / 1e9).toFixed(2)} GB</span>
-          </li>`).join("")}
-        </ul>
-      </details>
-    ` : (m.gguf_repo ? `<div id="gguf-lazy"><p class="mut tiny">${t("market.loadingQuant")}</p></div>` : "")}
+    ${ggufFiles.length > 0
+      ? renderQuantPicker(ggufFiles, m.gguf_repo)
+      : (m.gguf_repo ? `<div id="gguf-lazy"><p class="mut tiny">${t("market.loadingQuant")}</p></div>` : "")}
   `;
 }
 
