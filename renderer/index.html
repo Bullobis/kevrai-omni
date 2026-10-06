@@ -98,6 +98,9 @@
         <button class="pane-tab" data-tab="piper" title="本地语音合成" data-i18n-title="nav.piper">
           <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></span> <span class="tab-label" data-i18n="nav.piper">本地语音合成</span>
         </button>
+        <button class="pane-tab" data-tab="multimodal" title="多模态对话" data-i18n-title="nav.multimodal">
+          <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></span> <span class="tab-label" data-i18n="nav.multimodal">多模态对话</span>
+        </button>
         <button class="pane-tab" data-tab="local" title="本地模型" data-i18n-title="nav.local">
           <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 16h.01"/><path d="M2.212 11.577a2 2 0 0 0-.212.896V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.527a2 2 0 0 0-.212-.896L18.55 5.11A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><path d="M21.946 12.013H2.054"/><path d="M6 16h.01"/></svg></span> <span class="tab-label" data-i18n="nav.local">本地模型</span>
         </button>
@@ -478,6 +481,52 @@
         </div>
 
         <div class="asr-result" id="piper-result"></div>
+      </section>
+
+      <!-- Multimodal (image + text) chat pane -->
+      <section id="pane-multimodal" class="pane" aria-label="多模态对话">
+        <div class="pane-head">
+          <h2 data-i18n="multimodal.title">多模态对话</h2>
+          <p class="muted" id="mm-engine-status" data-i18n="multimodal.engineMissing">引擎未安装</p>
+        </div>
+
+        <div class="asr-engine-missing" id="mm-missing-card">
+          <p class="muted" data-i18n="multimodal.missingHint">需要安装 Transformers 引擎，可对图片提问，完全本地运行。</p>
+          <button class="primary" id="mm-install" data-i18n="multimodal.install">安装引擎</button>
+        </div>
+
+        <div class="asr-form card">
+          <div class="form-grid">
+            <div class="form-row">
+              <label for="mm-model" data-i18n="multimodal.model">模型</label>
+              <select id="mm-model"></select>
+            </div>
+            <div class="form-row">
+              <label for="mm-max-tokens" data-i18n="multimodal.maxTokens">最大生成长度</label>
+              <input id="mm-max-tokens" type="number" min="1" max="4096" value="512">
+            </div>
+          </div>
+          <div class="form-row">
+            <label data-i18n="multimodal.image">图片（可选）</label>
+            <input id="mm-file" type="file" accept="image/*" hidden>
+            <div class="mm-pick-row">
+              <button type="button" id="mm-pick-btn" class="ghost" data-i18n="multimodal.chooseImage">选择图片</button>
+            </div>
+            <div id="mm-preview" class="mm-preview"></div>
+          </div>
+          <div class="form-row">
+            <label for="mm-question" data-i18n="multimodal.question">提问</label>
+            <textarea id="mm-question" rows="4" maxlength="4000"></textarea>
+          </div>
+          <div class="form-actions">
+            <button class="primary" id="mm-run" data-i18n="multimodal.run">发送</button>
+          </div>
+        </div>
+
+        <div class="asr-result card">
+          <h3 class="mm-answer-title" data-i18n="multimodal.answerTitle">回答</h3>
+          <div id="mm-answer" class="mm-answer"></div>
+        </div>
       </section>
 
       <!-- Environments pane -->

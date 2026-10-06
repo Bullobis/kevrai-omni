@@ -138,6 +138,8 @@ const api = {
   piperCapabilities:      () => invoke("api:tts-piper:capabilities"),
   piperSynthesize:        (payload) => invoke("api:tts-piper:synthesize", payload),
   piperStream:            (params) => invoke("api:tts-piper:stream", params),
+  multimodalCapabilities: () => invoke("api:multimodal:capabilities"),
+  multimodalChat:         (payload) => invoke("api:multimodal:chat", payload),
   // ClawdChat heartbeat (runs server-side; credential stays in the sidecar).
   clawdchatHeartbeat: () => invoke("api:clawdchat-heartbeat"),
   categories:    () => invoke("api:categories"),

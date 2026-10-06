@@ -1006,6 +1006,24 @@ function registerIpc() {
     const r = await sidecarFetchBytes(`/api/tts-piper/stream?${q}`);
     return new Uint8Array(r.bytes);
   });
+  ipcMain.handle("api:multimodal:capabilities", async () =>
+    sidecarFetch("/api/multimodal/capabilities"));
+  ipcMain.handle("api:multimodal:chat", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(Array.isArray(payload.messages) && payload.messages.length >= 1,
+      "messages: invalid");
+    const body = {
+      model: isString(payload.model, 128) ? payload.model : "smolvlm-256",
+      messages: payload.messages,
+      max_tokens: Number.isFinite(Number(payload.max_tokens))
+        ? Number(payload.max_tokens) : 512,
+      stream: false,
+    };
+    return sidecarFetch("/api/multimodal/chat", {
+      method: "POST", rawBody: Buffer.from(JSON.stringify(body)),
+      headers: { "Content-Type": "application/json" }, timeoutMs: 300_000,
+    });
+  });
   ipcMain.handle("api:categories",   async () => sidecarFetch("/api/categories"));
   ipcMain.handle("api:models", async (_e, params) => {
     const p = (params && typeof params === "object") ? params : {};
