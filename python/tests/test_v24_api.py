@@ -19,14 +19,26 @@ CATALOG_DIR = REPO_ROOT / "catalog"
 @pytest.fixture(scope="module")
 def client():
     tmp = Path(tempfile.mkdtemp(prefix="kevrai-v24-"))
+    old_local = os.environ.get("LOCALAPPDATA")
+    old_xdg = os.environ.get("XDG_DATA_HOME")
     os.environ["LOCALAPPDATA"] = str(tmp)
     os.environ["XDG_DATA_HOME"] = str(tmp)
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from fastapi.testclient import TestClient
 
     from app.main import app
-    with TestClient(app) as c:
-        yield c
+    try:
+        with TestClient(app) as c:
+            yield c
+    finally:
+        if old_local is None:
+            os.environ.pop("LOCALAPPDATA", None)
+        else:
+            os.environ["LOCALAPPDATA"] = old_local
+        if old_xdg is None:
+            os.environ.pop("XDG_DATA_HOME", None)
+        else:
+            os.environ["XDG_DATA_HOME"] = old_xdg
 
 
 # ---------- /api/search ----------

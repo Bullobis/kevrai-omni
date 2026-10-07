@@ -14,13 +14,25 @@ def client():
     # Patch APP_ROOT etc. to a temp dir BEFORE importing the app
     import tempfile
     tmp = Path(tempfile.mkdtemp(prefix="kevrai-smoke-"))
+    old_local = os.environ.get("LOCALAPPDATA")
+    old_xdg = os.environ.get("XDG_DATA_HOME")
     os.environ["LOCALAPPDATA"] = str(tmp)        # windows path
     os.environ["XDG_DATA_HOME"] = str(tmp)       # linux path
     # Now import the app fresh
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from app.main import app
-    with TestClient(app) as c:
-        yield c
+    try:
+        with TestClient(app) as c:
+            yield c
+    finally:
+        if old_local is None:
+            os.environ.pop("LOCALAPPDATA", None)
+        else:
+            os.environ["LOCALAPPDATA"] = old_local
+        if old_xdg is None:
+            os.environ.pop("XDG_DATA_HOME", None)
+        else:
+            os.environ["XDG_DATA_HOME"] = old_xdg
 
 
 def test_health(client):
