@@ -14313,10 +14313,10 @@
       "trending": true,
       "description": "Piper 美式英语女声 Lessac，medium 质量，CPU 实时合成、发音自然。",
       "sources": [
-        "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/piper-en-lessac.onnx",
+        "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx",
         "https://github.com/rhasspy/piper"
       ],
-      "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/piper-en-lessac.onnx",
+      "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx",
       "hardware": {
         "vram_gb": 1,
         "min_vram_gb": 0,
@@ -14352,10 +14352,10 @@
       "trending": false,
       "description": "Piper 美式英语女声 Amy，medium 质量。",
       "sources": [
-        "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/piper-en-amy.onnx",
+        "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/en_US-amy-medium.onnx",
         "https://github.com/rhasspy/piper"
       ],
-      "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/piper-en-amy.onnx",
+      "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/en_US-amy-medium.onnx",
       "hardware": {
         "vram_gb": 1,
         "min_vram_gb": 0,
@@ -14391,10 +14391,10 @@
       "trending": false,
       "description": "Piper 普通话女声 华颜，medium 质量，可完全离线合成中文语音。",
       "sources": [
-        "https://huggingface.co/rhasspy/piper-voices/resolve/main/zh/zh_CN/huayan/medium/piper-zh-huayan.onnx",
+        "https://huggingface.co/rhasspy/piper-voices/resolve/main/zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx",
         "https://github.com/rhasspy/piper"
       ],
-      "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/zh/zh_CN/huayan/medium/piper-zh-huayan.onnx",
+      "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx",
       "hardware": {
         "vram_gb": 1,
         "min_vram_gb": 0,
