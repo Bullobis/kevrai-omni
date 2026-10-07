@@ -46,6 +46,10 @@ MAX_OBSERVATION_CHARS = 2000
 # tool on a task that clearly needs data.
 MAX_PREMATURE_NUDGES = 2
 
+# How many times we nudge a brain that keeps repeating the identical tool call
+# (same parameters, same result) before we stop the no-progress loop.
+MAX_CYCLE_NUDGES = 2
+
 # Tool-intent markers: a request containing one of these needs real data before
 # it can be answered (used to reject a hallucinated, tool-free conclusion).
 _TOOL_INTENT_MARKERS = (
@@ -70,6 +74,15 @@ def _premature_correction(attempted: str) -> str:
         "System: 你还没有调用任何工具，不能直接给出结论，也禁止编造数值。"
         "请严格按格式继续：先输出 Thought，然后输出 "
         "Action: 工具名|{...} 来获取真实信息。\n"
+    )
+
+
+def _cycle_correction(tool_name: str) -> str:
+    """Build the scratchpad note that breaks a no-progress repeated action."""
+    return (
+        f"System: 你刚刚用完全相同的参数再次调用了 {tool_name}，得到的结果也相同，"
+        "没有任何新进展。请不要重复同一调用：基于已经获得的结果直接输出 "
+        "Final Answer，或改用不同的参数 / 工具。\n"
     )
 
 
@@ -598,6 +611,8 @@ class Agent:
         tools_used: list[str] = []
         scratchpad = ""  # accumulates Thought/Action/Observation for the LLM
         nudges = 0  # how often we rejected a premature, tool-free conclusion
+        cycle_nudges = 0  # how often we broke a no-progress repeated action
+        last_sig: tuple[str, str, str] | None = None
         final_answer = ""
         error_msg = ""
         cancelled = False  # set at a checkpoint when cancel() was requested
@@ -725,6 +740,39 @@ class Agent:
             steps.append(step)
             if self._step_callback:
                 self._step_callback(step)
+
+            # Detect a no-progress cycle: if the immediately previous tool call
+            # succeeded and had the same name, parameters and observation, the
+            # brain is repeating itself. Nudge it to use the result / change
+            # approach; after a bounded number of repeats stop rather than spin.
+            # Failing/unknown tools are left to the MAX_ITERATIONS path so the
+            # existing friendly "step limit" behaviour is preserved.
+            succeeded = obs.get("ok") is not False
+            if succeeded:
+                sig = (tool_name,
+                       json.dumps(tool_params, ensure_ascii=False, sort_keys=True),
+                       obs_str)
+                if sig == last_sig:
+                    if cycle_nudges < MAX_CYCLE_NUDGES:
+                        cycle_nudges += 1
+                        scratchpad += "\n" + _cycle_correction(tool_name)
+                        log.info("no-progress cycle on %s (nudge %d)",
+                                 tool_name, cycle_nudges)
+                        last_sig = sig
+                        continue
+                    final_answer = (
+                        "抱歉，处理过程在同一步骤上反复而没有进展，已自动停止。"
+                        f"最后一次 {tool_name} 的结果：{obs_str[:500]}"
+                    )
+                    error_msg = "检测到无进展的重复动作，已终止。"
+                    log.warning("agent stuck in no-progress loop on %s; stopping",
+                                tool_name)
+                    last_sig = sig
+                    break
+                last_sig = sig
+                cycle_nudges = 0
+            else:
+                last_sig = None
 
             # Checkpoint 3: tool done — stop before looping back into another
             # LLM call if a cancel arrived mid-tool-execution.
