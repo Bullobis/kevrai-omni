@@ -209,13 +209,12 @@ def pick_best(ranking: list[dict[str, Any]]) -> dict[str, Any] | None:
 # Hosts that mirror the HuggingFace path layout
 # (`/<owner>/<repo>/resolve/<ref>/<file>`). Swapping the host of a primary
 # HF URL onto any of these yields a working equivalent download URL.
+# Only hosts verified to resolve and serve the HF path layout are listed;
+# candidates that no longer resolve are removed rather than assumed.
 HF_MIRROR_HOSTS: set[str] = {
     "huggingface.co",
     "cdn-lfs.huggingface.co",
     "hf-mirror.com",
-    "hf-mirror.us",
-    "huggingface.dl.in.tel",
-    "hf-cn-mirror.com",
 }
 
 
