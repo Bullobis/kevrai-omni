@@ -10688,40 +10688,40 @@
           "id": "Q3_K_M",
           "label": "Q3_K_M",
           "file_quant": "Q3_K_M",
-          "size_gb": 176.91,
-          "vram_gb": 203.4,
+          "size_gb": 189.95,
+          "vram_gb": 218.4,
           "recommended": false
         },
         {
           "id": "Q4_K_M",
           "label": "Q4_K_M",
           "file_quant": "Q4_K_M",
-          "size_gb": 233.61,
-          "vram_gb": 268.7,
+          "size_gb": 250.83,
+          "vram_gb": 288.5,
           "recommended": true
         },
         {
           "id": "Q5_K_M",
           "label": "Q5_K_M",
           "file_quant": "Q5_K_M",
-          "size_gb": 284.62,
-          "vram_gb": 327.3,
+          "size_gb": 305.61,
+          "vram_gb": 351.5,
           "recommended": false
         },
         {
           "id": "Q6_K",
           "label": "Q6_K",
           "file_quant": "Q6_K",
-          "size_gb": 325.78,
-          "vram_gb": 374.6,
+          "size_gb": 349.8,
+          "vram_gb": 402.3,
           "recommended": false
         },
         {
           "id": "Q8_0",
           "label": "Q8_0",
           "file_quant": "Q8_0",
-          "size_gb": 392.62,
-          "vram_gb": 451.5,
+          "size_gb": 421.58,
+          "vram_gb": 484.8,
           "recommended": false
         }
       ]
