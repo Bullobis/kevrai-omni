@@ -14587,6 +14587,47 @@
         "高效",
         "Apache"
       ]
+    },
+    {
+      "id": "embeddinggemma-2",
+      "category": "embedding",
+      "name": "EmbeddingGemma 2 嵌入",
+      "repo": "google/embeddinggemma-2",
+      "size_gb": 1.49,
+      "engine": [
+        "sentence-transformers"
+      ],
+      "license": "apache-2.0",
+      "trending": true,
+      "description": "Google 发布的多语言文本嵌入模型，512 维输出，sentence-transformers 原生加载，适合语义检索与 RAG。",
+      "sources": [
+        "https://huggingface.co/google/embeddinggemma-2/",
+        "https://modelscope.cn/models/google/embeddinggemma-2"
+      ],
+      "primary_url": "https://huggingface.co/google/embeddinggemma-2/",
+      "hardware": {
+        "vram_gb": 2,
+        "min_vram_gb": 2,
+        "ram_gb": 8,
+        "disk_gb": 3
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [
+          "text"
+        ],
+        "generate": [
+          "embedding"
+        ]
+      },
+      "tags": [
+        "嵌入",
+        "Embedding",
+        "多语言",
+        "RAG",
+        "检索",
+        "Google"
+      ]
     }
   ],
   "gguf_repos": [
