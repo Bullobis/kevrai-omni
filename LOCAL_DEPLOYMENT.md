@@ -1,4 +1,4 @@
-# 本地部署指南 — Kevrai Omni v3.0.0
+# 本地部署指南 — Kevrai Omni
 
 本文面向需要**自己动手部署/排障**的用户与开发者：从源码运行、只跑 Python sidecar、
 离线/内网部署、GPU 加速选型，以及常见问题排查。
@@ -112,7 +112,7 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 17890 --log-level info
 - 健康检查（免鉴权）：
   ```bash
   curl http://127.0.0.1:17890/api/health
-  # → {"ok": true, "version": "3.0.0", "models_dir": "...", "app_root": "..."}
+  # → {"ok": true, "version": "<VERSION>", "models_dir": "...", "app_root": "..."}
   ```
 - 带鉴权访问其它路由示例：
   ```bash

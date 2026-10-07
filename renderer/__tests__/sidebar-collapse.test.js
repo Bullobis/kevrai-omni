@@ -32,7 +32,7 @@ const bodyHtml = `
     </nav>
     <div class="sidebar-foot">
       <button class="ghost full" title="设置"><span class="tab-label">设置</span></button>
-      <p class="mut tiny" id="version-line">v3.6.0</p>
+      <p class="mut tiny" id="version-line">v4.0.1</p>
     </div>
   </aside>
 </div>`;

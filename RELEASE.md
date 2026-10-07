@@ -1,4 +1,4 @@
-# Release Runbook — Kevrai Omni v3.0.0
+# Release Runbook — Kevrai Omni
 
 本文件是发布到 GitHub Releases 的操作手册。实际发布逻辑由
 [`scripts/release.sh`](scripts/release.sh) 实现，本文件描述其前置条件与步骤。
@@ -31,7 +31,7 @@ export REPO=Bullobis/kevrai-omni     # 或你有权限的 fork
 
 - `gh` CLI 已安装并可通过 `gh auth status`。
 - 工作树干净（或已接受脚本的未提交变更警告）。
-- 目标 tag（默认 `v3.0.0`）在远端**尚不存在**。
+- 目标 tag（默认 `<VERSION>`）在远端**尚不存在**。
 - 本次发布的说明写在 `RELEASE_NOTES_<VERSION>.md`（脚本会自动复制为
   release notes；不存在时才回退到自动生成的模板）。
 
@@ -58,7 +58,7 @@ bash scripts/release.sh
 ```bash
 bash scripts/release.sh --dry-run     # 只打印将要执行的动作，不真正发布
 bash scripts/release.sh --skip-build  # 跳过打包，直接发布 build/output/ 已有产物
-TAG=v3.0.1 bash scripts/release.sh    # 覆盖默认 tag
+TAG=<VERSION> bash scripts/release.sh    # 覆盖默认 tag
 ```
 
 ## 产物命名（electron-builder.yml `artifactName`）
@@ -77,7 +77,7 @@ latest.yml / latest-linux.yml        # electron-updater 自动更新元数据（
 ## 验证发布成功
 
 ```bash
-gh release view v3.0.0 --repo "$REPO"
+gh release view <VERSION> --repo "$REPO"
 # 应能看到上述 exe / AppImage / deb / dmg / latest*.yml 等资产
 # 脚本结尾会打印第一个产物的 SHA-256，可与下载页展示值核对
 ```
