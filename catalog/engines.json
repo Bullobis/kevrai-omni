@@ -646,8 +646,7 @@
         "https://pypi.org/simple/demucs/",
         "https://mirrors.aliyun.com/pypi/simple/demucs/",
         "https://pypi.tuna.tsinghua.edu.cn/simple/demucs/",
-        "https://github.com/facebookresearch/demucs",
-        "https://dl.fbaipublicfiles.com/demucs/"
+        "https://github.com/facebookresearch/demucs"
       ]
     },
     {
