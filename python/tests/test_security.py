@@ -45,6 +45,8 @@ def client():
     import importlib  # noqa: F401 — keeps import order deterministic
 
     tmp = Path(tempfile.mkdtemp(prefix="kevrai-security-"))
+    old_local = os.environ.get("LOCALAPPDATA")
+    old_xdg = os.environ.get("XDG_DATA_HOME")
     os.environ["LOCALAPPDATA"] = str(tmp)
     os.environ["XDG_DATA_HOME"] = str(tmp)
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -52,8 +54,18 @@ def client():
 
     from app.main import app  # imported here so env is set first
 
-    with TestClient(app) as c:
-        yield c
+    try:
+        with TestClient(app) as c:
+            yield c
+    finally:
+        if old_local is None:
+            os.environ.pop("LOCALAPPDATA", None)
+        else:
+            os.environ["LOCALAPPDATA"] = old_local
+        if old_xdg is None:
+            os.environ.pop("XDG_DATA_HOME", None)
+        else:
+            os.environ["XDG_DATA_HOME"] = old_xdg
 
 
 def test_model_id_path_traversal(client):
