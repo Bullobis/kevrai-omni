@@ -39,20 +39,33 @@ async function refreshStatus() {
   if (st.deps_missing) {
     lines.push(`运行依赖：<b class="warn">缺失</b>（后端启动时报 ModuleNotFoundError）`);
   } else if (st.python) {
-    lines.push(`运行依赖：<b>待验证</b>`);
+    lines.push(`运行依赖：<b>待验证</b>（点下方按钮自动安装/验证）`);
   }
   $("#bs-status").innerHTML = lines.join("<br/>");
 
   const isWin = st.platform === "win32";
+  // Windows only: one-click managed Python install.
   $("#btn-install").hidden = !!st.python || !isWin;
-  $("#btn-deps").hidden = !st.deps_missing;
+  $("#btn-install").disabled = !!st.python;
+
+  // Deps button: always visible when Python is present, so users can verify
+  // or reinstall deps from this page regardless of the current state.
+  $("#btn-deps").hidden = false;
+  $("#btn-deps").disabled = !st.python;
+  $("#btn-deps").textContent = st.deps_missing
+    ? "一键安装运行依赖"
+    : "安装/重装运行依赖";
 
   if (!st.python && !isWin) {
     $("#bs-tip").innerHTML =
-      "当前系统（Linux/macOS）暂不支持软件内自动安装 Python，请手动执行：<br/>" +
-      "<code>python3 -m pip install -r python/requirements.txt</code>（安装目录见软件文档），完成后点「重试启动」。";
+      "Linux / macOS：需要系统自带的 Python 3.10+。如果没有，请先安装 Python，" +
+      "<br/>命令：<code>sudo apt install python3 python3-pip</code> 或 <code>brew install python</code>";
+  } else if (!st.python && isWin) {
+    $("#bs-tip").innerHTML =
+      "Windows：点上方「一键安装 Python 环境」，我们下载官方 3.12 便携版到用户目录，不污染系统。";
   }
   if (st.stderr_tail && st.stderr_tail.length) {
+    appendLog("--- sidecar stderr (last " + st.stderr_tail.length + " lines) ---");
     appendLog(st.stderr_tail.join("\n"));
   }
 }

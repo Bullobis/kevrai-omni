@@ -41,7 +41,7 @@
     .stage { font-size: 13px; color: #9aa7c0; min-height: 20px; }
     .log {
       margin-top: 14px; font-size: 12px; color: #7f8ba3; background: rgba(0,0,0,.25);
-      border-radius: 8px; padding: 10px 12px; max-height: 130px; overflow: auto;
+      border-radius: 8px; padding: 10px 12px; max-height: 200px; overflow: auto;
       font-family: Consolas, monospace; white-space: pre-wrap; word-break: break-all;
     }
     .tip { margin-top: 18px; font-size: 12.5px; color: #8b98b3; line-height: 1.8; }
@@ -53,7 +53,7 @@
       <img src="../assets/icons/icon-256.png" alt="Kevrai Omni" />
       <div>
         <h1>欢迎使用 Kevrai Omni</h1>
-        <p class="sub">首次启动 · 准备运行环境（一次性，约 1-5 分钟）</p>
+        <p class="sub">准备 Python 运行环境（一次性，约 1-5 分钟）</p>
       </div>
     </div>
 
@@ -63,12 +63,12 @@
     <div class="stage" id="bs-stage"></div>
 
     <div id="bs-actions">
-      <button class="btn" id="btn-install" hidden>一键安装 Python 环境</button>
-      <button class="btn" id="btn-deps" hidden>安装运行依赖</button>
+      <button class="btn" id="btn-install" hidden>一键安装 Python 环境（仅 Windows）</button>
+      <button class="btn" id="btn-deps" hidden>一键安装运行依赖</button>
       <button class="btn ghost" id="btn-retry">重试启动</button>
     </div>
 
-    <div class="log" id="bs-log" hidden></div>
+    <div class="log" id="bs-log"></div>
 
     <p class="tip" id="bs-tip">
       Kevrai Omni 的推理后端需要 Python 3.10+。为了保持安装包小巧，

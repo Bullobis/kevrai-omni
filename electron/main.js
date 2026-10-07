@@ -1911,18 +1911,17 @@ async function bootstrap() {
     const tail = sidecarStderrTail.join("\n");
     const depsMissing = /ModuleNotFoundError|No module named|ImportError/.test(tail);
     if (depsMissing) {
-      // 有 Python 但缺依赖：同样进引导页，一键补装依赖。
+      // 有 Python 但缺依赖：进引导页，一键补装依赖。
       createWindow(true);
       return;
     }
-    dialog.showErrorBox(
-      "Kevrai Omni — Python sidecar failed to start",
-      `The Python inference sidecar could not be reached on http://${SIDECAR_HOST}:${SIDECAR_PORT}.\n\n` +
-        `Reason: ${e.message}\n\n` +
-        `Fix: install Python 3.10+ and the deps in python/pyproject.toml ` +
-        `(pip install -r requirements), then relaunch.`
-    );
-    app.quit();
+    // Any other sidecar failure (health timeout, port conflict, weird Python
+    // path, unexpected interpreter crash) -> route to the in-app bootstrap
+    // page. The page shows the actual stderr tail and offers one-click
+    // install buttons for pip deps (any platform) and Python (Windows).
+    // Never dump raw technical errors to a new user who may not speak English.
+    logInfo("routing sidecar failure to bootstrap page");
+    createWindow(true);
     return;
   }
 
