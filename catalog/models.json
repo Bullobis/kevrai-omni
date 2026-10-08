@@ -1,7 +1,7 @@
 {
-  "version": "4.0.3",
+  "version": "4.1.0",
   "updated": "2026-10-08",
-  "notice": "v2.9.0 数据核验：修正 14 处失效/错误仓库 slug(THUDM/glm-4-9b-chat→zai-org/GLM-4.5, Tencent-Hunyuan→tencent, xinntao/Real-ESRGAN→ai-forever, Kiteretsu77/APISR→camenduru, Fanghua-Yu/SUPIR→camenduru[非官方转存], Kim2091/4x-UltraSharp→lokCX, haoheliu/audioldm2→audioldm2-full, ASLP-lab/DiffRhythm→DiffRhythm-base, VAST-AI-Research/TripoSR→stabilityai, RVC-Boss/GPT-SoVITS→lj1995, THU-MIG/yolov10→onnx-community, hpcaitech/Open-Sora→hpcai-tech, dummy9996/MiniMax-Music3-w4a8→NidAll, buffalo_l→immich-app/buffalo_l)；清除广告软文式描述；按平台分拆 sources（GitHub/HF 各用各 slug）。",
+  "notice": "v4.1.0：为 72 个 HF-only 模型自动补充魔搭模型广场（modelscope.cn）直链（只保留 API 验证存在的路径），国内用户免令牌即可直接下载。\nv2.9.0 数据核验：修正 14 处失效/错误仓库 slug(THUDM/glm-4-9b-chat→zai-org/GLM-4.5, Tencent-Hunyuan→tencent, xinntao/Real-ESRGAN→ai-forever, Kiteretsu77/APISR→camenduru, Fanghua-Yu/SUPIR→camenduru[非官方转存], Kim2091/4x-UltraSharp→lokCX, haoheliu/audioldm2→audioldm2-full, ASLP-lab/DiffRhythm→DiffRhythm-base, VAST-AI-Research/TripoSR→stabilityai, RVC-Boss/GPT-SoVITS→lj1995, THU-MIG/yolov10→onnx-community, hpcaitech/Open-Sora→hpcai-tech, dummy9996/MiniMax-Music3-w4a8→NidAll, buffalo_l→immich-app/buffalo_l)；清除广告软文式描述；按平台分拆 sources（GitHub/HF 各用各 slug）。",
   "categories": [
     {
       "id": "llm",
@@ -1473,7 +1473,8 @@
       "description": "潞晨 Open-Sora 2.0，开源文/图/视频生视频。",
       "sources": [
         "https://huggingface.co/hpcai-tech/Open-Sora/",
-        "https://hf-mirror.com/hpcai-tech/Open-Sora/"
+        "https://hf-mirror.com/hpcai-tech/Open-Sora/",
+        "https://www.modelscope.cn/models/hpcai-tech/Open-Sora"
       ],
       "primary_url": "https://huggingface.co/hpcai-tech/Open-Sora/",
       "hardware": {
@@ -1802,7 +1803,8 @@
       "description": "腾讯 ARC 经典超分，老照片/通用图。",
       "sources": [
         "https://huggingface.co/ai-forever/Real-ESRGAN/",
-        "https://hf-mirror.com/ai-forever/Real-ESRGAN/"
+        "https://hf-mirror.com/ai-forever/Real-ESRGAN/",
+        "https://www.modelscope.cn/models/ai-forever/Real-ESRGAN"
       ],
       "primary_url": "https://huggingface.co/ai-forever/Real-ESRGAN/",
       "hardware": {
@@ -2136,7 +2138,8 @@
       "description": "西北工业大学 DiffRhythm，全曲生成。",
       "sources": [
         "https://huggingface.co/ASLP-lab/DiffRhythm-base/",
-        "https://hf-mirror.com/ASLP-lab/DiffRhythm-base/"
+        "https://hf-mirror.com/ASLP-lab/DiffRhythm-base/",
+        "https://www.modelscope.cn/models/ASLP-lab/DiffRhythm-base"
       ],
       "primary_url": "https://huggingface.co/ASLP-lab/DiffRhythm-base/",
       "hardware": {
@@ -6395,7 +6398,8 @@
       "sources": [
         "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-MOPD/",
         "https://hf-mirror.com/XiaomiMiMo/MiMo-V2.6-Pro-MOPD/",
-        "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL/"
+        "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL/",
+        "https://www.modelscope.cn/models/XiaomiMiMo/MiMo-V2.6-Pro-MOPD"
       ],
       "primary_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-MOPD/",
       "hardware": {
@@ -6446,7 +6450,8 @@
       "sources": [
         "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-MOPD/",
         "https://hf-mirror.com/XiaomiMiMo/MiMo-V2.6-Flash-MOPD/",
-        "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-RL/"
+        "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-RL/",
+        "https://www.modelscope.cn/models/XiaomiMiMo/MiMo-V2.6-Flash-MOPD"
       ],
       "primary_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-MOPD/",
       "hardware": {
@@ -6496,7 +6501,8 @@
       "description": "Google Gemma 4 31B 稠密旗舰，基于 Gemini 3 研究，128K/256K 上下文，原生函数调用与结构化输出，可配置思考模式，140+ 语言，含视觉理解。",
       "sources": [
         "https://huggingface.co/google/gemma-4-31B-it/",
-        "https://hf-mirror.com/google/gemma-4-31B-it/"
+        "https://hf-mirror.com/google/gemma-4-31B-it/",
+        "https://www.modelscope.cn/models/google/gemma-4-31B-it"
       ],
       "primary_url": "https://huggingface.co/google/gemma-4-31B-it/",
       "hardware": {
@@ -6585,7 +6591,8 @@
       "description": "Gemma 4 26B A4B 混合专家，25.2B 总参/3.8B 激活，30 层，256K 上下文，视觉理解，高智能/参数比。",
       "sources": [
         "https://huggingface.co/google/gemma-4-26B-A4B-it/",
-        "https://hf-mirror.com/google/gemma-4-26B-A4B-it/"
+        "https://hf-mirror.com/google/gemma-4-26B-A4B-it/",
+        "https://www.modelscope.cn/models/google/gemma-4-26B-A4B-it"
       ],
       "primary_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/",
       "hardware": {
@@ -6671,7 +6678,8 @@
       "description": "Gemma 4 12B 稠密，128K/256K 上下文，函数调用与结构化输出，可配置思考，消费级显卡友好。",
       "sources": [
         "https://huggingface.co/google/gemma-4-12B-it/",
-        "https://hf-mirror.com/google/gemma-4-12B-it/"
+        "https://hf-mirror.com/google/gemma-4-12B-it/",
+        "https://www.modelscope.cn/models/google/gemma-4-12B-it"
       ],
       "primary_url": "https://huggingface.co/google/gemma-4-12B-it/",
       "hardware": {
@@ -6811,7 +6819,8 @@
         "https://huggingface.co/mistralai/Mistral-Medium-3.5-128B",
         "https://hf-mirror.com/mistralai/Mistral-Medium-3.5-128B",
         "https://huggingface.co/unsloth/Mistral-Medium-3.5-128B-GGUF",
-        "https://hf-mirror.com/unsloth/Mistral-Medium-3.5-128B-GGUF"
+        "https://hf-mirror.com/unsloth/Mistral-Medium-3.5-128B-GGUF",
+        "https://www.modelscope.cn/models/mistralai/Mistral-Medium-3.5-128B"
       ],
       "primary_url": "https://huggingface.co/unsloth/Mistral-Medium-3.5-128B-GGUF/",
       "hardware": {
@@ -6900,7 +6909,8 @@
         "https://huggingface.co/XHToken/Spark-X2.5-4B",
         "https://hf-mirror.com/XHToken/Spark-X2.5-4B",
         "https://huggingface.co/XHToken/Spark-X2.5-4B-GGUF",
-        "https://hf-mirror.com/XHToken/Spark-X2.5-4B-GGUF"
+        "https://hf-mirror.com/XHToken/Spark-X2.5-4B-GGUF",
+        "https://www.modelscope.cn/models/XHToken/Spark-X2.5-4B"
       ],
       "primary_url": "https://huggingface.co/XHToken/Spark-X2.5-4B-GGUF/",
       "hardware": {
@@ -8517,7 +8527,8 @@
         "https://huggingface.co/microsoft/phi-4/",
         "https://hf-mirror.com/microsoft/phi-4/",
         "https://huggingface.co/unsloth/Phi-4-GGUF/",
-        "https://hf-mirror.com/unsloth/Phi-4-GGUF/"
+        "https://hf-mirror.com/unsloth/Phi-4-GGUF/",
+        "https://www.modelscope.cn/models/microsoft/phi-4"
       ],
       "primary_url": "https://huggingface.co/unsloth/Phi-4-GGUF/",
       "hardware": {
@@ -8567,7 +8578,8 @@
         "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct/",
         "https://hf-mirror.com/HuggingFaceTB/SmolLM2-1.7B-Instruct/",
         "https://huggingface.co/unsloth/SmolLM2-1.7B-Instruct-GGUF/",
-        "https://hf-mirror.com/unsloth/SmolLM2-1.7B-Instruct-GGUF/"
+        "https://hf-mirror.com/unsloth/SmolLM2-1.7B-Instruct-GGUF/",
+        "https://www.modelscope.cn/models/HuggingFaceTB/SmolLM2-1.7B-Instruct"
       ],
       "primary_url": "https://huggingface.co/unsloth/SmolLM2-1.7B-Instruct-GGUF/",
       "hardware": {
@@ -8717,7 +8729,8 @@
       "description": "Cloudflare 发布的 27B 多模态结构化决策模型，基于 Qwen3.8-27B（含视觉编码器）后训练。读取文本/JSON/图像/视频状态，按给定类型化问题 schema 在单次前向内输出每个选项的校准概率，无自由文本生成；带 Joint Schema Head。",
       "sources": [
         "https://huggingface.co/Cloudflare/clef/",
-        "https://hf-mirror.com/Cloudflare/clef/"
+        "https://hf-mirror.com/Cloudflare/clef/",
+        "https://www.modelscope.cn/models/Cloudflare/clef"
       ],
       "primary_url": "https://huggingface.co/Cloudflare/clef/",
       "hardware": {
@@ -8767,7 +8780,8 @@
       "description": "Clef 的小尺寸快速变体，9.4B 参数（Qwen3.5 骨干），同样读取文本/JSON/图像/视频并按类型化 schema 输出选项概率，端侧/低成本决策场景。",
       "sources": [
         "https://huggingface.co/Cloudflare/clef-flash/",
-        "https://hf-mirror.com/Cloudflare/clef-flash/"
+        "https://hf-mirror.com/Cloudflare/clef-flash/",
+        "https://www.modelscope.cn/models/Cloudflare/clef-flash"
       ],
       "primary_url": "https://huggingface.co/Cloudflare/clef-flash/",
       "hardware": {
@@ -8817,7 +8831,8 @@
       "description": "通义 Qwen3.8-Flash-Next，Qwen4 架构的首个开放权重实验预览。引入 Gated DeltaNet + QSA 稀疏注意力、Gated Residual、N-gram Embedding；多模态图文（image-text-to-text），长上下文 Agent 向。",
       "sources": [
         "https://huggingface.co/Qwen/Qwen3.8-Flash-Next/",
-        "https://hf-mirror.com/Qwen/Qwen3.8-Flash-Next/"
+        "https://hf-mirror.com/Qwen/Qwen3.8-Flash-Next/",
+        "https://www.modelscope.cn/models/Qwen/Qwen3.8-Flash-Next"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen3.8-Flash-Next/",
       "hardware": {
@@ -8867,7 +8882,8 @@
       "description": "JEV-27B 的视觉版（在 Qwen3.8-27B 上加视觉适配器/LoRA）。System 1 单次前向对文本+截图/相机图像输出类型化决策（2–256 选项或 0–5 打分的校准概率），System 2 为可思考的图文推理；已演示机械臂抓取与 computer-use。",
       "sources": [
         "https://huggingface.co/autotrust/JEV-27B-VL/",
-        "https://hf-mirror.com/autotrust/JEV-27B-VL/"
+        "https://hf-mirror.com/autotrust/JEV-27B-VL/",
+        "https://www.modelscope.cn/models/autotrust/JEV-27B-VL"
       ],
       "primary_url": "https://huggingface.co/autotrust/JEV-27B-VL/",
       "hardware": {
@@ -8965,7 +8981,8 @@
       "description": "Meta Segment Anything Model 3，开放词汇的概念分割/检测/跟踪统一模型。用文本短语或图像样例作为提示，单次前向返回该概念的全部实例掩码与 ID，支持图像与视频，训练于 400 万+ 概念。",
       "sources": [
         "https://huggingface.co/facebook/sam3/",
-        "https://hf-mirror.com/facebook/sam3/"
+        "https://hf-mirror.com/facebook/sam3/",
+        "https://www.modelscope.cn/models/facebook/sam3"
       ],
       "primary_url": "https://huggingface.co/facebook/sam3/",
       "hardware": {
@@ -9200,7 +9217,8 @@
       "description": "Black Forest Labs 2025-06 推出的图像编辑旗舰：基于 FLUX.1 微调的指令式图像编辑模型（FluxKontextPipeline），支持按自然语言指令对参考图做语义编辑、物体替换与风格迁移，编辑一致性在开源模型中位居前列。HF 36.7 万下载 / 2800+ likes。gated 受控访问，需在 HF 页面接受协议并配置 Token。",
       "sources": [
         "https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev/",
-        "https://hf-mirror.com/black-forest-labs/FLUX.1-Kontext-dev/"
+        "https://hf-mirror.com/black-forest-labs/FLUX.1-Kontext-dev/",
+        "https://www.modelscope.cn/models/black-forest-labs/FLUX.1-Kontext-dev"
       ],
       "primary_url": "https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev/",
       "hardware": {
@@ -9251,7 +9269,8 @@
       "description": "Viggle 对 Qwen-Image-2.1 的少步蒸馏加速版（v0.3 / v0.2.1）：仅需 4–6 步即可出图，仓库内同时提供 fp8_e4m3fn、int8_convrot 安全张量与多档 GGUF（Q8/Q6/Q5…）量化。HF 28.6 万下载 / 600+ likes，更新至 2026-10-01，是当前最快的 Qwen-Image-2.1 衍生推理权重。",
       "sources": [
         "https://huggingface.co/Viggle/Qwen-Image-2.1-viggle-turbo/",
-        "https://hf-mirror.com/Viggle/Qwen-Image-2.1-viggle-turbo/"
+        "https://hf-mirror.com/Viggle/Qwen-Image-2.1-viggle-turbo/",
+        "https://www.modelscope.cn/models/Viggle/Qwen-Image-2.1-viggle-turbo"
       ],
       "primary_url": "https://huggingface.co/Viggle/Qwen-Image-2.1-viggle-turbo/",
       "hardware": {
@@ -9354,7 +9373,8 @@
       "description": "fal 开源的 GAN 式超分模型（基于 GigaGAN 图像条件上采样的变体，lucidrains/gigagan-pytorch 实现），专为 AI 生成图/真实照片做高质量放大，速度快于扩散式超分（如 SUPIR），ComfyUI 生态有 AuraSR 节点。Apache-2.0。与现有 Real-ESRGAN/4x-Ultrasharp（传统 RRDBNet）和 SUPIR（扩散修复）形成轻量 GAN 上采样互补。",
       "sources": [
         "https://huggingface.co/fal/AuraSR-v2/",
-        "https://hf-mirror.com/fal/AuraSR-v2/"
+        "https://hf-mirror.com/fal/AuraSR-v2/",
+        "https://www.modelscope.cn/models/fal/AuraSR-v2"
       ],
       "primary_url": "https://huggingface.co/fal/AuraSR-v2/",
       "hardware": {
@@ -9448,7 +9468,8 @@
       "description": "Fish Audio S2 Pro：Dual-AR（慢速 AR 4B + 快速 AR 400M），44.1kHz 高保真、80+ 语言、内联 [tag] 韵律标签、10–30 秒克隆。HF 3.3 万下载、1395 赞。⚠️ Fish Audio Research License：研究/非商用免费，商用需另行授权。",
       "sources": [
         "https://huggingface.co/fishaudio/s2-pro/",
-        "https://hf-mirror.com/fishaudio/s2-pro/"
+        "https://hf-mirror.com/fishaudio/s2-pro/",
+        "https://www.modelscope.cn/models/fishaudio/s2-pro"
       ],
       "primary_url": "https://huggingface.co/fishaudio/s2-pro/",
       "hardware": {
@@ -9590,7 +9611,8 @@
       "description": "ACE-Step v15 系列基础版（较现有 Ace-Step1.5 更新一代），MIT 许可，权重约 4.8GB，消费级显卡可跑；同系列另有 v15-xl-turbo（约 20GB）与 v15-xl-sft。HF 3.8k 下载、68 赞。",
       "sources": [
         "https://huggingface.co/ACE-Step/acestep-v15-base/",
-        "https://hf-mirror.com/ACE-Step/acestep-v15-base/"
+        "https://hf-mirror.com/ACE-Step/acestep-v15-base/",
+        "https://www.modelscope.cn/models/ACE-Step/acestep-v15-base"
       ],
       "primary_url": "https://huggingface.co/ACE-Step/acestep-v15-base/",
       "hardware": {
@@ -9635,7 +9657,8 @@
       "description": "FermionResearch Phonon-2：基于 nvidia/parakeet-tdt-0.6b-v3 的量化感知端侧英文 ASR，MLX 打包（phonon-2.bps.tar.zst 约 163MB）。HF 3063 下载、234 赞，2026-10-01 更新。权重 CC-BY-4.0、代码 Apache-2.0，面向 Apple Silicon 本地听写。",
       "sources": [
         "https://huggingface.co/FermionResearch/Phonon-2/",
-        "https://hf-mirror.com/FermionResearch/Phonon-2/"
+        "https://hf-mirror.com/FermionResearch/Phonon-2/",
+        "https://www.modelscope.cn/models/FermionResearch/Phonon-2"
       ],
       "primary_url": "https://huggingface.co/FermionResearch/Phonon-2/",
       "hardware": {
@@ -9680,7 +9703,8 @@
       "description": "Canopy Labs Orpheus：Llama-3B 主干 Speech-LLM，靠 [tag] 控制情感/语调，零样本克隆，流式约 200ms。HF 3.0 万下载、745 赞，Apache-2.0。⚠️ 英文为主；实际常经 llama.cpp/ollama GGUF（Q8≈4GB）部署，本 catalog 无专用 tts 引擎，沿用 transformers 路线，接入前需确认推理栈。",
       "sources": [
         "https://huggingface.co/canopylabs/orpheus-3b-0.1-ft/",
-        "https://hf-mirror.com/canopylabs/orpheus-3b-0.1-ft/"
+        "https://hf-mirror.com/canopylabs/orpheus-3b-0.1-ft/",
+        "https://www.modelscope.cn/models/canopylabs/orpheus-3b-0.1-ft"
       ],
       "primary_url": "https://huggingface.co/canopylabs/orpheus-3b-0.1-ft/",
       "hardware": {
@@ -9876,7 +9900,8 @@
       "description": "Genmo 开源 10B 文生视频旗舰，采用非对称扩散 Transformer (AsymmDiT)，强提示词遵从与物理合理运动，848×480@30fps，配套因果 VAE。Apache-2.0 可商用。Diffusers MochiPipeline。",
       "sources": [
         "https://huggingface.co/genmo/mochi-1-preview/",
-        "https://hf-mirror.com/genmo/mochi-1-preview/"
+        "https://hf-mirror.com/genmo/mochi-1-preview/",
+        "https://www.modelscope.cn/models/genmo/mochi-1-preview"
       ],
       "primary_url": "https://huggingface.co/genmo/mochi-1-preview/",
       "hardware": {
@@ -9920,7 +9945,8 @@
       "description": "lllyasviel (ControlNet/InstantID 作者) 提出的帧上下文打包方法，基于 HunyuanVideo 13B：把输入上下文压缩为固定长度，使生成算力/显存与视频时长解耦，可在笔记本 GPU 上生成最长约 2 分钟长视频，图生视频。",
       "sources": [
         "https://huggingface.co/lllyasviel/FramePackI2V_HY/",
-        "https://hf-mirror.com/lllyasviel/FramePackI2V_HY/"
+        "https://hf-mirror.com/lllyasviel/FramePackI2V_HY/",
+        "https://www.modelscope.cn/models/lllyasviel/FramePackI2V_HY"
       ],
       "primary_url": "https://huggingface.co/lllyasviel/FramePackI2V_HY/",
       "hardware": {
@@ -10056,7 +10082,8 @@
       "description": "Stability AI 前馈式单图转 3D：一次前向传播直接输出带纹理的三角网格（无需多视图扩散迭代），约 0.5 秒出模，HF likes 1183、下载 1.9 万+，是最轻量热门的图生 3D 底座之一，ComfyUI 3D Pack 原生支持。",
       "sources": [
         "https://huggingface.co/stabilityai/stable-fast-3d",
-        "https://hf-mirror.com/stabilityai/stable-fast-3d"
+        "https://hf-mirror.com/stabilityai/stable-fast-3d",
+        "https://www.modelscope.cn/models/stabilityai/stable-fast-3d"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-fast-3d",
       "hardware": {
@@ -10102,7 +10129,8 @@
       "description": "苹果 2025-12 开源的单图转 3D 扩散模型（ml-sharp，权重 sharp_2572gikvuh.pt 约 2.8GB），HF likes 408、下载 2400+；苹果在生成式 3D 资产方向的首个公开权重，几何与纹理质量较高。",
       "sources": [
         "https://huggingface.co/apple/Sharp",
-        "https://hf-mirror.com/apple/Sharp"
+        "https://hf-mirror.com/apple/Sharp",
+        "https://www.modelscope.cn/models/apple/Sharp"
       ],
       "primary_url": "https://huggingface.co/apple/Sharp",
       "hardware": {
@@ -10149,7 +10177,8 @@
       "description": "腾讯 ARC 单图前馈 3D 重建代表作：稀疏视图扩散（SparseVS）+ 快速可优化的离散网格提取，HF likes 343、下载 1.8 万+，diffusers 原生支持（含 base/large 多权重）。",
       "sources": [
         "https://huggingface.co/TencentARC/InstantMesh",
-        "https://hf-mirror.com/TencentARC/InstantMesh"
+        "https://hf-mirror.com/TencentARC/InstantMesh",
+        "https://www.modelscope.cn/models/TencentARC/InstantMesh"
       ],
       "primary_url": "https://huggingface.co/TencentARC/InstantMesh",
       "hardware": {
@@ -10194,7 +10223,8 @@
       "description": "Stability AI 点条件 3D 生成：先由单图回归点云，再以点云为条件扩散生成精细几何与纹理，缓解 Janus/多义问题，HF likes 404、下载 8900+。",
       "sources": [
         "https://huggingface.co/stabilityai/stable-point-aware-3d",
-        "https://hf-mirror.com/stabilityai/stable-point-aware-3d"
+        "https://hf-mirror.com/stabilityai/stable-point-aware-3d",
+        "https://www.modelscope.cn/models/stabilityai/stable-point-aware-3d"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-point-aware-3d",
       "hardware": {
@@ -11073,7 +11103,8 @@
       "description": "pyannote 说话人分离流水线社区版，按说话人切分音频；首次运行会拉取分段/嵌入子模型。",
       "sources": [
         "https://huggingface.co/pyannote/speaker-diarization-community-1/",
-        "https://hf-mirror.com/pyannote/speaker-diarization-community-1/"
+        "https://hf-mirror.com/pyannote/speaker-diarization-community-1/",
+        "https://www.modelscope.cn/models/pyannote/speaker-diarization-community-1"
       ],
       "primary_url": "https://huggingface.co/pyannote/speaker-diarization-community-1/",
       "hardware": {
@@ -11116,7 +11147,8 @@
       "description": "GLiNER 2.5 命名实体识别，可用任意自然语言类型标签零样本抽取实体。",
       "sources": [
         "https://huggingface.co/fastino/GLiNER2.5-Decide/",
-        "https://hf-mirror.com/fastino/GLiNER2.5-Decide/"
+        "https://hf-mirror.com/fastino/GLiNER2.5-Decide/",
+        "https://www.modelscope.cn/models/fastino/GLiNER2.5-Decide"
       ],
       "primary_url": "https://huggingface.co/fastino/GLiNER2.5-Decide/",
       "hardware": {
@@ -11156,7 +11188,8 @@
       "description": "对比学习重排序/验证器，仅含状态与动作投影头；需搭配冻结的 Qwen3-8B 编码器使用。",
       "sources": [
         "https://huggingface.co/Contrastive-LM/CLM-v0.1-8B/",
-        "https://hf-mirror.com/Contrastive-LM/CLM-v0.1-8B/"
+        "https://hf-mirror.com/Contrastive-LM/CLM-v0.1-8B/",
+        "https://www.modelscope.cn/models/Contrastive-LM/CLM-v0.1-8B"
       ],
       "primary_url": "https://huggingface.co/Contrastive-LM/CLM-v0.1-8B/",
       "hardware": {
@@ -11196,7 +11229,8 @@
       "description": "微软 4B 小型模型，MIT 许可，适合本地轻量部署。",
       "sources": [
         "https://huggingface.co/microsoft/FrogNano-4B-2609/",
-        "https://hf-mirror.com/microsoft/FrogNano-4B-2609/"
+        "https://hf-mirror.com/microsoft/FrogNano-4B-2609/",
+        "https://www.modelscope.cn/models/microsoft/FrogNano-4B-2609"
       ],
       "primary_url": "https://huggingface.co/microsoft/FrogNano-4B-2609/",
       "hardware": {
@@ -11237,7 +11271,8 @@
       "description": "Google Gemma 4 Edge E2B，端侧多模态（文本+图像+音频），含视觉/音频编码器。",
       "sources": [
         "https://huggingface.co/google/gemma-4-E2B-it/",
-        "https://hf-mirror.com/google/gemma-4-E2B-it/"
+        "https://hf-mirror.com/google/gemma-4-E2B-it/",
+        "https://www.modelscope.cn/models/google/gemma-4-E2B-it"
       ],
       "primary_url": "https://huggingface.co/google/gemma-4-E2B-it/",
       "hardware": {
@@ -11334,7 +11369,8 @@
       "description": "Google Gemma 4 Edge E4B，端侧多模态（文本+图像+音频），能力强于 E2B。",
       "sources": [
         "https://huggingface.co/google/gemma-4-E4B-it/",
-        "https://hf-mirror.com/google/gemma-4-E4B-it/"
+        "https://hf-mirror.com/google/gemma-4-E4B-it/",
+        "https://www.modelscope.cn/models/google/gemma-4-E4B-it"
       ],
       "primary_url": "https://huggingface.co/google/gemma-4-E4B-it/",
       "hardware": {
@@ -11429,7 +11465,8 @@
       "description": "非自回归决策模型（System One），单次前向给出校准概率，提供 choice/score/noul 三类原语，约 33–40ms，可用于路由、评分与护栏判断。",
       "sources": [
         "https://huggingface.co/convaiinnovations/laya/",
-        "https://hf-mirror.com/convaiinnovations/laya/"
+        "https://hf-mirror.com/convaiinnovations/laya/",
+        "https://www.modelscope.cn/models/convaiinnovations/laya"
       ],
       "primary_url": "https://huggingface.co/convaiinnovations/laya/",
       "hardware": {
@@ -11824,7 +11861,8 @@
       "sources": [
         "https://huggingface.co/microsoft/Phi-4-mini-instruct/",
         "https://huggingface.co/unsloth/Phi-4-mini-instruct-GGUF/",
-        "https://hf-mirror.com/unsloth/Phi-4-mini-instruct-GGUF/"
+        "https://hf-mirror.com/unsloth/Phi-4-mini-instruct-GGUF/",
+        "https://www.modelscope.cn/models/microsoft/Phi-4-mini-instruct"
       ],
       "primary_url": "https://huggingface.co/microsoft/Phi-4-mini-instruct/",
       "hardware": {
@@ -12001,7 +12039,8 @@
       "sources": [
         "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407/",
         "https://huggingface.co/bartowski/Mistral-Nemo-Instruct-2407-GGUF/",
-        "https://hf-mirror.com/bartowski/Mistral-Nemo-Instruct-2407-GGUF/"
+        "https://hf-mirror.com/bartowski/Mistral-Nemo-Instruct-2407-GGUF/",
+        "https://www.modelscope.cn/models/mistralai/Mistral-Nemo-Instruct-2407"
       ],
       "primary_url": "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407/",
       "hardware": {
@@ -12078,7 +12117,8 @@
       "sources": [
         "https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct/",
         "https://huggingface.co/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/",
-        "https://hf-mirror.com/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/"
+        "https://hf-mirror.com/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/",
+        "https://www.modelscope.cn/models/Qwen/Qwen2.5-VL-7B-Instruct"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct/",
       "hardware": {
@@ -12234,7 +12274,8 @@
       "sources": [
         "https://huggingface.co/microsoft/Phi-4-reasoning/",
         "https://huggingface.co/unsloth/Phi-4-reasoning-GGUF/",
-        "https://hf-mirror.com/unsloth/Phi-4-reasoning-GGUF/"
+        "https://hf-mirror.com/unsloth/Phi-4-reasoning-GGUF/",
+        "https://www.modelscope.cn/models/microsoft/Phi-4-reasoning"
       ],
       "primary_url": "https://huggingface.co/microsoft/Phi-4-reasoning/",
       "hardware": {
@@ -12327,7 +12368,8 @@
       "sources": [
         "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/",
         "https://huggingface.co/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/",
-        "https://hf-mirror.com/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/"
+        "https://hf-mirror.com/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/",
+        "https://www.modelscope.cn/models/mistralai/Devstral-Small-2-24B-Instruct-2512"
       ],
       "primary_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/",
       "hardware": {
@@ -12418,7 +12460,8 @@
       "description": "微软 Phi-4-multimodal（约5.6B），统一处理文本、图像与音频（含语音识别/翻译），MIT，需 transformers 加载。",
       "sources": [
         "https://huggingface.co/microsoft/Phi-4-multimodal-instruct/",
-        "https://hf-mirror.com/microsoft/Phi-4-multimodal-instruct/"
+        "https://hf-mirror.com/microsoft/Phi-4-multimodal-instruct/",
+        "https://www.modelscope.cn/models/microsoft/Phi-4-multimodal-instruct"
       ],
       "primary_url": "https://huggingface.co/microsoft/Phi-4-multimodal-instruct/",
       "hardware": {
@@ -12464,7 +12507,8 @@
       "sources": [
         "https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506/",
         "https://huggingface.co/unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF/",
-        "https://hf-mirror.com/unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF/"
+        "https://hf-mirror.com/unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF/",
+        "https://www.modelscope.cn/models/mistralai/Mistral-Small-3.2-24B-Instruct-2506"
       ],
       "primary_url": "https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506/",
       "hardware": {
@@ -12559,7 +12603,8 @@
       "sources": [
         "https://huggingface.co/google/gemma-3n-E4B-it/",
         "https://huggingface.co/unsloth/gemma-3n-E4B-it-GGUF/",
-        "https://hf-mirror.com/unsloth/gemma-3n-E4B-it-GGUF/"
+        "https://hf-mirror.com/unsloth/gemma-3n-E4B-it-GGUF/",
+        "https://www.modelscope.cn/models/google/gemma-3n-E4B-it"
       ],
       "primary_url": "https://huggingface.co/google/gemma-3n-E4B-it/",
       "hardware": {
@@ -12646,7 +12691,8 @@
       "sources": [
         "https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct/",
         "https://huggingface.co/unsloth/Qwen2.5-VL-72B-Instruct-GGUF/",
-        "https://hf-mirror.com/unsloth/Qwen2.5-VL-72B-Instruct-GGUF/"
+        "https://hf-mirror.com/unsloth/Qwen2.5-VL-72B-Instruct-GGUF/",
+        "https://www.modelscope.cn/models/Qwen/Qwen2.5-VL-72B-Instruct"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct/",
       "hardware": {
@@ -12732,7 +12778,8 @@
       "sources": [
         "https://huggingface.co/mistralai/Codestral-22B-v0.1/",
         "https://huggingface.co/bartowski/Codestral-22B-v0.1-GGUF/",
-        "https://hf-mirror.com/bartowski/Codestral-22B-v0.1-GGUF/"
+        "https://hf-mirror.com/bartowski/Codestral-22B-v0.1-GGUF/",
+        "https://www.modelscope.cn/models/mistralai/Codestral-22B-v0.1"
       ],
       "primary_url": "https://huggingface.co/mistralai/Codestral-22B-v0.1/",
       "hardware": {
@@ -12809,7 +12856,8 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B/",
         "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-14B-GGUF/",
-        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Qwen-14B-GGUF/"
+        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Qwen-14B-GGUF/",
+        "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B/",
       "hardware": {
@@ -12885,7 +12933,8 @@
       "description": "阿里 Ovis2 16B 视觉语言模型，强图像/文档理解；组织已由 AIDC-AI 迁至 ATH-MaaS（旧链接自动重定向），transformers 原生支持。",
       "sources": [
         "https://huggingface.co/ATH-MaaS/Ovis2-16B/",
-        "https://hf-mirror.com/ATH-MaaS/Ovis2-16B/"
+        "https://hf-mirror.com/ATH-MaaS/Ovis2-16B/",
+        "https://www.modelscope.cn/models/ATH-MaaS/Ovis2-16B"
       ],
       "primary_url": "https://huggingface.co/ATH-MaaS/Ovis2-16B/",
       "hardware": {
@@ -12929,7 +12978,8 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-8B/",
         "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Llama-8B-GGUF/",
-        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Llama-8B-GGUF/"
+        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Llama-8B-GGUF/",
+        "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-8B/",
       "hardware": {
@@ -13022,7 +13072,8 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B/",
         "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF/",
-        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF/"
+        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF/",
+        "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B/",
       "hardware": {
@@ -13099,7 +13150,8 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B/",
         "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/",
-        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/"
+        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/",
+        "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B/",
       "hardware": {
@@ -13184,7 +13236,8 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B/",
         "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Llama-70B-GGUF/",
-        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Llama-70B-GGUF/"
+        "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Llama-70B-GGUF/",
+        "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Llama-70B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B/",
       "hardware": {
@@ -13361,7 +13414,8 @@
       "sources": [
         "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct/",
         "https://huggingface.co/unsloth/Qwen2.5-Coder-7B-Instruct-GGUF/",
-        "https://hf-mirror.com/unsloth/Qwen2.5-Coder-7B-Instruct-GGUF/"
+        "https://hf-mirror.com/unsloth/Qwen2.5-Coder-7B-Instruct-GGUF/",
+        "https://www.modelscope.cn/models/Qwen/Qwen2.5-Coder-7B-Instruct"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct/",
       "hardware": {
@@ -13438,7 +13492,8 @@
       "sources": [
         "https://huggingface.co/CohereForAI/aya-expanse-8b/",
         "https://huggingface.co/bartowski/aya-expanse-8b-GGUF/",
-        "https://hf-mirror.com/bartowski/aya-expanse-8b-GGUF/"
+        "https://hf-mirror.com/bartowski/aya-expanse-8b-GGUF/",
+        "https://www.modelscope.cn/models/CohereForAI/aya-expanse-8b"
       ],
       "primary_url": "https://huggingface.co/CohereForAI/aya-expanse-8b/",
       "hardware": {
@@ -13515,7 +13570,8 @@
       "sources": [
         "https://huggingface.co/Qwen/Qwen2.5-32B-Instruct/",
         "https://huggingface.co/bartowski/Qwen2.5-32B-Instruct-GGUF/",
-        "https://hf-mirror.com/bartowski/Qwen2.5-32B-Instruct-GGUF/"
+        "https://hf-mirror.com/bartowski/Qwen2.5-32B-Instruct-GGUF/",
+        "https://www.modelscope.cn/models/Qwen/Qwen2.5-32B-Instruct"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen2.5-32B-Instruct/",
       "hardware": {
@@ -13674,7 +13730,8 @@
       "description": "阿里 Qwen2-Audio-7B-Instruct，语音/声音理解并转文字，支持音频问答，Apache-2.0，transformers 加载。",
       "sources": [
         "https://huggingface.co/Qwen/Qwen2-Audio-7B-Instruct/",
-        "https://hf-mirror.com/Qwen/Qwen2-Audio-7B-Instruct/"
+        "https://hf-mirror.com/Qwen/Qwen2-Audio-7B-Instruct/",
+        "https://www.modelscope.cn/models/Qwen/Qwen2-Audio-7B-Instruct"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen2-Audio-7B-Instruct/",
       "hardware": {
@@ -13715,7 +13772,8 @@
       "description": "Stability AI SDXL 1.0 基座，1024x1024 文生图经典，LoRA/生态最丰富，OpenRAIL++ 许可。",
       "sources": [
         "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/",
-        "https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/"
+        "https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/",
+        "https://www.modelscope.cn/models/stabilityai/stable-diffusion-xl-base-1.0"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/",
       "hardware": {
@@ -13755,7 +13813,8 @@
       "description": "HiDream-I1-Fast，开源图像生成 MoE（少步快速版，社区采用最广），MIT 许可。",
       "sources": [
         "https://huggingface.co/HiDream-ai/HiDream-I1-Fast/",
-        "https://hf-mirror.com/HiDream-ai/HiDream-I1-Fast/"
+        "https://hf-mirror.com/HiDream-ai/HiDream-I1-Fast/",
+        "https://www.modelscope.cn/models/HiDream-ai/HiDream-I1-Fast"
       ],
       "primary_url": "https://huggingface.co/HiDream-ai/HiDream-I1-Fast/",
       "hardware": {
@@ -13836,7 +13895,8 @@
       "description": "Stability AI Stable Video Diffusion XT，单张图片生成短视频（约25帧），经典图生视频，SVD 研究许可（other）。",
       "sources": [
         "https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt/",
-        "https://hf-mirror.com/stabilityai/stable-video-diffusion-img2vid-xt/"
+        "https://hf-mirror.com/stabilityai/stable-video-diffusion-img2vid-xt/",
+        "https://www.modelscope.cn/models/stabilityai/stable-video-diffusion-img2vid-xt"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt/",
       "hardware": {
@@ -13877,7 +13937,8 @@
       "description": "Whisper Large v3 的 CTranslate2 版本（Systran 官方），多语言语音识别 + 翻译，CPU/CUDA 高效转写。",
       "sources": [
         "https://huggingface.co/Systran/faster-whisper-large-v3/",
-        "https://hf-mirror.com/Systran/faster-whisper-large-v3/"
+        "https://hf-mirror.com/Systran/faster-whisper-large-v3/",
+        "https://www.modelscope.cn/models/Systran/faster-whisper-large-v3"
       ],
       "primary_url": "https://huggingface.co/Systran/faster-whisper-large-v3/",
       "hardware": {
@@ -13959,7 +14020,8 @@
       "description": "多语言多功能嵌入（稠密/稀疏/ColBERT），支持 100+ 语言，语义检索与 RAG 常用。",
       "sources": [
         "https://huggingface.co/BAAI/bge-m3/",
-        "https://hf-mirror.com/BAAI/bge-m3/"
+        "https://hf-mirror.com/BAAI/bge-m3/",
+        "https://www.modelscope.cn/models/BAAI/bge-m3"
       ],
       "primary_url": "https://huggingface.co/BAAI/bge-m3/",
       "hardware": {
@@ -13999,7 +14061,8 @@
       "description": "英文高质量句向量（1024 维），英文语义检索与相似度基准模型之一。",
       "sources": [
         "https://huggingface.co/BAAI/bge-large-en-v1.5/",
-        "https://hf-mirror.com/BAAI/bge-large-en-v1.5/"
+        "https://hf-mirror.com/BAAI/bge-large-en-v1.5/",
+        "https://www.modelscope.cn/models/BAAI/bge-large-en-v1.5"
       ],
       "primary_url": "https://huggingface.co/BAAI/bge-large-en-v1.5/",
       "hardware": {
@@ -14038,7 +14101,8 @@
       "description": "中文高质量句向量（1024 维），中文语义检索、聚类与 RAG 常用。",
       "sources": [
         "https://huggingface.co/BAAI/bge-large-zh-v1.5/",
-        "https://hf-mirror.com/BAAI/bge-large-zh-v1.5/"
+        "https://hf-mirror.com/BAAI/bge-large-zh-v1.5/",
+        "https://www.modelscope.cn/models/BAAI/bge-large-zh-v1.5"
       ],
       "primary_url": "https://huggingface.co/BAAI/bge-large-zh-v1.5/",
       "hardware": {
@@ -14116,7 +14180,8 @@
       "description": "多语言句向量（1024 维），检索时配合 query/passage 前缀，多语言检索表现稳健。",
       "sources": [
         "https://huggingface.co/intfloat/multilingual-e5-large/",
-        "https://hf-mirror.com/intfloat/multilingual-e5-large/"
+        "https://hf-mirror.com/intfloat/multilingual-e5-large/",
+        "https://www.modelscope.cn/models/intfloat/multilingual-e5-large"
       ],
       "primary_url": "https://huggingface.co/intfloat/multilingual-e5-large/",
       "hardware": {
@@ -14314,7 +14379,8 @@
       "description": "Piper 美式英语女声 Lessac，medium 质量，CPU 实时合成、发音自然。",
       "sources": [
         "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx",
-        "https://github.com/rhasspy/piper"
+        "https://github.com/rhasspy/piper",
+        "https://www.modelscope.cn/models/rhasspy/piper-voices"
       ],
       "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx",
       "hardware": {
@@ -14353,7 +14419,8 @@
       "description": "Piper 美式英语女声 Amy，medium 质量。",
       "sources": [
         "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/en_US-amy-medium.onnx",
-        "https://github.com/rhasspy/piper"
+        "https://github.com/rhasspy/piper",
+        "https://www.modelscope.cn/models/rhasspy/piper-voices"
       ],
       "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/en_US-amy-medium.onnx",
       "hardware": {
@@ -14392,7 +14459,8 @@
       "description": "Piper 普通话女声 华颜，medium 质量，可完全离线合成中文语音。",
       "sources": [
         "https://huggingface.co/rhasspy/piper-voices/resolve/main/zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx",
-        "https://github.com/rhasspy/piper"
+        "https://github.com/rhasspy/piper",
+        "https://www.modelscope.cn/models/rhasspy/piper-voices"
       ],
       "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx",
       "hardware": {
@@ -14431,7 +14499,8 @@
       "description": "Hugging Face SmolVLM 256M 轻量视觉语言模型，可对图片提问；运行时仅加载 PyTorch 权重（仓库另含多种 ONNX 变体，不计入安装足迹）。",
       "sources": [
         "https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct/",
-        "https://hf-mirror.com/HuggingFaceTB/SmolVLM-256M-Instruct/"
+        "https://hf-mirror.com/HuggingFaceTB/SmolVLM-256M-Instruct/",
+        "https://www.modelscope.cn/models/HuggingFaceTB/SmolVLM-256M-Instruct"
       ],
       "primary_url": "https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct/",
       "hardware": {
@@ -14473,7 +14542,8 @@
       "description": "DeepSeek Janus-Pro 7B 统一多模态模型（解耦视觉编码），支持图像理解与文生图；transformers 原生支持。",
       "sources": [
         "https://huggingface.co/deepseek-ai/Janus-Pro-7B/",
-        "https://hf-mirror.com/deepseek-ai/Janus-Pro-7B/"
+        "https://hf-mirror.com/deepseek-ai/Janus-Pro-7B/",
+        "https://www.modelscope.cn/models/deepseek-ai/Janus-Pro-7B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/Janus-Pro-7B/",
       "hardware": {
@@ -14516,7 +14586,8 @@
       "description": "DeepSeek Janus-Pro 1B 统一多模态模型，支持图像理解与文生图，显存占用更小；transformers 原生支持。",
       "sources": [
         "https://huggingface.co/deepseek-ai/Janus-Pro-1B/",
-        "https://hf-mirror.com/deepseek-ai/Janus-Pro-1B/"
+        "https://hf-mirror.com/deepseek-ai/Janus-Pro-1B/",
+        "https://www.modelscope.cn/models/deepseek-ai/Janus-Pro-1B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/Janus-Pro-1B/",
       "hardware": {
@@ -14560,7 +14631,8 @@
       "description": "面壁 MiniCPM-V 4.6 高效视觉语言模型，单文件权重，可对图片提问；transformers 原生支持。",
       "sources": [
         "https://huggingface.co/openbmb/MiniCPM-V-4.6/",
-        "https://hf-mirror.com/openbmb/MiniCPM-V-4.6/"
+        "https://hf-mirror.com/openbmb/MiniCPM-V-4.6/",
+        "https://www.modelscope.cn/models/openbmb/MiniCPM-V-4.6"
       ],
       "primary_url": "https://huggingface.co/openbmb/MiniCPM-V-4.6/",
       "hardware": {
