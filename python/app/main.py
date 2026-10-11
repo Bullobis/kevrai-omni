@@ -4347,6 +4347,95 @@ def agent_cancel(req: AgentCancelReq, request: Request) -> dict[str, Any]:
     return {"cancelled": cancelled, "session_id": req.session_id}
 
 
+# ---------------------------------------------------------------------------
+# Tool-call approval gate
+# ---------------------------------------------------------------------------
+@app.get("/api/agent/approvals")
+def agent_list_approvals(request: Request) -> dict[str, Any]:
+    """List pending tool-approval requests.
+
+    The renderer polls this to render the "confirm before running" cards. Only
+    *undecided* requests are returned; resolved ones are pruned server-side.
+    """
+    agent = _get_agent(request)
+    pending = agent.approval.list_pending()
+    return {"requests": pending, "count": len(pending)}
+
+
+class ApprovalResolveReq(BaseModel):
+    # Optional edited parameters to run the tool with on approval. When empty /
+    # null the tool runs with its original parsed parameters.
+    edited_params: dict[str, Any] | None = None
+
+
+@app.post("/api/agent/approvals/{request_id}/approve")
+def agent_approve_tool_call(
+    request: Request,
+    request_id: str,
+    req: ApprovalResolveReq,
+) -> dict[str, Any]:
+    """Approve a pending tool call, optionally with edited parameters.
+
+    Wakes the blocked ReAct loop: it runs the tool with the (possibly edited)
+    parameters. 404 when the request id is unknown or already resolved.
+    """
+    agent = _get_agent(request)
+    resolved = agent.approval.approve(request_id, edited_params=req.edited_params)
+    if resolved is None:
+        raise HTTPException(status_code=404, detail="approval request not found or already resolved")
+    return {
+        "ok": True,
+        "id": request_id,
+        "decision": resolved.decision,
+        "tool_params": resolved.effective_params if resolved.effective_params is not None else resolved.tool_params,
+    }
+
+
+@app.post("/api/agent/approvals/{request_id}/reject")
+def agent_reject_tool_call(request: Request, request_id: str) -> dict[str, Any]:
+    """Reject a pending tool call.
+
+    Wakes the blocked ReAct loop: it does NOT run the tool and feeds the model a
+    "用户未批准" observation so it adapts or concludes. 404 when the request id
+    is unknown or already resolved.
+    """
+    agent = _get_agent(request)
+    resolved = agent.approval.reject(request_id)
+    if resolved is None:
+        raise HTTPException(status_code=404, detail="approval request not found or already resolved")
+    return {"ok": True, "id": request_id, "decision": resolved.decision}
+
+
+class ApprovalPolicyReq(BaseModel):
+    session_id: str = Field(default="default", max_length=128)
+    # "auto" = run every tool immediately (default); "confirm" = ask first.
+    policy: str = Field(default="auto", max_length=16)
+
+
+@app.get("/api/agent/approval-policy")
+def agent_get_approval_policy(request: Request, session_id: str = "default") -> dict[str, Any]:
+    """Read a session's tool-approval policy and the global timeout."""
+    agent = _get_agent(request)
+    return {
+        "session_id": session_id,
+        "policy": agent.approval.get_policy(session_id),
+        "timeout_seconds": agent.approval.default_timeout,
+    }
+
+
+@app.put("/api/agent/approval-policy")
+def agent_set_approval_policy(req: ApprovalPolicyReq, request: Request) -> dict[str, Any]:
+    """Set a session's tool-approval policy (persisted best-effort)."""
+    agent = _get_agent(request)
+    try:
+        mode = agent.set_tool_approval_policy(req.session_id, req.policy)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+    return {"ok": True, "session_id": req.session_id, "policy": mode,
+            "timeout_seconds": agent.approval.default_timeout}
+
+
+
 @app.post("/api/clawdchat/heartbeat")
 def clawdchat_heartbeat() -> dict[str, Any]:
     """One-shot ClawdChat (虾聊) agent heartbeat for the unified scheduler.
@@ -4440,6 +4529,21 @@ async def ws_agent(websocket: WebSocket, session_id: str) -> None:
 
             agent.set_step_callback(_on_step)
 
+            # Approval gate streaming: push "approval_request" the moment the
+            # loop parks a tool call, and "approval_resolved" when the human
+            # acts (or it times out / cancels). The renderer also polls
+            # GET /api/agent/approvals, so a missed frame is not fatal.
+            def _on_approval(event: str, payload: dict, _loop=_ws_loop_ref):
+                def _emit(ev=event, pl=payload, loop=_loop):
+                    with contextlib.suppress(Exception):
+                        asyncio.ensure_future(websocket.send_json({
+                            "event": ev, "session_id": session_id, **pl,
+                        }))
+                with contextlib.suppress(Exception):
+                    _loop.call_soon_threadsafe(_emit)
+
+            agent.approval.set_callback(_on_approval)
+
             # Run agent.run() on a worker thread. The ReAct body is synchronous
             # (router.chat / registry.execute block), so awaiting it inline would
             # freeze this event loop: the client could neither send a
@@ -4520,6 +4624,7 @@ async def ws_agent(websocket: WebSocket, session_id: str) -> None:
                         await websocket.send_json({"event": "error", "message": str(e)})
             finally:
                 agent.set_step_callback(None)
+                agent.approval.set_callback(None)
     except WebSocketDisconnect:
         pass
     finally:

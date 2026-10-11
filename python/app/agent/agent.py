@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .approval import ApprovalManager
 from .memory import AgentMemory
 from .model_router import ModelRouter
 from .tool_registry import (
@@ -208,6 +209,14 @@ class Agent:
         self.ctx.memory = memory
         self._step_callback: Callable[[AgentStep], None] | None = None
 
+        # --- Tool-call approval gate ----------------------------------------
+        # Per-session policy ("auto" = run everything immediately, the default;
+        # "confirm" = park each tool call and block until the human approves /
+        # rejects / it times out / the run is cancelled). Default is auto so
+        # existing behaviour and every existing test are unchanged.
+        self.approval = ApprovalManager()
+        self._load_approval_policies()
+
         # --- Cooperative cancellation ---------------------------------------
         # One threading.Event per in-flight run, keyed by session_id. The Agent
         # is a singleton that may concurrently serve many sessions, so the token
@@ -275,6 +284,42 @@ class Agent:
         """Rebuild the active tool registry after skills are toggled."""
         if self.skills is not None:
             self.registry = self.skills.build_registry()
+
+    # ------------------------------------------------------------------
+    # Tool-call approval policy (best-effort persisted to memory)
+    # ------------------------------------------------------------------
+    _APPROVAL_PREF_PREFIX = "tool_approval_policy::"
+
+    def _load_approval_policies(self) -> None:
+        """Restore persisted per-session approval policies on startup."""
+        if not self.memory:
+            return
+        try:
+            prefs = self.memory.get_all_preferences() or {}
+        except Exception as e:  # noqa: BLE001 - best-effort restore
+            log.warning("agent: load approval policies failed: %s", e)
+            return
+        mapping: dict[str, str] = {}
+        for key, value in prefs.items():
+            if key.startswith(self._APPROVAL_PREF_PREFIX):
+                mapping[key.split("::", 1)[1]] = str(value)
+        if mapping:
+            self.approval.load_policies(mapping)
+
+    def set_tool_approval_policy(self, session_id: str, mode: str) -> str:
+        """Set a session's approval policy and persist it best-effort.
+
+        ``mode`` is ``"auto"`` (run tools immediately, default) or ``"confirm"``
+        (ask before each tool call). Raises ``ValueError`` for other values.
+        """
+        mode = self.approval.set_policy(session_id, mode)
+        if self.memory:
+            try:
+                self.memory.set_preference(
+                    f"{self._APPROVAL_PREF_PREFIX}{session_id}", mode)
+            except Exception as e:  # noqa: BLE001 - best-effort persistence
+                log.warning("agent: persist approval policy failed: %s", e)
+        return mode
 
     def set_step_callback(self, cb: Callable[[AgentStep], None] | None) -> None:
         """Set a callback invoked after each ReAct step (for streaming UI)."""
@@ -723,7 +768,33 @@ class Agent:
                 cancelled = True
                 break
             log.info("agent tool call: %s(%s)", tool_name, json.dumps(tool_params, ensure_ascii=False)[:200])
-            obs = self.registry.execute(tool_name, tool_params, self.ctx)
+
+            # --- Tool approval gate -----------------------------------------
+            # In "auto" mode (the default) this returns immediately with the
+            # original params — behaviour unchanged. In "confirm" mode the loop
+            # parks the call and BLOCKS here until the human approves (possibly
+            # editing the params), rejects, the request times out, or the run is
+            # cancelled. Rejection / timeout never raise: they degrade to a
+            # "用户未批准" observation the model can adapt to.
+            with self._cancel_lock:
+                cancel_ev = self._cancel_events.get(session_id)
+            gate = self.approval.gate(
+                session_id, tool_name, tool_params, cancel_event=cancel_ev,
+            )
+            if gate.reason == "cancel":
+                cancelled = True
+                break
+            if gate.approved:
+                tool_params = gate.effective_params
+                obs = self.registry.execute(tool_name, tool_params, self.ctx)
+            else:
+                why = "已超时，按未批准处理" if gate.reason == "timeout" else "用户未批准"
+                obs = {
+                    "ok": False,
+                    "error": f"{why}：未执行工具 {tool_name}。请改用其他工具或直接给出结论。",
+                    "error_type": "ApprovalDenied",
+                    "approval": gate.reason,
+                }
             step.observation = obs
 
             # Truncate observation for context
