@@ -142,6 +142,8 @@ const api = {
   knowledgeDeleteDoc: (payload) => invoke("api:knowledge:delete-doc", payload),
   knowledgeSearch:  (payload) => invoke("api:knowledge:search", payload),
   knowledgeAsk:     (payload) => invoke("api:knowledge:ask", payload),
+  // On-device text translation.
+  translate:        (payload) => invoke("api:translate", payload),
   // Demucs music source separation.
   separationCapabilities: () => invoke("api:separation:capabilities"),
   separation:             (payload) => invoke("api:separation", payload),

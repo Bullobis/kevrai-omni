@@ -1035,6 +1035,22 @@ function registerIpc() {
         timeoutMs: 120_000,
       });
   });
+  // On-device text translation through the local brain.
+  ipcMain.handle("api:translate", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.text, 8000) && payload.text.length, "text: invalid");
+    assert(isString(payload.target_lang, 16), "target_lang: invalid");
+    return sidecarFetch("/api/translate", {
+      method: "POST",
+      body: {
+        text: payload.text,
+        source_lang: isString(payload.source_lang, 16) ? payload.source_lang : "auto",
+        target_lang: payload.target_lang,
+        model: isString(payload.model, 200) ? payload.model : "",
+      },
+      timeoutMs: 180_000,
+    });
+  });
   // Demucs music source separation (multipart upload of one track).
   ipcMain.handle("api:separation", async (_e, payload) => {
     assert(payload && typeof payload === "object", "payload: invalid");
