@@ -59,6 +59,22 @@ export function escapeHtml(s) {
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+/**
+ * Build HTML for the numbered source list attached to a grounded answer.
+ * Each item: [n] doc name · match score · excerpt. Pure / testable.
+ */
+export function sourceCardsHtml(sources) {
+  const list = Array.isArray(sources) ? sources : [];
+  if (!list.length) return "";
+  const rows = list.map((s) => {
+    const pct = (typeof s.score === "number") ? ` · ${Math.round(s.score * 100)}%` : "";
+    return `<li class="kb-src"><span class="kb-src-ref">[${s.ref}]</span>` +
+      `<span class="kb-src-name">${escapeHtml(s.doc_name || "")}${pct}</span>` +
+      `<span class="kb-src-excerpt">${escapeHtml(s.excerpt || "")}</span></li>`;
+  }).join("");
+  return `<div class="kb-sources"><h5 data-i18n="knowledge.sources">来源</h5><ul>${rows}</ul></div>`;
+}
+
 /** True when the filename has an extension this build can ingest. */
 export function isAllowedFile(filename) {
   const name = String(filename || "").toLowerCase();
@@ -347,8 +363,9 @@ async function runAsk() {
       ? `<div class="kb-answer"><h4>${t("knowledge.answer")}</h4>` +
         `<p>${escapeHtml(data.answer)}</p></div>`
       : `<p class="muted">${escapeHtml(data.answer_note || "")}</p>`;
+    const sources = sourceCardsHtml(data.sources || []);
     renderResults({ results: data.results || [] });
-    if (out) out.innerHTML = answer;
+    if (out) out.innerHTML = answer + sources;
   } catch (e) {
     toast(e.message, { kind: "err" });
   } finally {

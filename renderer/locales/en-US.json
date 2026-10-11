@@ -1009,6 +1009,7 @@
     "ask": "Ask the knowledge base",
     "askBtn": "Ask",
     "answer": "Answer",
+    "sources": "Sources",
     "brain": "Answer model",
     "brainNone": "Retrieve only, no generated answer",
     "enterQuery": "Please enter something",

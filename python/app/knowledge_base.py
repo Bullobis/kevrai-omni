@@ -480,6 +480,14 @@ def _cosine(a: list[float], b: list[float]) -> float:
     return dot / (math.sqrt(na) * math.sqrt(nb))
 
 
+def _source_excerpt(text: str, limit: int = 140) -> str:
+    """Collapse whitespace and truncate a passage for a compact source card."""
+    flat = re.sub(r"\s+", " ", str(text or "")).strip()
+    if len(flat) > limit:
+        return flat[:limit].rstrip() + "…"
+    return flat
+
+
 # ---------------------------------------------------------------------------
 # Knowledge base manager
 # ---------------------------------------------------------------------------
@@ -963,6 +971,8 @@ class KnowledgeBase:
             system = (
                 "你是一个基于本地知识库回答问题的助手。只依据下方提供的"
                 "上下文作答；若上下文不足以回答，请明确说明。不要复述上下文。"
+                "必须先给出完整答案；可在句末用对应的来源编号标注（如 [1]、[2]），"
+                "只能引用下方已列出的编号，禁止编造来源。"
             )
             prompt = (
                 f"上下文：\n{context}\n\n问题：{question}\n\n"
@@ -974,6 +984,18 @@ class KnowledgeBase:
             except Exception as e:  # noqa: BLE001 — a brain failure must not 500
                 log.warning("knowledge brain generation failed: %s", e)
                 answer = None
+        # Source map for the numbered retrieved chunks ([1]..[N]); built from the
+        # actual hits so it never depends on the model inventing references.
+        sources = [
+            {
+                "ref": i + 1,
+                "doc_id": r["doc_id"],
+                "doc_name": r["doc_name"],
+                "score": r["score"],
+                "excerpt": _source_excerpt(r["text"]),
+            }
+            for i, r in enumerate(results)
+        ]
         return {
             "kb_id": kb_id,
             "question": question,
@@ -981,6 +1003,7 @@ class KnowledgeBase:
             "context": context,
             "results": results,
             "pinned": pinned,
+            "sources": sources,
             "answer": answer,
             "brain_used": brain_used,
             "answer_note": (None if brain_used
