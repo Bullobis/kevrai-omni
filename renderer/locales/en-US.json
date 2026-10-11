@@ -378,7 +378,8 @@
     "accentPink": "Pink",
     "accentCyan": "Cyan",
     "densityComfortable": "Comfortable",
-    "densityCompact": "Compact"
+    "densityCompact": "Compact",
+    "tokenEstimate": "Show an estimated token count next to input boxes"
   },
   "onboarding": {
     "title": "Welcome to Kevrai Omni — three steps to get started",

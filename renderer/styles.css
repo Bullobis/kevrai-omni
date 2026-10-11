@@ -1560,3 +1560,23 @@ html[data-theme="light"] .skeleton-card::after {
 #pane-translate .translate-actions {
   display: flex; gap: 10px; justify-content: flex-start; margin-top: 12px;
 }
+
+/* Token estimate counters (composer boxes) */
+.token-counter {
+  display: block;
+  margin-top: 4px;
+  color: var(--mut);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+.appearance-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: var(--fs-md);
+  color: var(--fg);
+  cursor: pointer;
+}
+.appearance-check input { accent-color: var(--accent); }
