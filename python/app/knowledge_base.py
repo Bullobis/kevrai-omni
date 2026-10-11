@@ -51,7 +51,7 @@ log = logging.getLogger("kevrai.knowledge")
 # Constants & errors
 # ---------------------------------------------------------------------------
 
-SUPPORTED_EXTENSIONS = {".txt", ".md", ".markdown", ".json", ".csv", ".pdf"}
+SUPPORTED_EXTENSIONS = {".txt", ".md", ".markdown", ".json", ".csv", ".pdf", ".docx"}
 DEFAULT_CHUNK_SIZE = 600
 DEFAULT_CHUNK_OVERLAP = 80
 DEFAULT_TOP_K = 4
@@ -196,6 +196,65 @@ def extract_pdf_bytes(data: bytes) -> str:
         raise KnowledgeParamError(
             "该 PDF 不含可供检索的文本（疑似扫描件 / 图片版），"
             "暂不支持扫描件 OCR，请改用可选中文字的 PDF 或文本文件。"
+        )
+    return text
+
+
+def extract_docx_bytes(data: bytes) -> str:
+    """Extract text from a .docx (Office Open XML) file, stdlib only.
+
+    A .docx is a ZIP whose main document is ``word/document.xml``. Paragraphs
+    are ``<w:p>`` and visible text lives in ``<w:t>`` runs. We read it with
+    :mod:`zipfile` and :mod:`xml.etree` so no third-party dependency is needed.
+    A corrupt / non-docx file raises :class:`KnowledgeParamError` (route → 400).
+    The legacy binary ``.doc`` format is not supported (different container).
+    """
+    if not data:
+        raise KnowledgeParamError("DOCX content is empty")
+    try:
+        import zipfile
+        with zipfile.ZipFile(io.BytesIO(data)) as zf:
+            try:
+                xml_bytes = zf.read("word/document.xml")
+            except KeyError as e:
+                raise KnowledgeParamError(
+                    "该文件不是有效的 .docx（缺少 word/document.xml），"
+                    "旧版 .doc 二进制格式暂不支持，请另存为 .docx。"
+                ) from e
+    except KnowledgeParamError:
+        raise
+    except Exception as e:  # noqa: BLE001 — not a zip / corrupt
+        raise KnowledgeParamError(
+            f"无法解析该 .docx（文件可能已损坏）：{e}"
+        ) from e
+
+    try:
+        # Prefer defusedxml (entity-expansion hardening); fall back to the
+        # stdlib parser if the optional package is absent (files are supplied
+        # by the local user).
+        try:
+            from defusedxml.ElementTree import fromstring as _xml_fromstring
+        except Exception:  # noqa: BLE001 — defusedxml not installed
+            from xml.etree.ElementTree import (  # noqa: S314
+                fromstring as _xml_fromstring,
+            )
+        root = _xml_fromstring(xml_bytes)  # noqa: S314
+    except Exception as e:  # noqa: BLE001 — malformed XML
+        raise KnowledgeParamError(
+            f"无法解析该 .docx 的文档内容（XML 已损坏）：{e}"
+        ) from e
+
+    w_ns = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    paragraphs: list[str] = []
+    for p in root.iter(f"{w_ns}p"):
+        # Join all text runs in the paragraph; <w:tab/> and breaks are rare, so
+        # a simple concatenation preserves the readable text.
+        runs = [t.text or "" for t in p.iter(f"{w_ns}t")]
+        paragraphs.append("".join(runs).strip())
+    text = "\n".join(p for p in paragraphs if p).strip()
+    if not text:
+        raise KnowledgeParamError(
+            "该 .docx 不含可供检索的文本（可能为空文档或仅含图片）。"
         )
     return text
 

@@ -17,3 +17,5 @@ imageio>=2.34
 imageio-ffmpeg>=0.5
 # Knowledge base PDF text extraction (pure Python, BSD-3-Clause).
 pypdf==6.20.0
+# Safe XML parsing for .docx ingestion (entity-expansion hardening, PSF).
+defusedxml==0.7.1

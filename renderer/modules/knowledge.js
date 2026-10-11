@@ -9,11 +9,21 @@ import { t } from "./i18n.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 
-export const KB_ALLOWED_EXT = [".txt", ".md", ".markdown", ".json", ".csv", ".pdf"];
+export const KB_ALLOWED_EXT = [".txt", ".md", ".markdown", ".json", ".csv", ".pdf", ".docx"];
 
 /** True when the filename is a PDF (sent as base64, not plain text). */
 export function isPdfFile(filename) {
   return String(filename || "").toLowerCase().endsWith(".pdf");
+}
+
+/** True when the filename is a .docx (sent as base64, not plain text). */
+export function isDocxFile(filename) {
+  return String(filename || "").toLowerCase().endsWith(".docx");
+}
+
+/** True for binary formats that are uploaded base64-encoded (PDF / DOCX). */
+export function isBinaryDocFile(filename) {
+  return isPdfFile(filename) || isDocxFile(filename);
 }
 
 /** Read a File as a base64 data string (data:...;base64,<payload>). */
@@ -227,8 +237,8 @@ async function addDocument() {
     const pinBox = $("#kb-doc-pin");
     const pinned = !!(pinBox && pinBox.checked);
     let payload;
-    if (isPdfFile(file.name)) {
-      // PDF is binary: read as base64 and let the sidecar extract text.
+    if (isBinaryDocFile(file.name)) {
+      // PDF / DOCX are binary: read as base64 and let the sidecar extract text.
       const dataUrl = await readFileAsDataUrl(file);
       const b64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
       payload = {

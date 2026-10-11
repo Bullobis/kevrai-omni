@@ -990,7 +990,7 @@
     "overlap": "Overlap (chars)",
     "create": "Create knowledge base",
     "select": "Select knowledge base",
-    "addDoc": "Add document (.txt/.md/.json/.csv/.pdf)",
+    "addDoc": "Add document (.txt/.md/.json/.csv/.pdf/.docx)",
     "ingest": "Index document",
     "chunks": "chunks",
     "delete": "Delete",
