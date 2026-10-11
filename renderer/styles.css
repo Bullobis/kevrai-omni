@@ -1423,3 +1423,25 @@ html[data-theme="light"] .skeleton-card::after {
   padding: 6px 14px; font-size: var(--fs-sm); cursor: pointer;
 }
 .music-download:hover { border-color: var(--accent); }
+
+/* Knowledge base / RAG (v4.29.0) */
+#pane-knowledge.engine-missing .asr-form { display: none; }
+.kb-doc-list { margin-top: 8px; }
+.kb-doc-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 2px; border-bottom: 1px solid var(--line);
+}
+.kb-doc-name { flex: 1; font-size: var(--fs-sm); }
+.kb-results, .kb-ask-result { margin-top: 8px; }
+.kb-result {
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 8px 10px; margin-bottom: 8px; background: var(--bg-1);
+}
+.kb-result-h { font-size: var(--fs-xs); margin-bottom: 4px; }
+.kb-score { color: var(--accent); font-weight: 600; margin-right: 8px; }
+.kb-pre {
+  white-space: pre-wrap; word-break: break-word;
+  font-size: var(--fs-sm); margin: 0; max-height: 220px; overflow: auto;
+}
+.kb-answer h4 { margin: 0 0 6px; font-size: var(--fs-sm); }
+.kb-answer p { white-space: pre-wrap; font-size: var(--fs-sm); }

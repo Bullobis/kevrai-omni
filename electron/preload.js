@@ -131,6 +131,17 @@ const api = {
   // Sentence-transformers text embeddings.
   embeddingsCapabilities: () => invoke("api:embeddings:capabilities"),
   embeddings:             (payload) => invoke("api:embeddings", payload),
+  // Local knowledge base / RAG.
+  knowledgeCapabilities: () => invoke("api:knowledge:capabilities"),
+  knowledgeList:    () => invoke("api:knowledge:list"),
+  knowledgeCreate:  (payload) => invoke("api:knowledge:create", payload),
+  knowledgeGet:     (kbId) => invoke("api:knowledge:get", kbId),
+  knowledgeDelete:  (kbId) => invoke("api:knowledge:delete", kbId),
+  knowledgeDocs:    (kbId) => invoke("api:knowledge:docs", kbId),
+  knowledgeAddDoc:  (payload) => invoke("api:knowledge:add-doc", payload),
+  knowledgeDeleteDoc: (payload) => invoke("api:knowledge:delete-doc", payload),
+  knowledgeSearch:  (payload) => invoke("api:knowledge:search", payload),
+  knowledgeAsk:     (payload) => invoke("api:knowledge:ask", payload),
   // Demucs music source separation.
   separationCapabilities: () => invoke("api:separation:capabilities"),
   separation:             (payload) => invoke("api:separation", payload),

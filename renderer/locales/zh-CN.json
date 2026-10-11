@@ -30,7 +30,8 @@
     "separation": "音源分离",
     "piper": "本地语音合成",
     "multimodal": "多模态对话",
-    "music": "音乐生成"
+    "music": "音乐生成",
+    "knowledge": "知识库"
   },
   "header": {
     "downloads": "下载",
@@ -946,5 +947,38 @@
     "promptFirst": "请先填写风格描述",
     "failed": "音乐生成失败：{err}",
     "engineInstalled": "引擎已安装"
+  },
+  "knowledge": {
+    "title": "知识库（RAG）",
+    "engineReady": "嵌入引擎已就绪",
+    "engineMissing": "嵌入引擎未安装",
+    "kbName": "知识库名称",
+    "model": "嵌入模型",
+    "chunkSize": "分块字符数",
+    "overlap": "重叠字符数",
+    "create": "新建知识库",
+    "select": "选择知识库",
+    "addDoc": "添加文档（.txt/.md/.json/.csv）",
+    "ingest": "索引文档",
+    "chunks": "分块",
+    "delete": "删除",
+    "docDeleted": "文档已删除",
+    "created": "知识库已创建",
+    "docAdded": "文档已索引",
+    "nameRequired": "请输入知识库名称",
+    "modelRequired": "请选择嵌入模型",
+    "selectFirst": "请先选择一个知识库",
+    "chooseFile": "请先选择文档",
+    "badExt": "不支持的文件类型",
+    "noDocs": "该知识库还没有文档",
+    "query": "检索测试",
+    "search": "检索",
+    "noResults": "没有检索到相关内容",
+    "ask": "基于知识库提问",
+    "askBtn": "提问",
+    "answer": "回答",
+    "enterQuery": "请输入内容",
+    "empty": "（暂无知识库）",
+    "failed": "知识库页加载失败"
   }
 }
