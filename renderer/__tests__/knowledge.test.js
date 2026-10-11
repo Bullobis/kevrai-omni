@@ -7,6 +7,7 @@ import {
   sanitizeKbName,
   scorePct,
   escapeHtml,
+  formatExportFilename,
   KB_ALLOWED_EXT,
 } from "../modules/knowledge.js";
 
@@ -54,4 +55,13 @@ test("allowlist is the documented text set", () => {
     [...KB_ALLOWED_EXT].sort(),
     [".csv", ".json", ".markdown", ".md", ".txt"].sort()
   );
+});
+
+test("formatExportFilename builds a safe kb-name-date.json", () => {
+  assert.equal(formatExportFilename("我的笔记", "2026-10-12"),
+    "kb-我的笔记-20261012.json");
+  assert.equal(formatExportFilename("a/b:c*?", "20261012"),
+    "kb-a-b-c-20261012.json");
+  // Blank name / date fall back gracefully.
+  assert.equal(formatExportFilename("", ""), "kb-kb-00000000.json");
 });

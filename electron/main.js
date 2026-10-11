@@ -1048,6 +1048,23 @@ function registerIpc() {
         timeoutMs: 120_000,
       });
   });
+  // Knowledge base export (download bundle) + import (upload bundle).
+  ipcMain.handle("api:knowledge:export", async (_e, kbId) => {
+    assert(isString(kbId, 64), "kbId: invalid");
+    return sidecarFetch(
+      `/api/knowledge/kbs/${encodeURIComponent(kbId)}/export`,
+      { timeoutMs: 60_000 });
+  });
+  ipcMain.handle("api:knowledge:import", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(payload.bundle && typeof payload.bundle === "object",
+      "bundle: invalid");
+    return sidecarFetch("/api/knowledge/import", {
+      method: "POST",
+      body: { bundle: payload.bundle },
+      timeoutMs: 120_000,
+    });
+  });
   // On-device text translation through the local brain.
   ipcMain.handle("api:translate", async (_e, payload) => {
     assert(payload && typeof payload === "object", "payload: invalid");

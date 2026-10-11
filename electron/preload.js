@@ -143,6 +143,8 @@ const api = {
   knowledgeSetPin:  (payload) => invoke("api:knowledge:set-pin", payload),
   knowledgeSearch:  (payload) => invoke("api:knowledge:search", payload),
   knowledgeAsk:     (payload) => invoke("api:knowledge:ask", payload),
+  knowledgeExport:  (kbId) => invoke("api:knowledge:export", kbId),
+  knowledgeImport:  (payload) => invoke("api:knowledge:import", payload),
   // On-device text translation.
   translate:        (payload) => invoke("api:translate", payload),
   // Demucs music source separation.

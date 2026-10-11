@@ -15,6 +15,9 @@ const html = `
     <button id="kb-doc-add-btn" type="button"></button>
     <button id="kb-search-btn" type="button"></button>
     <button id="kb-ask-btn" type="button"></button>
+    <button id="kb-export-btn" type="button"></button>
+    <button id="kb-import-btn" type="button"></button>
+    <input type="file" id="kb-import-file" hidden />
     <select id="kb-list"></select>
     <select id="kb-brain"><option value=""></option></select>
     <input id="kb-question" type="text" />
@@ -27,6 +30,8 @@ const { window, document } = setupDom(html);
 let sentAsk = null;
 let sentAdd = null;
 let sentPin = null;
+let sentExport = null;
+let sentImport = null;
 window.kevrai = {
   knowledgeCapabilities: async () => ({ body: { engine_installed: true } }),
   knowledgeList: async () => ({
@@ -63,6 +68,20 @@ window.kevrai = {
     return {
       body: { answer: "ANSWER: blue", results: [{ score: 0.9, index: 0 }] },
     };
+  },
+  knowledgeExport: async (kbId) => {
+    sentExport = kbId;
+    return {
+      body: {
+        format: "kevrai-kb", version: 1,
+        meta: { name: "Notes", model: "BAAI/bge-m3" },
+        documents: [{ filename: "a.md", pinned: false, text: "hello" }],
+      },
+    };
+  },
+  knowledgeImport: async (payload) => {
+    sentImport = payload;
+    return { body: { kb_id: "kbNew", name: "Notes (2)", doc_count: 1 } };
   },
 };
 
@@ -144,4 +163,28 @@ test("unchecked pin checkbox sends pinned:false on add", async () => {
   await new Promise((r) => setTimeout(r, 5));
   assert.ok(sentAdd);
   assert.equal(sentAdd.pinned, false);
+});
+
+test("export button asks for the current KB bundle", async () => {
+  const list = document.getElementById("kb-list");
+  list.value = "kb1";
+  list.dispatchEvent(new window.Event("change"));
+  document.getElementById("kb-export-btn").click();
+  await new Promise((r) => setTimeout(r, 5));
+  assert.equal(sentExport, "kb1");
+});
+
+test("import reads a local JSON file and posts the parsed bundle", async () => {
+  const input = document.getElementById("kb-import-file");
+  const bundle = { format: "kevrai-kb", version: 1,
+    meta: { name: "Notes", model: "BAAI/bge-m3" }, documents: [] };
+  const file = new window.File([JSON.stringify(bundle)], "kb-Notes.json",
+    { type: "application/json" });
+  file.text = async () => JSON.stringify(bundle);
+  Object.defineProperty(input, "files", { value: [file], configurable: true });
+  input.dispatchEvent(new window.Event("change"));
+  await new Promise((r) => setTimeout(r, 5));
+  assert.ok(sentImport);
+  assert.equal(sentImport.bundle.format, "kevrai-kb");
+  assert.equal(sentImport.bundle.version, 1);
 });

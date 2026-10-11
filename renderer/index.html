@@ -455,6 +455,11 @@
             <label for="kb-list" data-i18n="knowledge.select">选择知识库</label>
             <select id="kb-list"><option value="">--</option></select>
           </div>
+          <div class="form-actions">
+            <button id="kb-export-btn" data-i18n="knowledge.export">导出知识库</button>
+            <button id="kb-import-btn" data-i18n="knowledge.import">导入知识库</button>
+            <input type="file" id="kb-import-file" accept="application/json,.json" hidden />
+          </div>
           <div class="form-row">
             <label for="kb-doc-file" data-i18n="knowledge.addDoc">添加文档（.txt/.md/.json/.csv）</label>
             <input type="file" id="kb-doc-file" accept=".txt,.md,.markdown,.json,.csv" />

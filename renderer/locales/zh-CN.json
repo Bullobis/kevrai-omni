@@ -1018,6 +1018,11 @@
     "pinned": "已钉选",
     "pinnedDoc": "钉选文档",
     "unpin": "取消钉选",
-    "unpinned": "已取消钉选，恢复为可检索文档"
+    "unpinned": "已取消钉选，恢复为可检索文档",
+    "export": "导出知识库",
+    "import": "导入知识库",
+    "exported": "已导出 {name}",
+    "imported": "已导入 {name}（{n} 篇文档）",
+    "importBadJson": "所选文件不是有效的 JSON"
   }
 }

@@ -3396,6 +3396,36 @@ def knowledge_ask(request: Request, kb_id: str, req: KbAskReq) -> dict[str, Any]
         ) from e
 
 
+@app.get("/api/knowledge/kbs/{kb_id}/export")
+def knowledge_export(request: Request, kb_id: str) -> dict[str, Any]:
+    """Return a portable JSON bundle of a knowledge base for download."""
+    mgr = _knowledge_manager(request)
+    _require_kb(mgr, kb_id)
+    try:
+        return mgr.export_kb(kb_id)
+    except knowledge_base.KnowledgeError as e:
+        raise HTTPException(
+            status_code=_knowledge_status_for(e), detail=str(e)
+        ) from e
+
+
+class KbImportReq(BaseModel):
+    # The whole exported bundle as a JSON object (no multipart).
+    bundle: dict[str, Any]
+
+
+@app.post("/api/knowledge/import")
+def knowledge_import(request: Request, req: KbImportReq) -> dict[str, Any]:
+    """Import a previously exported bundle into a new knowledge base."""
+    mgr = _knowledge_manager(request)
+    try:
+        return mgr.import_kb(req.bundle)
+    except knowledge_base.KnowledgeError as e:
+        raise HTTPException(
+            status_code=_knowledge_status_for(e), detail=str(e)
+        ) from e
+
+
 # ---------------------------------------------------------------------------
 # On-device text translation (built on the local text brain)
 # ---------------------------------------------------------------------------
