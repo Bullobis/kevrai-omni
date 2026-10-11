@@ -15,12 +15,13 @@ const KNOWN_PIP_MIRRORS = [
   { id: "tencent",         label: "腾讯云 PyPI 镜像",   url: "https://mirrors.cloud.tencent.com/pypi/simple/" },
 ];
 
-const KNOWN_MODEL_MIRRORS = [
+export const KNOWN_MODEL_MIRRORS = [
   { id: "hf-official",  label: "HuggingFace 官方",  url: "https://huggingface.co" },
   { id: "hf-mirror",    label: "HF-Mirror (CN)",    url: "https://hf-mirror.com" },
-  { id: "hf-mirror-us", label: "HF-Mirror (US)",    url: "https://hf-mirror.us" },
-  { id: "hf-cn",        label: "HF-CN-Mirror",      url: "https://hf-cn-mirror.com" },
-  { id: "modelscope",   label: "ModelScope (CN)",   url: "https://www.modelscope.cn" },
+  // hf-mirror.us / hf-cn-mirror.com removed: both fail DNS (verified 2026-10),
+  // listing them as selectable only set users up for dead downloads. They stay
+  // as disabled presets in the backend sources_registry.
+  { id: "modelscope",   label: "ModelScope (CN)",   url: "https://modelscope.cn" },
   { id: "aliyun",       label: "阿里云 OSS",        url: "https://oss.aliyun.com" },
 ];
 
