@@ -60,6 +60,33 @@ MAX_CONTENT_BYTES = 8 * 1024 * 1024  # 8 MiB of raw text per document
 _ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
 
+def clean_brain_answer(raw: str) -> str:
+    """Trim a raw grounded-answer completion.
+
+    Small brains decoded in raw-continuation mode often emit the correct
+    answer first and then loop (repeating an ``答案：`` anchor or identical
+    lines). Keep the text up to the first repeated line / second anchor.
+    """
+    text = str(raw or "").strip()
+    if not text:
+        return ""
+    # A re-occurring answer anchor means the model started a new "answer".
+    parts = re.split(r"\n?答案[:：]", text)
+    text = parts[0].strip() if parts and parts[0].strip() else text
+    seen: set[str] = set()
+    kept: list[str] = []
+    for line in text.splitlines():
+        key = line.strip()
+        if not key:
+            kept.append(line)
+            continue
+        if key in seen:  # first repeated non-empty line → stop here
+            break
+        seen.add(key)
+        kept.append(line)
+    return "\n".join(kept).strip()
+
+
 class KnowledgeError(Exception):
     """Base error for the knowledge base runtime."""
 
@@ -501,12 +528,15 @@ class KnowledgeBase:
         if brain is not None and results:
             system = (
                 "你是一个基于本地知识库回答问题的助手。只依据下方提供的"
-                "上下文作答；若上下文不足以回答，请明确说明。"
+                "上下文作答；若上下文不足以回答，请明确说明。不要复述上下文。"
             )
-            prompt = f"上下文：\n{context}\n\n问题：{question}"
+            prompt = (
+                f"上下文：\n{context}\n\n问题：{question}\n\n"
+                "请只根据上述上下文，用与问题相同的语言，简要给出答案。\n答案："
+            )
             try:
-                answer = str(brain(system, prompt))
-                brain_used = True
+                answer = clean_brain_answer(str(brain(system, prompt)))
+                brain_used = bool(answer)
             except Exception as e:  # noqa: BLE001 — a brain failure must not 500
                 log.warning("knowledge brain generation failed: %s", e)
                 answer = None

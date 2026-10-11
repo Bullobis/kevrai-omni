@@ -227,6 +227,34 @@ def test_ask_brain_failure_does_not_raise(mgr):
     assert out["results"], "context still returned on brain failure"
 
 
+def test_clean_brain_answer_cuts_second_anchor():
+    from app.knowledge_base import clean_brain_answer
+
+    raw = "续航是 42 小时。\n答案：续航是 8 小时。\n答案：续航是 42 小时。"
+    assert clean_brain_answer(raw) == "续航是 42 小时。"
+
+
+def test_clean_brain_answer_cuts_repeated_line():
+    from app.knowledge_base import clean_brain_answer
+
+    raw = "续航 42 小时。\n重量 137 克。\n续航 42 小时。\n重量 137 克。"
+    assert clean_brain_answer(raw) == "续航 42 小时。\n重量 137 克。"
+
+
+def test_clean_brain_answer_keeps_distinct_multiline():
+    from app.knowledge_base import clean_brain_answer
+
+    raw = "第一点：续航 42 小时。\n第二点：重量 137 克。"
+    assert clean_brain_answer(raw) == "第一点：续航 42 小时。\n第二点：重量 137 克。"
+
+
+def test_clean_brain_answer_empty():
+    from app.knowledge_base import clean_brain_answer
+
+    assert clean_brain_answer("   ") == ""
+    assert clean_brain_answer("") == ""
+
+
 # --------------------------------------------------------------------------
 # FastAPI routes
 # --------------------------------------------------------------------------
