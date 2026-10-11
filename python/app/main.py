@@ -3307,10 +3307,10 @@ def knowledge_add_doc(request: Request, kb_id: str, req: KbDocReq) -> dict[str, 
     _require_kb(mgr, kb_id)
     try:
         suffix = Path(req.filename or "").suffix.lower()
-        if suffix == ".pdf":
+        if suffix in {".pdf", ".docx"}:
             if req.encoding != "base64" or not req.content_b64:
                 raise knowledge_base.KnowledgeParamError(
-                    "PDF 需以 base64 编码上传（encoding=base64, content_b64）"
+                    f"{suffix} 需以 base64 编码上传（encoding=base64, content_b64）"
                 )
             import base64
 
@@ -3318,9 +3318,12 @@ def knowledge_add_doc(request: Request, kb_id: str, req: KbDocReq) -> dict[str, 
                 data = base64.b64decode(req.content_b64, validate=True)
             except Exception as e:  # noqa: BLE001 — malformed b64 payload
                 raise knowledge_base.KnowledgeParamError(
-                    "PDF 的 base64 数据无法解码"
+                    f"{suffix} 的 base64 数据无法解码"
                 ) from e
-            text = knowledge_base.extract_pdf_bytes(data)
+            if suffix == ".pdf":
+                text = knowledge_base.extract_pdf_bytes(data)
+            else:
+                text = knowledge_base.extract_docx_bytes(data)
             return mgr.add_document(kb_id, req.filename, text,
                                     pinned=req.pinned)
         if not req.content.strip():

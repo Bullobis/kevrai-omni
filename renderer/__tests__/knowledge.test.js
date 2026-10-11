@@ -5,6 +5,8 @@ import assert from "node:assert/strict";
 import {
   isAllowedFile,
   isPdfFile,
+  isDocxFile,
+  isBinaryDocFile,
   sanitizeKbName,
   scorePct,
   escapeHtml,
@@ -23,7 +25,7 @@ test("isAllowedFile accepts supported text extensions case-insensitively", () =>
 
 test("isAllowedFile rejects binaries and unknown extensions", () => {
   assert.equal(isAllowedFile("video.mp4"), false);
-  assert.equal(isAllowedFile("report.docx"), false);
+  assert.equal(isAllowedFile("report.doc"), false);  // legacy binary .doc
   assert.equal(isAllowedFile("archive.zip"), false);
   assert.equal(isAllowedFile(""), false);
 });
@@ -51,10 +53,10 @@ test("escapeHtml neutralises markup", () => {
   assert.equal(escapeHtml(undefined), "");
 });
 
-test("allowlist is the documented text set", () => {
+test("allowlist is the documented ingest set", () => {
   assert.deepEqual(
     [...KB_ALLOWED_EXT].sort(),
-    [".csv", ".json", ".markdown", ".md", ".pdf", ".txt"].sort()
+    [".csv", ".docx", ".json", ".markdown", ".md", ".pdf", ".txt"].sort()
   );
 });
 
@@ -77,4 +79,19 @@ test("isPdfFile detects the PDF extension case-insensitively", () => {
 test("allowlist now includes .pdf", () => {
   assert.ok(KB_ALLOWED_EXT.includes(".pdf"));
   assert.equal(isAllowedFile("paper.pdf"), true);
+});
+
+test("isDocxFile detects the DOCX extension case-insensitively", () => {
+  assert.equal(isDocxFile("notes.docx"), true);
+  assert.equal(isDocxFile("NOTES.DOCX"), true);
+  assert.equal(isDocxFile("legacy.doc"), false);
+  assert.equal(isDocxFile("paper.pdf"), false);
+});
+
+test("allowlist now includes .docx and is treated as a binary doc", () => {
+  assert.ok(KB_ALLOWED_EXT.includes(".docx"));
+  assert.equal(isAllowedFile("notes.docx"), true);
+  assert.equal(isBinaryDocFile("notes.docx"), true);
+  assert.equal(isBinaryDocFile("paper.pdf"), true);
+  assert.equal(isBinaryDocFile("note.md"), false);
 });
