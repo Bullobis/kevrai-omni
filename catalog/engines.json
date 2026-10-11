@@ -699,6 +699,29 @@
         "https://pypi.tuna.tsinghua.edu.cn/simple/rapidocr/",
         "https://github.com/RapidAI/RapidOCR"
       ]
+    },
+    {
+      "id": "pymupdf",
+      "name": "PyMuPDF",
+      "category": "general",
+      "description": "高性能 PDF 渲染与处理（MuPDF），用于把扫描件/图片版 PDF 逐页渲染为图片，再交由 OCR 识别文字。",
+      "github": "ArtifexSoftware/PyMuPDF",
+      "install": "pip",
+      "pypi": "PyMuPDF==1.28.2",
+      "license": "AGPL-3.0",
+      "size_mb": 25,
+      "platforms": {
+        "linux-x64": "https://github.com/ArtifexSoftware/PyMuPDF/releases",
+        "windows-x64": "https://github.com/ArtifexSoftware/PyMuPDF/releases",
+        "darwin-arm64": "https://github.com/ArtifexSoftware/PyMuPDF/releases",
+        "darwin-x64": "https://github.com/ArtifexSoftware/PyMuPDF/releases"
+      },
+      "trending": false,
+      "sources": [
+        "https://pypi.org/simple/PyMuPDF/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/PyMuPDF/",
+        "https://github.com/ArtifexSoftware/PyMuPDF"
+      ]
     }
   ]
 }

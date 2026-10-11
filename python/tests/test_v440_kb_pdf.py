@@ -139,7 +139,18 @@ def test_route_pdf_missing_b64_is_400(client):
     assert r.status_code == 400
 
 
-def test_route_pdf_scanned_is_400(client):
+def test_route_pdf_scanned_needs_ocr_engine(client, monkeypatch):
+    # A scanned / textless PDF now triggers render+OCR; when the optional
+    # PyMuPDF engine is absent the route returns 503 with install guidance
+    # (rather than the older 400 dead-end). Rendering is forced to report the
+    # missing engine so the test is independent of the real data root.
+    from app import main
+
+    main.app.state.ocr = None
+    monkeypatch.setattr(
+        kb, "render_pdf_pages",
+        lambda data, data_root=None, dpi=170: (_ for _ in ()).throw(
+            kb.KnowledgeEngineMissing("install PyMuPDF")))
     r = client.post("/api/knowledge/kbs",
                     json={"name": "PDF 库 3", "model": "BAAI/bge-m3"})
     bid = r.json()["id"]
@@ -147,7 +158,7 @@ def test_route_pdf_scanned_is_400(client):
     r = client.post(f"/api/knowledge/kbs/{bid}/documents",
                    json={"filename": "scan.pdf",
                          "content_b64": b64, "encoding": "base64"})
-    assert r.status_code == 400
+    assert r.status_code == 503
 
 
 def test_route_text_route_still_works(client):

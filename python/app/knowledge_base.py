@@ -106,6 +106,10 @@ class KnowledgeEngineMissing(KnowledgeError):
     """Raised when the embedding engine is not installed/loadable."""
 
 
+class ScannedPdfError(KnowledgeParamError):
+    """PDF has no selectable text (scanned / image-only); OCR can recover it."""
+
+
 # ---------------------------------------------------------------------------
 # Pure helpers
 # ---------------------------------------------------------------------------
@@ -195,11 +199,71 @@ def extract_pdf_bytes(data: bytes) -> str:
 
     text = "\n".join(p.strip() for p in pages).strip()
     if not text:
-        raise KnowledgeParamError(
-            "该 PDF 不含可供检索的文本（疑似扫描件 / 图片版），"
-            "暂不支持扫描件 OCR，请改用可选中文字的 PDF 或文本文件。"
+        raise ScannedPdfError(
+            "该 PDF 不含可供检索的文本（疑似扫描件 / 图片版）。"
         )
     return text
+
+
+def _pymupdf_engine_dir(data_root: Path | None = None) -> Path:
+    root = Path(data_root) if data_root is not None else default_data_root()
+    return root / "engines" / "pip-pymupdf"
+
+
+def render_pdf_pages(data: bytes, data_root: Path | None = None,
+                     dpi: int = 170) -> list[bytes]:
+    """Render each PDF page to a PNG (bytes) using PyMuPDF.
+
+    PyMuPDF is an optional engine (``engines/pip-pymupdf``); its directory is
+    prepended to ``sys.path``. Raises :class:`KnowledgeEngineMissing` with an
+    install hint when it is unavailable, and :class:`KnowledgeParamError` for a
+    corrupt PDF.
+    """
+    if not data:
+        raise KnowledgeParamError("PDF content is empty")
+    target = _pymupdf_engine_dir(data_root)
+    if target.is_dir():
+        import sys
+        s = str(target)
+        if s not in sys.path:
+            sys.path.insert(0, s)
+    try:
+        try:
+            import pymupdf
+        except Exception:  # noqa: BLE001 — newer name missing, try legacy fitz
+            try:
+                import fitz as pymupdf  # type: ignore
+            except Exception as e:  # noqa: BLE001 — engine not installed
+                raise KnowledgeEngineMissing(
+                    "扫描件 OCR 需要 PyMuPDF 渲染页面，请先在引擎页安装 PyMuPDF。"
+                ) from e
+        doc = pymupdf.open(stream=data, filetype="pdf")
+        pngs: list[bytes] = []
+        for page in doc:
+            pix = page.get_pixmap(dpi=dpi)
+            pngs.append(pix.tobytes("png"))
+        return pngs
+    except KnowledgeError:
+        raise
+    except Exception as e:  # noqa: BLE001 — corrupt PDF / render failure
+        raise KnowledgeParamError(
+            f"无法渲染该 PDF（文件可能已损坏）：{e}"
+        ) from e
+
+
+def ocr_scanned_pdf(data: bytes, ocr_callable: Callable[[bytes], str],
+                    data_root: Path | None = None, dpi: int = 170) -> str:
+    """Render a textless PDF page-by-page and OCR each, pages joined newline.
+
+    ``ocr_callable`` is the bound :meth:`OCRManager.extract` (or a fake in
+    tests). Pages that yield no text are skipped.
+    """
+    parts: list[str] = []
+    for png in render_pdf_pages(data, data_root=data_root, dpi=dpi):
+        text = ocr_callable(png).strip()
+        if text:
+            parts.append(text)
+    return "\n".join(parts)
 
 
 def extract_docx_bytes(data: bytes) -> str:
