@@ -1637,6 +1637,35 @@ function registerIpc() {
     sidecarFetch("/api/agent/cancel",
       { method: "POST", body: { session_id: sessionId } }));
 
+  // Agent tool-call approval gate — list pending requests, resolve them
+  // (approve optionally with edited parameters, reject), and read/set the
+  // per-session policy. Mirrors Cherry Studio's confirm-before-run UX.
+  ipcMain.handle("kevrai:agent-approvals", async () =>
+    sidecarFetch("/api/agent/approvals"));
+  ipcMain.handle("kevrai:agent-approval-approve", async (_e, requestId, editedParams) => {
+    assert(typeof requestId === "string" && requestId.length > 0, "requestId: invalid");
+    const body = (editedParams && typeof editedParams === "object")
+      ? { edited_params: editedParams } : {};
+    return sidecarFetch(`/api/agent/approvals/${encodeURIComponent(requestId)}/approve`,
+      { method: "POST", body });
+  });
+  ipcMain.handle("kevrai:agent-approval-reject", async (_e, requestId) => {
+    assert(typeof requestId === "string" && requestId.length > 0, "requestId: invalid");
+    return sidecarFetch(`/api/agent/approvals/${encodeURIComponent(requestId)}/reject`,
+      { method: "POST", body: {} });
+  });
+  ipcMain.handle("kevrai:agent-approval-policy", async (_e, sessionId) => {
+    const sid = (typeof sessionId === "string" && sessionId) ? sessionId : "default";
+    return sidecarFetch(`/api/agent/approval-policy?session_id=${encodeURIComponent(sid)}`);
+  });
+  ipcMain.handle("kevrai:agent-approval-policy-set", async (_e, sessionId, policy) => {
+    const sid = (typeof sessionId === "string" && sessionId) ? sessionId : "default";
+    assert(policy === "auto" || policy === "confirm", "policy: must be auto|confirm");
+    return sidecarFetch("/api/agent/approval-policy",
+      { method: "PUT", body: { session_id: sid, policy } });
+  });
+
+
   // v2.9.0 — skill hub（导入外部 Anthropic SKILL.md 技能）
   // 注意：/skill-hub 系列必须由 sidecar 端声明在 /skills/{skill_id} 之前，
   // 否则 "skill-hub" 会被当成 skill id 匹配掉（见 python/app/main.py）。

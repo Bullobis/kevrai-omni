@@ -946,6 +946,22 @@ html[data-theme="light"] .agent-msg-user { color: #fff; }
   color: var(--fg, #ccc); border: 1px solid var(--border, #333); border-radius: 8px;
   padding: 6px 8px; font-size: 12.5px; }
 .agent-brain-bar .hint { font-size: 11.5px; }
+.agent-approval-toggle { display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--fg, #ccc); cursor: pointer; margin-left: auto;
+  padding: 4px 8px; border: 1px solid var(--border, #333); border-radius: 8px;
+  background: var(--bg, #141518); }
+.agent-approvals { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.agent-approval-card { border: 1px solid rgba(255, 196, 84, 0.55); border-radius: 10px;
+  background: rgba(255, 196, 84, 0.08); padding: 10px 12px; }
+.agent-approval-head { font-size: 12.5px; font-weight: 600; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px; }
+.agent-approval-tool { font-size: 12px; color: var(--accent, #7aa2ff);
+  background: var(--bg, #141518); padding: 2px 6px; border-radius: 6px; }
+.agent-approval-params { width: 100%; box-sizing: border-box; min-height: 90px;
+  max-height: 220px; resize: vertical; font-family: ui-monospace, monospace;
+  font-size: 11.5px; background: var(--bg, #141518); color: var(--fg, #ccc);
+  border: 1px solid var(--border, #333); border-radius: 8px; padding: 8px; }
+.agent-approval-actions { display: flex; gap: 8px; margin-top: 8px; }
 .agent-cancel-btn { height: 42px; padding: 0 16px; font-size: 13px;
   border-color: rgba(255, 120, 120, 0.5); color: #ff8a8a; }
 .agent-trace { margin: 8px 0 2px; border: 1px solid var(--border, #333);

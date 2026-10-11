@@ -6,6 +6,7 @@ import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { unwrap } from "./net.js";
 import { t } from "./i18n.js";
+import { approvalCardHtml, parseEditedParams } from "./agent-approval.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -32,6 +33,8 @@ export async function initAgent() {
   _loadBrain();
   _loadSkills();
   _loadSessionList();
+  _loadApprovalPolicy();
+  _wireApprovals(document.getElementById("agent-approvals"));
 }
 
 function _renderShell() {
@@ -53,7 +56,12 @@ function _renderShell() {
         <label class="agent-brain-label" for="agent-brain-select">🧠 ${t("agent.brain")}</label>
         <select id="agent-brain-select" class="agent-brain-select" title="${t("agent.brainTitle")}"></select>
         <span class="hint" id="agent-brain-hint"></span>
+        <label class="agent-approval-toggle" title="开启后，Agent 每次调用工具前都会暂停等待你确认/编辑/拒绝">
+          <input type="checkbox" id="agent-approval-confirm">
+          🛡️ 每次确认工具
+        </label>
       </div>
+      <div id="agent-approvals" class="agent-approvals" hidden></div>
       <details class="agent-skills-panel" id="agent-skills-panel">
         <summary>
           🧩 ${t("agent.skillsLibrary")}
@@ -135,6 +143,7 @@ function _wireEvents(root) {
     if (sessionSelect.value) {
       _sessionId = sessionSelect.value;
       _loadSessionMessages();
+      _loadApprovalPolicy();
     }
   });
 
@@ -169,6 +178,26 @@ function _wireEvents(root) {
       toast(err.message || String(err), { kind: "err" });
     }
   });
+
+  // Approval policy toggle: auto (run everything) vs confirm (ask first).
+  const approvalToggle = $("#agent-approval-confirm", root);
+  if (approvalToggle) {
+    approvalToggle.addEventListener("change", async () => {
+      const policy = approvalToggle.checked ? "confirm" : "auto";
+      approvalToggle.disabled = true;
+      try {
+        unwrap(await api.agentSetApprovalPolicy(_sessionId, policy));
+        toast(policy === "confirm"
+          ? "已开启：每次工具调用前需确认"
+          : "已关闭：工具自动执行", { kind: "ok" });
+      } catch (err) {
+        approvalToggle.checked = !approvalToggle.checked; // rollback
+        toast(`策略设置失败：${err.message || err}`, { kind: "err" });
+      } finally {
+        approvalToggle.disabled = false;
+      }
+    });
+  }
 
   // 技能库：开关（事件委托）+ 恢复默认
   const skillsList = $("#agent-skills-list", root);
@@ -541,6 +570,98 @@ function _renderTrace(steps) {
   </details>`;
 }
 
+// ---------------------------------------------------------------------------
+// Tool-call approval gate (confirm-before-run)
+// While a chat is in flight we poll GET /approvals and render a card per pending
+// tool call: the human can approve (optionally editing the JSON params), or
+// reject. The blocked ReAct loop wakes on whichever they choose.
+// ---------------------------------------------------------------------------
+let _approvalTimer = null;
+
+async function _loadApprovalPolicy() {
+  const toggle = document.getElementById("agent-approval-confirm");
+  if (!toggle) return;
+  try {
+    const res = unwrap(await api.agentApprovalPolicy(_sessionId));
+    toggle.checked = res.policy === "confirm";
+  } catch (e) {
+    console.warn("approval policy load failed:", e);
+  }
+}
+
+function _wireApprovals(container) {
+  if (!container) return;
+  container.addEventListener("click", async (e) => {
+    const approveBtn = e.target.closest("[data-approval-approve]");
+    const rejectBtn = e.target.closest("[data-approval-reject]");
+    if (!approveBtn && !rejectBtn) return;
+    const card = e.target.closest(".agent-approval-card");
+    const id = card && card.dataset.id;
+    if (!id) return;
+    if (approveBtn) {
+      const ta = card.querySelector("textarea.agent-approval-params");
+      let edited;
+      try {
+        edited = parseEditedParams(ta ? ta.value : "");
+      } catch (err) {
+        toast(`参数 JSON 无效：${err.message || err}`, { kind: "err" });
+        return;
+      }
+      approveBtn.disabled = rejectBtn.disabled = true;
+      try {
+        unwrap(await api.agentApproveTool(id, edited));
+      } catch (err) {
+        toast(`批准失败：${err.message || err}`, { kind: "err" });
+        approveBtn.disabled = rejectBtn.disabled = false;
+      }
+    } else if (rejectBtn) {
+      approveBtn.disabled = rejectBtn.disabled = true;
+      try {
+        unwrap(await api.agentRejectTool(id));
+      } catch (err) {
+        toast(`拒绝失败：${err.message || err}`, { kind: "err" });
+        approveBtn.disabled = rejectBtn.disabled = false;
+      }
+    }
+  });
+}
+
+function _renderApprovals(requests) {
+  const container = document.getElementById("agent-approvals");
+  if (!container) return;
+  const list = Array.isArray(requests) ? requests : [];
+  if (!list.length) {
+    container.hidden = true;
+    container.innerHTML = "";
+    return;
+  }
+  container.innerHTML = list.map(approvalCardHtml).join("");
+  container.hidden = false;
+}
+
+async function _pollApprovals() {
+  try {
+    const res = unwrap(await api.agentApprovals());
+    _renderApprovals(res.requests || []);
+  } catch (_) {
+    /* transient poll error: leave the cards as-is */
+  }
+}
+
+function _startApprovalPolling() {
+  if (_approvalTimer) return;
+  _pollApprovals();
+  _approvalTimer = setInterval(_pollApprovals, 1000);
+}
+
+function _stopApprovalPolling() {
+  if (_approvalTimer) {
+    clearInterval(_approvalTimer);
+    _approvalTimer = null;
+  }
+  _renderApprovals([]);
+}
+
 async function _sendMessage() {
   if (_busy) return;
   const input = document.getElementById("agent-input");
@@ -560,6 +681,9 @@ async function _sendMessage() {
 
   _appendMessage("user", message, false);
   input.value = "";
+  // In "confirm" mode the run parks on each tool call; poll for pending
+  // approvals so the cards appear while agentChat() is still awaiting.
+  _startApprovalPolling();
 
   try {
     const res = unwrap(await api.agentChat({
@@ -590,6 +714,7 @@ async function _sendMessage() {
     input.disabled = false;
     sendBtn.disabled = !input.value.trim();
     input.focus();
+    _stopApprovalPolling();
   }
 }
 

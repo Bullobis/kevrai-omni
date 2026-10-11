@@ -424,6 +424,23 @@ const api = {
     assertString(sessionId, "sessionId", 128);
     return invoke("kevrai:agent-cancel", sessionId);
   },
+  // ----- Agent tool-call approval gate -----
+  agentApprovals: () => invoke("kevrai:agent-approvals"),
+  agentApproveTool: (requestId, editedParams) => {
+    assertString(requestId, "requestId", 64);
+    return invoke("kevrai:agent-approval-approve", requestId, editedParams || null);
+  },
+  agentRejectTool: (requestId) => {
+    assertString(requestId, "requestId", 64);
+    return invoke("kevrai:agent-approval-reject", requestId);
+  },
+  agentApprovalPolicy: (sessionId) =>
+    invoke("kevrai:agent-approval-policy", sessionId || "default"),
+  agentSetApprovalPolicy: (sessionId, policy) => {
+    assertString(sessionId, "sessionId", 128);
+    return invoke("kevrai:agent-approval-policy-set", sessionId || "default", policy);
+  },
+
   // ----- v2.9.0: skill hub（导入外部 SKILL.md 技能）-----
   skillHubList: () => invoke("kevrai:skill-hub-list"),
   skillHubImportDir: (dirPath) => {

@@ -154,6 +154,12 @@ export const api = {
   agentBrain:           wrap("agentBrain",           () => k().agentBrain()),
   agentSetBrain:        wrap("agentSetBrain",        (backend) => k().agentSetBrain(backend)),
   agentCancel:          wrap("agentCancel",          (id) => k().agentCancel(id)),
+  // Tool-call approval gate (confirm-before-run)
+  agentApprovals:       wrap("agentApprovals",       () => k().agentApprovals()),
+  agentApproveTool:     wrap("agentApproveTool",     (id, edited) => k().agentApproveTool(id, edited)),
+  agentRejectTool:      wrap("agentRejectTool",      (id) => k().agentRejectTool(id)),
+  agentApprovalPolicy:  wrap("agentApprovalPolicy",  (sid) => k().agentApprovalPolicy(sid)),
+  agentSetApprovalPolicy: wrap("agentSetApprovalPolicy", (sid, policy) => k().agentSetApprovalPolicy(sid, policy)),
   // v2.9.0 — skill hub（导入外部 Anthropic SKILL.md 技能）
   // 走 k() 守卫：老 preload 缺这些方法时抛可捕获的错误，而不是 TypeError。
   skillHubList:      wrap("skillHubList",      () => k().skillHubList()),
