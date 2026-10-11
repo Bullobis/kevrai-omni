@@ -187,4 +187,5 @@ def test_media_tools_registered_in_skill():
     skill = next(s for s in BUILTIN_SKILLS if s.id == "media_engines")
     names = [t.name for t in skill.tools]
     assert names == ["asr_transcribe", "embed_text", "separate_audio",
-                     "tts_speak", "vision_ask", "gen_image"]
+                     "tts_speak", "vision_ask", "gen_image",
+                     "generate_music"]

@@ -141,6 +141,9 @@ const api = {
   multimodalCapabilities: () => invoke("api:multimodal:capabilities"),
   multimodalChat:         (payload) => invoke("api:multimodal:chat", payload),
   multimodalGenerateImage:(payload) => invoke("api:multimodal:generate-image", payload),
+  // Native MusicGen text-to-music.
+  musicCapabilities: () => invoke("api:music:capabilities"),
+  musicGenerate:     (payload) => invoke("api:music:generate", payload),
   // ClawdChat heartbeat (runs server-side; credential stays in the sidecar).
   clawdchatHeartbeat: () => invoke("api:clawdchat-heartbeat"),
   categories:    () => invoke("api:categories"),

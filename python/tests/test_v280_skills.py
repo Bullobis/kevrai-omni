@@ -236,8 +236,8 @@ class TestBuiltinSkills:
         sm = build_skill_manager()
         for sid in ("writing_studio", "media_prompt_studio", "media_engines"):
             sm.enable(sid)
-        assert len(sm.active_tool_names()) == 29
-        assert len(all_skill_tools()) == 29
+        assert len(sm.active_tool_names()) == 30
+        assert len(all_skill_tools()) == 30
 
     def test_global_tool_name_uniqueness(self):
         names = [t.name for t in all_skill_tools()]

@@ -1043,6 +1043,28 @@ function registerIpc() {
       headers: { "Content-Type": "application/json" }, timeoutMs: 600_000,
     });
   });
+  ipcMain.handle("api:music:capabilities", async () =>
+    sidecarFetch("/api/music/capabilities"));
+  ipcMain.handle("api:music:generate", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.prompt, 2000), "prompt: invalid");
+    const dur = Number(payload.duration_s);
+    const guidance = Number(payload.guidance_scale);
+    const body = {
+      model: isString(payload.model, 128) ? payload.model : "musicgen-small",
+      prompt: payload.prompt,
+      duration_s: Number.isFinite(dur) ? Math.min(60, Math.max(1, dur)) : 15,
+      guidance_scale: Number.isFinite(guidance)
+        ? Math.min(20, Math.max(0.1, guidance)) : 3.0,
+      seed: Number.isFinite(Number(payload.seed))
+        ? Number(payload.seed) : null,
+      do_sample: payload.do_sample !== false,
+    };
+    return sidecarFetch("/api/music/generate", {
+      method: "POST", rawBody: Buffer.from(JSON.stringify(body)),
+      headers: { "Content-Type": "application/json" }, timeoutMs: 600_000,
+    });
+  });
   ipcMain.handle("api:categories",   async () => sidecarFetch("/api/categories"));
   ipcMain.handle("api:models", async (_e, params) => {
     const p = (params && typeof params === "object") ? params : {};

@@ -197,7 +197,8 @@ class TestBuiltinPreserved:
         "writing_studio": None,          # 只在下方断言存在
         "media_prompt_studio": None,
         "media_engines": {"asr_transcribe", "embed_text", "separate_audio",
-                          "tts_speak", "vision_ask", "gen_image"},
+                          "tts_speak", "vision_ask", "gen_image",
+                          "generate_music"},
     }
     EXPECTED_IDS = set(EXPECTED)
 

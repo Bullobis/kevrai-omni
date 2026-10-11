@@ -319,6 +319,53 @@ gen_image = Tool(
 )
 
 
+def _gen_music(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
+    prompt = str(params.get("prompt") or "").strip()
+    if not prompt:
+        return {"error": "prompt is required"}
+    model = str(params.get("model") or "musicgen-small").strip()
+    try:
+        from ...music_runtime import MusicManager
+
+        mgr = _manager(ctx, "music", MusicManager)
+        kw: dict[str, Any] = {}
+        if params.get("duration_s") is not None:
+            kw["duration_s"] = float(params["duration_s"])
+        if params.get("guidance_scale") is not None:
+            kw["guidance_scale"] = float(params["guidance_scale"])
+        if params.get("seed") is not None and params.get("seed") != "":
+            kw["seed"] = int(params["seed"])
+        out = _artifact_dir() / f"agentmusic_{int(time.time()*1000)}.wav"
+        res = mgr.generate_to_file(model, prompt, out, **kw)
+        return {
+            "audio_path": res["audio_path"],
+            "sampling_rate": res["sampling_rate"],
+            "model": model,
+        }
+    except Exception as e:  # noqa: BLE001
+        hint = "请先在「音乐生成」页安装 Transformers 引擎与 MusicGen 模型。" if _engine_missing(e) else ""
+        return {"error": f"{e} {hint}".strip(), "error_type": type(e).__name__}
+
+
+generate_music = Tool(
+    name="generate_music",
+    description="Generate a short music clip from a style description on-device with a MusicGen model. Returns the WAV file path.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "prompt": {"type": "string", "description": "Style description, e.g. 'upbeat lo-fi hip hop with warm keys'."},
+            "model": {"type": "string", "description": "Music model id (default musicgen-small)."},
+            "duration_s": {"type": "number", "description": "Clip length in seconds (default 15)."},
+            "guidance_scale": {"type": "number", "description": "Guidance scale (default 3)."},
+            "seed": {"type": "integer", "description": "Optional seed for reproducibility."},
+        },
+        "required": ["prompt"],
+    },
+    handler=_gen_music,
+    category="media",
+)
+
+
 MEDIA_ENGINE_TOOLS = [
     asr_transcribe,
     embed_text,
@@ -326,4 +373,5 @@ MEDIA_ENGINE_TOOLS = [
     tts_speak,
     vision_ask,
     gen_image,
+    generate_music,
 ]

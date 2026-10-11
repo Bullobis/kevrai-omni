@@ -55,6 +55,7 @@ from . import (
     ltx_runtime,
     mnn_runtime,
     multimodal_runtime,
+    music_runtime,
     piper_runtime,
 )
 from . import clawdchat as clawdchat_mod
@@ -272,6 +273,8 @@ async def _lifespan(app: FastAPI):
     app.state.piper = piper_runtime.PiperManager(APP_ROOT)
     # Generic transformers vision-language manager (image+text chat).
     app.state.multimodal = multimodal_runtime.MultimodalManager(APP_ROOT)
+    # Native MusicGen text-to-music manager (reuses the transformers engine).
+    app.state.music = music_runtime.MusicManager(APP_ROOT)
     # Dual-source hub registry (HF + ModelScope + curated). Adapters own their
     # httpx clients, so the lifespan must aclose() them on shutdown. Wire the
     # lifespan handle to the *process singleton* (get_registry), NOT a fresh
@@ -3545,6 +3548,77 @@ async def multimodal_generate_image_route(
         "elapsed_s": res.get("elapsed_s"),
         "output_dir": str(outdir),
         "images": items,
+    })
+
+
+def _music_manager(request: Request) -> music_runtime.MusicManager:
+    mgr = getattr(request.app.state, "music", None)
+    if mgr is None:
+        mgr = music_runtime.MusicManager(APP_ROOT)
+        request.app.state.music = mgr
+    return mgr
+
+
+class MusicGenReq(BaseModel):
+    model: str = "musicgen-small"
+    prompt: str = ""
+    duration_s: float = 15.0
+    guidance_scale: float = 3.0
+    seed: int | None = None
+    do_sample: bool = True
+
+
+@app.get("/api/music/capabilities")
+def music_capabilities(request: Request) -> dict[str, Any]:
+    return music_runtime.capabilities(APP_ROOT)
+
+
+@app.post("/api/music/generate")
+async def music_generate_route(
+    request: Request, req: MusicGenReq
+) -> JSONResponse:
+    if not (req.prompt or "").strip():
+        raise HTTPException(status_code=400, detail="prompt 不能为空")
+    mgr = _music_manager(request)
+    outdir = APP_ROOT / "generated" / "music"
+    outdir.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    out_path = outdir / f"{stamp}.wav"
+    try:
+        res = await asyncio.to_thread(
+            mgr.generate_to_file,
+            req.model,
+            req.prompt,
+            out_path,
+            duration_s=req.duration_s,
+            guidance_scale=req.guidance_scale,
+            seed=req.seed,
+            do_sample=req.do_sample,
+        )
+    except music_runtime.MusicEngineMissing as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except music_runtime.MusicParamError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except music_runtime.MusicError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+
+    import base64
+
+    audio_path = Path(res["audio_path"])
+    data_url = (
+        "data:audio/wav;base64,"
+        + base64.b64encode(audio_path.read_bytes()).decode("ascii")
+    )
+    return JSONResponse({
+        "model": req.model,
+        "repo": res.get("repo"),
+        "file": audio_path.name,
+        "output_dir": str(outdir),
+        "audio_path": str(audio_path),
+        "sampling_rate": res.get("sampling_rate"),
+        "duration_s": res.get("requested_s"),
+        "elapsed_s": res.get("elapsed_s"),
+        "data_url": data_url,
     })
 
 
