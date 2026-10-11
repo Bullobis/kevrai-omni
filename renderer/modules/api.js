@@ -62,6 +62,7 @@ export const api = {
   knowledgeDocs:     wrap("knowledgeDocs",       (kbId) => k().knowledgeDocs(kbId)),
   knowledgeAddDoc:  wrap("knowledgeAddDoc",    (payload) => k().knowledgeAddDoc(payload)),
   knowledgeDeleteDoc: wrap("knowledgeDeleteDoc", (payload) => k().knowledgeDeleteDoc(payload)),
+  knowledgeSetPin:  wrap("knowledgeSetPin",   (payload) => k().knowledgeSetPin(payload)),
   knowledgeSearch:  wrap("knowledgeSearch",    (payload) => k().knowledgeSearch(payload)),
   knowledgeAsk:      wrap("knowledgeAsk",      (payload) => k().knowledgeAsk(payload)),
   translate:         wrap("translate",         (payload) => k().translate(payload)),

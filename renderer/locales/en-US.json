@@ -1013,6 +1013,11 @@
     "brainNone": "Retrieve only, no generated answer",
     "enterQuery": "Please enter something",
     "empty": "(no knowledge bases yet)",
-    "failed": "Knowledge base page failed to load"
+    "failed": "Knowledge base page failed to load",
+    "pin": "📌 Pin (inject full text, skip retrieval)",
+    "pinned": "Pinned",
+    "pinnedDoc": "Pinned document",
+    "unpin": "Unpin",
+    "unpinned": "Document unpinned, back to retrieval"
   }
 }

@@ -990,7 +990,11 @@ function registerIpc() {
       `/api/knowledge/kbs/${encodeURIComponent(payload.kb_id)}/documents`,
       {
         method: "POST",
-        body: { filename: payload.filename, content: payload.content },
+        body: {
+          filename: payload.filename,
+          content: payload.content,
+          pinned: payload.pinned === true,
+        },
         timeoutMs: 120_000,
       });
   });
@@ -1002,6 +1006,15 @@ function registerIpc() {
       `/api/knowledge/kbs/${encodeURIComponent(payload.kb_id)}` +
       `/documents/${encodeURIComponent(payload.doc_id)}`,
       { method: "DELETE" });
+  });
+  ipcMain.handle("api:knowledge:set-pin", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.kb_id, 64), "kb_id: invalid");
+    assert(isString(payload.doc_id, 64), "doc_id: invalid");
+    return sidecarFetch(
+      `/api/knowledge/kbs/${encodeURIComponent(payload.kb_id)}` +
+      `/documents/${encodeURIComponent(payload.doc_id)}/pin`,
+      { method: "POST", body: { pinned: payload.pinned === true } });
   });
   ipcMain.handle("api:knowledge:search", async (_e, payload) => {
     assert(payload && typeof payload === "object", "payload: invalid");

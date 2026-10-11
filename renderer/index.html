@@ -459,6 +459,12 @@
             <label for="kb-doc-file" data-i18n="knowledge.addDoc">添加文档（.txt/.md/.json/.csv）</label>
             <input type="file" id="kb-doc-file" accept=".txt,.md,.markdown,.json,.csv" />
           </div>
+          <div class="form-row kb-pin-row">
+            <label class="kb-pin-label" for="kb-doc-pin">
+              <input type="checkbox" id="kb-doc-pin" />
+              <span data-i18n="knowledge.pin">📌 钉选（全文注入，不参与检索）</span>
+            </label>
+          </div>
           <div class="form-actions">
             <button id="kb-doc-add-btn" data-i18n="knowledge.ingest">索引文档</button>
           </div>

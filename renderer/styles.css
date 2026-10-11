@@ -1494,6 +1494,12 @@ html[data-theme="light"] .skeleton-card::after {
   padding: 6px 2px; border-bottom: 1px solid var(--line);
 }
 .kb-doc-name { flex: 1; font-size: var(--fs-sm); }
+.kb-pin-badge { font-size: var(--fs-sm); }
+.kb-pin-row { align-items: center; }
+.kb-pin-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: var(--fs-sm); cursor: pointer; user-select: none;
+}
 .kb-results, .kb-ask-result { margin-top: 8px; }
 .kb-result {
   border: 1px solid var(--line); border-radius: var(--radius-sm);
