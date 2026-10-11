@@ -23,6 +23,7 @@ import { initSearch, runSearch } from "./modules/search.js";
 import { initLtx } from "./modules/ltx.js";
 import { initAsr } from "./modules/asr.js";
 import { initEmbeddings } from "./modules/embeddings.js";
+import { initKnowledge } from "./modules/knowledge.js";
 import { initSeparation } from "./modules/separation.js";
 import { initPiper } from "./modules/piper.js";
 import { initMultimodal } from "./modules/multimodal.js";
@@ -274,6 +275,14 @@ function switchView(name) {
     if (root && !root.dataset.rendered) {
       root.dataset.rendered = "1";
       initEmbeddings().catch((e) => toast(t("embeddings.failed", { err: e.message }), { kind: "err" }));
+    }
+  }
+  // v4.29.0 — Local knowledge base (RAG) page (init once).
+  if (name === "knowledge") {
+    const root = document.getElementById("pane-knowledge");
+    if (root && !root.dataset.rendered) {
+      root.dataset.rendered = "1";
+      initKnowledge().catch((e) => toast(t("knowledge.failed", { err: e.message }), { kind: "err" }));
     }
   }
   if (name === "separation") {

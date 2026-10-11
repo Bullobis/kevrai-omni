@@ -52,6 +52,7 @@ from . import (
     asr_runtime,
     demucs_runtime,
     embedding_runtime,
+    knowledge_base,
     ltx_runtime,
     mnn_runtime,
     multimodal_runtime,
@@ -267,6 +268,11 @@ async def _lifespan(app: FastAPI):
     app.state.asr = asr_runtime.AsrManager(APP_ROOT)
     # Sentence-transformers embedding manager (models cached in-process).
     app.state.emb = embedding_runtime.EmbeddingManager(APP_ROOT)
+    # Local knowledge base (RAG). Reuses the shared embedding manager so no
+    # second model instance is loaded; data lives under APP_ROOT/knowledge/.
+    app.state.knowledge = knowledge_base.KnowledgeBase(
+        APP_ROOT, embedder=app.state.emb
+    )
     # Demucs music source-separation manager (separators cached in-process).
     app.state.demucs = demucs_runtime.DemucsManager(APP_ROOT)
     # Piper lightweight neural TTS manager (ONNX voices cached in-process).
@@ -3185,6 +3191,188 @@ def create_embeddings(request: Request, req: EmbeddingsReq) -> dict[str, Any]:
     except embedding_runtime.EmbeddingError as e:
         raise HTTPException(status_code=_emb_status_for(e), detail=str(e)) from e
     return payload
+
+
+# ---------------------------------------------------------------------------
+# Knowledge base / RAG (v4.29.0)
+# ---------------------------------------------------------------------------
+
+
+def _knowledge_manager(request: Request) -> knowledge_base.KnowledgeBase:
+    mgr = getattr(request.app.state, "knowledge", None)
+    if mgr is None:
+        mgr = knowledge_base.KnowledgeBase(
+            APP_ROOT, embedder=getattr(request.app.state, "emb", None)
+        )
+        request.app.state.knowledge = mgr
+    return mgr
+
+
+def _knowledge_status_for(exc: Exception) -> int:
+    if isinstance(exc, knowledge_base.KnowledgeEngineMissing):
+        return 503
+    if isinstance(exc, knowledge_base.KnowledgeNotFound):
+        return 404
+    if isinstance(exc, knowledge_base.KnowledgeParamError):
+        return 400
+    return 422
+
+
+def _require_kb(mgr: knowledge_base.KnowledgeBase, kb_id: str) -> dict[str, Any]:
+    try:
+        return mgr.get_kb(kb_id)
+    except knowledge_base.KnowledgeError as e:
+        raise HTTPException(
+            status_code=_knowledge_status_for(e), detail=str(e)
+        ) from e
+
+
+@app.get("/api/knowledge/capabilities")
+def knowledge_capabilities(request: Request) -> dict[str, Any]:
+    kb = _knowledge_manager(request)
+    installed = True
+    try:
+        embedding_runtime.capabilities(APP_ROOT)
+    except Exception:  # noqa: BLE001 — capability probe is best-effort
+        installed = False
+    return {
+        "engine": "sentence-transformers",
+        "engine_installed": installed,
+        "kb_count": len(kb.list_kbs()),
+        "supported_extensions": sorted(knowledge_base.SUPPORTED_EXTENSIONS),
+    }
+
+
+class KbCreateReq(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    model: str = Field(..., max_length=200)
+    chunk_size: int = knowledge_base.DEFAULT_CHUNK_SIZE
+    overlap: int = knowledge_base.DEFAULT_CHUNK_OVERLAP
+
+
+@app.post("/api/knowledge/kbs")
+def knowledge_create(request: Request, req: KbCreateReq) -> dict[str, Any]:
+    mgr = _knowledge_manager(request)
+    try:
+        return mgr.create_kb(req.name, req.model,
+                             chunk_size=req.chunk_size, overlap=req.overlap)
+    except knowledge_base.KnowledgeError as e:
+        raise HTTPException(
+            status_code=_knowledge_status_for(e), detail=str(e)
+        ) from e
+
+
+@app.get("/api/knowledge/kbs")
+def knowledge_list(request: Request) -> dict[str, Any]:
+    mgr = _knowledge_manager(request)
+    items = mgr.list_kbs()
+    return {"items": items, "count": len(items)}
+
+
+@app.get("/api/knowledge/kbs/{kb_id}")
+def knowledge_get(request: Request, kb_id: str) -> dict[str, Any]:
+    mgr = _knowledge_manager(request)
+    kb = _require_kb(mgr, kb_id)
+    kb["documents"] = mgr.list_documents(kb_id)
+    return kb
+
+
+@app.delete("/api/knowledge/kbs/{kb_id}")
+def knowledge_delete(request: Request, kb_id: str) -> dict[str, Any]:
+    mgr = _knowledge_manager(request)
+    try:
+        mgr.delete_kb(kb_id)
+    except knowledge_base.KnowledgeError as e:
+        raise HTTPException(
+            status_code=_knowledge_status_for(e), detail=str(e)
+        ) from e
+    return {"ok": True, "kb_id": kb_id}
+
+
+class KbDocReq(BaseModel):
+    filename: str = Field(..., max_length=255)
+    content: str = Field(..., min_length=1)
+
+
+@app.post("/api/knowledge/kbs/{kb_id}/documents")
+def knowledge_add_doc(request: Request, kb_id: str, req: KbDocReq) -> dict[str, Any]:
+    mgr = _knowledge_manager(request)
+    _require_kb(mgr, kb_id)
+    try:
+        return mgr.add_document(kb_id, req.filename, req.content)
+    except knowledge_base.KnowledgeError as e:
+        raise HTTPException(
+            status_code=_knowledge_status_for(e), detail=str(e)
+        ) from e
+
+
+@app.get("/api/knowledge/kbs/{kb_id}/documents")
+def knowledge_docs(request: Request, kb_id: str) -> dict[str, Any]:
+    mgr = _knowledge_manager(request)
+    _require_kb(mgr, kb_id)
+    items = mgr.list_documents(kb_id)
+    return {"items": items, "count": len(items)}
+
+
+@app.delete("/api/knowledge/kbs/{kb_id}/documents/{doc_id}")
+def knowledge_delete_doc(request: Request, kb_id: str, doc_id: str) -> dict[str, Any]:
+    mgr = _knowledge_manager(request)
+    _require_kb(mgr, kb_id)
+    try:
+        mgr.delete_document(kb_id, doc_id)
+    except knowledge_base.KnowledgeError as e:
+        raise HTTPException(
+            status_code=_knowledge_status_for(e), detail=str(e)
+        ) from e
+    return {"ok": True, "doc_id": doc_id}
+
+
+class KbSearchReq(BaseModel):
+    query: str = Field(..., min_length=1)
+    top_k: int = knowledge_base.DEFAULT_TOP_K
+
+
+@app.post("/api/knowledge/kbs/{kb_id}/search")
+def knowledge_search(request: Request, kb_id: str, req: KbSearchReq) -> dict[str, Any]:
+    mgr = _knowledge_manager(request)
+    _require_kb(mgr, kb_id)
+    try:
+        return mgr.search(kb_id, req.query, req.top_k)
+    except knowledge_base.KnowledgeError as e:
+        raise HTTPException(
+            status_code=_knowledge_status_for(e), detail=str(e)
+        ) from e
+
+
+class KbAskReq(BaseModel):
+    question: str = Field(..., min_length=1)
+    top_k: int = knowledge_base.DEFAULT_TOP_K
+    # Optional transformers brain repo (e.g. "Qwen/Qwen2.5-1.5B-Instruct").
+    # Empty/omitted → return retrieved context only.
+    brain_model: str = Field("", max_length=200)
+
+
+@app.post("/api/knowledge/kbs/{kb_id}/ask")
+def knowledge_ask(request: Request, kb_id: str, req: KbAskReq) -> dict[str, Any]:
+    mgr = _knowledge_manager(request)
+    _require_kb(mgr, kb_id)
+
+    brain = None
+    if req.brain_model and "/" in req.brain_model:
+        from .llm_runtime import TextBrainManager
+
+        manager = TextBrainManager(APP_ROOT)
+        repo = req.brain_model
+
+        def brain(system: str, prompt: str) -> str:
+            return manager.generate(repo, prompt, system=system)
+
+    try:
+        return mgr.ask(kb_id, req.question, req.top_k, brain=brain)
+    except knowledge_base.KnowledgeError as e:
+        raise HTTPException(
+            status_code=_knowledge_status_for(e), detail=str(e)
+        ) from e
 
 
 # ---------------------------------------------------------------------------

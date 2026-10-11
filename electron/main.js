@@ -947,6 +947,94 @@ function registerIpc() {
   });
   ipcMain.handle("api:embeddings:capabilities", async () =>
     sidecarFetch("/api/embeddings/capabilities"));
+  // Local knowledge base / RAG (JSON CRUD + retrieval).
+  ipcMain.handle("api:knowledge:capabilities", async () =>
+    sidecarFetch("/api/knowledge/capabilities"));
+  ipcMain.handle("api:knowledge:list", async () =>
+    sidecarFetch("/api/knowledge/kbs"));
+  ipcMain.handle("api:knowledge:create", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.name, 120), "name: invalid");
+    assert(isString(payload.model, 200), "model: invalid");
+    return sidecarFetch("/api/knowledge/kbs", {
+      method: "POST",
+      body: {
+        name: payload.name,
+        model: payload.model,
+        chunk_size: Number.isInteger(payload.chunk_size) ? payload.chunk_size : undefined,
+        overlap: Number.isInteger(payload.overlap) ? payload.overlap : undefined,
+      },
+      timeoutMs: 60_000,
+    });
+  });
+  ipcMain.handle("api:knowledge:get", async (_e, kbId) => {
+    assert(isString(kbId, 64), "kbId: invalid");
+    return sidecarFetch(`/api/knowledge/kbs/${encodeURIComponent(kbId)}`);
+  });
+  ipcMain.handle("api:knowledge:delete", async (_e, kbId) => {
+    assert(isString(kbId, 64), "kbId: invalid");
+    return sidecarFetch(`/api/knowledge/kbs/${encodeURIComponent(kbId)}`,
+      { method: "DELETE" });
+  });
+  ipcMain.handle("api:knowledge:docs", async (_e, kbId) => {
+    assert(isString(kbId, 64), "kbId: invalid");
+    return sidecarFetch(`/api/knowledge/kbs/${encodeURIComponent(kbId)}/documents`);
+  });
+  ipcMain.handle("api:knowledge:add-doc", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.kb_id, 64), "kb_id: invalid");
+    assert(isString(payload.filename, 255), "filename: invalid");
+    assert(isString(payload.content, 8_000_000) && payload.content.length,
+      "content: invalid");
+    return sidecarFetch(
+      `/api/knowledge/kbs/${encodeURIComponent(payload.kb_id)}/documents`,
+      {
+        method: "POST",
+        body: { filename: payload.filename, content: payload.content },
+        timeoutMs: 120_000,
+      });
+  });
+  ipcMain.handle("api:knowledge:delete-doc", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.kb_id, 64), "kb_id: invalid");
+    assert(isString(payload.doc_id, 64), "doc_id: invalid");
+    return sidecarFetch(
+      `/api/knowledge/kbs/${encodeURIComponent(payload.kb_id)}` +
+      `/documents/${encodeURIComponent(payload.doc_id)}`,
+      { method: "DELETE" });
+  });
+  ipcMain.handle("api:knowledge:search", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.kb_id, 64), "kb_id: invalid");
+    assert(isString(payload.query, 65_536) && payload.query.length,
+      "query: invalid");
+    return sidecarFetch(
+      `/api/knowledge/kbs/${encodeURIComponent(payload.kb_id)}/search`,
+      {
+        method: "POST",
+        body: { query: payload.query,
+                top_k: Number.isInteger(payload.top_k) ? payload.top_k : undefined },
+        timeoutMs: 120_000,
+      });
+  });
+  ipcMain.handle("api:knowledge:ask", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.kb_id, 64), "kb_id: invalid");
+    assert(isString(payload.question, 65_536) && payload.question.length,
+      "question: invalid");
+    return sidecarFetch(
+      `/api/knowledge/kbs/${encodeURIComponent(payload.kb_id)}/ask`,
+      {
+        method: "POST",
+        body: {
+          question: payload.question,
+          top_k: Number.isInteger(payload.top_k) ? payload.top_k : undefined,
+          brain_model: isString(payload.brain_model, 200)
+            ? payload.brain_model : "",
+        },
+        timeoutMs: 120_000,
+      });
+  });
   // Demucs music source separation (multipart upload of one track).
   ipcMain.handle("api:separation", async (_e, payload) => {
     assert(payload && typeof payload === "object", "payload: invalid");

@@ -30,7 +30,8 @@
     "separation": "Source Separation",
     "piper": "Local Speech",
     "multimodal": "Vision Chat",
-    "music": "Music Studio"
+    "music": "Music Studio",
+    "knowledge": "Knowledge Base"
   },
   "header": {
     "downloads": "Downloads",
@@ -946,5 +947,38 @@
     "promptFirst": "Please describe the style first",
     "failed": "Music generation failed: {err}",
     "engineInstalled": "Engine installed"
+  },
+  "knowledge": {
+    "title": "Knowledge Base (RAG)",
+    "engineReady": "Embedding engine ready",
+    "engineMissing": "Embedding engine not installed",
+    "kbName": "Knowledge base name",
+    "model": "Embedding model",
+    "chunkSize": "Chunk size (chars)",
+    "overlap": "Overlap (chars)",
+    "create": "Create knowledge base",
+    "select": "Select knowledge base",
+    "addDoc": "Add document (.txt/.md/.json/.csv)",
+    "ingest": "Index document",
+    "chunks": "chunks",
+    "delete": "Delete",
+    "docDeleted": "Document deleted",
+    "created": "Knowledge base created",
+    "docAdded": "Document indexed",
+    "nameRequired": "Please enter a name",
+    "modelRequired": "Please choose an embedding model",
+    "selectFirst": "Please select a knowledge base first",
+    "chooseFile": "Please choose a file first",
+    "badExt": "Unsupported file type",
+    "noDocs": "No documents in this knowledge base yet",
+    "query": "Test retrieval",
+    "search": "Search",
+    "noResults": "No matching content found",
+    "ask": "Ask the knowledge base",
+    "askBtn": "Ask",
+    "answer": "Answer",
+    "enterQuery": "Please enter something",
+    "empty": "(no knowledge bases yet)",
+    "failed": "Knowledge base page failed to load"
   }
 }
