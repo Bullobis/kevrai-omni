@@ -52,7 +52,8 @@ log = logging.getLogger("kevrai.knowledge")
 # ---------------------------------------------------------------------------
 
 SUPPORTED_EXTENSIONS = {".txt", ".md", ".markdown", ".json", ".csv", ".pdf",
-                        ".docx", ".pptx"}
+                        ".docx", ".pptx", ".png", ".jpg", ".jpeg", ".bmp"}
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp"}
 DEFAULT_CHUNK_SIZE = 600
 DEFAULT_CHUNK_OVERLAP = 80
 DEFAULT_TOP_K = 4

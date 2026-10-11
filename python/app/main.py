@@ -57,6 +57,7 @@ from . import (
     mnn_runtime,
     multimodal_runtime,
     music_runtime,
+    ocr_runtime,
     piper_runtime,
 )
 from . import clawdchat as clawdchat_mod
@@ -273,6 +274,8 @@ async def _lifespan(app: FastAPI):
     app.state.knowledge = knowledge_base.KnowledgeBase(
         APP_ROOT, embedder=app.state.emb
     )
+    # RapidOCR manager (ONNX Runtime CPU, engine installed on demand).
+    app.state.ocr = ocr_runtime.OCRManager(APP_ROOT)
     # Demucs music source-separation manager (separators cached in-process).
     app.state.demucs = demucs_runtime.DemucsManager(APP_ROOT)
     # Piper lightweight neural TTS manager (ONNX voices cached in-process).
@@ -3307,7 +3310,8 @@ def knowledge_add_doc(request: Request, kb_id: str, req: KbDocReq) -> dict[str, 
     _require_kb(mgr, kb_id)
     try:
         suffix = Path(req.filename or "").suffix.lower()
-        if suffix in {".pdf", ".docx", ".pptx"}:
+        binary_ext = {".pdf", ".docx", ".pptx"} | knowledge_base.IMAGE_EXTENSIONS
+        if suffix in binary_ext:
             if req.encoding != "base64" or not req.content_b64:
                 raise knowledge_base.KnowledgeParamError(
                     f"{suffix} 需以 base64 编码上传（encoding=base64, content_b64）"
@@ -3324,14 +3328,28 @@ def knowledge_add_doc(request: Request, kb_id: str, req: KbDocReq) -> dict[str, 
                 text = knowledge_base.extract_pdf_bytes(data)
             elif suffix == ".docx":
                 text = knowledge_base.extract_docx_bytes(data)
-            else:
+            elif suffix == ".pptx":
                 text = knowledge_base.extract_pptx_bytes(data)
+            else:
+                # Image: recognise text with the (on-demand) OCR engine.
+                ocr = getattr(request.app.state, "ocr", None)
+                if ocr is None:
+                    ocr = ocr_runtime.OCRManager(APP_ROOT)
+                    request.app.state.ocr = ocr
+                text = ocr.extract(data)
+                if not text:
+                    raise knowledge_base.KnowledgeParamError(
+                        "未在该图片中识别到文字（可能是空白图片或文字过于模糊）。"
+                    )
             return mgr.add_document(kb_id, req.filename, text,
                                     pinned=req.pinned)
         if not req.content.strip():
             raise knowledge_base.KnowledgeParamError("document content is empty")
         return mgr.add_document(kb_id, req.filename, req.content,
                                 pinned=req.pinned)
+    except ocr_runtime.OCREngineMissing as e:
+        # OCR engine not installed yet → 503 with the actionable guidance.
+        raise HTTPException(status_code=503, detail=str(e)) from e
     except knowledge_base.KnowledgeError as e:
         raise HTTPException(
             status_code=_knowledge_status_for(e), detail=str(e)
