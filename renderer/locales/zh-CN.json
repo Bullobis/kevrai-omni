@@ -31,7 +31,8 @@
     "piper": "本地语音合成",
     "multimodal": "多模态对话",
     "music": "音乐生成",
-    "knowledge": "知识库"
+    "knowledge": "知识库",
+    "translate": "翻译"
   },
   "header": {
     "downloads": "下载",
@@ -881,6 +882,35 @@
     "engineInstalled": "引擎已安装",
     "outputDir": "输出目录",
     "openDir": "打开输出目录"
+  },
+  "translate": {
+    "title": "翻译",
+    "hint": "使用本地大脑模型离线翻译",
+    "sourceLang": "源语言",
+    "targetLang": "目标语言",
+    "swap": "互换",
+    "sourcePlaceholder": "输入要翻译的文本…",
+    "targetPlaceholder": "译文将显示在这里",
+    "run": "翻译",
+    "copy": "复制译文",
+    "enterFirst": "请先输入要翻译的文本",
+    "translating": "翻译中…",
+    "done": "已完成 · 模型 {model}",
+    "copied": "译文已复制",
+    "nothingToCopy": "暂无译文可复制",
+    "copyFailed": "复制失败：{err}",
+    "failed": "翻译失败",
+    "lang": {
+      "auto": "自动检测",
+      "zh": "中文",
+      "en": "英语",
+      "ja": "日语",
+      "ko": "韩语",
+      "fr": "法语",
+      "de": "德语",
+      "es": "西班牙语",
+      "ru": "俄语"
+    }
   },
   "piper": {
     "title": "本地语音合成",

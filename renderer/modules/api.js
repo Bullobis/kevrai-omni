@@ -64,6 +64,7 @@ export const api = {
   knowledgeDeleteDoc: wrap("knowledgeDeleteDoc", (payload) => k().knowledgeDeleteDoc(payload)),
   knowledgeSearch:  wrap("knowledgeSearch",    (payload) => k().knowledgeSearch(payload)),
   knowledgeAsk:      wrap("knowledgeAsk",      (payload) => k().knowledgeAsk(payload)),
+  translate:         wrap("translate",         (payload) => k().translate(payload)),
   separationCapabilities: wrap("separationCapabilities", () => k().separationCapabilities()),
   separation:             wrap("separation", (payload) => k().separation(payload)),
   separationStream:       wrap("separationStream", (params) => k().separationStream(params)),

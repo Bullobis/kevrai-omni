@@ -3376,6 +3376,76 @@ def knowledge_ask(request: Request, kb_id: str, req: KbAskReq) -> dict[str, Any]
 
 
 # ---------------------------------------------------------------------------
+# On-device text translation (built on the local text brain)
+# ---------------------------------------------------------------------------
+
+
+class TranslateReq(BaseModel):
+    text: str = Field(..., min_length=1, max_length=8000)
+    source_lang: str = Field("auto", max_length=16)
+    target_lang: str = Field(..., min_length=1, max_length=16)
+    # Optional transformers brain repo ("owner/name"); empty -> current brain.
+    model: str = Field("", max_length=200)
+
+
+@app.post("/api/translate")
+def translate(request: Request, req: TranslateReq) -> dict[str, Any]:
+    """Translate ``text`` through the local transformers brain.
+
+    Uses the explicitly requested model when given, otherwise the currently
+    selected reasoning brain. With no brain selected we return a clear guidance
+    error (never a 500), mirroring the knowledge ask page.
+    """
+    from . import translate as tr
+    from .llm_runtime import (
+        BrainEngineMissing,
+        BrainModelError,
+        BrainParamError,
+        TextBrainManager,
+    )
+
+    agent = _get_agent(request)
+    repo = tr.resolve_brain_repo(req.model, agent.router.backend)
+    if not repo:
+        raise HTTPException(
+            status_code=409,
+            detail="尚未选择本地大脑模型：请先在「AI Agent」页选择一个推理大脑"
+                   "（如 Qwen3 0.6B），再使用翻译功能。",
+        )
+
+    manager = TextBrainManager(APP_ROOT)
+    # Scale generation budget to the input: translations are roughly the same
+    # length as the source, but leave headroom and respect the runtime cap.
+    max_new = min(1024, max(128, int(len(req.text) * 1.5) + 64))
+
+    def generate(system: str, prompt: str) -> str:
+        return manager.generate(repo, prompt, system=system,
+                                 max_new_tokens=max_new)
+
+    try:
+        result = tr.translate_text(
+            generate,
+            text=req.text,
+            source_lang=req.source_lang,
+            target_lang=req.target_lang,
+        )
+    except BrainEngineMissing as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except BrainParamError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except BrainModelError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    except tr.TranslateParamError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    return {
+        "translation": result,
+        "source_lang": req.source_lang,
+        "target_lang": req.target_lang,
+        "model": repo,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Demucs music source separation
 # ---------------------------------------------------------------------------
 

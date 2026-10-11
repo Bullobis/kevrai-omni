@@ -1483,3 +1483,38 @@ html[data-theme="light"] .skeleton-card::after {
 }
 .kb-answer h4 { margin: 0 0 6px; font-size: var(--fs-sm); }
 .kb-answer p { white-space: pre-wrap; font-size: var(--fs-sm); }
+
+/* On-device translation pane (dual-column) */
+#pane-translate .translate-toolbar { padding: 10px 12px; }
+#pane-translate .translate-lang-row {
+  display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap;
+}
+#pane-translate .translate-lang-row > label {
+  font-size: var(--fs-xs); color: var(--mut); margin-right: -6px;
+}
+#pane-translate .translate-lang-row select {
+  background: var(--bg-1); color: var(--fg); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: 6px 8px; font-size: var(--fs-sm);
+}
+#pane-translate #translate-swap {
+  padding: 6px 12px; font-size: var(--fs-sm);
+}
+#pane-translate .translate-columns {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;
+}
+@media (max-width: 760px) {
+  #pane-translate .translate-columns { grid-template-columns: 1fr; }
+}
+#pane-translate .translate-col { padding: 8px; }
+#pane-translate textarea {
+  width: 100%; box-sizing: border-box; resize: vertical;
+  background: var(--bg-1); color: var(--fg);
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 9px 10px; font-size: var(--fs-sm); line-height: 1.5;
+}
+#pane-translate textarea:focus-visible {
+  outline: none; border-color: var(--acc); box-shadow: var(--focus);
+}
+#pane-translate .translate-actions {
+  display: flex; gap: 10px; justify-content: flex-start; margin-top: 12px;
+}

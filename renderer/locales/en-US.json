@@ -31,7 +31,8 @@
     "piper": "Local Speech",
     "multimodal": "Vision Chat",
     "music": "Music Studio",
-    "knowledge": "Knowledge Base"
+    "knowledge": "Knowledge Base",
+    "translate": "Translate"
   },
   "header": {
     "downloads": "Downloads",
@@ -881,6 +882,35 @@
     "engineInstalled": "Engine installed",
     "outputDir": "Output directory",
     "openDir": "Open output directory"
+  },
+  "translate": {
+    "title": "Translate",
+    "hint": "Translate offline with the local brain model",
+    "sourceLang": "Source",
+    "targetLang": "Target",
+    "swap": "Swap",
+    "sourcePlaceholder": "Enter text to translate…",
+    "targetPlaceholder": "Translation appears here",
+    "run": "Translate",
+    "copy": "Copy translation",
+    "enterFirst": "Please enter text to translate first",
+    "translating": "Translating…",
+    "done": "Done · model {model}",
+    "copied": "Translation copied",
+    "nothingToCopy": "Nothing to copy yet",
+    "copyFailed": "Copy failed: {err}",
+    "failed": "Translation failed",
+    "lang": {
+      "auto": "Auto-detect",
+      "zh": "Chinese",
+      "en": "English",
+      "ja": "Japanese",
+      "ko": "Korean",
+      "fr": "French",
+      "de": "German",
+      "es": "Spanish",
+      "ru": "Russian"
+    }
   },
   "piper": {
     "title": "Local Speech Synthesis",
