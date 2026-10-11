@@ -977,6 +977,8 @@
     "ask": "基于知识库提问",
     "askBtn": "提问",
     "answer": "回答",
+    "brain": "回答模型",
+    "brainNone": "仅检索，不生成回答",
     "enterQuery": "请输入内容",
     "empty": "（暂无知识库）",
     "failed": "知识库页加载失败"

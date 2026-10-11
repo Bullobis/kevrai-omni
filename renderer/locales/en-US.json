@@ -977,6 +977,8 @@
     "ask": "Ask the knowledge base",
     "askBtn": "Ask",
     "answer": "Answer",
+    "brain": "Answer model",
+    "brainNone": "Retrieve only, no generated answer",
     "enterQuery": "Please enter something",
     "empty": "(no knowledge bases yet)",
     "failed": "Knowledge base page failed to load"
