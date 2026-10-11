@@ -31,6 +31,17 @@ export function wireOnboarding() {
   };
   overlay.querySelectorAll("[data-action=close-onboarding]").forEach((b) =>
     b.addEventListener("click", close));
+  // Quick-nav buttons: dismiss the guide, then route to the named sidebar tab.
+  overlay.querySelectorAll("[data-goto]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const target = b.getAttribute("data-goto");
+      close();
+      if (target) {
+        const tab = document.querySelector(
+          `.sidebar [data-tab="${CSS.escape(target)}"]`);
+        if (tab) tab.click();
+      }
+    }));
   overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
   registerEsc({
     order: 50,
