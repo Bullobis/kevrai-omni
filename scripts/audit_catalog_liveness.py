@@ -151,11 +151,20 @@ async def probe(client: httpx.AsyncClient, url: str, timeout: float) -> Result:
         r.elapsed_ms = int((time.monotonic() - t0) * 1000)
         return r
 
-    headers = {"User-Agent": "kevrai-liveness-audit/1.0", "Range": "bytes=0-1023"}
+    # Byte-range only helps file downloads (avoid pulling the whole artifact).
+    # Dynamic index/API pages — e.g. the aliyun pypi simple index — reject a
+    # Range header with HTTP 416 even though the resource is perfectly usable,
+    # so only attach it to file-looking URLs.
+    plain_headers = {"User-Agent": "kevrai-liveness-audit/1.0"}
+    ranged_headers = {**plain_headers, "Range": "bytes=0-1023"}
+    headers = ranged_headers if kind in ("file", "file-base") else plain_headers
 
-    async def one(method: str) -> tuple[httpx.Response | None, str | None]:
+    async def one(method: str,
+                  req_headers: dict[str, str] | None = None
+                  ) -> tuple[httpx.Response | None, str | None]:
         try:
-            req = client.build_request(method, url, headers=headers)
+            req = client.build_request(method, url,
+                                       headers=req_headers or headers)
             resp = await client.send(req, follow_redirects=True)
             return resp, None
         except httpx.TimeoutException:
@@ -177,6 +186,11 @@ async def probe(client: httpx.AsyncClient, url: str, timeout: float) -> Result:
     if resp is not None and resp.status_code in (405, 501):
         await resp.aclose()
         resp, err = await one("GET")
+    # HTTP 416 means the byte-range was rejected, not that the resource is gone.
+    # Retry once with a plain (range-free) GET before flagging it.
+    if resp is not None and resp.status_code == 416:
+        await resp.aclose()
+        resp, err = await one("GET", plain_headers)
 
     r.elapsed_ms = int((time.monotonic() - t0) * 1000)
     if err is not None:
