@@ -404,7 +404,7 @@ class KnowledgeBase:
                 })
         return out
 
-    def _load_originals(self, kb_id: str) -> dict[str, str]:
+    def _load_originals(self, kb_id: str) -> dict[str, dict[str, str]]:
         """Return ``{doc_id: {"filename", "text"}}`` raw extracted texts.
 
         Originals make an exact export possible: chunk text only ever stores
@@ -417,7 +417,13 @@ class KnowledgeBase:
         if not path.is_file():
             return {}
         data = self._read_json(path)
-        return data if isinstance(data, dict) else {}
+        if not isinstance(data, dict):
+            return {}
+        # Keep only well-formed ``{filename, text}`` records.
+        return {
+            str(k): v for k, v in data.items()
+            if isinstance(v, dict)
+        }
 
     def add_document(self, kb_id: str, filename: str, content: str,
                      pinned: bool = False) -> dict[str, Any]:
