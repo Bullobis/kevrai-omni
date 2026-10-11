@@ -51,7 +51,8 @@ log = logging.getLogger("kevrai.knowledge")
 # Constants & errors
 # ---------------------------------------------------------------------------
 
-SUPPORTED_EXTENSIONS = {".txt", ".md", ".markdown", ".json", ".csv", ".pdf", ".docx"}
+SUPPORTED_EXTENSIONS = {".txt", ".md", ".markdown", ".json", ".csv", ".pdf",
+                        ".docx", ".pptx"}
 DEFAULT_CHUNK_SIZE = 600
 DEFAULT_CHUNK_OVERLAP = 80
 DEFAULT_TOP_K = 4
@@ -255,6 +256,69 @@ def extract_docx_bytes(data: bytes) -> str:
     if not text:
         raise KnowledgeParamError(
             "该 .docx 不含可供检索的文本（可能为空文档或仅含图片）。"
+        )
+    return text
+
+
+def extract_pptx_bytes(data: bytes) -> str:
+    """Extract text from a .pptx (Office Open XML presentation), stdlib only.
+
+    Slides live at ``ppt/slides/slideN.xml``; visible text is in DrawingML
+    ``<a:t>`` runs. Slides are read in numeric order and joined with newlines.
+    Uses defusedxml when available for entity-expansion hardening. A corrupt /
+    non-pptx file raises :class:`KnowledgeParamError` (route → 400).
+    """
+    if not data:
+        raise KnowledgeParamError("PPTX content is empty")
+    import re
+    try:
+        import zipfile
+        with zipfile.ZipFile(io.BytesIO(data)) as zf:
+            numbered: list[tuple[int, str]] = []
+            for n in zf.namelist():
+                m = re.fullmatch(r"ppt/slides/slide(\d+)\.xml", n)
+                if m:
+                    numbered.append((int(m.group(1)), n))
+            if not numbered:
+                raise KnowledgeParamError(
+                    "该文件不是有效的 .pptx（缺少 ppt/slides/），"
+                    "旧版 .ppt 二进制格式暂不支持，请另存为 .pptx。"
+                )
+            numbered.sort(key=lambda item: item[0])
+            slide_xml = [zf.read(n) for _, n in numbered]
+    except KnowledgeParamError:
+        raise
+    except Exception as e:  # noqa: BLE001 — not a zip / corrupt
+        raise KnowledgeParamError(
+            f"无法解析该 .pptx（文件可能已损坏）：{e}"
+        ) from e
+
+    try:
+        try:
+            from defusedxml.ElementTree import fromstring as _xml_fromstring
+        except Exception:  # noqa: BLE001 — defusedxml not installed
+            from xml.etree.ElementTree import (  # noqa: S314
+                fromstring as _xml_fromstring,
+            )
+        a_ns = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
+        slides_text: list[str] = []
+        for xml_bytes in slide_xml:
+            root = _xml_fromstring(xml_bytes)  # noqa: S314
+            runs = [t.text or "" for t in root.iter(f"{a_ns}t")]
+            line = "".join(runs).strip()
+            if line:
+                slides_text.append(line)
+    except KnowledgeParamError:
+        raise
+    except Exception as e:  # noqa: BLE001 — malformed XML
+        raise KnowledgeParamError(
+            f"无法解析该 .pptx 的幻灯片内容（XML 已损坏）：{e}"
+        ) from e
+
+    text = "\n".join(slides_text).strip()
+    if not text:
+        raise KnowledgeParamError(
+            "该 .pptx 不含可供检索的文本（可能为空演示或仅含图片）。"
         )
     return text
 

@@ -6,6 +6,7 @@ import {
   isAllowedFile,
   isPdfFile,
   isDocxFile,
+  isPptxFile,
   isBinaryDocFile,
   sanitizeKbName,
   scorePct,
@@ -56,7 +57,7 @@ test("escapeHtml neutralises markup", () => {
 test("allowlist is the documented ingest set", () => {
   assert.deepEqual(
     [...KB_ALLOWED_EXT].sort(),
-    [".csv", ".docx", ".json", ".markdown", ".md", ".pdf", ".txt"].sort()
+    [".csv", ".docx", ".json", ".markdown", ".md", ".pdf", ".pptx", ".txt"].sort()
   );
 });
 
@@ -94,4 +95,17 @@ test("allowlist now includes .docx and is treated as a binary doc", () => {
   assert.equal(isBinaryDocFile("notes.docx"), true);
   assert.equal(isBinaryDocFile("paper.pdf"), true);
   assert.equal(isBinaryDocFile("note.md"), false);
+});
+
+test("isPptxFile detects the PPTX extension case-insensitively", () => {
+  assert.equal(isPptxFile("deck.pptx"), true);
+  assert.equal(isPptxFile("DECK.PPTX"), true);
+  assert.equal(isPptxFile("legacy.ppt"), false);
+  assert.equal(isPptxFile("paper.pdf"), false);
+});
+
+test("allowlist now includes .pptx and is treated as a binary doc", () => {
+  assert.ok(KB_ALLOWED_EXT.includes(".pptx"));
+  assert.equal(isAllowedFile("deck.pptx"), true);
+  assert.equal(isBinaryDocFile("deck.pptx"), true);
 });
