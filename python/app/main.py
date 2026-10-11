@@ -3291,7 +3291,11 @@ def knowledge_delete(request: Request, kb_id: str) -> dict[str, Any]:
 
 class KbDocReq(BaseModel):
     filename: str = Field(..., max_length=255)
-    content: str = Field(..., min_length=1)
+    # Text documents pass their payload in ``content``. PDFs are binary and are
+    # sent base64-encoded in ``content_b64`` with ``encoding="base64"``.
+    content: str = ""
+    content_b64: str = ""
+    encoding: str = ""
     # When true the document is stored verbatim (no chunk/embed) and injected
     # on every ask.
     pinned: bool = False
@@ -3302,6 +3306,25 @@ def knowledge_add_doc(request: Request, kb_id: str, req: KbDocReq) -> dict[str, 
     mgr = _knowledge_manager(request)
     _require_kb(mgr, kb_id)
     try:
+        suffix = Path(req.filename or "").suffix.lower()
+        if suffix == ".pdf":
+            if req.encoding != "base64" or not req.content_b64:
+                raise knowledge_base.KnowledgeParamError(
+                    "PDF 需以 base64 编码上传（encoding=base64, content_b64）"
+                )
+            import base64
+
+            try:
+                data = base64.b64decode(req.content_b64, validate=True)
+            except Exception as e:  # noqa: BLE001 — malformed b64 payload
+                raise knowledge_base.KnowledgeParamError(
+                    "PDF 的 base64 数据无法解码"
+                ) from e
+            text = knowledge_base.extract_pdf_bytes(data)
+            return mgr.add_document(kb_id, req.filename, text,
+                                    pinned=req.pinned)
+        if not req.content.strip():
+            raise knowledge_base.KnowledgeParamError("document content is empty")
         return mgr.add_document(kb_id, req.filename, req.content,
                                 pinned=req.pinned)
     except knowledge_base.KnowledgeError as e:

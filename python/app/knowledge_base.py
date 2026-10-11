@@ -31,6 +31,7 @@ Design
 """
 from __future__ import annotations
 
+import io
 import json
 import logging
 import math
@@ -50,7 +51,7 @@ log = logging.getLogger("kevrai.knowledge")
 # Constants & errors
 # ---------------------------------------------------------------------------
 
-SUPPORTED_EXTENSIONS = {".txt", ".md", ".markdown", ".json", ".csv"}
+SUPPORTED_EXTENSIONS = {".txt", ".md", ".markdown", ".json", ".csv", ".pdf"}
 DEFAULT_CHUNK_SIZE = 600
 DEFAULT_CHUNK_OVERLAP = 80
 DEFAULT_TOP_K = 4
@@ -162,6 +163,41 @@ def extract_text(filename: str, content: str) -> str:
         return _parse_csv_text(content)
     # .txt / .md / .markdown / unknown → keep verbatim.
     return content
+
+
+def extract_pdf_bytes(data: bytes) -> str:
+    """Extract selectable text from PDF bytes, pages joined with newlines.
+
+    pypdf is imported lazily so the control plane starts even when the package
+    is not installed. A corrupt PDF raises :class:`KnowledgeParamError` (the
+    route maps it to HTTP 400). A page-scanned / image PDF that yields no
+    selectable text raises :class:`KnowledgeParamError` with a clear OCR hint,
+    instead of silently indexing empty content.
+    """
+    if not data:
+        raise KnowledgeParamError("PDF content is empty")
+    try:
+        from pypdf import PdfReader
+    except Exception as e:  # noqa: BLE001 — dependency missing
+        raise KnowledgeParamError(
+            "PDF 解析组件未安装（pypdf），请先安装依赖后再导入 PDF。"
+        ) from e
+
+    try:
+        reader = PdfReader(io.BytesIO(data))
+        pages = [(page.extract_text() or "") for page in reader.pages]
+    except KnowledgeParamError:
+        raise
+    except Exception as e:  # noqa: BLE001 — corrupt / unreadable PDF
+        raise KnowledgeParamError(f"无法解析该 PDF（文件可能已损坏）：{e}") from e
+
+    text = "\n".join(p.strip() for p in pages).strip()
+    if not text:
+        raise KnowledgeParamError(
+            "该 PDF 不含可供检索的文本（疑似扫描件 / 图片版），"
+            "暂不支持扫描件 OCR，请改用可选中文字的 PDF 或文本文件。"
+        )
+    return text
 
 
 def chunk_text(text: str, chunk_size: int = DEFAULT_CHUNK_SIZE,
