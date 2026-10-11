@@ -9,7 +9,16 @@ import { t } from "./i18n.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 
-export const KB_ALLOWED_EXT = [".txt", ".md", ".markdown", ".json", ".csv", ".pdf", ".docx", ".pptx"];
+export const KB_ALLOWED_EXT = [".txt", ".md", ".markdown", ".json", ".csv", ".pdf", ".docx", ".pptx", ".png", ".jpg", ".jpeg", ".bmp"];
+
+/** Image extensions recognised by the OCR path (uploaded base64). */
+export const KB_IMAGE_EXT = [".png", ".jpg", ".jpeg", ".bmp"];
+
+/** True when the filename is an image for OCR. */
+export function isImageFile(filename) {
+  const f = String(filename || "").toLowerCase();
+  return KB_IMAGE_EXT.some((ext) => f.endsWith(ext));
+}
 
 /** True when the filename is a PDF (sent as base64, not plain text). */
 export function isPdfFile(filename) {
@@ -26,9 +35,9 @@ export function isPptxFile(filename) {
   return String(filename || "").toLowerCase().endsWith(".pptx");
 }
 
-/** True for binary formats that are uploaded base64-encoded (PDF / DOCX / PPTX). */
+/** True for binary formats uploaded base64-encoded (PDF/DOCX/PPTX/images). */
 export function isBinaryDocFile(filename) {
-  return isPdfFile(filename) || isDocxFile(filename) || isPptxFile(filename);
+  return isPdfFile(filename) || isDocxFile(filename) || isPptxFile(filename) || isImageFile(filename);
 }
 
 /** Read a File as a base64 data string (data:...;base64,<payload>). */

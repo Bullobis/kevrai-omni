@@ -7,6 +7,7 @@ import {
   isPdfFile,
   isDocxFile,
   isPptxFile,
+  isImageFile,
   isBinaryDocFile,
   sanitizeKbName,
   scorePct,
@@ -57,7 +58,8 @@ test("escapeHtml neutralises markup", () => {
 test("allowlist is the documented ingest set", () => {
   assert.deepEqual(
     [...KB_ALLOWED_EXT].sort(),
-    [".csv", ".docx", ".json", ".markdown", ".md", ".pdf", ".pptx", ".txt"].sort()
+    [".bmp", ".csv", ".docx", ".jpeg", ".jpg", ".json", ".markdown", ".md",
+     ".pdf", ".png", ".pptx", ".txt"].sort()
   );
 });
 
@@ -108,4 +110,21 @@ test("allowlist now includes .pptx and is treated as a binary doc", () => {
   assert.ok(KB_ALLOWED_EXT.includes(".pptx"));
   assert.equal(isAllowedFile("deck.pptx"), true);
   assert.equal(isBinaryDocFile("deck.pptx"), true);
+});
+
+test("isImageFile detects image extensions case-insensitively", () => {
+  assert.equal(isImageFile("photo.png"), true);
+  assert.equal(isImageFile("photo.JPG"), true);
+  assert.equal(isImageFile("scan.jpeg"), true);
+  assert.equal(isImageFile("scan.bmp"), true);
+  assert.equal(isImageFile("doc.pdf"), false);
+  assert.equal(isImageFile("notes.txt"), false);
+});
+
+test("allowlist includes images and they are treated as binary docs", () => {
+  for (const ext of [".png", ".jpg", ".jpeg", ".bmp"]) {
+    assert.ok(KB_ALLOWED_EXT.includes(ext));
+    assert.equal(isAllowedFile(`shot${ext}`), true);
+    assert.equal(isBinaryDocFile(`shot${ext}`), true);
+  }
 });

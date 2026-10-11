@@ -990,7 +990,7 @@
     "overlap": "重叠字符数",
     "create": "新建知识库",
     "select": "选择知识库",
-    "addDoc": "添加文档（.txt/.md/.json/.csv/.pdf/.docx/.pptx）",
+    "addDoc": "添加文档（.txt/.md/.json/.csv/.pdf/.docx/.pptx/图片）",
     "ingest": "索引文档",
     "chunks": "分块",
     "delete": "删除",

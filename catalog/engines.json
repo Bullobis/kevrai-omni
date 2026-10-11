@@ -673,6 +673,32 @@
         "https://github.com/rhasspy/piper",
         "https://huggingface.co/rhasspy/piper-voices"
       ]
+    },
+    {
+      "id": "rapidocr",
+      "name": "RapidOCR",
+      "category": "general",
+      "description": "轻量本地 OCR（ONNX Runtime CPU），识别图片中的中英文文字，可完全离线；用于把图片、扫描件文字纳入知识库检索。",
+      "github": "RapidAI/RapidOCR",
+      "install": "pip",
+      "pypi": "rapidocr==3.10.0",
+      "pip_extra": [
+        "onnxruntime"
+      ],
+      "license": "Apache-2.0",
+      "size_mb": 80,
+      "platforms": {
+        "linux-x64": "https://github.com/RapidAI/RapidOCR/releases",
+        "windows-x64": "https://github.com/RapidAI/RapidOCR/releases",
+        "darwin-arm64": "https://github.com/RapidAI/RapidOCR/releases",
+        "darwin-x64": "https://github.com/RapidAI/RapidOCR/releases"
+      },
+      "trending": true,
+      "sources": [
+        "https://pypi.org/simple/rapidocr/",
+        "https://pypi.tuna.tsinghua.edu.cn/simple/rapidocr/",
+        "https://github.com/RapidAI/RapidOCR"
+      ]
     }
   ]
 }
