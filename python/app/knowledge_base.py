@@ -425,6 +425,27 @@ class KnowledgeBase:
             if isinstance(v, dict)
         }
 
+    def _embed(self, model: str, texts: list[str]) -> dict[str, Any]:
+        """Embed texts, translating engine-missing errors.
+
+        The embedder is a duck-typed object (typically
+        ``embedding_runtime.EmbeddingManager``). When its backend is not
+        installed it raises ``EmbeddingEngineMissing``; we re-raise that as
+        :class:`KnowledgeEngineMissing` so the HTTP routes surface a clean
+        install-guidance response (503) instead of an unhandled 500.
+        """
+        if self._embedder is None:
+            raise KnowledgeEngineMissing(
+                "未配置嵌入引擎。请先在「向量嵌入」页安装 "
+                "sentence-transformers 引擎。"
+            )
+        try:
+            return self._embedder.embed(model, texts)
+        except Exception as exc:
+            if type(exc).__name__ == "EmbeddingEngineMissing":
+                raise KnowledgeEngineMissing(str(exc)) from exc
+            raise
+
     def add_document(self, kb_id: str, filename: str, content: str,
                      pinned: bool = False) -> dict[str, Any]:
         """Ingest a document into a knowledge base.
@@ -474,7 +495,7 @@ class KnowledgeBase:
                 raise KnowledgeParamError("document produced no usable chunks")
 
             # Embed the chunks in one batch.
-            result = self._embedder.embed(meta["model"], chunks)
+            result = self._embed(meta["model"], chunks)
             vectors = result.get("embeddings") or []
             if len(vectors) != len(chunks):
                 raise KnowledgeEngineMissing(
@@ -576,7 +597,7 @@ class KnowledgeBase:
                     "未配置嵌入引擎，无法取消钉选并重新索引"
                 )
             chunks = chunk_text(text, meta["chunk_size"], meta["overlap"])
-            result = self._embedder.embed(meta["model"], chunks)
+            result = self._embed(meta["model"], chunks)
             vectors = result.get("embeddings") or []
             if len(vectors) != len(chunks):
                 raise KnowledgeEngineMissing(
@@ -667,7 +688,7 @@ class KnowledgeBase:
             return {"kb_id": kb_id, "query": query, "model": meta["model"],
                     "results": [], "pinned": pinned}
 
-        qvec = self._embedder.embed(meta["model"], [query])["embeddings"][0]
+        qvec = self._embed(meta["model"], [query])["embeddings"][0]
         scored = []
         for rec in store:
             vec = rec.get("embedding") or []
@@ -860,19 +881,25 @@ class KnowledgeBase:
         new_id = new_kb["id"]
 
         added = 0
-        for item in documents:
-            if not isinstance(item, dict):
-                continue
-            text = str(item.get("text") or "")
-            if not text.strip():
-                continue
-            filename = str(item.get("filename") or "document.txt")
-            pinned = bool(item.get("pinned"))
-            # add_document re-extracts by extension; for a .txt/.md payload the
-            # text passes through unchanged. Errors here (e.g. missing embedder)
-            # surface as KnowledgeEngineMissing / KnowledgeParamError → 400/503.
-            self.add_document(new_id, filename, text, pinned=pinned)
-            added += 1
+        try:
+            for item in documents:
+                if not isinstance(item, dict):
+                    continue
+                text = str(item.get("text") or "")
+                if not text.strip():
+                    continue
+                filename = str(item.get("filename") or "document.txt")
+                pinned = bool(item.get("pinned"))
+                # add_document re-extracts by extension; for a .txt/.md payload
+                # the text passes through unchanged. Errors here (e.g. missing
+                # embedder) surface as KnowledgeEngineMissing/KnowledgeParamError.
+                self.add_document(new_id, filename, text, pinned=pinned)
+                added += 1
+        except BaseException:
+            # Make import transactional: never leave a half-built KB behind
+            # when a document fails to ingest (e.g. embedding engine missing).
+            self.delete_kb(new_id)
+            raise
 
         log.info("knowledge base imported id=%s docs=%d", new_id, added)
         return {"kb_id": new_id, "name": name, "doc_count": added}

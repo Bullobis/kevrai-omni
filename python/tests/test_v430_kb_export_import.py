@@ -131,9 +131,35 @@ def test_import_engine_missing_guidance(tmp_path):
     bid = _make(src)
     bundle = src.export_kb(bid)
 
-    dst = kb.KnowledgeBase(tmp_path, embedder=None)
+    dst_root = tmp_path / "dst"
+    dst_root.mkdir()
+    dst = kb.KnowledgeBase(dst_root, embedder=None)
     with pytest.raises(kb.KnowledgeEngineMissing):
         dst.import_kb(bundle)
+    # Transactional: the failed import must not leave a half-built KB behind.
+    assert dst.list_kbs() == []
+
+
+def test_import_rolls_back_when_embedder_fails(tmp_path):
+    # Embedder present at create time but raises on the second (non-pinned) doc.
+    src = kb.KnowledgeBase(tmp_path, embedder=FakeEmbedder())
+    bid = _make(src)
+    bundle = src.export_kb(bid)
+
+    class EmbeddingEngineMissing(RuntimeError):
+        pass
+
+    class FlakyEmbedder:
+        # Succeeds for the pinned path (no embed call) then fails on chunk embed.
+        def embed(self, repo: str, texts: list[str], **_kw) -> dict:
+            raise EmbeddingEngineMissing("backend gone")
+
+    dst_root = tmp_path / "dst2"
+    dst_root.mkdir()
+    dst = kb.KnowledgeBase(dst_root, embedder=FlakyEmbedder())
+    with pytest.raises(kb.KnowledgeEngineMissing):
+        dst.import_kb(bundle)
+    assert dst.list_kbs() == []
 
 
 def test_export_missing_kb_404(mgr):
