@@ -7,6 +7,9 @@ import { toast } from "./toast.js";
 import { unwrap } from "./net.js";
 import { t } from "./i18n.js";
 import { approvalCardHtml, parseEditedParams } from "./agent-approval.js";
+import {
+  QUICK_PHRASE_GROUPS, findPhraseById, composePhraseValue,
+} from "./agent-quickphrases.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -97,6 +100,16 @@ function _renderShell() {
         </div>
       </details>
       <div id="agent-messages" class="agent-messages"></div>
+      <div class="agent-quickphrases" id="agent-quickphrases">
+        <button type="button" id="agent-qp-toggle" class="agent-qp-toggle"
+          title="${t("agent.quickPhrasesTitle")}"
+          aria-expanded="false" aria-controls="agent-qp-body">
+          ${t("agent.quickPhrases")}
+        </button>
+        <div class="agent-qp-body" id="agent-qp-body" hidden>
+          ${QUICK_PHRASE_GROUPS.map(_renderQpGroup).join("")}
+        </div>
+      </div>
       <div class="agent-input-area">
         <textarea id="agent-input" class="agent-input" rows="2"
           placeholder="${t("agent.inputPlaceholder")}"
@@ -110,6 +123,21 @@ function _renderShell() {
       </div>
     </div>
   `;
+}
+
+// ---------------------------------------------------------------------------
+// 快捷短语（对标 Cherry Studio）：折叠按钮 + 分组 chips，点击填入输入框。
+// 数据与「点完输入框变成什么」抽在 agent-quickphrases.js（纯函数，可单测）。
+// ---------------------------------------------------------------------------
+function _renderQpGroup(g) {
+  const chips = g.phrases.map((p) =>
+    `<button type="button" class="agent-qp-chip" data-qp="${esc(p.id)}"
+      title="${esc(p.text)}">${esc(p.label)}</button>`).join("");
+  return `
+    <div class="agent-qp-group">
+      <span class="agent-qp-group-label">${esc(g.icon)} ${esc(g.label)}</span>
+      <div class="agent-qp-chips">${chips}</div>
+    </div>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -234,7 +262,37 @@ function _wireEvents(root) {
       }
     });
   }
+  _wireQuickPhrases(root, input, sendBtn);
   _wireSkillHub(root);
+}
+
+// 折叠开关 + chip 点击（事件委托到 #agent-qp-body）。
+// 点击 chip：把短语填入 #agent-input、聚焦、启用发送按钮；不自动发送，留给用户修改。
+function _wireQuickPhrases(root, input, sendBtn) {
+  const toggle = $("#agent-qp-toggle", root);
+  const body = $("#agent-qp-body", root);
+  if (!body) return;
+
+  if (toggle) {
+    toggle.addEventListener("click", () => {
+      const open = body.hidden;
+      body.hidden = !open;
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.classList.toggle("is-open", open);
+    });
+  }
+
+  body.addEventListener("click", (e) => {
+    const chip = e.target.closest(".agent-qp-chip");
+    if (!chip) return;
+    const hit = findPhraseById(chip.dataset.qp);
+    if (!hit || !input) return;
+    input.value = composePhraseValue(input.value, hit.phrase.text);
+    // 触发既有 input 监听，使发送按钮随内容启用（不在此处发送）。
+    input.dispatchEvent(new Event("input"));
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  });
 }
 
 // ---------------------------------------------------------------------------
