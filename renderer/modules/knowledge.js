@@ -9,7 +9,7 @@ import { t } from "./i18n.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 
-export const KB_ALLOWED_EXT = [".txt", ".md", ".markdown", ".json", ".csv", ".pdf", ".docx"];
+export const KB_ALLOWED_EXT = [".txt", ".md", ".markdown", ".json", ".csv", ".pdf", ".docx", ".pptx"];
 
 /** True when the filename is a PDF (sent as base64, not plain text). */
 export function isPdfFile(filename) {
@@ -21,9 +21,14 @@ export function isDocxFile(filename) {
   return String(filename || "").toLowerCase().endsWith(".docx");
 }
 
-/** True for binary formats that are uploaded base64-encoded (PDF / DOCX). */
+/** True when the filename is a .pptx (sent as base64, not plain text). */
+export function isPptxFile(filename) {
+  return String(filename || "").toLowerCase().endsWith(".pptx");
+}
+
+/** True for binary formats that are uploaded base64-encoded (PDF / DOCX / PPTX). */
 export function isBinaryDocFile(filename) {
-  return isPdfFile(filename) || isDocxFile(filename);
+  return isPdfFile(filename) || isDocxFile(filename) || isPptxFile(filename);
 }
 
 /** Read a File as a base64 data string (data:...;base64,<payload>). */

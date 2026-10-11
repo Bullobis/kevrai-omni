@@ -3307,7 +3307,7 @@ def knowledge_add_doc(request: Request, kb_id: str, req: KbDocReq) -> dict[str, 
     _require_kb(mgr, kb_id)
     try:
         suffix = Path(req.filename or "").suffix.lower()
-        if suffix in {".pdf", ".docx"}:
+        if suffix in {".pdf", ".docx", ".pptx"}:
             if req.encoding != "base64" or not req.content_b64:
                 raise knowledge_base.KnowledgeParamError(
                     f"{suffix} 需以 base64 编码上传（encoding=base64, content_b64）"
@@ -3322,8 +3322,10 @@ def knowledge_add_doc(request: Request, kb_id: str, req: KbDocReq) -> dict[str, 
                 ) from e
             if suffix == ".pdf":
                 text = knowledge_base.extract_pdf_bytes(data)
-            else:
+            elif suffix == ".docx":
                 text = knowledge_base.extract_docx_bytes(data)
+            else:
+                text = knowledge_base.extract_pptx_bytes(data)
             return mgr.add_document(kb_id, req.filename, text,
                                     pinned=req.pinned)
         if not req.content.strip():
