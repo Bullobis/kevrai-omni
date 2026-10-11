@@ -4,6 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   isAllowedFile,
+  isPdfFile,
   sanitizeKbName,
   scorePct,
   escapeHtml,
@@ -22,7 +23,7 @@ test("isAllowedFile accepts supported text extensions case-insensitively", () =>
 
 test("isAllowedFile rejects binaries and unknown extensions", () => {
   assert.equal(isAllowedFile("video.mp4"), false);
-  assert.equal(isAllowedFile("doc.pdf"), false);
+  assert.equal(isAllowedFile("report.docx"), false);
   assert.equal(isAllowedFile("archive.zip"), false);
   assert.equal(isAllowedFile(""), false);
 });
@@ -53,7 +54,7 @@ test("escapeHtml neutralises markup", () => {
 test("allowlist is the documented text set", () => {
   assert.deepEqual(
     [...KB_ALLOWED_EXT].sort(),
-    [".csv", ".json", ".markdown", ".md", ".txt"].sort()
+    [".csv", ".json", ".markdown", ".md", ".pdf", ".txt"].sort()
   );
 });
 
@@ -64,4 +65,16 @@ test("formatExportFilename builds a safe kb-name-date.json", () => {
     "kb-a-b-c-20261012.json");
   // Blank name / date fall back gracefully.
   assert.equal(formatExportFilename("", ""), "kb-kb-00000000.json");
+});
+
+test("isPdfFile detects the PDF extension case-insensitively", () => {
+  assert.equal(isPdfFile("paper.pdf"), true);
+  assert.equal(isPdfFile("paper.PDF"), true);
+  assert.equal(isPdfFile("note.md"), false);
+  assert.equal(isPdfFile("data.csv"), false);
+});
+
+test("allowlist now includes .pdf", () => {
+  assert.ok(KB_ALLOWED_EXT.includes(".pdf"));
+  assert.equal(isAllowedFile("paper.pdf"), true);
 });

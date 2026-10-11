@@ -9,7 +9,22 @@ import { t } from "./i18n.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 
-export const KB_ALLOWED_EXT = [".txt", ".md", ".markdown", ".json", ".csv"];
+export const KB_ALLOWED_EXT = [".txt", ".md", ".markdown", ".json", ".csv", ".pdf"];
+
+/** True when the filename is a PDF (sent as base64, not plain text). */
+export function isPdfFile(filename) {
+  return String(filename || "").toLowerCase().endsWith(".pdf");
+}
+
+/** Read a File as a base64 data string (data:...;base64,<payload>). */
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("read failed"));
+    reader.readAsDataURL(file);
+  });
+}
 
 let knowledgeInited = false;
 let currentKbId = null;
@@ -209,15 +224,30 @@ async function addDocument() {
   const btn = $("#kb-doc-add-btn");
   btn.disabled = true;
   try {
-    const content = await file.text();
     const pinBox = $("#kb-doc-pin");
     const pinned = !!(pinBox && pinBox.checked);
-    await api.knowledgeAddDoc({
-      kb_id: currentKbId,
-      filename: file.name,
-      content,
-      pinned,
-    });
+    let payload;
+    if (isPdfFile(file.name)) {
+      // PDF is binary: read as base64 and let the sidecar extract text.
+      const dataUrl = await readFileAsDataUrl(file);
+      const b64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+      payload = {
+        kb_id: currentKbId,
+        filename: file.name,
+        content_b64: b64,
+        encoding: "base64",
+        pinned,
+      };
+    } else {
+      const content = await file.text();
+      payload = {
+        kb_id: currentKbId,
+        filename: file.name,
+        content,
+        pinned,
+      };
+    }
+    await api.knowledgeAddDoc(payload);
     input.value = "";
     if (pinBox) pinBox.checked = false;
     toast(t("knowledge.docAdded"), { kind: "ok" });
