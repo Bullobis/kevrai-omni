@@ -328,6 +328,7 @@ class KnowledgeBase:
             self._write_json(d / "meta.json", meta)
             self._write_json(d / "docs.json", [])
             self._write_json(d / "chunks.json", [])
+            self._write_json(d / "originals.json", {})
         log.info("knowledge base created id=%s name=%r", kb_id, name)
         return self.get_kb(kb_id)
 
@@ -402,6 +403,27 @@ class KnowledgeBase:
                     "text": doc["text"],
                 })
         return out
+
+    def _load_originals(self, kb_id: str) -> dict[str, dict[str, str]]:
+        """Return ``{doc_id: {"filename", "text"}}`` raw extracted texts.
+
+        Originals make an exact export possible: chunk text only ever stores
+        overlapping slices, so without this the full source cannot be rebuilt.
+        Older KBs (created before this file existed) simply have no entry here
+        and fall back to a chunks-based reconstruction on export.
+        """
+        d = self._kb_dir(kb_id)
+        path = d / "originals.json"
+        if not path.is_file():
+            return {}
+        data = self._read_json(path)
+        if not isinstance(data, dict):
+            return {}
+        # Keep only well-formed ``{filename, text}`` records.
+        return {
+            str(k): v for k, v in data.items()
+            if isinstance(v, dict)
+        }
 
     def add_document(self, kb_id: str, filename: str, content: str,
                      pinned: bool = False) -> dict[str, Any]:
@@ -481,18 +503,27 @@ class KnowledgeBase:
             ]
 
         with self._lock:
-            docs_path = self._kb_dir(kb_id) / "docs.json"
-            chunks_path = self._kb_dir(kb_id) / "chunks.json"
+            base = self._kb_dir(kb_id)
+            docs_path = base / "docs.json"
+            chunks_path = base / "chunks.json"
+            originals_path = base / "originals.json"
             docs = self._read_json(docs_path) if docs_path.is_file() else []
             store = self._read_json(chunks_path) if chunks_path.is_file() else []
+            originals = (self._read_json(originals_path)
+                         if originals_path.is_file() else {})
             docs.append(doc)
             store.extend(new_records)
+            # Keep the raw extracted text so export is byte-exact. Pinned docs
+            # already keep ``text`` on the doc record, but we register it here
+            # too so export has one uniform source.
+            originals[doc_id] = {"filename": filename, "text": text}
             self._write_json(docs_path, docs)
             self._write_json(chunks_path, store)
+            self._write_json(originals_path, originals)
             meta["doc_count"] = len(docs)
             meta["chunk_count"] = len(store)
             meta["updated_at"] = now
-            self._write_json(self._kb_dir(kb_id) / "meta.json", meta)
+            self._write_json(base / "meta.json", meta)
 
         log.info(
             "document ingested kb=%s doc=%s pinned=%s chunks=%d",
@@ -592,14 +623,20 @@ class KnowledgeBase:
             d = self._kb_dir(kb_id)
             docs_path = d / "docs.json"
             chunks_path = d / "chunks.json"
+            originals_path = d / "originals.json"
             docs = self._read_json(docs_path) if docs_path.is_file() else []
             store = self._read_json(chunks_path) if chunks_path.is_file() else []
+            originals = (self._read_json(originals_path)
+                         if originals_path.is_file() else {})
             kept_docs = [x for x in docs if x["id"] != doc_id]
             if len(kept_docs) == len(docs):
                 raise KnowledgeNotFound(f"document not found: {doc_id}")
             store = [c for c in store if c["doc_id"] != doc_id]
+            originals.pop(doc_id, None)
             self._write_json(docs_path, kept_docs)
             self._write_json(chunks_path, store)
+            if originals_path.is_file():
+                self._write_json(originals_path, originals)
             meta = self._read_json(d / "meta.json")
             meta["doc_count"] = len(kept_docs)
             meta["chunk_count"] = len(store)
@@ -704,3 +741,138 @@ class KnowledgeBase:
             "answer_note": (None if brain_used
                             else "未配置生成模型，仅返回检索到的上下文"),
         }
+
+    # ------------------------------------------------------------------
+    # Export / import (portable bundle)
+    # ------------------------------------------------------------------
+    def _reconstruct_text(self, chunks: list[dict[str, Any]],
+                          overlap: int) -> str:
+        """Best-effort original text from stored overlapping chunks.
+
+        This only ever runs for documents ingested before ``originals.json``
+        existed. Stored chunk ``i`` is ``(tail of chunk i-1) + "\\n\\n" + raw_i``,
+        so we peel the carried prefix off every chunk after the first.
+        """
+        recs = sorted(chunks, key=lambda c: c.get("index", 0))
+        overlap = max(0, int(overlap or 0))
+        if not recs:
+            return ""
+        head = recs[0].get("text", "")
+        tail = head[-overlap:] if overlap else ""
+        parts = [head]
+        for rec in recs[1:]:
+            t = rec.get("text", "")
+            if overlap and tail and t.startswith(tail):
+                t = t[len(tail):].lstrip("\n")
+            elif overlap:
+                t = t[overlap:].lstrip("\n")
+            parts.append(t)
+            tail = t[-overlap:] if overlap else ""
+        return "\n\n".join(p for p in parts if p).strip()
+
+    def export_kb(self, kb_id: str) -> dict[str, Any]:
+        """Build a portable bundle of a knowledge base.
+
+        Layout::
+
+            {"format": "kevrai-kb", "version": 1,
+             "meta": {"name", "model", "chunk_size", "overlap"},
+             "documents": [{"filename", "pinned", "text",
+                            "reconstructed"?: bool}]}
+        """
+        meta = self._load_meta(kb_id)
+        d = self._kb_dir(kb_id)
+        docs = self._read_json(d / "docs.json") if (d / "docs.json").is_file() else []
+        store = self._read_json(d / "chunks.json") if (d / "chunks.json").is_file() else []
+        originals = self._load_originals(kb_id)
+        overlap = int(meta.get("overlap", 0) or 0)
+
+        docs_by_id: dict[str, list[dict[str, Any]]] = {}
+        for rec in store:
+            docs_by_id.setdefault(rec.get("doc_id"), []).append(rec)
+
+        documents: list[dict[str, Any]] = []
+        for doc in docs:
+            doc_id = doc["id"]
+            pinned = bool(doc.get("pinned"))
+            entry: dict[str, Any] = {
+                "filename": doc.get("filename", "document.txt"),
+                "pinned": pinned,
+            }
+            original = originals.get(doc_id) or {}
+            text = original.get("text")
+            if not text and pinned:
+                text = doc.get("text")
+            reconstructed = False
+            if not text:
+                # Legacy document: rebuild from overlapping chunks.
+                text = self._reconstruct_text(docs_by_id.get(doc_id, []), overlap)
+                reconstructed = True
+            entry["text"] = text or ""
+            if reconstructed:
+                entry["reconstructed"] = True
+            documents.append(entry)
+
+        return {
+            "format": "kevrai-kb",
+            "version": 1,
+            "meta": {
+                "name": meta.get("name", "imported"),
+                "model": meta.get("model", ""),
+                "chunk_size": meta.get("chunk_size", DEFAULT_CHUNK_SIZE),
+                "overlap": meta.get("overlap", DEFAULT_CHUNK_OVERLAP),
+            },
+            "documents": documents,
+        }
+
+    def _unique_kb_name(self, base: str) -> str:
+        """Append a numeric suffix until the desired KB name is free."""
+        base = (base or "imported").strip() or "imported"
+        existing = {m.get("name") for m in self.list_kbs()}
+        if base not in existing:
+            return base
+        for n in range(2, 1000):
+            candidate = f"{base} ({n})"
+            if candidate not in existing:
+                return candidate
+        return f"{base} ({uuid.uuid4().hex[:6]})"
+
+    def import_kb(self, bundle: dict[str, Any]) -> dict[str, Any]:
+        """Import an exported bundle into a brand-new knowledge base."""
+        if not isinstance(bundle, dict):
+            raise KnowledgeParamError("bundle must be a JSON object")
+        if bundle.get("format") != "kevrai-kb":
+            raise KnowledgeParamError("not a kevrai-kb bundle (format mismatch)")
+        if int(bundle.get("version", 0)) != 1:
+            raise KnowledgeParamError("unsupported bundle version")
+        meta = bundle.get("meta")
+        if not isinstance(meta, dict) or not meta.get("model"):
+            raise KnowledgeParamError("bundle missing meta.model")
+        documents = bundle.get("documents")
+        if not isinstance(documents, list):
+            raise KnowledgeParamError("bundle missing documents list")
+
+        name = self._unique_kb_name(str(meta.get("name") or "imported"))
+        chunk_size = int(meta.get("chunk_size", DEFAULT_CHUNK_SIZE))
+        overlap = int(meta.get("overlap", DEFAULT_CHUNK_OVERLAP))
+        new_kb = self.create_kb(name, str(meta["model"]),
+                                chunk_size=chunk_size, overlap=overlap)
+        new_id = new_kb["id"]
+
+        added = 0
+        for item in documents:
+            if not isinstance(item, dict):
+                continue
+            text = str(item.get("text") or "")
+            if not text.strip():
+                continue
+            filename = str(item.get("filename") or "document.txt")
+            pinned = bool(item.get("pinned"))
+            # add_document re-extracts by extension; for a .txt/.md payload the
+            # text passes through unchanged. Errors here (e.g. missing embedder)
+            # surface as KnowledgeEngineMissing / KnowledgeParamError → 400/503.
+            self.add_document(new_id, filename, text, pinned=pinned)
+            added += 1
+
+        log.info("knowledge base imported id=%s docs=%d", new_id, added)
+        return {"kb_id": new_id, "name": name, "doc_count": added}

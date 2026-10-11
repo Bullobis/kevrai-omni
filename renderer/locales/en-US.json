@@ -1018,6 +1018,11 @@
     "pinned": "Pinned",
     "pinnedDoc": "Pinned document",
     "unpin": "Unpin",
-    "unpinned": "Document unpinned, back to retrieval"
+    "unpinned": "Document unpinned, back to retrieval",
+    "export": "Export KB",
+    "import": "Import KB",
+    "exported": "Exported {name}",
+    "imported": "Imported {name} ({n} docs)",
+    "importBadJson": "Selected file is not valid JSON"
   }
 }

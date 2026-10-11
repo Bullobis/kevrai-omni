@@ -38,6 +38,14 @@ export function scorePct(score) {
   return `${Math.round(Math.max(0, Math.min(1, n)) * 100)}%`;
 }
 
+/** Build the download filename for an exported KB: ``kb-<name>-<date>.json``. */
+export function formatExportFilename(name, dateStr) {
+  const slug = String(name || "kb").trim().replace(/[\\/:*?"<>|\s]+/g, "-")
+    .replace(/-+$/, "").slice(0, 60) || "kb";
+  const date = String(dateStr || "").replace(/[^0-9]/g, "").slice(0, 8) || "00000000";
+  return `kb-${slug}-${date}.json`;
+}
+
 function currentKb() {
   return currentKbId;
 }
@@ -310,6 +318,74 @@ async function populateBrains() {
   } catch (_) { /* brain list is optional; retrieval-only still works */ }
 }
 
+async function exportKb() {
+  if (!currentKbId) {
+    toast(t("knowledge.selectFirst"), { kind: "warn" });
+    return;
+  }
+  const btn = $("#kb-export-btn");
+  btn.disabled = true;
+  try {
+    const r = await api.knowledgeExport(currentKbId);
+    const bundle = (r && r.body) ? r.body : r;
+    const name = (bundle.meta && bundle.meta.name) || "kb";
+    const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const fname = formatExportFilename(name, stamp);
+    const blob = new Blob([JSON.stringify(bundle, null, 2)],
+      { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast(t("knowledge.exported", { name }), { kind: "ok" });
+  } catch (e) {
+    toast(e.message, { kind: "err" });
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function importKb() {
+  const input = $("#kb-import-file");
+  if (!input) return;
+  input.value = "";
+  input.click();
+}
+
+async function onImportFilePicked(e) {
+  const file = e.target && e.target.files && e.target.files[0];
+  if (!file) return;
+  const btn = $("#kb-import-btn");
+  btn.disabled = true;
+  try {
+    const text = await file.text();
+    let bundle;
+    try {
+      bundle = JSON.parse(text);
+    } catch (_) {
+      toast(t("knowledge.importBadJson"), { kind: "err" });
+      return;
+    }
+    const r = await api.knowledgeImport({ bundle });
+    const result = (r && r.body) ? r.body : r;
+    currentKbId = result.kb_id;
+    toast(t("knowledge.imported", { name: result.name, n: result.doc_count }),
+      { kind: "ok" });
+    await refreshKbList();
+    // Select the freshly imported KB in the dropdown.
+    const sel = $("#kb-list");
+    if (sel && currentKbId) sel.value = currentKbId;
+  } catch (err) {
+    toast(err.message, { kind: "err" });
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 export async function initKnowledge() {
   if (knowledgeInited) return;
   knowledgeInited = true;
@@ -317,6 +393,12 @@ export async function initKnowledge() {
   $("#kb-doc-add-btn").addEventListener("click", addDocument);
   $("#kb-search-btn").addEventListener("click", runSearch);
   $("#kb-ask-btn").addEventListener("click", runAsk);
+  const exportBtn = $("#kb-export-btn");
+  if (exportBtn) exportBtn.addEventListener("click", exportKb);
+  const importBtn = $("#kb-import-btn");
+  if (importBtn) importBtn.addEventListener("click", importKb);
+  const imp = $("#kb-import-file");
+  if (imp) imp.addEventListener("change", onImportFilePicked);
   $("#kb-list").addEventListener("change", async (e) => {
     currentKbId = e.target.value || null;
     await refreshDocs();
