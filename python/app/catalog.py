@@ -36,13 +36,12 @@ DEFAULT_MODEL_HOSTS: set[str] = {
     "release.github.com",
     # Official HF partner mirrors
     "hf-mirror.com",
-    # Community/popular mirrors (as many sources as possible)
-    "hf-mirror.us",
+    # NOTE: hf-mirror.us / huggingface.dl.in.tel / hf-cn-mirror.com were here
+    # but all fail DNS (verified 2026-10); a positive allowlist must not bless
+    # non-resolving hosts. They remain *disabled* presets in sources_registry.
     # NOTE: hf-cdn.sufy.com is a phishing/typosquat mirror. It is deliberately
     # NOT here — see DEFAULT_BLOCKED_MIRRORS. (P0-3: previously it was wrongly
     # added to the positive allowlist, contradicting SECURITY.md.)
-    "huggingface.dl.in.tel",
-    "hf-cn-mirror.com",
     "modelscope.cn",
     "www.modelscope.cn",
     "aliyuncs.com",

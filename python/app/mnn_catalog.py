@@ -16,10 +16,12 @@ from . import USER_AGENT
 # NOTE: ``hf-cdn.sufy.com`` is a typosquat/phishing clone and is hard-blocked
 # by SECURITY.md / ``DEFAULT_BLOCKED_MIRRORS`` — it must never appear here, even
 # as a last-resort fallback.
+# NOTE: ``hf-mirror.us`` / ``hf-cn-mirror.com`` were removed: both fail DNS
+# (verified 2026-10) and only added connection-timeout delays before falling
+# through. They remain registered as *disabled* presets in sources_registry for
+# recognition/migration, but must not be actively tried here.
 _MIRRORS = (
     "https://hf-mirror.com",
-    "https://hf-mirror.us",
-    "https://hf-cn-mirror.com",
     "https://huggingface.co",
 )
 
