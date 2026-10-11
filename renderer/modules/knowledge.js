@@ -106,14 +106,38 @@ async function refreshDocs() {
     list.innerHTML = `<p class="muted">${t("knowledge.noDocs")}</p>`;
     return;
   }
-  list.innerHTML = items.map((d) =>
-    `<div class="kb-doc-row">` +
-    `<span class="kb-doc-name">${escapeHtml(d.filename)}</span>` +
-    `<span class="muted tiny">${d.chunk_count} ${t("knowledge.chunks")}</span>` +
-    `<button class="ghost tiny" data-del-doc="${escapeHtml(d.id)}" ` +
-    `data-doc-name="${escapeHtml(d.filename)}">${t("knowledge.delete")}</button>` +
-    `</div>`
-  ).join("");
+  list.innerHTML = items.map((d) => {
+    const pinned = !!d.pinned;
+    const pinBadge = pinned
+      ? `<span class="kb-pin-badge" title="${escapeHtml(t("knowledge.pinned"))}">📌</span>`
+      : "";
+    const meta = pinned
+      ? t("knowledge.pinnedDoc")
+      : `${d.chunk_count} ${t("knowledge.chunks")}`;
+    const unpinBtn = pinned
+      ? `<button class="ghost tiny" data-unpin-doc="${escapeHtml(d.id)}">` +
+        `${t("knowledge.unpin")}</button>`
+      : "";
+    return `<div class="kb-doc-row">` +
+      `${pinBadge}<span class="kb-doc-name">${escapeHtml(d.filename)}</span>` +
+      `<span class="muted tiny">${escapeHtml(meta)}</span>` +
+      `${unpinBtn}` +
+      `<button class="ghost tiny" data-del-doc="${escapeHtml(d.id)}" ` +
+      `data-doc-name="${escapeHtml(d.filename)}">${t("knowledge.delete")}</button>` +
+      `</div>`;
+  }).join("");
+  list.querySelectorAll("[data-unpin-doc]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const docId = btn.getAttribute("data-unpin-doc");
+      try {
+        await api.knowledgeSetPin({ kb_id: currentKbId, doc_id: docId, pinned: false });
+        toast(t("knowledge.unpinned"), { kind: "ok" });
+        await refreshKbList();
+      } catch (e) {
+        toast(e.message, { kind: "err" });
+      }
+    });
+  });
   list.querySelectorAll("[data-del-doc]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const docId = btn.getAttribute("data-del-doc");
@@ -178,12 +202,16 @@ async function addDocument() {
   btn.disabled = true;
   try {
     const content = await file.text();
+    const pinBox = $("#kb-doc-pin");
+    const pinned = !!(pinBox && pinBox.checked);
     await api.knowledgeAddDoc({
       kb_id: currentKbId,
       filename: file.name,
       content,
+      pinned,
     });
     input.value = "";
+    if (pinBox) pinBox.checked = false;
     toast(t("knowledge.docAdded"), { kind: "ok" });
     await refreshKbList();
   } catch (e) {

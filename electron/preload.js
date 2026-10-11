@@ -140,6 +140,7 @@ const api = {
   knowledgeDocs:    (kbId) => invoke("api:knowledge:docs", kbId),
   knowledgeAddDoc:  (payload) => invoke("api:knowledge:add-doc", payload),
   knowledgeDeleteDoc: (payload) => invoke("api:knowledge:delete-doc", payload),
+  knowledgeSetPin:  (payload) => invoke("api:knowledge:set-pin", payload),
   knowledgeSearch:  (payload) => invoke("api:knowledge:search", payload),
   knowledgeAsk:     (payload) => invoke("api:knowledge:ask", payload),
   // On-device text translation.

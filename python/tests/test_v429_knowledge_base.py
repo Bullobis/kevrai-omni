@@ -234,6 +234,111 @@ def test_clean_brain_answer_cuts_second_anchor():
     assert clean_brain_answer(raw) == "续航是 42 小时。"
 
 
+# --------------------------------------------------------------------------
+# Pinned documents (skip chunk/embed; inject full text on ask)
+# --------------------------------------------------------------------------
+
+
+def test_pinned_stores_full_text_and_no_chunks(mgr, tmp_path):
+    k = mgr.create_kb("pin", "BAAI/bge-m3")
+    bid = k["id"]
+    body = "Company policy: remote work allowed three days per week."
+    doc = mgr.add_document(bid, "policy.md", body, pinned=True)
+    assert doc["pinned"] is True
+    assert doc["chunk_count"] == 0
+    # No chunks persisted for the pinned document.
+    chunks = mgr._read_json(tmp_path / "knowledge" / bid / "chunks.json")
+    assert chunks == []
+    assert mgr.get_kb(bid)["chunk_count"] == 0
+    # The full text lives on the docs.json record.
+    docs = mgr._read_json(tmp_path / "knowledge" / bid / "docs.json")
+    assert docs[0]["text"] == body
+    # Listing strips the raw text but keeps the pinned flag.
+    listed = mgr.list_documents(bid)
+    assert listed[0]["pinned"] is True
+    assert "text" not in listed[0]
+
+
+def test_non_pinned_doc_has_no_text_field(mgr):
+    k = mgr.create_kb("plain", "BAAI/bge-m3")
+    doc = mgr.add_document(k["id"], "n.md", "ordinary indexed content here")
+    assert doc["pinned"] is False
+    assert "text" not in doc
+
+
+def test_search_returns_pinned_list_separate_from_results(mgr):
+    k = mgr.create_kb("mix", "BAAI/bge-m3")
+    bid = k["id"]
+    mgr.add_document(bid, "indexed.md", "Tokyo trains and tall buildings.")
+    mgr.add_document(bid, "note.md", "Always-on reminder text.", pinned=True)
+    res = mgr.search(bid, "trains", top_k=4)
+    # The pinned doc is not in the cosine results.
+    assert all(r["doc_name"] != "note.md" for r in res["results"])
+    # But it is surfaced in the dedicated pinned list.
+    assert len(res["pinned"]) == 1
+    assert res["pinned"][0]["doc_name"] == "note.md"
+    assert res["pinned"][0]["text"] == "Always-on reminder text."
+
+
+def test_ask_brain_answers_from_pinned_only(mgr):
+    k = mgr.create_kb("pinask", "BAAI/bge-m3")
+    bid = k["id"]
+    # No indexed (chunked) documents at all — only a pinned note.
+    mgr.add_document(bid, "fact.md", "The meeting room capacity is 12 people.",
+                     pinned=True)
+
+    def fake_brain(system: str, prompt: str) -> str:
+        # Echo the injected pinned text so we can prove it reached the prompt.
+        return "ANSWER:12" if "会议室" in prompt or "12 people" in prompt else "ANSWER:?"
+
+    out = mgr.ask(bid, "how many people fit in the meeting room?",
+                  top_k=4, brain=fake_brain)
+    assert out["results"] == [], "no semantic chunks expected"
+    assert out["brain_used"] is True
+    assert out["answer"] == "ANSWER:12"
+    # Pinned block is prefixed in the context.
+    assert out["context"].startswith("【钉选】(fact.md)")
+
+
+def test_unpin_reindexes_then_searchable(mgr):
+    k = mgr.create_kb("unpin", "BAAI/bge-m3")
+    bid = k["id"]
+    doc = mgr.add_document(bid, "note.md",
+                            "Renewable solar panels output maximum at noon.",
+                            pinned=True)
+    # Not searchable while pinned.
+    assert mgr.search(bid, "solar panels")["results"] == []
+    # Unpin → re-index the stored text.
+    updated = mgr.set_pinned(bid, doc["id"], False)
+    assert updated["pinned"] is False
+    assert updated["chunk_count"] >= 1
+    # Now the text is retrievable.
+    res = mgr.search(bid, "solar panels")
+    assert res["results"], "unpinned document should now be searchable"
+    assert res["pinned"] == []
+
+
+def test_pin_non_pinned_doc_without_text_errors(mgr):
+    k = mgr.create_kb("pinerr", "BAAI/bge-m3")
+    bid = k["id"]
+    doc = mgr.add_document(bid, "idx.md", "a normally indexed paragraph here")
+    with pytest.raises(kb.KnowledgeParamError):
+        mgr.set_pinned(bid, doc["id"], True)
+
+
+def test_set_pinned_is_idempotent(mgr):
+    k = mgr.create_kb("pinidem", "BAAI/bge-m3")
+    bid = k["id"]
+    doc = mgr.add_document(bid, "p.md", "pinned body text", pinned=True)
+    # Pinning an already-pinned doc is a no-op.
+    again = mgr.set_pinned(bid, doc["id"], True)
+    assert again["pinned"] is True
+    # Unpinning an already-unpinned doc is a no-op.
+    mgr.set_pinned(bid, doc["id"], False)
+    mgr.set_pinned(bid, doc["id"], False)  # second time must not raise
+    assert mgr.search(bid, "pinned body text")["results"]
+
+
 def test_clean_brain_answer_cuts_repeated_line():
     from app.knowledge_base import clean_brain_answer
 
@@ -323,3 +428,34 @@ def test_route_pydantic_validation_422(client):
     # A truly empty string violates Field(min_length=1) → 422.
     r = client.post("/api/knowledge/kbs", json={"name": "", "model": "x"})
     assert r.status_code == 422
+
+
+def test_route_pin_lifecycle(client):
+    # Create a KB and add a pinned document through the API.
+    bid = client.post("/api/knowledge/kbs",
+                      json={"name": "PIN API", "model": "BAAI/bge-m3"}).json()["id"]
+    r = client.post(f"/api/knowledge/kbs/{bid}/documents",
+                   json={"filename": "short.md", "content": "Top secret note.",
+                         "pinned": True})
+    assert r.status_code == 200, r.text
+    doc = r.json()
+    assert doc["pinned"] is True and doc["chunk_count"] == 0
+    doc_id = doc["id"]
+    # Listing exposes the pinned flag.
+    r = client.get(f"/api/knowledge/kbs/{bid}/documents")
+    assert r.status_code == 200
+    assert r.json()["items"][0]["pinned"] is True
+    # Ask with a brain: pinned-only context still produces an answer.
+    r = client.post(f"/api/knowledge/kbs/{bid}/ask",
+                   json={"question": "what is the note about?"})
+    body = r.json()
+    assert body["pinned"] and body["context"].startswith("【钉选】")
+    # Unpin through the dedicated endpoint.
+    r = client.post(f"/api/knowledge/kbs/{bid}/documents/{doc_id}/pin",
+                    json={"pinned": False})
+    assert r.status_code == 200, r.text
+    assert r.json()["pinned"] is False and r.json()["chunk_count"] >= 1
+    # Pinning a now-unpinned (indexed) doc without full text → 400.
+    r = client.post(f"/api/knowledge/kbs/{bid}/documents/{doc_id}/pin",
+                    json={"pinned": True})
+    assert r.status_code == 400

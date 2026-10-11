@@ -372,15 +372,48 @@ class KnowledgeBase:
         self._load_meta(kb_id)
         d = self._kb_dir(kb_id)
         docs = self._read_json(d / "docs.json") if (d / "docs.json").is_file() else []
-        return list(docs)
+        # Pinned documents keep their full text on disk for injection, but the
+        # listing only exposes the metadata (and the pinned flag) to avoid
+        # shipping the whole document on every refresh.
+        out: list[dict[str, Any]] = []
+        for doc in docs:
+            view = dict(doc)
+            view.pop("text", None)
+            out.append(view)
+        return out
 
-    def add_document(self, kb_id: str, filename: str, content: str) -> dict[str, Any]:
+    def _load_pinned(self, kb_id: str) -> list[dict[str, Any]]:
+        """Return pinned documents as ``{doc_id, doc_name, text}``.
+
+        Pinned documents are *not* chunked or embedded: their full text lives on
+        the ``docs.json`` record and is injected verbatim on search/ask. This
+        never needs the embedding engine.
+        """
+        d = self._kb_dir(kb_id)
+        docs_path = d / "docs.json"
+        if not docs_path.is_file():
+            return []
+        out: list[dict[str, Any]] = []
+        for doc in self._read_json(docs_path):
+            if doc.get("pinned") and doc.get("text"):
+                out.append({
+                    "doc_id": doc["id"],
+                    "doc_name": doc.get("filename", ""),
+                    "text": doc["text"],
+                })
+        return out
+
+    def add_document(self, kb_id: str, filename: str, content: str,
+                     pinned: bool = False) -> dict[str, Any]:
+        """Ingest a document into a knowledge base.
+
+        When ``pinned`` is true the document is *not* chunked or embedded: its
+        full text is stored on the doc record (``docs.json``) so it can be
+        injected verbatim on every ask. This is meant for short reference
+        notes that should always be in context. A pinned document therefore has
+        ``chunk_count == 0`` and no rows in ``chunks.json``.
+        """
         meta = self._load_meta(kb_id)
-        if self._embedder is None:
-            raise KnowledgeEngineMissing(
-                "未配置嵌入引擎，无法索引文档。请先在「向量嵌入」页安装 "
-                "sentence-transformers 引擎。"
-            )
         if not isinstance(content, str) or not content.strip():
             raise KnowledgeParamError("document content is empty")
         if len(content.encode("utf-8")) > MAX_CONTENT_BYTES:
@@ -388,39 +421,64 @@ class KnowledgeBase:
 
         filename = (filename or "document.txt").strip() or "document.txt"
         text = extract_text(filename, content)
-        chunks = chunk_text(text, meta["chunk_size"], meta["overlap"])
-        if not chunks:
-            raise KnowledgeParamError("document produced no usable chunks")
-
-        # Embed the chunks in one batch.
-        result = self._embedder.embed(meta["model"], chunks)
-        vectors = result.get("embeddings") or []
-        if len(vectors) != len(chunks):
-            raise KnowledgeEngineMissing(
-                "嵌入数量与分块数量不一致，索引失败"
-            )
+        if not text.strip():
+            raise KnowledgeParamError("document produced no usable content")
 
         doc_id = uuid.uuid4().hex[:16]
         now = _now()
-        doc = {
-            "id": doc_id,
-            "kb_id": kb_id,
-            "filename": filename,
-            "char_count": len(text),
-            "chunk_count": len(chunks),
-            "created_at": now,
-        }
-        new_records = [
-            {
-                "id": f"{doc_id}_{i}",
-                "doc_id": doc_id,
-                "doc_name": filename,
-                "index": i,
-                "text": chunk,
-                "embedding": vec,
+        pinned = bool(pinned)
+
+        new_records: list[dict[str, Any]] = []
+        if pinned:
+            # Store the full text; skip chunking/embedding entirely.
+            doc: dict[str, Any] = {
+                "id": doc_id,
+                "kb_id": kb_id,
+                "filename": filename,
+                "char_count": len(text),
+                "chunk_count": 0,
+                "pinned": True,
+                "text": text,
+                "created_at": now,
             }
-            for i, (chunk, vec) in enumerate(zip(chunks, vectors, strict=True))
-        ]
+        else:
+            if self._embedder is None:
+                raise KnowledgeEngineMissing(
+                    "未配置嵌入引擎，无法索引文档。请先在「向量嵌入」页安装 "
+                    "sentence-transformers 引擎。"
+                )
+            chunks = chunk_text(text, meta["chunk_size"], meta["overlap"])
+            if not chunks:
+                raise KnowledgeParamError("document produced no usable chunks")
+
+            # Embed the chunks in one batch.
+            result = self._embedder.embed(meta["model"], chunks)
+            vectors = result.get("embeddings") or []
+            if len(vectors) != len(chunks):
+                raise KnowledgeEngineMissing(
+                    "嵌入数量与分块数量不一致，索引失败"
+                )
+
+            doc = {
+                "id": doc_id,
+                "kb_id": kb_id,
+                "filename": filename,
+                "char_count": len(text),
+                "chunk_count": len(chunks),
+                "pinned": False,
+                "created_at": now,
+            }
+            new_records = [
+                {
+                    "id": f"{doc_id}_{i}",
+                    "doc_id": doc_id,
+                    "doc_name": filename,
+                    "index": i,
+                    "text": chunk,
+                    "embedding": vec,
+                }
+                for i, (chunk, vec) in enumerate(zip(chunks, vectors, strict=True))
+            ]
 
         with self._lock:
             docs_path = self._kb_dir(kb_id) / "docs.json"
@@ -437,9 +495,94 @@ class KnowledgeBase:
             self._write_json(self._kb_dir(kb_id) / "meta.json", meta)
 
         log.info(
-            "document ingested kb=%s doc=%s chunks=%d", kb_id, doc_id, len(chunks)
+            "document ingested kb=%s doc=%s pinned=%s chunks=%d",
+            kb_id, doc_id, pinned, len(new_records),
         )
         return doc
+
+    def set_pinned(self, kb_id: str, doc_id: str, pinned: bool) -> dict[str, Any]:
+        """Toggle a document's pinned flag.
+
+        * Pinning (``pinned=True``) an *already* pinned doc is a no-op. Pinning
+          a normally-indexed document is rejected (``KnowledgeParamError``):
+          only chunks were stored, so the original full text cannot be rebuilt.
+          Pinning is therefore offered at upload time, not afterwards.
+        * Unpinning (``pinned=False``) a pinned document re-indexes its stored
+          full text (chunk + embed) and drops the stored ``text`` field, so it
+          becomes a normal retrievable document again.
+        """
+        meta = self._load_meta(kb_id)
+        if not _valid_id(doc_id):
+            raise KnowledgeParamError(f"invalid document id: {doc_id!r}")
+        pinned = bool(pinned)
+        with self._lock:
+            d = self._kb_dir(kb_id)
+            docs_path = d / "docs.json"
+            chunks_path = d / "chunks.json"
+            docs = self._read_json(docs_path) if docs_path.is_file() else []
+            store = self._read_json(chunks_path) if chunks_path.is_file() else []
+            idx = next((i for i, x in enumerate(docs) if x["id"] == doc_id), None)
+            if idx is None:
+                raise KnowledgeNotFound(f"document not found: {doc_id}")
+            doc = docs[idx]
+            already_pinned = bool(doc.get("pinned"))
+
+            if pinned:
+                if already_pinned:
+                    return doc
+                raise KnowledgeParamError(
+                    "无法钉选已索引文档：缺少全文，请在上传时勾选钉选"
+                )
+
+            # Unpin.
+            if not already_pinned:
+                return doc
+            text = doc.get("text")
+            if not text:
+                raise KnowledgeParamError("钉选文档缺少全文，无法取消钉选")
+            if self._embedder is None:
+                raise KnowledgeEngineMissing(
+                    "未配置嵌入引擎，无法取消钉选并重新索引"
+                )
+            chunks = chunk_text(text, meta["chunk_size"], meta["overlap"])
+            result = self._embedder.embed(meta["model"], chunks)
+            vectors = result.get("embeddings") or []
+            if len(vectors) != len(chunks):
+                raise KnowledgeEngineMissing(
+                    "嵌入数量与分块数量不一致，索引失败"
+                )
+            new_records = [
+                {
+                    "id": f"{doc_id}_{i}",
+                    "doc_id": doc_id,
+                    "doc_name": doc.get("filename", ""),
+                    "index": i,
+                    "text": chunk,
+                    "embedding": vec,
+                }
+                for i, (chunk, vec) in enumerate(zip(chunks, vectors, strict=True))
+            ]
+            store.extend(new_records)
+            new_doc = {
+                "id": doc_id,
+                "kb_id": kb_id,
+                "filename": doc.get("filename", ""),
+                "char_count": doc.get("char_count", len(text)),
+                "chunk_count": len(chunks),
+                "pinned": False,
+                "created_at": doc.get("created_at", _now()),
+            }
+            docs[idx] = new_doc
+            self._write_json(docs_path, docs)
+            self._write_json(chunks_path, store)
+            meta["doc_count"] = len(docs)
+            meta["chunk_count"] = len(store)
+            meta["updated_at"] = _now()
+            self._write_json(d / "meta.json", meta)
+            log.info(
+                "document unpinned kb=%s doc=%s chunks=%d", kb_id, doc_id, len(chunks)
+            )
+            return new_doc
 
     def delete_document(self, kb_id: str, doc_id: str) -> None:
         self._load_meta(kb_id)
@@ -481,10 +624,11 @@ class KnowledgeBase:
             raise KnowledgeEngineMissing("未配置嵌入引擎，无法检索")
         top_k = max(1, min(int(top_k or DEFAULT_TOP_K), 50))
 
+        pinned = self._load_pinned(kb_id)
         store = self._load_chunks(kb_id)
         if not store:
             return {"kb_id": kb_id, "query": query, "model": meta["model"],
-                    "results": []}
+                    "results": [], "pinned": pinned}
 
         qvec = self._embedder.embed(meta["model"], [query])["embeddings"][0]
         scored = []
@@ -506,7 +650,7 @@ class KnowledgeBase:
             for score, rec in scored[:top_k]
         ]
         return {"kb_id": kb_id, "query": query, "model": meta["model"],
-                "results": results}
+                "results": results, "pinned": pinned}
 
     def ask(self, kb_id: str, question: str,
             top_k: int = DEFAULT_TOP_K,
@@ -519,13 +663,21 @@ class KnowledgeBase:
         """
         hit = self.search(kb_id, question, top_k)
         results = hit["results"]
-        context = "\n\n".join(
+        pinned = hit.get("pinned") or []
+        # Pinned documents are injected verbatim *before* the retrieved chunks,
+        # so short always-relevant notes lead the context.
+        pinned_block = "\n\n".join(
+            f"【钉选】({p['doc_name']}) {p['text']}" for p in pinned
+        )
+        retrieved_block = "\n\n".join(
             f"[{i + 1}] ({r['doc_name']}) {r['text']}"
             for i, r in enumerate(results)
         )
+        context = "\n\n".join(b for b in (pinned_block, retrieved_block) if b)
+        has_context = bool(results) or bool(pinned)
         answer: str | None = None
         brain_used = False
-        if brain is not None and results:
+        if brain is not None and has_context:
             system = (
                 "你是一个基于本地知识库回答问题的助手。只依据下方提供的"
                 "上下文作答；若上下文不足以回答，请明确说明。不要复述上下文。"
@@ -546,6 +698,7 @@ class KnowledgeBase:
             "model": hit["model"],
             "context": context,
             "results": results,
+            "pinned": pinned,
             "answer": answer,
             "brain_used": brain_used,
             "answer_note": (None if brain_used

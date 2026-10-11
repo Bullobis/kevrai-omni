@@ -3292,6 +3292,9 @@ def knowledge_delete(request: Request, kb_id: str) -> dict[str, Any]:
 class KbDocReq(BaseModel):
     filename: str = Field(..., max_length=255)
     content: str = Field(..., min_length=1)
+    # When true the document is stored verbatim (no chunk/embed) and injected
+    # on every ask.
+    pinned: bool = False
 
 
 @app.post("/api/knowledge/kbs/{kb_id}/documents")
@@ -3299,7 +3302,8 @@ def knowledge_add_doc(request: Request, kb_id: str, req: KbDocReq) -> dict[str, 
     mgr = _knowledge_manager(request)
     _require_kb(mgr, kb_id)
     try:
-        return mgr.add_document(kb_id, req.filename, req.content)
+        return mgr.add_document(kb_id, req.filename, req.content,
+                                pinned=req.pinned)
     except knowledge_base.KnowledgeError as e:
         raise HTTPException(
             status_code=_knowledge_status_for(e), detail=str(e)
@@ -3325,6 +3329,23 @@ def knowledge_delete_doc(request: Request, kb_id: str, doc_id: str) -> dict[str,
             status_code=_knowledge_status_for(e), detail=str(e)
         ) from e
     return {"ok": True, "doc_id": doc_id}
+
+
+class KbDocPinReq(BaseModel):
+    pinned: bool = Field(...)
+
+
+@app.post("/api/knowledge/kbs/{kb_id}/documents/{doc_id}/pin")
+def knowledge_set_pin(request: Request, kb_id: str, doc_id: str,
+                     req: KbDocPinReq) -> dict[str, Any]:
+    mgr = _knowledge_manager(request)
+    _require_kb(mgr, kb_id)
+    try:
+        return mgr.set_pinned(kb_id, doc_id, req.pinned)
+    except knowledge_base.KnowledgeError as e:
+        raise HTTPException(
+            status_code=_knowledge_status_for(e), detail=str(e)
+        ) from e
 
 
 class KbSearchReq(BaseModel):
