@@ -24,6 +24,7 @@ from .catalog_tools import (
     search_models,
 )
 from .drama_tools import DRAMA_TOOLS
+from .knowledge_tools import KNOWLEDGE_TOOLS
 from .media_engine_tools import MEDIA_ENGINE_TOOLS
 from .media_prompt_tools import MEDIA_PROMPT_TOOLS
 from .system_tools import (
@@ -173,6 +174,20 @@ MEDIA_ENGINE_SKILL = Skill(
     ),
 )
 
+KNOWLEDGE_SKILL = Skill(
+    id="knowledge_retrieval",
+    name="知识库检索",
+    description="在自主任务中检索本地知识库（RAG）：列出知识库、语义检索并阅读相关段落。",
+    icon="📚",
+    category="knowledge",
+    default_enabled=False,  # opt-in
+    tools=KNOWLEDGE_TOOLS,
+    guidance=(
+        "需要查阅用户知识库时：先 list_knowledge_bases 取得知识库 id，再用 search_knowledge 语义检索，"
+        "阅读返回的 passages（含 pinned 钉选文档）后据此作答；不要凭空编造知识库中的内容。"
+    ),
+)
+
 BUILTIN_SKILLS: list[Skill] = [
     CORE_SKILL,
     CATALOG_SKILL,
@@ -181,6 +196,7 @@ BUILTIN_SKILLS: list[Skill] = [
     WRITING_SKILL,
     MEDIA_PROMPT_SKILL,
     MEDIA_ENGINE_SKILL,
+    KNOWLEDGE_SKILL,
 ]
 
 

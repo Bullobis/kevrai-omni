@@ -199,6 +199,7 @@ class TestBuiltinPreserved:
         "media_engines": {"asr_transcribe", "embed_text", "separate_audio",
                           "tts_speak", "vision_ask", "gen_image",
                           "generate_music"},
+        "knowledge_retrieval": {"list_knowledge_bases", "search_knowledge"},
     }
     EXPECTED_IDS = set(EXPECTED)
 
