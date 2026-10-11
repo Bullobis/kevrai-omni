@@ -13,6 +13,7 @@ import {
   scorePct,
   escapeHtml,
   formatExportFilename,
+  sourceCardsHtml,
   KB_ALLOWED_EXT,
 } from "../modules/knowledge.js";
 
@@ -127,4 +128,28 @@ test("allowlist includes images and they are treated as binary docs", () => {
     assert.equal(isAllowedFile(`shot${ext}`), true);
     assert.equal(isBinaryDocFile(`shot${ext}`), true);
   }
+});
+
+test("sourceCardsHtml renders numbered refs, name, score and excerpt", () => {
+  const html = sourceCardsHtml([
+    { ref: 1, doc_name: "policy.md", score: 0.812, excerpt: "年假五天" },
+    { ref: 2, doc_name: "expense.md", score: 0.6, excerpt: "报销三十天" },
+  ]);
+  assert.match(html, /\[1\]/);
+  assert.match(html, /policy\.md/);
+  assert.match(html, /81%/); // rounded score
+  assert.match(html, /年假五天/);
+  assert.match(html, /\[2\]/);
+});
+
+test("sourceCardsHtml empty for no sources", () => {
+  assert.equal(sourceCardsHtml([]), "");
+  assert.equal(sourceCardsHtml(null), "");
+});
+
+test("sourceCardsHtml escapes html in source fields", () => {
+  const html = sourceCardsHtml(
+    [{ ref: 1, doc_name: "<x>.md", score: 0.5, excerpt: "<img src=x>" }]);
+  assert.doesNotMatch(html, /<img src=x>/);
+  assert.match(html, /&lt;img/);
 });

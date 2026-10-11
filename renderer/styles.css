@@ -1514,6 +1514,18 @@ html[data-theme="light"] .skeleton-card::after {
 .kb-answer h4 { margin: 0 0 6px; font-size: var(--fs-sm); }
 .kb-answer p { white-space: pre-wrap; font-size: var(--fs-sm); }
 
+.kb-sources { margin-top: 10px; }
+.kb-sources h5 { margin: 0 0 6px; font-size: var(--fs-xs); color: var(--mut); }
+.kb-sources ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.kb-src {
+  display: grid; grid-template-columns: auto 1fr; gap: 2px 8px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 7px 9px; font-size: var(--fs-xs);
+}
+.kb-src-ref { color: var(--accent); font-variant-numeric: tabular-nums; grid-row: 1; }
+.kb-src-name { font-weight: 600; color: var(--fg); word-break: break-word; }
+.kb-src-excerpt { grid-column: 1 / -1; color: var(--mut); line-height: 1.45; }
+
 /* On-device translation pane (dual-column) */
 #pane-translate .translate-toolbar { padding: 10px 12px; }
 #pane-translate .translate-lang-row {
