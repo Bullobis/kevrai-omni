@@ -138,6 +138,31 @@ def test_no_embedder_engine_missing(tmp_path):
         mgr.add_document(k["id"], "n.md", "some content here")
 
 
+class EmbeddingEngineMissing(RuntimeError):
+    """Mirrors embedding_runtime.EmbeddingEngineMissing (matched by name)."""
+
+
+class RaisingEmbedder:
+    def embed(self, repo: str, texts: list[str], **_kw) -> dict:
+        raise EmbeddingEngineMissing("sentence-transformers not installed")
+
+
+def test_backend_engine_missing_translated_add(tmp_path):
+    mgr = kb.KnowledgeBase(tmp_path, embedder=RaisingEmbedder())
+    k = mgr.create_kb("x", "BAAI/bge-m3")
+    with pytest.raises(kb.KnowledgeEngineMissing):
+        mgr.add_document(k["id"], "n.md", "some content here")
+
+
+def test_backend_engine_missing_translated_search(tmp_path):
+    mgr = kb.KnowledgeBase(tmp_path, embedder=FakeEmbedder())
+    k = mgr.create_kb("x", "BAAI/bge-m3")
+    mgr.add_document(k["id"], "n.md", "useful content body text")
+    mgr._embedder = RaisingEmbedder()
+    with pytest.raises(kb.KnowledgeEngineMissing):
+        mgr.search(k["id"], "body")
+
+
 def test_search_ranks_relevant_chunk_top(mgr):
     k = mgr.create_kb("find", "BAAI/bge-m3")
     bid = k["id"]
