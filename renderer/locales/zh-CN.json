@@ -387,6 +387,10 @@
     "step3Title": "③ 输入提示词，开始生成",
     "step3Body": "对话、画图、做视频：选模型 → 输提示词 → 点生成。就这么简单。",
     "gatedHint": "带 ⓘ 的模型为 gated（受控访问），下载前需在「设置」填入 HF Token。",
+    "noGpuHint": "没有独立显卡也没关系：可先在模型市场安装约 0.6B 的小模型（CPU 即可运行），或打开「硬件推荐」页让软件按你的配置推荐。",
+    "gotoEngines": "先去安装引擎",
+    "gotoMarket": "去模型市场",
+    "gotoHardware": "硬件推荐",
     "start": "开始使用"
   },
   "update": {

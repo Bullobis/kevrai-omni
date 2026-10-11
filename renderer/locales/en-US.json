@@ -387,6 +387,10 @@
     "step3Title": "③ Prompt and generate",
     "step3Body": "Chat, draw, make video: pick a model → type a prompt → hit generate. That's it.",
     "gatedHint": "Models marked ⓘ are gated. Before downloading, fill in your HF Token under Settings.",
+    "noGpuHint": "No dedicated GPU? Start with a ~0.6B model from the Model Market (runs on CPU), or open the Hardware page for a recommendation for your machine.",
+    "gotoEngines": "Install an engine",
+    "gotoMarket": "Open Model Market",
+    "gotoHardware": "Hardware",
     "start": "Get started"
   },
   "update": {

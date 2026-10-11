@@ -439,6 +439,21 @@ button.full { width: 100%; }
   padding: 14px 18px; border-bottom: 1px solid var(--bord);
 }
 .overlay-card > header h2 { margin: 0; font-size: 16px; }
+
+/* First-run onboarding guide */
+.onboarding-card { width: min(560px, 96vw); }
+.onboarding-steps {
+  list-style: none; margin: 0; padding: 16px 18px 4px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.onboarding-steps li { display: flex; flex-direction: column; gap: 3px; }
+.onboarding-steps strong { font-size: 14px; }
+.onboarding-steps span { font-size: 13px; color: var(--mut); line-height: 1.55; }
+.onboarding-card > p { margin: 12px 18px 0; line-height: 1.5; }
+.onboarding-actions {
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 18px 2px;
+}
+.onboarding-actions .secondary { padding: 6px 12px; font-size: 13px; }
 .overlay-card > .settings-grid {
   padding: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
   overflow-y: auto;
