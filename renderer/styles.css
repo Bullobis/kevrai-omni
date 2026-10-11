@@ -979,6 +979,30 @@ html[data-theme="light"] .agent-msg-user { color: #fff; }
   border: 1px solid var(--border, #333); border-radius: 7px; padding: 3px 8px; cursor: pointer; }
 .agent-artifact:hover { border-color: var(--accent, #4a7dff); }
 
+/* ── 快捷短语（对标 Cherry Studio）：折叠按钮 + 分组 chips ── */
+.agent-quickphrases { margin-bottom: 8px; }
+.agent-qp-toggle {
+  align-self: flex-start; padding: 4px 12px; border-radius: var(--radius-pill);
+  font-size: var(--fs-xs); cursor: pointer; user-select: none;
+  background: var(--card); color: var(--mut);
+  border: 1px solid var(--bord); transition: color 0.15s ease, border-color 0.15s ease;
+}
+.agent-qp-toggle:hover { color: var(--fg); border-color: var(--bord-strong); }
+.agent-qp-toggle.is-open { color: var(--acc); border-color: var(--bord-strong); }
+.agent-qp-toggle:focus-visible { outline: none; box-shadow: var(--focus); }
+.agent-qp-body { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.agent-qp-group { display: flex; flex-direction: column; gap: 5px; }
+.agent-qp-group-label { font-size: var(--fs-xs); color: var(--mut); font-weight: 500; }
+.agent-qp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.agent-qp-chip {
+  padding: 4px 11px; border-radius: var(--radius-pill); font-size: var(--fs-xs);
+  background: var(--card); color: var(--mut);
+  border: 1px solid var(--bord); cursor: pointer; white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.agent-qp-chip:hover { color: var(--fg); border-color: var(--bord-strong); }
+.agent-qp-chip:focus-visible { outline: none; box-shadow: var(--focus); }
+
 @media (max-width: 768px) {
   .agent-container { height: calc(100vh - 140px); }
   .agent-msg { max-width: 92%; }

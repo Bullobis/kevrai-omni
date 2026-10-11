@@ -608,7 +608,9 @@
     "brainFailed": "大脑设置失败：{err}",
     "callingTool": "调用工具",
     "reasoningTrace": "推理与工具过程（{n} 步）",
-    "openFailed": "无法打开：{err}"
+    "openFailed": "无法打开：{err}",
+    "quickPhrases": "⚡ 快捷短语",
+    "quickPhrasesTitle": "展开常用提问，点击短语即可填入输入框（可再修改后发送）"
   },
   "mnn": {
     "title": "⬢ MNN 推理引擎（阿里巴巴开源）",

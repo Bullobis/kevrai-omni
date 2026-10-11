@@ -608,7 +608,9 @@
     "brainFailed": "Brain setup failed: {err}",
     "callingTool": "Calling tool",
     "reasoningTrace": "Reasoning & tools ({n} steps)",
-    "openFailed": "Cannot open: {err}"
+    "openFailed": "Cannot open: {err}",
+    "quickPhrases": "⚡ Quick phrases",
+    "quickPhrasesTitle": "Common questions; click a chip to fill the input (edit before sending)"
   },
   "mnn": {
     "title": "⬢ MNN inference engine (Alibaba open-source)",
