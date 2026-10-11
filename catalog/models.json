@@ -1382,7 +1382,7 @@
       "sources": [
         "https://huggingface.co/tencent/HunyuanVideo/",
         "https://hf-mirror.com/tencent/HunyuanVideo/",
-        "https://modelscope.cn/models/tencent/HunyuanVideo"
+        "https://modelscope.cn/models/Tencent-Hunyuan/HunyuanVideo"
       ],
       "primary_url": "https://huggingface.co/tencent/HunyuanVideo/",
       "hardware": {
@@ -1474,7 +1474,7 @@
       "sources": [
         "https://huggingface.co/hpcai-tech/Open-Sora/",
         "https://hf-mirror.com/hpcai-tech/Open-Sora/",
-        "https://www.modelscope.cn/models/hpcai-tech/Open-Sora"
+        "https://modelscope.cn/models/hpcai-tech/Open-Sora"
       ],
       "primary_url": "https://huggingface.co/hpcai-tech/Open-Sora/",
       "hardware": {
@@ -1804,7 +1804,7 @@
       "sources": [
         "https://huggingface.co/ai-forever/Real-ESRGAN/",
         "https://hf-mirror.com/ai-forever/Real-ESRGAN/",
-        "https://www.modelscope.cn/models/ai-forever/Real-ESRGAN"
+        "https://modelscope.cn/models/ai-forever/Real-ESRGAN"
       ],
       "primary_url": "https://huggingface.co/ai-forever/Real-ESRGAN/",
       "hardware": {
@@ -2015,12 +2015,86 @@
       ]
     },
     {
+      "id": "musicgen-small",
+      "category": "audio",
+      "name": "MusicGen Small",
+      "repo": "facebook/musicgen-small",
+      "gguf_repo": "",
+      "size_gb": 2.4,
+      "engine": [
+        "transformers"
+      ],
+      "license": "CC-BY-NC-4.0",
+      "trending": true,
+      "description": "Meta MusicGen Small，文本/旋律生成音乐，CPU 可运行，适合入门。",
+      "sources": [
+        "https://huggingface.co/facebook/musicgen-small/",
+        "https://hf-mirror.com/facebook/musicgen-small/",
+        "https://modelscope.cn/models/facebook/musicgen-small/"
+      ],
+      "primary_url": "https://huggingface.co/facebook/musicgen-small/",
+      "hardware": {
+        "vram_gb": 0,
+        "min_vram_gb": 0,
+        "ram_gb": 5,
+        "disk_gb": 2.4,
+        "notes": "300M·CPU可跑"
+      },
+      "tags": [
+        "audio",
+        "music",
+        "transformers",
+        "trending",
+        "热门",
+        "音乐",
+        "音乐生成",
+        "音效",
+        "音频生成"
+      ]
+    },
+    {
+      "id": "musicgen-medium",
+      "category": "audio",
+      "name": "MusicGen Medium",
+      "repo": "facebook/musicgen-medium",
+      "gguf_repo": "",
+      "size_gb": 8.1,
+      "engine": [
+        "transformers"
+      ],
+      "license": "CC-BY-NC-4.0",
+      "trending": false,
+      "description": "Meta MusicGen Medium，1.5B，文/曲生成音乐，质量与体积平衡。",
+      "sources": [
+        "https://huggingface.co/facebook/musicgen-medium/",
+        "https://hf-mirror.com/facebook/musicgen-medium/",
+        "https://modelscope.cn/models/facebook/musicgen-medium/"
+      ],
+      "primary_url": "https://huggingface.co/facebook/musicgen-medium/",
+      "hardware": {
+        "vram_gb": 4,
+        "min_vram_gb": 2,
+        "ram_gb": 11,
+        "disk_gb": 8.1,
+        "notes": "1.5B"
+      },
+      "tags": [
+        "audio",
+        "music",
+        "transformers",
+        "音乐",
+        "音乐生成",
+        "音效",
+        "音频生成"
+      ]
+    },
+    {
       "id": "musicgen-large",
       "category": "audio",
       "name": "MusicGen Large",
       "repo": "facebook/musicgen-large",
       "gguf_repo": "",
-      "size_gb": 19,
+      "size_gb": 13.8,
       "engine": [
         "transformers"
       ],
@@ -2036,9 +2110,9 @@
       "hardware": {
         "vram_gb": 10,
         "min_vram_gb": 4,
-        "ram_gb": 27,
-        "disk_gb": 19,
-        "notes": "3B"
+        "ram_gb": 18,
+        "disk_gb": 13.8,
+        "notes": "3.3B"
       },
       "tags": [
         "audio",
@@ -2058,13 +2132,13 @@
       "name": "MusicGen Stereo Large",
       "repo": "facebook/musicgen-stereo-large",
       "gguf_repo": "",
-      "size_gb": 3.5,
+      "size_gb": 6.9,
       "engine": [
         "transformers"
       ],
       "license": "CC-BY-NC-4.0",
       "trending": false,
-      "description": "MusicGen 立体声版。",
+      "description": "MusicGen 立体声版（Stereo Large）。",
       "sources": [
         "https://huggingface.co/facebook/musicgen-stereo-large/",
         "https://hf-mirror.com/facebook/musicgen-stereo-large/",
@@ -2074,8 +2148,8 @@
       "hardware": {
         "vram_gb": 10,
         "min_vram_gb": 4,
-        "ram_gb": 16,
-        "disk_gb": 12,
+        "ram_gb": 10,
+        "disk_gb": 6.9,
         "notes": "立体声"
       },
       "tags": [
@@ -2139,7 +2213,7 @@
       "sources": [
         "https://huggingface.co/ASLP-lab/DiffRhythm-base/",
         "https://hf-mirror.com/ASLP-lab/DiffRhythm-base/",
-        "https://www.modelscope.cn/models/ASLP-lab/DiffRhythm-base"
+        "https://modelscope.cn/models/ASLP-lab/DiffRhythm-base"
       ],
       "primary_url": "https://huggingface.co/ASLP-lab/DiffRhythm-base/",
       "hardware": {
@@ -6399,7 +6473,7 @@
         "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-MOPD/",
         "https://hf-mirror.com/XiaomiMiMo/MiMo-V2.6-Pro-MOPD/",
         "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL/",
-        "https://www.modelscope.cn/models/XiaomiMiMo/MiMo-V2.6-Pro-MOPD"
+        "https://modelscope.cn/models/XiaomiMiMo/MiMo-V2.6-Pro-MOPD"
       ],
       "primary_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-MOPD/",
       "hardware": {
@@ -6451,7 +6525,7 @@
         "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-MOPD/",
         "https://hf-mirror.com/XiaomiMiMo/MiMo-V2.6-Flash-MOPD/",
         "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-RL/",
-        "https://www.modelscope.cn/models/XiaomiMiMo/MiMo-V2.6-Flash-MOPD"
+        "https://modelscope.cn/models/XiaomiMiMo/MiMo-V2.6-Flash-MOPD"
       ],
       "primary_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-MOPD/",
       "hardware": {
@@ -6502,7 +6576,7 @@
       "sources": [
         "https://huggingface.co/google/gemma-4-31B-it/",
         "https://hf-mirror.com/google/gemma-4-31B-it/",
-        "https://www.modelscope.cn/models/google/gemma-4-31B-it"
+        "https://modelscope.cn/models/google/gemma-4-31B-it"
       ],
       "primary_url": "https://huggingface.co/google/gemma-4-31B-it/",
       "hardware": {
@@ -6592,7 +6666,7 @@
       "sources": [
         "https://huggingface.co/google/gemma-4-26B-A4B-it/",
         "https://hf-mirror.com/google/gemma-4-26B-A4B-it/",
-        "https://www.modelscope.cn/models/google/gemma-4-26B-A4B-it"
+        "https://modelscope.cn/models/google/gemma-4-26B-A4B-it"
       ],
       "primary_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/",
       "hardware": {
@@ -6679,7 +6753,7 @@
       "sources": [
         "https://huggingface.co/google/gemma-4-12B-it/",
         "https://hf-mirror.com/google/gemma-4-12B-it/",
-        "https://www.modelscope.cn/models/google/gemma-4-12B-it"
+        "https://modelscope.cn/models/google/gemma-4-12B-it"
       ],
       "primary_url": "https://huggingface.co/google/gemma-4-12B-it/",
       "hardware": {
@@ -6820,7 +6894,7 @@
         "https://hf-mirror.com/mistralai/Mistral-Medium-3.5-128B",
         "https://huggingface.co/unsloth/Mistral-Medium-3.5-128B-GGUF",
         "https://hf-mirror.com/unsloth/Mistral-Medium-3.5-128B-GGUF",
-        "https://www.modelscope.cn/models/mistralai/Mistral-Medium-3.5-128B"
+        "https://modelscope.cn/models/mistralai/Mistral-Medium-3.5-128B"
       ],
       "primary_url": "https://huggingface.co/unsloth/Mistral-Medium-3.5-128B-GGUF/",
       "hardware": {
@@ -6910,7 +6984,7 @@
         "https://hf-mirror.com/XHToken/Spark-X2.5-4B",
         "https://huggingface.co/XHToken/Spark-X2.5-4B-GGUF",
         "https://hf-mirror.com/XHToken/Spark-X2.5-4B-GGUF",
-        "https://www.modelscope.cn/models/XHToken/Spark-X2.5-4B"
+        "https://modelscope.cn/models/XHToken/Spark-X2.5-4B"
       ],
       "primary_url": "https://huggingface.co/XHToken/Spark-X2.5-4B-GGUF/",
       "hardware": {
@@ -7143,7 +7217,7 @@
       "sources": [
         "https://huggingface.co/zai-org/GLM-5.3-Flash/",
         "https://hf-mirror.com/zai-org/GLM-5.3-Flash/",
-        "https://modelscope.cn/models/zai-org/GLM-5.3-Flash/"
+        "https://modelscope.cn/models/ZhipuAI/GLM-5.3-Flash/"
       ],
       "primary_url": "https://huggingface.co/zai-org/GLM-5.3-Flash/",
       "hardware": {
@@ -7253,7 +7327,7 @@
       "sources": [
         "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16/",
         "https://hf-mirror.com/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16/",
-        "https://modelscope.cn/models/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16/"
+        "https://modelscope.cn/models/nv-community/NVIDIA-Nemotron-3-Super-120B-A12B-BF16/"
       ],
       "primary_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16/",
       "hardware": {
@@ -7303,7 +7377,7 @@
       "sources": [
         "https://huggingface.co/tencent/Hy4-preview/",
         "https://hf-mirror.com/tencent/Hy4-preview/",
-        "https://modelscope.cn/models/tencent/Hy4-preview/"
+        "https://modelscope.cn/models/Tencent-Hunyuan/Hy4-preview/"
       ],
       "primary_url": "https://huggingface.co/tencent/Hy4-preview/",
       "hardware": {
@@ -7646,7 +7720,7 @@
       "sources": [
         "https://huggingface.co/tencent/AuK/",
         "https://hf-mirror.com/tencent/AuK/",
-        "https://modelscope.cn/models/tencent/AuK/"
+        "https://modelscope.cn/models/Tencent-Hunyuan/AuK/"
       ],
       "primary_url": "https://huggingface.co/tencent/AuK/",
       "hardware": {
@@ -8528,7 +8602,7 @@
         "https://hf-mirror.com/microsoft/phi-4/",
         "https://huggingface.co/unsloth/Phi-4-GGUF/",
         "https://hf-mirror.com/unsloth/Phi-4-GGUF/",
-        "https://www.modelscope.cn/models/microsoft/phi-4"
+        "https://modelscope.cn/models/microsoft/phi-4"
       ],
       "primary_url": "https://huggingface.co/unsloth/Phi-4-GGUF/",
       "hardware": {
@@ -8579,7 +8653,7 @@
         "https://hf-mirror.com/HuggingFaceTB/SmolLM2-1.7B-Instruct/",
         "https://huggingface.co/unsloth/SmolLM2-1.7B-Instruct-GGUF/",
         "https://hf-mirror.com/unsloth/SmolLM2-1.7B-Instruct-GGUF/",
-        "https://www.modelscope.cn/models/HuggingFaceTB/SmolLM2-1.7B-Instruct"
+        "https://modelscope.cn/models/HuggingFaceTB/SmolLM2-1.7B-Instruct"
       ],
       "primary_url": "https://huggingface.co/unsloth/SmolLM2-1.7B-Instruct-GGUF/",
       "hardware": {
@@ -8730,7 +8804,7 @@
       "sources": [
         "https://huggingface.co/Cloudflare/clef/",
         "https://hf-mirror.com/Cloudflare/clef/",
-        "https://www.modelscope.cn/models/Cloudflare/clef"
+        "https://modelscope.cn/models/Cloudflare/clef"
       ],
       "primary_url": "https://huggingface.co/Cloudflare/clef/",
       "hardware": {
@@ -8781,7 +8855,7 @@
       "sources": [
         "https://huggingface.co/Cloudflare/clef-flash/",
         "https://hf-mirror.com/Cloudflare/clef-flash/",
-        "https://www.modelscope.cn/models/Cloudflare/clef-flash"
+        "https://modelscope.cn/models/Cloudflare/clef-flash"
       ],
       "primary_url": "https://huggingface.co/Cloudflare/clef-flash/",
       "hardware": {
@@ -8832,7 +8906,7 @@
       "sources": [
         "https://huggingface.co/Qwen/Qwen3.8-Flash-Next/",
         "https://hf-mirror.com/Qwen/Qwen3.8-Flash-Next/",
-        "https://www.modelscope.cn/models/Qwen/Qwen3.8-Flash-Next"
+        "https://modelscope.cn/models/Qwen/Qwen3.8-Flash-Next"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen3.8-Flash-Next/",
       "hardware": {
@@ -8883,7 +8957,7 @@
       "sources": [
         "https://huggingface.co/autotrust/JEV-27B-VL/",
         "https://hf-mirror.com/autotrust/JEV-27B-VL/",
-        "https://www.modelscope.cn/models/autotrust/JEV-27B-VL"
+        "https://modelscope.cn/models/autotrust/JEV-27B-VL"
       ],
       "primary_url": "https://huggingface.co/autotrust/JEV-27B-VL/",
       "hardware": {
@@ -8982,7 +9056,7 @@
       "sources": [
         "https://huggingface.co/facebook/sam3/",
         "https://hf-mirror.com/facebook/sam3/",
-        "https://www.modelscope.cn/models/facebook/sam3"
+        "https://modelscope.cn/models/facebook/sam3"
       ],
       "primary_url": "https://huggingface.co/facebook/sam3/",
       "hardware": {
@@ -9218,7 +9292,7 @@
       "sources": [
         "https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev/",
         "https://hf-mirror.com/black-forest-labs/FLUX.1-Kontext-dev/",
-        "https://www.modelscope.cn/models/black-forest-labs/FLUX.1-Kontext-dev"
+        "https://modelscope.cn/models/black-forest-labs/FLUX.1-Kontext-dev"
       ],
       "primary_url": "https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev/",
       "hardware": {
@@ -9270,7 +9344,7 @@
       "sources": [
         "https://huggingface.co/Viggle/Qwen-Image-2.1-viggle-turbo/",
         "https://hf-mirror.com/Viggle/Qwen-Image-2.1-viggle-turbo/",
-        "https://www.modelscope.cn/models/Viggle/Qwen-Image-2.1-viggle-turbo"
+        "https://modelscope.cn/models/Viggle/Qwen-Image-2.1-viggle-turbo"
       ],
       "primary_url": "https://huggingface.co/Viggle/Qwen-Image-2.1-viggle-turbo/",
       "hardware": {
@@ -9374,7 +9448,7 @@
       "sources": [
         "https://huggingface.co/fal/AuraSR-v2/",
         "https://hf-mirror.com/fal/AuraSR-v2/",
-        "https://www.modelscope.cn/models/fal/AuraSR-v2"
+        "https://modelscope.cn/models/fal/AuraSR-v2"
       ],
       "primary_url": "https://huggingface.co/fal/AuraSR-v2/",
       "hardware": {
@@ -9469,7 +9543,7 @@
       "sources": [
         "https://huggingface.co/fishaudio/s2-pro/",
         "https://hf-mirror.com/fishaudio/s2-pro/",
-        "https://www.modelscope.cn/models/fishaudio/s2-pro"
+        "https://modelscope.cn/models/fishaudio/s2-pro"
       ],
       "primary_url": "https://huggingface.co/fishaudio/s2-pro/",
       "hardware": {
@@ -9612,7 +9686,7 @@
       "sources": [
         "https://huggingface.co/ACE-Step/acestep-v15-base/",
         "https://hf-mirror.com/ACE-Step/acestep-v15-base/",
-        "https://www.modelscope.cn/models/ACE-Step/acestep-v15-base"
+        "https://modelscope.cn/models/ACE-Step/acestep-v15-base"
       ],
       "primary_url": "https://huggingface.co/ACE-Step/acestep-v15-base/",
       "hardware": {
@@ -9658,7 +9732,7 @@
       "sources": [
         "https://huggingface.co/FermionResearch/Phonon-2/",
         "https://hf-mirror.com/FermionResearch/Phonon-2/",
-        "https://www.modelscope.cn/models/FermionResearch/Phonon-2"
+        "https://modelscope.cn/models/FermionResearch/Phonon-2"
       ],
       "primary_url": "https://huggingface.co/FermionResearch/Phonon-2/",
       "hardware": {
@@ -9704,7 +9778,7 @@
       "sources": [
         "https://huggingface.co/canopylabs/orpheus-3b-0.1-ft/",
         "https://hf-mirror.com/canopylabs/orpheus-3b-0.1-ft/",
-        "https://www.modelscope.cn/models/canopylabs/orpheus-3b-0.1-ft"
+        "https://modelscope.cn/models/canopylabs/orpheus-3b-0.1-ft"
       ],
       "primary_url": "https://huggingface.co/canopylabs/orpheus-3b-0.1-ft/",
       "hardware": {
@@ -9901,7 +9975,7 @@
       "sources": [
         "https://huggingface.co/genmo/mochi-1-preview/",
         "https://hf-mirror.com/genmo/mochi-1-preview/",
-        "https://www.modelscope.cn/models/genmo/mochi-1-preview"
+        "https://modelscope.cn/models/genmo/mochi-1-preview"
       ],
       "primary_url": "https://huggingface.co/genmo/mochi-1-preview/",
       "hardware": {
@@ -9946,7 +10020,7 @@
       "sources": [
         "https://huggingface.co/lllyasviel/FramePackI2V_HY/",
         "https://hf-mirror.com/lllyasviel/FramePackI2V_HY/",
-        "https://www.modelscope.cn/models/lllyasviel/FramePackI2V_HY"
+        "https://modelscope.cn/models/lllyasviel/FramePackI2V_HY"
       ],
       "primary_url": "https://huggingface.co/lllyasviel/FramePackI2V_HY/",
       "hardware": {
@@ -10083,7 +10157,7 @@
       "sources": [
         "https://huggingface.co/stabilityai/stable-fast-3d",
         "https://hf-mirror.com/stabilityai/stable-fast-3d",
-        "https://www.modelscope.cn/models/stabilityai/stable-fast-3d"
+        "https://modelscope.cn/models/stabilityai/stable-fast-3d"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-fast-3d",
       "hardware": {
@@ -10130,7 +10204,7 @@
       "sources": [
         "https://huggingface.co/apple/Sharp",
         "https://hf-mirror.com/apple/Sharp",
-        "https://www.modelscope.cn/models/apple/Sharp"
+        "https://modelscope.cn/models/apple/Sharp"
       ],
       "primary_url": "https://huggingface.co/apple/Sharp",
       "hardware": {
@@ -10178,7 +10252,7 @@
       "sources": [
         "https://huggingface.co/TencentARC/InstantMesh",
         "https://hf-mirror.com/TencentARC/InstantMesh",
-        "https://www.modelscope.cn/models/TencentARC/InstantMesh"
+        "https://modelscope.cn/models/TencentARC/InstantMesh"
       ],
       "primary_url": "https://huggingface.co/TencentARC/InstantMesh",
       "hardware": {
@@ -10224,7 +10298,7 @@
       "sources": [
         "https://huggingface.co/stabilityai/stable-point-aware-3d",
         "https://hf-mirror.com/stabilityai/stable-point-aware-3d",
-        "https://www.modelscope.cn/models/stabilityai/stable-point-aware-3d"
+        "https://modelscope.cn/models/stabilityai/stable-point-aware-3d"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-point-aware-3d",
       "hardware": {
@@ -11104,7 +11178,7 @@
       "sources": [
         "https://huggingface.co/pyannote/speaker-diarization-community-1/",
         "https://hf-mirror.com/pyannote/speaker-diarization-community-1/",
-        "https://www.modelscope.cn/models/pyannote/speaker-diarization-community-1"
+        "https://modelscope.cn/models/pyannote/speaker-diarization-community-1"
       ],
       "primary_url": "https://huggingface.co/pyannote/speaker-diarization-community-1/",
       "hardware": {
@@ -11148,7 +11222,7 @@
       "sources": [
         "https://huggingface.co/fastino/GLiNER2.5-Decide/",
         "https://hf-mirror.com/fastino/GLiNER2.5-Decide/",
-        "https://www.modelscope.cn/models/fastino/GLiNER2.5-Decide"
+        "https://modelscope.cn/models/fastino/GLiNER2.5-Decide"
       ],
       "primary_url": "https://huggingface.co/fastino/GLiNER2.5-Decide/",
       "hardware": {
@@ -11189,7 +11263,7 @@
       "sources": [
         "https://huggingface.co/Contrastive-LM/CLM-v0.1-8B/",
         "https://hf-mirror.com/Contrastive-LM/CLM-v0.1-8B/",
-        "https://www.modelscope.cn/models/Contrastive-LM/CLM-v0.1-8B"
+        "https://modelscope.cn/models/Contrastive-LM/CLM-v0.1-8B"
       ],
       "primary_url": "https://huggingface.co/Contrastive-LM/CLM-v0.1-8B/",
       "hardware": {
@@ -11230,7 +11304,7 @@
       "sources": [
         "https://huggingface.co/microsoft/FrogNano-4B-2609/",
         "https://hf-mirror.com/microsoft/FrogNano-4B-2609/",
-        "https://www.modelscope.cn/models/microsoft/FrogNano-4B-2609"
+        "https://modelscope.cn/models/microsoft/FrogNano-4B-2609"
       ],
       "primary_url": "https://huggingface.co/microsoft/FrogNano-4B-2609/",
       "hardware": {
@@ -11272,7 +11346,7 @@
       "sources": [
         "https://huggingface.co/google/gemma-4-E2B-it/",
         "https://hf-mirror.com/google/gemma-4-E2B-it/",
-        "https://www.modelscope.cn/models/google/gemma-4-E2B-it"
+        "https://modelscope.cn/models/google/gemma-4-E2B-it"
       ],
       "primary_url": "https://huggingface.co/google/gemma-4-E2B-it/",
       "hardware": {
@@ -11370,7 +11444,7 @@
       "sources": [
         "https://huggingface.co/google/gemma-4-E4B-it/",
         "https://hf-mirror.com/google/gemma-4-E4B-it/",
-        "https://www.modelscope.cn/models/google/gemma-4-E4B-it"
+        "https://modelscope.cn/models/google/gemma-4-E4B-it"
       ],
       "primary_url": "https://huggingface.co/google/gemma-4-E4B-it/",
       "hardware": {
@@ -11466,7 +11540,7 @@
       "sources": [
         "https://huggingface.co/convaiinnovations/laya/",
         "https://hf-mirror.com/convaiinnovations/laya/",
-        "https://www.modelscope.cn/models/convaiinnovations/laya"
+        "https://modelscope.cn/models/convaiinnovations/laya"
       ],
       "primary_url": "https://huggingface.co/convaiinnovations/laya/",
       "hardware": {
@@ -11862,7 +11936,7 @@
         "https://huggingface.co/microsoft/Phi-4-mini-instruct/",
         "https://huggingface.co/unsloth/Phi-4-mini-instruct-GGUF/",
         "https://hf-mirror.com/unsloth/Phi-4-mini-instruct-GGUF/",
-        "https://www.modelscope.cn/models/microsoft/Phi-4-mini-instruct"
+        "https://modelscope.cn/models/microsoft/Phi-4-mini-instruct"
       ],
       "primary_url": "https://huggingface.co/microsoft/Phi-4-mini-instruct/",
       "hardware": {
@@ -12040,7 +12114,7 @@
         "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407/",
         "https://huggingface.co/bartowski/Mistral-Nemo-Instruct-2407-GGUF/",
         "https://hf-mirror.com/bartowski/Mistral-Nemo-Instruct-2407-GGUF/",
-        "https://www.modelscope.cn/models/mistralai/Mistral-Nemo-Instruct-2407"
+        "https://modelscope.cn/models/mistralai/Mistral-Nemo-Instruct-2407"
       ],
       "primary_url": "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407/",
       "hardware": {
@@ -12118,7 +12192,7 @@
         "https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct/",
         "https://huggingface.co/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/",
-        "https://www.modelscope.cn/models/Qwen/Qwen2.5-VL-7B-Instruct"
+        "https://modelscope.cn/models/Qwen/Qwen2.5-VL-7B-Instruct"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct/",
       "hardware": {
@@ -12275,7 +12349,7 @@
         "https://huggingface.co/microsoft/Phi-4-reasoning/",
         "https://huggingface.co/unsloth/Phi-4-reasoning-GGUF/",
         "https://hf-mirror.com/unsloth/Phi-4-reasoning-GGUF/",
-        "https://www.modelscope.cn/models/microsoft/Phi-4-reasoning"
+        "https://modelscope.cn/models/microsoft/Phi-4-reasoning"
       ],
       "primary_url": "https://huggingface.co/microsoft/Phi-4-reasoning/",
       "hardware": {
@@ -12369,7 +12443,7 @@
         "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/",
         "https://huggingface.co/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/",
         "https://hf-mirror.com/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/",
-        "https://www.modelscope.cn/models/mistralai/Devstral-Small-2-24B-Instruct-2512"
+        "https://modelscope.cn/models/mistralai/Devstral-Small-2-24B-Instruct-2512"
       ],
       "primary_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/",
       "hardware": {
@@ -12461,7 +12535,7 @@
       "sources": [
         "https://huggingface.co/microsoft/Phi-4-multimodal-instruct/",
         "https://hf-mirror.com/microsoft/Phi-4-multimodal-instruct/",
-        "https://www.modelscope.cn/models/microsoft/Phi-4-multimodal-instruct"
+        "https://modelscope.cn/models/microsoft/Phi-4-multimodal-instruct"
       ],
       "primary_url": "https://huggingface.co/microsoft/Phi-4-multimodal-instruct/",
       "hardware": {
@@ -12508,7 +12582,7 @@
         "https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506/",
         "https://huggingface.co/unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF/",
         "https://hf-mirror.com/unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF/",
-        "https://www.modelscope.cn/models/mistralai/Mistral-Small-3.2-24B-Instruct-2506"
+        "https://modelscope.cn/models/mistralai/Mistral-Small-3.2-24B-Instruct-2506"
       ],
       "primary_url": "https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506/",
       "hardware": {
@@ -12604,7 +12678,7 @@
         "https://huggingface.co/google/gemma-3n-E4B-it/",
         "https://huggingface.co/unsloth/gemma-3n-E4B-it-GGUF/",
         "https://hf-mirror.com/unsloth/gemma-3n-E4B-it-GGUF/",
-        "https://www.modelscope.cn/models/google/gemma-3n-E4B-it"
+        "https://modelscope.cn/models/google/gemma-3n-E4B-it"
       ],
       "primary_url": "https://huggingface.co/google/gemma-3n-E4B-it/",
       "hardware": {
@@ -12692,7 +12766,7 @@
         "https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct/",
         "https://huggingface.co/unsloth/Qwen2.5-VL-72B-Instruct-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen2.5-VL-72B-Instruct-GGUF/",
-        "https://www.modelscope.cn/models/Qwen/Qwen2.5-VL-72B-Instruct"
+        "https://modelscope.cn/models/Qwen/Qwen2.5-VL-72B-Instruct"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct/",
       "hardware": {
@@ -12779,7 +12853,7 @@
         "https://huggingface.co/mistralai/Codestral-22B-v0.1/",
         "https://huggingface.co/bartowski/Codestral-22B-v0.1-GGUF/",
         "https://hf-mirror.com/bartowski/Codestral-22B-v0.1-GGUF/",
-        "https://www.modelscope.cn/models/mistralai/Codestral-22B-v0.1"
+        "https://modelscope.cn/models/mistralai/Codestral-22B-v0.1"
       ],
       "primary_url": "https://huggingface.co/mistralai/Codestral-22B-v0.1/",
       "hardware": {
@@ -12857,7 +12931,7 @@
         "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B/",
         "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-14B-GGUF/",
         "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Qwen-14B-GGUF/",
-        "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B/",
       "hardware": {
@@ -12934,7 +13008,7 @@
       "sources": [
         "https://huggingface.co/ATH-MaaS/Ovis2-16B/",
         "https://hf-mirror.com/ATH-MaaS/Ovis2-16B/",
-        "https://www.modelscope.cn/models/ATH-MaaS/Ovis2-16B"
+        "https://modelscope.cn/models/ATH-MaaS/Ovis2-16B"
       ],
       "primary_url": "https://huggingface.co/ATH-MaaS/Ovis2-16B/",
       "hardware": {
@@ -12979,7 +13053,7 @@
         "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-8B/",
         "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Llama-8B-GGUF/",
         "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Llama-8B-GGUF/",
-        "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-8B/",
       "hardware": {
@@ -13073,7 +13147,7 @@
         "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B/",
         "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF/",
         "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF/",
-        "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B/",
       "hardware": {
@@ -13151,7 +13225,7 @@
         "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B/",
         "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/",
         "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/",
-        "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B/",
       "hardware": {
@@ -13237,7 +13311,7 @@
         "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B/",
         "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Llama-70B-GGUF/",
         "https://hf-mirror.com/unsloth/DeepSeek-R1-Distill-Llama-70B-GGUF/",
-        "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Llama-70B"
+        "https://modelscope.cn/models/deepseek-ai/DeepSeek-R1-Distill-Llama-70B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B/",
       "hardware": {
@@ -13415,7 +13489,7 @@
         "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct/",
         "https://huggingface.co/unsloth/Qwen2.5-Coder-7B-Instruct-GGUF/",
         "https://hf-mirror.com/unsloth/Qwen2.5-Coder-7B-Instruct-GGUF/",
-        "https://www.modelscope.cn/models/Qwen/Qwen2.5-Coder-7B-Instruct"
+        "https://modelscope.cn/models/Qwen/Qwen2.5-Coder-7B-Instruct"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct/",
       "hardware": {
@@ -13493,7 +13567,7 @@
         "https://huggingface.co/CohereForAI/aya-expanse-8b/",
         "https://huggingface.co/bartowski/aya-expanse-8b-GGUF/",
         "https://hf-mirror.com/bartowski/aya-expanse-8b-GGUF/",
-        "https://www.modelscope.cn/models/CohereForAI/aya-expanse-8b"
+        "https://modelscope.cn/models/CohereForAI/aya-expanse-8b"
       ],
       "primary_url": "https://huggingface.co/CohereForAI/aya-expanse-8b/",
       "hardware": {
@@ -13571,7 +13645,7 @@
         "https://huggingface.co/Qwen/Qwen2.5-32B-Instruct/",
         "https://huggingface.co/bartowski/Qwen2.5-32B-Instruct-GGUF/",
         "https://hf-mirror.com/bartowski/Qwen2.5-32B-Instruct-GGUF/",
-        "https://www.modelscope.cn/models/Qwen/Qwen2.5-32B-Instruct"
+        "https://modelscope.cn/models/Qwen/Qwen2.5-32B-Instruct"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen2.5-32B-Instruct/",
       "hardware": {
@@ -13731,7 +13805,7 @@
       "sources": [
         "https://huggingface.co/Qwen/Qwen2-Audio-7B-Instruct/",
         "https://hf-mirror.com/Qwen/Qwen2-Audio-7B-Instruct/",
-        "https://www.modelscope.cn/models/Qwen/Qwen2-Audio-7B-Instruct"
+        "https://modelscope.cn/models/Qwen/Qwen2-Audio-7B-Instruct"
       ],
       "primary_url": "https://huggingface.co/Qwen/Qwen2-Audio-7B-Instruct/",
       "hardware": {
@@ -13773,7 +13847,7 @@
       "sources": [
         "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/",
         "https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/",
-        "https://www.modelscope.cn/models/stabilityai/stable-diffusion-xl-base-1.0"
+        "https://modelscope.cn/models/stabilityai/stable-diffusion-xl-base-1.0"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/",
       "hardware": {
@@ -13814,7 +13888,7 @@
       "sources": [
         "https://huggingface.co/HiDream-ai/HiDream-I1-Fast/",
         "https://hf-mirror.com/HiDream-ai/HiDream-I1-Fast/",
-        "https://www.modelscope.cn/models/HiDream-ai/HiDream-I1-Fast"
+        "https://modelscope.cn/models/HiDream-ai/HiDream-I1-Fast"
       ],
       "primary_url": "https://huggingface.co/HiDream-ai/HiDream-I1-Fast/",
       "hardware": {
@@ -13896,7 +13970,7 @@
       "sources": [
         "https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt/",
         "https://hf-mirror.com/stabilityai/stable-video-diffusion-img2vid-xt/",
-        "https://www.modelscope.cn/models/stabilityai/stable-video-diffusion-img2vid-xt"
+        "https://modelscope.cn/models/stabilityai/stable-video-diffusion-img2vid-xt"
       ],
       "primary_url": "https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt/",
       "hardware": {
@@ -13938,7 +14012,7 @@
       "sources": [
         "https://huggingface.co/Systran/faster-whisper-large-v3/",
         "https://hf-mirror.com/Systran/faster-whisper-large-v3/",
-        "https://www.modelscope.cn/models/Systran/faster-whisper-large-v3"
+        "https://modelscope.cn/models/Systran/faster-whisper-large-v3"
       ],
       "primary_url": "https://huggingface.co/Systran/faster-whisper-large-v3/",
       "hardware": {
@@ -14021,7 +14095,7 @@
       "sources": [
         "https://huggingface.co/BAAI/bge-m3/",
         "https://hf-mirror.com/BAAI/bge-m3/",
-        "https://www.modelscope.cn/models/BAAI/bge-m3"
+        "https://modelscope.cn/models/BAAI/bge-m3"
       ],
       "primary_url": "https://huggingface.co/BAAI/bge-m3/",
       "hardware": {
@@ -14062,7 +14136,7 @@
       "sources": [
         "https://huggingface.co/BAAI/bge-large-en-v1.5/",
         "https://hf-mirror.com/BAAI/bge-large-en-v1.5/",
-        "https://www.modelscope.cn/models/BAAI/bge-large-en-v1.5"
+        "https://modelscope.cn/models/BAAI/bge-large-en-v1.5"
       ],
       "primary_url": "https://huggingface.co/BAAI/bge-large-en-v1.5/",
       "hardware": {
@@ -14102,7 +14176,7 @@
       "sources": [
         "https://huggingface.co/BAAI/bge-large-zh-v1.5/",
         "https://hf-mirror.com/BAAI/bge-large-zh-v1.5/",
-        "https://www.modelscope.cn/models/BAAI/bge-large-zh-v1.5"
+        "https://modelscope.cn/models/BAAI/bge-large-zh-v1.5"
       ],
       "primary_url": "https://huggingface.co/BAAI/bge-large-zh-v1.5/",
       "hardware": {
@@ -14181,7 +14255,7 @@
       "sources": [
         "https://huggingface.co/intfloat/multilingual-e5-large/",
         "https://hf-mirror.com/intfloat/multilingual-e5-large/",
-        "https://www.modelscope.cn/models/intfloat/multilingual-e5-large"
+        "https://modelscope.cn/models/intfloat/multilingual-e5-large"
       ],
       "primary_url": "https://huggingface.co/intfloat/multilingual-e5-large/",
       "hardware": {
@@ -14380,7 +14454,7 @@
       "sources": [
         "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx",
         "https://github.com/rhasspy/piper",
-        "https://www.modelscope.cn/models/rhasspy/piper-voices"
+        "https://modelscope.cn/models/rhasspy/piper-voices"
       ],
       "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx",
       "hardware": {
@@ -14420,7 +14494,7 @@
       "sources": [
         "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/en_US-amy-medium.onnx",
         "https://github.com/rhasspy/piper",
-        "https://www.modelscope.cn/models/rhasspy/piper-voices"
+        "https://modelscope.cn/models/rhasspy/piper-voices"
       ],
       "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/en_US-amy-medium.onnx",
       "hardware": {
@@ -14460,7 +14534,7 @@
       "sources": [
         "https://huggingface.co/rhasspy/piper-voices/resolve/main/zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx",
         "https://github.com/rhasspy/piper",
-        "https://www.modelscope.cn/models/rhasspy/piper-voices"
+        "https://modelscope.cn/models/rhasspy/piper-voices"
       ],
       "primary_url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx",
       "hardware": {
@@ -14500,7 +14574,7 @@
       "sources": [
         "https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct/",
         "https://hf-mirror.com/HuggingFaceTB/SmolVLM-256M-Instruct/",
-        "https://www.modelscope.cn/models/HuggingFaceTB/SmolVLM-256M-Instruct"
+        "https://modelscope.cn/models/HuggingFaceTB/SmolVLM-256M-Instruct"
       ],
       "primary_url": "https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct/",
       "hardware": {
@@ -14543,7 +14617,7 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/Janus-Pro-7B/",
         "https://hf-mirror.com/deepseek-ai/Janus-Pro-7B/",
-        "https://www.modelscope.cn/models/deepseek-ai/Janus-Pro-7B"
+        "https://modelscope.cn/models/deepseek-ai/Janus-Pro-7B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/Janus-Pro-7B/",
       "hardware": {
@@ -14587,7 +14661,7 @@
       "sources": [
         "https://huggingface.co/deepseek-ai/Janus-Pro-1B/",
         "https://hf-mirror.com/deepseek-ai/Janus-Pro-1B/",
-        "https://www.modelscope.cn/models/deepseek-ai/Janus-Pro-1B"
+        "https://modelscope.cn/models/deepseek-ai/Janus-Pro-1B"
       ],
       "primary_url": "https://huggingface.co/deepseek-ai/Janus-Pro-1B/",
       "hardware": {
@@ -14632,7 +14706,7 @@
       "sources": [
         "https://huggingface.co/openbmb/MiniCPM-V-4.6/",
         "https://hf-mirror.com/openbmb/MiniCPM-V-4.6/",
-        "https://www.modelscope.cn/models/openbmb/MiniCPM-V-4.6"
+        "https://modelscope.cn/models/openbmb/MiniCPM-V-4.6"
       ],
       "primary_url": "https://huggingface.co/openbmb/MiniCPM-V-4.6/",
       "hardware": {

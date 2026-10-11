@@ -1395,3 +1395,16 @@ html[data-theme="light"] .skeleton-card::after {
   border: 1px solid var(--line);
 }
 .mm-img-item figcaption { font-size: var(--fs-xs); color: var(--mut); }
+
+/* Music generation (MusicGen) */
+#pane-music.engine-missing .asr-form,
+#pane-music.engine-missing .asr-result { display: none; }
+.music-audio { width: 100%; margin: 4px 0 8px; }
+.music-meta { margin: 2px 0 8px; font-size: var(--fs-xs); }
+.music-download {
+  display: inline-flex; align-items: center; text-decoration: none;
+  border: 1px solid var(--line); background: var(--bg-1);
+  color: var(--fg); border-radius: var(--radius-sm);
+  padding: 6px 14px; font-size: var(--fs-sm); cursor: pointer;
+}
+.music-download:hover { border-color: var(--accent); }
