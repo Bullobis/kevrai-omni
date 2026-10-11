@@ -1,6 +1,6 @@
 {
-  "version": "4.6.0",
-  "updated": "2026-10-08",
+  "version": "4.7.0",
+  "updated": "2026-10-12",
   "engines": [
     {
       "id": "llama.cpp",
