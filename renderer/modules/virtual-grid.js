@@ -60,6 +60,17 @@ export class VirtualGrid {
     };
     this.viewport.addEventListener("scroll", this.scrollHandler, { passive: true });
     window.addEventListener("resize", this.resizeHandler);
+    // A container-width change does not always fire a window "resize": panes
+    // go from display:none to block when their tab is shown, the sidebar can
+    // collapse, and startup layout settles a frame after construction. In all
+    // those cases clientWidth changes while colsNow stays stale, which stacked
+    // cards on top of each other. Observe the viewport and re-layout on size.
+    if (typeof ResizeObserver === "function") {
+      this._ro = new ResizeObserver(() => this.resizeHandler());
+      this._ro.observe(this.viewport);
+    } else {
+      this._ro = null;
+    }
     this.viewport.addEventListener("keydown", this.keydownHandler);
     // Click delegation
     this.viewport.addEventListener("click", (e) => {
@@ -132,7 +143,14 @@ export class VirtualGrid {
   }
 
   _render() {
-    const cols = this.colsNow || 1;
+    let cols = this.colsNow || 1;
+    // Self-heal if the live width no longer matches the laid-out column count
+    // (covers the brief window before the ResizeObserver callback runs).
+    const liveCols = this._cols();
+    if (liveCols !== cols) {
+      this._layout();
+      return;
+    }
     const rowH = this.itemHeight + this.gap;
     // Batch-read all layout values up front. Reading clientWidth/clientHeight
     // inside the per-card write loop forces a synchronous reflow after every
@@ -221,6 +239,7 @@ export class VirtualGrid {
     this.viewport.removeEventListener("scroll", this.scrollHandler);
     window.removeEventListener("resize", this.resizeHandler);
     this.viewport.removeEventListener("keydown", this.keydownHandler);
+    if (this._ro) this._ro.disconnect();
     if (this._raf) cancelAnimationFrame(this._raf);
     if (this._rafResize) cancelAnimationFrame(this._rafResize);
     this.host.replaceChildren();

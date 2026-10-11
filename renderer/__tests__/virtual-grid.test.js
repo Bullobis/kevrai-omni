@@ -127,3 +127,25 @@ test("destroy removes listeners and clears the host", () => {
   grid.destroy();
   assert.equal(host.children.length, 0);
 });
+
+test("render self-heals when width changes without a resize event", async () => {
+  let liveCols = 3;
+  const grid = newGrid({ colsOfWidth: () => liveCols });
+  grid.setItems(makeItems(9));
+  assert.equal(grid.colsNow, 3);
+
+  // Container width collapses (pane hidden / sidebar toggled) and the live
+  // column count drops to 1. A subsequent render must re-layout instead of
+  // stacking three cards on the same row (the overlap bug).
+  liveCols = 1;
+  stubSize(grid.viewport, { width: 200, height: 220 });
+  grid.viewport.dispatchEvent(new Event("scroll"));
+  await flushFrames();
+
+  assert.equal(grid.colsNow, 1);
+  const cards = [...grid.viewport.querySelectorAll(".vgrid-item")];
+  const tops = cards.map((c) => c.style.top);
+  // No two mounted cards share a row (no overlap); single left column.
+  assert.equal(tops.length, new Set(tops).size);
+  assert.ok(cards.every((c) => c.style.left === "8px"));
+});
