@@ -5,9 +5,10 @@
 // can be tested without real timers.
 import { JSDOM } from "jsdom";
 
-export function setupDom(bodyHtml = '<div id="host"></div>') {
+export function setupDom(bodyHtml = '<div id="host"></div>', opts = {}) {
   const dom = new JSDOM(`<!DOCTYPE html><html><body>${bodyHtml}</body></html>`, {
     pretendToBeVisual: false, // we install a controllable rAF below
+    url: opts.url || "http://localhost/",
   });
   const { window } = dom;
 

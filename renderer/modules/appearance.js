@@ -5,6 +5,10 @@
 // active 态，并在密度变化时触发 resize 让虚拟网格重算几何。
 "use strict";
 
+import {
+  tokenEstimateEnabled, setTokenEstimateEnabled,
+} from "./token-estimate.js";
+
 const ACCENT_KEY = "kevrai:accent";
 const DENSITY_KEY = "kevrai:density";
 export const ACCENTS = ["green", "blue", "violet", "orange", "pink", "cyan"];
@@ -84,4 +88,10 @@ export function initAppearance() {
   }
   syncSwatchUI();
   syncDensityUI();
+
+  const te = document.getElementById("token-estimate-toggle");
+  if (te) {
+    te.checked = tokenEstimateEnabled();
+    te.addEventListener("change", () => setTokenEstimateEnabled(te.checked));
+  }
 }

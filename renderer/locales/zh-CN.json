@@ -378,7 +378,8 @@
     "accentPink": "粉色",
     "accentCyan": "青色",
     "densityComfortable": "舒适",
-    "densityCompact": "紧凑"
+    "densityCompact": "紧凑",
+    "tokenEstimate": "在输入框旁显示 Token 预估"
   },
   "onboarding": {
     "title": "欢迎使用 Kevrai Omni，三步上手",

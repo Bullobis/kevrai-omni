@@ -10,6 +10,7 @@ import { approvalCardHtml, parseEditedParams } from "./agent-approval.js";
 import {
   QUICK_PHRASE_GROUPS, findPhraseById, composePhraseValue,
 } from "./agent-quickphrases.js";
+import { attachTokenCounter } from "./token-estimate.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -146,6 +147,7 @@ function _renderQpGroup(g) {
 function _wireEvents(root) {
   const input = $("#agent-input", root);
   const sendBtn = $("#agent-send-btn", root);
+  attachTokenCounter(input);
   const newBtn = $("#agent-new-btn", root);
   const sessionSelect = $("#agent-session-select", root);
 

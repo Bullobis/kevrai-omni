@@ -3,6 +3,7 @@
 import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { t } from "./i18n.js";
+import { attachTokenCounter } from "./token-estimate.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -180,6 +181,7 @@ export async function initMultimodal() {
   $("#mm-tab-understand").addEventListener("click", () => setMode("understand"));
   $("#mm-tab-image").addEventListener("click", () => setMode("image"));
   $("#mm-img-run").addEventListener("click", generateImage);
+  attachTokenCounter($("#mm-question"));
   await refresh();
   window.addEventListener("kevrai:view-change", (e) => {
     if (e.detail && e.detail.view === "multimodal") refresh().catch(() => {});

@@ -6,6 +6,7 @@
 import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { t } from "./i18n.js";
+import { attachTokenCounter } from "./token-estimate.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -464,6 +465,7 @@ export async function initKnowledge() {
   $("#kb-doc-add-btn").addEventListener("click", addDocument);
   $("#kb-search-btn").addEventListener("click", runSearch);
   $("#kb-ask-btn").addEventListener("click", runAsk);
+  attachTokenCounter($("#kb-question"));
   const exportBtn = $("#kb-export-btn");
   if (exportBtn) exportBtn.addEventListener("click", exportKb);
   const importBtn = $("#kb-import-btn");

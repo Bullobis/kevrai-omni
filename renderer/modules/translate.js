@@ -3,6 +3,7 @@
 import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { t } from "./i18n.js";
+import { attachTokenCounter } from "./token-estimate.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -124,6 +125,7 @@ export async function initTranslate() {
   // Enter (without shift) in the source box triggers translation.
   const src = $("#translate-source");
   if (src) {
+    attachTokenCounter(src);
     src.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey && !busy) {
         e.preventDefault();
