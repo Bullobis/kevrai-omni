@@ -247,8 +247,9 @@ async function runAsk() {
   const btn = $("#kb-ask-btn");
   btn.disabled = true;
   try {
+    const brainRepo = ($("#kb-brain") && $("#kb-brain").value) || "";
     const payload = await api.knowledgeAsk({
-      kb_id: currentKbId, question, top_k: 4, brain_model: "",
+      kb_id: currentKbId, question, top_k: 4, brain_model: brainRepo,
     });
     const data = (payload && payload.body) ? payload.body : payload;
     const out = $("#kb-ask-result");
@@ -265,6 +266,22 @@ async function runAsk() {
   }
 }
 
+// Populate the answer-model dropdown from the selectable local brain models.
+async function populateBrains() {
+  const sel = $("#kb-brain");
+  if (!sel) return;
+  try {
+    const r = await api.agentBrain();
+    const data = (r && r.body) ? r.body : r;
+    (data.models || []).forEach((m) => {
+      const o = document.createElement("option");
+      o.value = m.repo || "";
+      o.textContent = m.label || m.repo;
+      sel.appendChild(o);
+    });
+  } catch (_) { /* brain list is optional; retrieval-only still works */ }
+}
+
 export async function initKnowledge() {
   if (knowledgeInited) return;
   knowledgeInited = true;
@@ -278,6 +295,7 @@ export async function initKnowledge() {
   });
   await refreshCapabilities();
   await refreshKbList();
+  populateBrains().catch(() => {});
   window.addEventListener("kevrai:view-change", (e) => {
     if (e.detail && e.detail.view === "knowledge") {
       refreshCapabilities().catch(() => {});
