@@ -3324,19 +3324,32 @@ def knowledge_add_doc(request: Request, kb_id: str, req: KbDocReq) -> dict[str, 
                 raise knowledge_base.KnowledgeParamError(
                     f"{suffix} 的 base64 数据无法解码"
                 ) from e
+            def _get_ocr():
+                o = getattr(request.app.state, "ocr", None)
+                if o is None:
+                    o = ocr_runtime.OCRManager(APP_ROOT)
+                    request.app.state.ocr = o
+                return o
+
             if suffix == ".pdf":
-                text = knowledge_base.extract_pdf_bytes(data)
+                try:
+                    text = knowledge_base.extract_pdf_bytes(data)
+                except knowledge_base.ScannedPdfError as scanned:
+                    # Scanned / image-only PDF: render pages and OCR them.
+                    text = knowledge_base.ocr_scanned_pdf(
+                        data, _get_ocr().extract, data_root=APP_ROOT
+                    )
+                    if not text:
+                        raise knowledge_base.KnowledgeParamError(
+                            "扫描件 OCR 未识别到文字（可能页面空白或文字过于模糊）。"
+                        ) from scanned
             elif suffix == ".docx":
                 text = knowledge_base.extract_docx_bytes(data)
             elif suffix == ".pptx":
                 text = knowledge_base.extract_pptx_bytes(data)
             else:
                 # Image: recognise text with the (on-demand) OCR engine.
-                ocr = getattr(request.app.state, "ocr", None)
-                if ocr is None:
-                    ocr = ocr_runtime.OCRManager(APP_ROOT)
-                    request.app.state.ocr = ocr
-                text = ocr.extract(data)
+                text = _get_ocr().extract(data)
                 if not text:
                     raise knowledge_base.KnowledgeParamError(
                         "未在该图片中识别到文字（可能是空白图片或文字过于模糊）。"
