@@ -4522,6 +4522,10 @@ class McpServerReq(BaseModel):
     transport: str = Field(default="streamable-http")
     url: str = Field(default="", max_length=500)
     enabled: bool = True
+    command: str = Field(default="", max_length=300)
+    args: list[str] = Field(default_factory=list)
+    env: dict[str, str] = Field(default_factory=dict)
+    cwd: str = Field(default="", max_length=500)
 
 
 class McpCallReq(BaseModel):
@@ -4537,11 +4541,12 @@ def mcp_list_servers(request: Request) -> dict[str, Any]:
 
 @app.post("/api/mcp/servers", status_code=201)
 def mcp_add_server(request: Request, req: McpServerReq) -> dict[str, Any]:
-    """Add (and validate) a remote MCP server configuration."""
+    """Add (and validate) an MCP server configuration."""
     from .mcp_manager import MCPConfigError
     try:
         server = request.app.state.mcp.add_server(
-            req.name, req.transport, req.url, req.enabled)
+            req.name, req.transport, req.url, req.enabled,
+            command=req.command, args=req.args, env=req.env, cwd=req.cwd)
     except MCPConfigError as e:
         raise HTTPException(status_code=400, detail=str(e)) from None
     return server

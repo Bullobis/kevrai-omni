@@ -1,9 +1,11 @@
-// renderer/modules/mcp-servers.js — Settings panel for remote MCP servers.
+// renderer/modules/mcp-servers.js — Settings panel for MCP servers.
 //
-// Lets the user add remote MCP (Model Context Protocol) servers over the
-// streamable-HTTP and SSE transports, enable/disable them, inspect the tools
-// they expose, and call a tool as a smoke test. The Agent's MCP skill then
-// reaches the same servers. Pure helpers are exported for unit tests.
+// Lets the user add MCP (Model Context Protocol) servers, enable/disable them,
+// inspect the tools they expose, and call a tool as a smoke test. Three
+// transports are supported: local ``stdio`` servers spawned as child processes
+// (npx/uvx/python), plus remote ``streamable-http`` and ``sse`` servers. The
+// Agent's MCP skill reaches the same servers. Pure helpers are exported for
+// unit tests.
 "use strict";
 
 import { api } from "./api.js";
@@ -21,6 +23,39 @@ export function escapeHtml(s) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+/**
+ * Parse a newline-separated arguments textarea into an argv list. Blank lines
+ * are dropped. Pure.
+ */
+export function parseStdioArgs(text) {
+  return String(text ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
+/**
+ * Parse a newline-separated KEY=VALUE environment textarea into an object.
+ * Blank lines and lines without "=" are dropped. Pure.
+ */
+export function parseStdioEnv(text) {
+  const env = {};
+  for (const raw of String(text ?? "").split("\n")) {
+    const line = raw.trim();
+    if (!line) continue;
+    const eq = line.indexOf("=");
+    if (eq <= 0) continue;
+    env[line.slice(0, eq).trim()] = line.slice(eq + 1).trim();
+  }
+  return env;
+}
+
+/** Human-readable one-line summary of a stdio server's command. Pure. */
+export function stdioCommandLine(server) {
+  const parts = [server.command, ...(server.args || [])];
+  return parts.filter(Boolean).join(" ");
 }
 
 /** Render the discovered tools of one server as an HTML block (pure). */
@@ -58,23 +93,57 @@ export async function initMcpPanel() {
   if (!list) return;
   if (!_wired) {
     $("#mcp-add-btn")?.addEventListener("click", addServer);
+    $("#mcp-add-transport")?.addEventListener("change", syncTransportFields);
+    syncTransportFields();
     _wired = true;
   }
   await refresh();
 }
 
+/** Show URL inputs for http/sse, or command/args/env inputs for stdio. */
+function syncTransportFields() {
+  const sel = $("#mcp-add-transport");
+  if (!sel) return;
+  const isStdio = sel.value === "stdio";
+  const urlInput = $("#mcp-add-url");
+  const commandInput = $("#mcp-add-command");
+  const extra = $("#mcp-stdio-extra");
+  if (urlInput) urlInput.hidden = isStdio;
+  if (commandInput) commandInput.hidden = !isStdio;
+  if (extra) extra.hidden = !isStdio;
+}
+
 async function addServer() {
   const name = $("#mcp-add-name").value.trim();
   const transport = $("#mcp-add-transport").value;
-  const url = $("#mcp-add-url").value.trim();
-  if (!name || !url) {
-    toast(t("mcp.needFields"), { kind: "err" });
-    return;
+  const isStdio = transport === "stdio";
+  let payload;
+  if (isStdio) {
+    const command = $("#mcp-add-command").value.trim();
+    if (!name || !command) {
+      toast(t("mcp.needFields"), { kind: "err" });
+      return;
+    }
+    payload = {
+      name, transport, enabled: true, command,
+      args: parseStdioArgs($("#mcp-add-args").value),
+      env: parseStdioEnv($("#mcp-add-env").value),
+    };
+  } else {
+    const url = $("#mcp-add-url").value.trim();
+    if (!name || !url) {
+      toast(t("mcp.needFields"), { kind: "err" });
+      return;
+    }
+    payload = { name, transport, url, enabled: true };
   }
   try {
-    await api.mcpAddServer({ name, transport, url, enabled: true });
+    await api.mcpAddServer(payload);
     $("#mcp-add-name").value = "";
     $("#mcp-add-url").value = "";
+    $("#mcp-add-command").value = "";
+    $("#mcp-add-args").value = "";
+    $("#mcp-add-env").value = "";
     toast(t("mcp.added"), { kind: "ok" });
     await refresh();
   } catch (_) { /* api layer toasted */ }
@@ -130,7 +199,9 @@ function buildRow(server) {
 
   const urlLine = document.createElement("div");
   urlLine.className = "mut tiny mcp-server-url";
-  urlLine.textContent = server.url;
+  urlLine.textContent = server.transport === "stdio"
+    ? stdioCommandLine(server)
+    : (server.url || "");
   row.appendChild(urlLine);
 
   const actions = document.createElement("div");

@@ -892,12 +892,15 @@
     "failed": "操作失败：{err}"
   },
   "mcp": {
-    "desc": "连接远程 MCP（Model Context Protocol）服务器，让 Agent 调用它们提供的外部工具。支持 streamable HTTP（地址以 /mcp 结尾）与 SSE（地址以 /sse 结尾）。",
+    "desc": "连接 MCP（Model Context Protocol）服务器，让 Agent 调用它们提供的外部工具。支持本地 stdio（如 npx / uvx 拉起），以及 streamable HTTP（地址以 /mcp 结尾）与 SSE（地址以 /sse 结尾）。",
     "namePh": "名称",
     "urlPh": "https://example.com/mcp",
+    "commandPh": "命令，如 npx / uvx / python",
+    "argsPh": "参数，每行一个，如 -y",
+    "envPh": "环境变量，每行一个 KEY=VALUE",
     "add": "添加",
     "added": "已添加 MCP 服务器",
-    "needFields": "请填写名称和地址",
+    "needFields": "请填写名称和必要的连接信息",
     "empty": "还没有 MCP 服务器，在上方添加。",
     "enabled": "启用",
     "disabled": "已停用",

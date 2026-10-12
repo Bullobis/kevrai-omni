@@ -1,14 +1,17 @@
-"""MCP (Model Context Protocol) remote-server client manager.
+"""MCP (Model Context Protocol) server client manager.
 
-Lets the application connect to *remote* MCP servers over the
-streamable-HTTP and SSE transports, discover the tools they expose, and call
-them. Server configurations are persisted to ``mcp/servers.json`` inside the
-data directory. Local ``stdio`` servers (which require spawning an external
-runtime such as ``npx``/``uvx``) are intentionally not handled here; remote
-servers need no extra toolchain and work in the packaged application.
+Lets the application connect to MCP servers and discover/call the tools they
+expose. Three transports are supported:
 
-The manager exposes async methods for use from FastAPI ``async def`` routes
-and thin synchronous wrappers (via :func:`asyncio.run`) for the agent's
+- ``streamable-http`` / ``sse``: remote servers reached over HTTP(S).
+- ``stdio``: local servers spawned as child processes (e.g. ``npx -y
+  some-mcp-server`` or ``uvx some-server``) and talked to over their
+  stdin/stdout. The child is always torn down when the session closes, with
+  SIGTERM -> SIGKILL escalation, so no orphan processes are left behind.
+
+Server configurations are persisted to ``mcp/servers.json`` inside the data
+directory. The manager exposes async methods for use from FastAPI ``async def``
+routes and thin synchronous wrappers (via :func:`asyncio.run`) for the agent's
 synchronous tool handlers, which execute in worker threads.
 """
 from __future__ import annotations
@@ -20,7 +23,12 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-VALID_TRANSPORTS = ("streamable-http", "sse")
+VALID_TRANSPORTS = ("streamable-http", "sse", "stdio")
+
+# Hard upper bound for the handshake (spawn + initialize). A stdio server that
+# starts but never speaks MCP, or a remote endpoint that hangs, must fail fast
+# with a readable error instead of blocking the request forever.
+HANDSHAKE_TIMEOUT = 30.0
 
 
 class MCPError(Exception):
@@ -82,26 +90,43 @@ class MCPManager:
     def get_server(self, server_id: str) -> dict[str, Any]:
         return self._find(server_id)[0]
 
-    def add_server(self, name: str, transport: str, url: str,
-                   enabled: bool = True) -> dict[str, Any]:
+    def add_server(self, name: str, transport: str, url: str = "",
+                   enabled: bool = True, *, command: str = "",
+                   args: list[str] | None = None,
+                   env: dict[str, str] | None = None,
+                   cwd: str = "") -> dict[str, Any]:
         nm = (name or "").strip()
         if not nm:
             raise MCPConfigError("name is required")
         if transport not in VALID_TRANSPORTS:
             raise MCPConfigError(
                 f"transport must be one of {', '.join(VALID_TRANSPORTS)}")
-        u = _normalize_url(url, transport)
         data = self._read()
         if any(s["name"].lower() == nm.lower() for s in data["servers"]):
             raise MCPConfigError(f"a server named {nm} already exists")
-        server = {
+        server: dict[str, Any] = {
             "id": "mcp_" + uuid.uuid4().hex[:10],
             "name": nm,
             "transport": transport,
-            "url": u,
             "enabled": bool(enabled),
             "created_at": int(time.time()),
         }
+        if transport == "stdio":
+            cmd = (command or "").strip()
+            if not cmd:
+                raise MCPConfigError(
+                    "command is required for a stdio server "
+                    "(e.g. npx, uvx, or python)")
+            clean_args = [str(a) for a in (args or [])]
+            clean_env = {str(k): str(v) for k, v in (env or {}).items()}
+            server.update({
+                "command": cmd,
+                "args": clean_args,
+                "env": clean_env,
+                "cwd": (cwd or "").strip(),
+            })
+        else:
+            server["url"] = _normalize_url(url, transport)
         data["servers"].append(server)
         self._write(data)
         return server
@@ -124,6 +149,20 @@ class MCPManager:
     # ------------------------------------------------------------------ client
     @staticmethod
     def _transport_ctx(server: dict[str, Any]):
+        if server["transport"] == "stdio":
+            from mcp import StdioServerParameters
+            from mcp.client.stdio import stdio_client
+            # The SDK spawns the command as an argv list (no shell), merges the
+            # given env over the default environment, and on exit closes stdin,
+            # waits for graceful exit, then escalates SIGTERM -> SIGKILL for
+            # the whole process tree — so callers never leak a child process.
+            params = StdioServerParameters(
+                command=server["command"],
+                args=list(server.get("args") or []),
+                env=server.get("env") or None,
+                cwd=server.get("cwd") or None,
+            )
+            return stdio_client(params)
         if server["transport"] == "sse":
             from mcp.client.sse import sse_client
             return sse_client(server["url"])
@@ -142,7 +181,19 @@ class MCPManager:
     async def _session(self, server: dict[str, Any]):
         try:
             ctx = self._transport_ctx(server)
-            streams = await ctx.__aenter__()
+            streams = await asyncio.wait_for(
+                ctx.__aenter__(), timeout=HANDSHAKE_TIMEOUT)
+        except FileNotFoundError:
+            # The configured binary (npx/uvx/python…) does not exist on PATH.
+            # stdio_client already cleaned up its internal streams on spawn
+            # failure, so there is nothing to close here.
+            raise MCPConnectionError(
+                f"cannot start {server['name']}: command not found: "
+                f"{server.get('command', '')}") from None
+        except asyncio.TimeoutError:
+            raise MCPConnectionError(
+                f"timed out connecting to {server['name']} "
+                f"after {HANDSHAKE_TIMEOUT:.0f}s") from None
         except BaseException as e:  # noqa: BLE001
             raise MCPConnectionError(
                 f"cannot connect to {server['name']}: {e}") from None
@@ -151,7 +202,14 @@ class MCPManager:
         session = ClientSession(read, write)
         try:
             await session.__aenter__()
-            await session.initialize()
+            await asyncio.wait_for(
+                session.initialize(), timeout=HANDSHAKE_TIMEOUT)
+        except asyncio.TimeoutError:
+            await self._safe_close(session)
+            await self._safe_close(ctx)
+            raise MCPConnectionError(
+                f"{server['name']} did not respond to the MCP initialize "
+                f"request within {HANDSHAKE_TIMEOUT:.0f}s") from None
         except BaseException as e:  # noqa: BLE001
             await self._safe_close(session)
             await self._safe_close(ctx)
