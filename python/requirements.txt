@@ -19,3 +19,5 @@ imageio-ffmpeg>=0.5
 pypdf==6.20.0
 # Safe XML parsing for .docx ingestion (entity-expansion hardening, PSF).
 defusedxml==0.7.1
+# Model Context Protocol client: connect to remote streamable-HTTP/SSE servers.
+mcp==1.30.0
