@@ -149,3 +149,39 @@
 .sched-interval > span { flex: 0 0 auto; }
 .sched-interval select { min-width: 120px; }
 .sched-meta { margin: 0; }
+
+/* ── MCP remote servers ─────────────────────────────────────────────────── */
+.mcp-add-form { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.mcp-add-form .input { flex: 1 1 140px; min-width: 0; }
+.mcp-add-form select.input { flex: 0 0 auto; }
+.mcp-url-input { flex: 2 1 240px; }
+.mcp-server-list { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.mcp-server-row {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 12px; border: 1px solid var(--border, rgba(128,128,128,.25));
+  border-radius: 10px; background: var(--card, transparent);
+}
+.mcp-server-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mcp-server-title { font-weight: 600; }
+.mcp-server-url { word-break: break-all; margin: 0; }
+.mcp-server-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.mcp-server-detail {
+  border-top: 1px solid var(--border, rgba(128,128,128,.25));
+  padding-top: 8px;
+}
+.mcp-tool-list { display: flex; flex-direction: column; gap: 10px; }
+.mcp-tool {
+  padding: 8px 10px; border: 1px solid var(--border, rgba(128,128,128,.2));
+  border-radius: 8px; display: flex; flex-direction: column; gap: 4px;
+}
+.mcp-tool-name { font-weight: 600; }
+.mcp-tool-params code {
+  background: color-mix(in srgb, var(--accent, #3a8) 12%, transparent);
+  padding: 1px 5px; border-radius: 6px; font-size: .92em;
+}
+.mcp-call-result pre {
+  white-space: pre-wrap; word-break: break-word; margin: 6px 0 0;
+  background: var(--bg-1, rgba(128,128,128,.08)); padding: 8px 10px;
+  border-radius: 8px; font-size: .92em;
+}
+.btn.ghost.danger { color: #d05a5a; }
