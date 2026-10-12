@@ -35,6 +35,7 @@ import io
 import json
 import logging
 import math
+import os
 import re
 import threading
 import time
@@ -266,7 +267,106 @@ def ocr_scanned_pdf(data: bytes, ocr_callable: Callable[[bytes], str],
     return "\n".join(parts)
 
 
-def extract_docx_bytes(data: bytes) -> str:
+# ---------------------------------------------------------------------------
+# OOXML (DOCX / PPTX) embedded-image OCR helpers
+# ---------------------------------------------------------------------------
+
+_W_NS = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+_A_NS = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
+_R_NS = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
+_RELS_NS = "{http://schemas.openxmlformats.org/package/2006/relationships}"
+# Bitmap embeddings we are willing to OCR; WMF / EMF / SVG are skipped.
+_OCR_IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".bmp"}
+_IMAGE_MARK = "【图片内容】"
+
+
+def _xml_fromstring_strict(xml_bytes: bytes):
+    """Parse XML via defusedxml when available, else stdlib ElementTree."""
+    try:
+        from defusedxml.ElementTree import fromstring as _fs
+    except Exception:  # noqa: BLE001 — defusedxml not installed
+        from xml.etree.ElementTree import fromstring as _fs  # noqa: S314
+    return _fs(xml_bytes)  # noqa: S314
+
+
+def _load_rels(zf, rels_path: str) -> dict[str, str]:
+    """Parse ``*.rels`` into ``{rId: Target}`` (relative target strings).
+
+    Returns an empty dict when the rels part is missing or malformed — callers
+    treat that as "no embedded images" rather than failing the whole document.
+    """
+    try:
+        data = zf.read(rels_path)
+    except KeyError:
+        return {}
+    try:
+        root = _xml_fromstring_strict(data)
+    except Exception as e:  # noqa: BLE001 — malformed rels XML
+        log.warning("unreadable OOXML rels %s: %s", rels_path, e)
+        return {}
+    out: dict[str, str] = {}
+    for rel in root.iter(f"{_RELS_NS}Relationship"):
+        rid = rel.attrib.get("Id")
+        target = rel.attrib.get("Target")
+        if rid and target:
+            out[rid] = target
+    return out
+
+
+def _resolve_media_part(rels_dir: str, target: str) -> str:
+    """Resolve a rels ``Target`` (relative) to a zip member path.
+
+    ``rels_dir`` is the directory containing the ``*.rels`` file (e.g.
+    ``word/_rels`` or ``ppt/slides/_rels``). Targets are like
+    ``media/image1.png`` (relative to ``word/``) or ``../media/image1.png``
+    (relative to ``ppt/slides/``). We normalise ``..`` segments so the result
+    is a canonical zip member path.
+    """
+    # The rels file lives at ``<dir>/_rels/<name>.rels``; the relationship base
+    # is the *parent* of the ``_rels`` directory (e.g. ``word/`` or
+    # ``ppt/slides/``).
+    base = rels_dir.rsplit("/_rels", 1)[0]
+    joined = target.lstrip("/") if target.startswith("/") else f"{base}/{target}"
+    # Normalise ``.`` / ``..`` segments.
+    parts: list[str] = []
+    for seg in joined.split("/"):
+        if not seg or seg == ".":
+            continue
+        if seg == "..":
+            if parts:
+                parts.pop()
+            continue
+        parts.append(seg)
+    return "/".join(parts)
+
+
+def _ocr_one_image(ocr_callable, img_bytes: bytes | None, label: str) -> str:
+    """OCR one image, swallowing per-image / engine-missing failures.
+
+    Returns the recognised text (stripped) or ``""`` on any failure — so a
+    missing OCR engine or a corrupt image never fails the whole document.
+    """
+    if ocr_callable is None or not img_bytes:
+        return ""
+    try:
+        return str(ocr_callable(img_bytes) or "").strip()
+    except Exception as e:  # noqa: BLE001 — per-image OCR must not abort ingest
+        log.warning("%s image OCR skipped: %s", label, e)
+        return ""
+
+
+def _blip_embed_rids(root) -> list[str]:
+    """Return the ``r:embed`` rIds of every ``<a:blip>`` in document order."""
+    out: list[str] = []
+    for blip in root.iter(f"{_A_NS}blip"):
+        rid = blip.attrib.get(f"{_R_NS}embed")
+        if rid:
+            out.append(rid)
+    return out
+
+
+def extract_docx_bytes(data: bytes,
+                       ocr_callable: Callable[[bytes], str] | None = None) -> str:
     """Extract text from a .docx (Office Open XML) file, stdlib only.
 
     A .docx is a ZIP whose main document is ``word/document.xml``. Paragraphs
@@ -274,6 +374,13 @@ def extract_docx_bytes(data: bytes) -> str:
     :mod:`zipfile` and :mod:`xml.etree` so no third-party dependency is needed.
     A corrupt / non-docx file raises :class:`KnowledgeParamError` (route → 400).
     The legacy binary ``.doc`` format is not supported (different container).
+
+    When ``ocr_callable`` is provided (typically ``OCRManager.extract``) and the
+    document contains embedded raster images (``word/media/*.{png,jpg,jpeg,bmp}``
+    referenced by ``<a:blip r:embed="rIdX">``), the recognised text for each
+    image is inserted inline at the paragraph where the image appears, marked
+    with :data:`_IMAGE_MARK`. Failures (missing OCR engine, corrupt image,
+    missing media part) are swallowed so the surrounding text is still ingested.
     """
     if not data:
         raise KnowledgeParamError("DOCX content is empty")
@@ -287,6 +394,18 @@ def extract_docx_bytes(data: bytes) -> str:
                     "该文件不是有效的 .docx（缺少 word/document.xml），"
                     "旧版 .doc 二进制格式暂不支持，请另存为 .docx。"
                 ) from e
+            rels = _load_rels(zf, "word/_rels/document.xml.rels")
+            media_by_rid: dict[str, bytes] = {}
+            if rels:
+                for rid, target in rels.items():
+                    part = _resolve_media_part("word/_rels", target)
+                    ext = os.path.splitext(part)[1].lower()
+                    if ext not in _OCR_IMAGE_EXTS:
+                        continue
+                    try:
+                        media_by_rid[rid] = zf.read(part)
+                    except KeyError:
+                        log.warning("docx media part missing: %s", part)
     except KnowledgeParamError:
         raise
     except Exception as e:  # noqa: BLE001 — not a zip / corrupt
@@ -295,28 +414,26 @@ def extract_docx_bytes(data: bytes) -> str:
         ) from e
 
     try:
-        # Prefer defusedxml (entity-expansion hardening); fall back to the
-        # stdlib parser if the optional package is absent (files are supplied
-        # by the local user).
-        try:
-            from defusedxml.ElementTree import fromstring as _xml_fromstring
-        except Exception:  # noqa: BLE001 — defusedxml not installed
-            from xml.etree.ElementTree import (  # noqa: S314
-                fromstring as _xml_fromstring,
-            )
-        root = _xml_fromstring(xml_bytes)  # noqa: S314
+        root = _xml_fromstring_strict(xml_bytes)
     except Exception as e:  # noqa: BLE001 — malformed XML
         raise KnowledgeParamError(
             f"无法解析该 .docx 的文档内容（XML 已损坏）：{e}"
         ) from e
 
-    w_ns = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
     paragraphs: list[str] = []
-    for p in root.iter(f"{w_ns}p"):
+    for p in root.iter(f"{_W_NS}p"):
         # Join all text runs in the paragraph; <w:tab/> and breaks are rare, so
         # a simple concatenation preserves the readable text.
-        runs = [t.text or "" for t in p.iter(f"{w_ns}t")]
-        paragraphs.append("".join(runs).strip())
+        runs = [t.text or "" for t in p.iter(f"{_W_NS}t")]
+        para_text = "".join(runs).strip()
+        if para_text:
+            paragraphs.append(para_text)
+        # Emit OCR text for every blip embedded in this paragraph, in order.
+        for rid in _blip_embed_rids(p):
+            img = media_by_rid.get(rid)
+            ocr_text = _ocr_one_image(ocr_callable, img, "docx")
+            if ocr_text:
+                paragraphs.append(f"{_IMAGE_MARK}{ocr_text}")
     text = "\n".join(p for p in paragraphs if p).strip()
     if not text:
         raise KnowledgeParamError(
@@ -325,17 +442,22 @@ def extract_docx_bytes(data: bytes) -> str:
     return text
 
 
-def extract_pptx_bytes(data: bytes) -> str:
+def extract_pptx_bytes(data: bytes,
+                       ocr_callable: Callable[[bytes], str] | None = None) -> str:
     """Extract text from a .pptx (Office Open XML presentation), stdlib only.
 
     Slides live at ``ppt/slides/slideN.xml``; visible text is in DrawingML
     ``<a:t>`` runs. Slides are read in numeric order and joined with newlines.
     Uses defusedxml when available for entity-expansion hardening. A corrupt /
     non-pptx file raises :class:`KnowledgeParamError` (route → 400).
+
+    When ``ocr_callable`` is provided, raster images referenced by each slide
+    (``ppt/media/*`` via ``ppt/slides/_rels/slideN.xml.rels``) are OCR'd and
+    their text is appended to that slide's text block, marked with
+    :data:`_IMAGE_MARK`. Per-image / engine-missing failures are swallowed.
     """
     if not data:
         raise KnowledgeParamError("PPTX content is empty")
-    import re
     try:
         import zipfile
         with zipfile.ZipFile(io.BytesIO(data)) as zf:
@@ -351,6 +473,25 @@ def extract_pptx_bytes(data: bytes) -> str:
                 )
             numbered.sort(key=lambda item: item[0])
             slide_xml = [zf.read(n) for _, n in numbered]
+            # Read per-slide rels eagerly (media parts are the same across slides
+            # but rels are per-slide).
+            slide_rels: list[dict[str, str]] = []
+            slide_media: list[dict[str, bytes]] = []
+            for slide_no, _name in numbered:
+                rels_path = f"ppt/slides/_rels/slide{slide_no}.xml.rels"
+                rels = _load_rels(zf, rels_path)
+                slide_rels.append(rels)
+                media: dict[str, bytes] = {}
+                for rid, target in rels.items():
+                    part = _resolve_media_part("ppt/slides/_rels", target)
+                    ext = os.path.splitext(part)[1].lower()
+                    if ext not in _OCR_IMAGE_EXTS:
+                        continue
+                    try:
+                        media[rid] = zf.read(part)
+                    except KeyError:
+                        log.warning("pptx media part missing: %s", part)
+                slide_media.append(media)
     except KnowledgeParamError:
         raise
     except Exception as e:  # noqa: BLE001 — not a zip / corrupt
@@ -359,20 +500,24 @@ def extract_pptx_bytes(data: bytes) -> str:
         ) from e
 
     try:
-        try:
-            from defusedxml.ElementTree import fromstring as _xml_fromstring
-        except Exception:  # noqa: BLE001 — defusedxml not installed
-            from xml.etree.ElementTree import (  # noqa: S314
-                fromstring as _xml_fromstring,
-            )
-        a_ns = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
         slides_text: list[str] = []
-        for xml_bytes in slide_xml:
-            root = _xml_fromstring(xml_bytes)  # noqa: S314
-            runs = [t.text or "" for t in root.iter(f"{a_ns}t")]
+        for idx, xml_bytes in enumerate(slide_xml):
+            root = _xml_fromstring_strict(xml_bytes)
+            runs = [t.text or "" for t in root.iter(f"{_A_NS}t")]
             line = "".join(runs).strip()
-            if line:
-                slides_text.append(line)
+            chunks: list[str] = [line] if line else []
+            media = slide_media[idx] if idx < len(slide_media) else {}
+            seen: set[str] = set()
+            for rid in _blip_embed_rids(root):
+                if rid in seen:
+                    continue
+                seen.add(rid)
+                ocr_text = _ocr_one_image(ocr_callable, media.get(rid), "pptx")
+                if ocr_text:
+                    chunks.append(f"{_IMAGE_MARK}{ocr_text}")
+            joined = "\n".join(c for c in chunks if c)
+            if joined:
+                slides_text.append(joined)
     except KnowledgeParamError:
         raise
     except Exception as e:  # noqa: BLE001 — malformed XML

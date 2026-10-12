@@ -1091,6 +1091,7 @@
     "create": "Create knowledge base",
     "select": "Select knowledge base",
     "addDoc": "Add document (.txt/.md/.json/.csv/.pdf/.docx/.pptx/image)",
+    "addDocHint": "Embedded images inside .docx / .pptx (screenshots, scans, charts) are OCR'd and indexed automatically when the OCR engine is installed.",
     "ingest": "Index document",
     "chunks": "chunks",
     "delete": "Delete",

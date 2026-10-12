@@ -3358,9 +3358,15 @@ def knowledge_add_doc(request: Request, kb_id: str, req: KbDocReq) -> dict[str, 
                             "扫描件 OCR 未识别到文字（可能页面空白或文字过于模糊）。"
                         ) from scanned
             elif suffix == ".docx":
-                text = knowledge_base.extract_docx_bytes(data)
+                # Optional OCR for embedded images; failures degrade silently
+                # (text is still extracted) thanks to _ocr_one_image.
+                text = knowledge_base.extract_docx_bytes(
+                    data, ocr_callable=_get_ocr().extract
+                )
             elif suffix == ".pptx":
-                text = knowledge_base.extract_pptx_bytes(data)
+                text = knowledge_base.extract_pptx_bytes(
+                    data, ocr_callable=_get_ocr().extract
+                )
             else:
                 # Image: recognise text with the (on-demand) OCR engine.
                 text = _get_ocr().extract(data)
