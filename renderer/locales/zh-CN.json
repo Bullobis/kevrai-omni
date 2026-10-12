@@ -1091,6 +1091,7 @@
     "create": "新建知识库",
     "select": "选择知识库",
     "addDoc": "添加文档（.txt/.md/.json/.csv/.pdf/.docx/.pptx/图片）",
+    "addDocHint": ".docx / .pptx 中的内嵌图片（截图、扫描件、图表）会在已安装 OCR 引擎时自动识别文字并纳入检索。",
     "ingest": "索引文档",
     "chunks": "分块",
     "delete": "删除",
