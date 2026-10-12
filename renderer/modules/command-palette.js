@@ -434,6 +434,7 @@ const SHORTCUTS = [
     ["Ctrl ,", "cmdpal.scItemOpenSettings"],
     ["Ctrl D", "cmdpal.scItemOpenDownloads"],
     ["Ctrl B", "cmdpal.scItemToggleSidebar"],
+    ["Ctrl N", "cmdpal.scItemNewSession"],
   ] },
   { groupKey: "cmdpal.scGroupNav", items: [
     ["Ctrl 1 … 9", "cmdpal.scItemSwitchPage"],
@@ -442,6 +443,10 @@ const SHORTCUTS = [
   { groupKey: "cmdpal.scGroupSearch", items: [
     ["/", "cmdpal.scItemFocusSearch"],
     ["Ctrl F", "cmdpal.scItemFocusSearchSelect"],
+  ] },
+  { groupKey: "cmdpal.scGroupComposer", items: [
+    ["Enter", "cmdpal.scItemSendNow"],
+    ["Ctrl Enter", "cmdpal.scItemSend"],
   ] },
   { groupKey: "cmdpal.scGroupPalette", items: [
     ["↑ ↓", "cmdpal.scItemMove"],
@@ -546,6 +551,35 @@ function focusSearch(selectAll) {
   }
 }
 
+// ── Ctrl+N：切到 Agent 并新建会话 ────────────────────────────────────────────
+function newAgentSession() {
+  if (!hasDocument) return;
+  const tab = document.querySelector(".sidebar [data-tab='agent']");
+  if (tab) tab.click();
+  // Agent 面板懒渲染，按钮在视图初始化后才出现；下一帧再点击。
+  const click = () => {
+    const b = document.getElementById("agent-new-btn");
+    if (b) b.click();
+  };
+  if (document.getElementById("agent-new-btn")) click();
+  else setTimeout(click, 120);
+}
+
+// ── Ctrl+Enter：发送当前聚焦的编辑框 ─────────────────────────────────────────
+const COMPOSER_SEND_MAP = {
+  "agent-input": "agent-send-btn",
+  "translate-source": "translate-run",
+  "kb-question": "kb-ask-btn",
+  "mm-question": "mm-run",
+};
+function sendFocusedComposer(target) {
+  if (!hasDocument || !target || !target.id) return;
+  const btnId = COMPOSER_SEND_MAP[target.id];
+  if (!btnId) return;
+  const b = document.getElementById(btnId);
+  if (b && !b.disabled) b.click();
+}
+
 export function initCommandPalette(container) {
   if (inited) return;
   inited = true;
@@ -580,6 +614,14 @@ export function initCommandPalette(container) {
       // Ctrl+F：聚焦搜索框并全选（Electron 无内置 find 面板）。
       e.preventDefault();
       focusSearch(true);
+    } else if (k === "n" || k === "N") {
+      // Ctrl+N：切到 Agent 并新建会话（拦截浏览器的新建窗口）。
+      e.preventDefault();
+      newAgentSession();
+    } else if (k === "Enter") {
+      // Ctrl+Enter：发送当前聚焦的编辑框（Agent/翻译/知识库/多模态）。
+      e.preventDefault();
+      sendFocusedComposer(e.target);
     } else if (/^[0-9]$/.test(k)) {
       e.preventDefault();
       gotoNth(k === "0" ? 9 : Number(k) - 1);
