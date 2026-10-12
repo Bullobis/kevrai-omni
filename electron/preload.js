@@ -145,6 +145,8 @@ const api = {
   knowledgeAsk:     (payload) => invoke("api:knowledge:ask", payload),
   knowledgeExport:  (kbId) => invoke("api:knowledge:export", kbId),
   knowledgeImport:  (payload) => invoke("api:knowledge:import", payload),
+  backupDiskGet:     () => invoke("api:backup:disk:get"),
+  backupDiskPut:     (payload) => invoke("api:backup:disk:put", payload),
   // On-device text translation.
   translate:        (payload) => invoke("api:translate", payload),
   // Demucs music source separation.

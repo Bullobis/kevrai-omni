@@ -3486,6 +3486,46 @@ def knowledge_import(request: Request, req: KbImportReq) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Unified full backup (on-disk state: knowledge bases, agent history, brain)
+# ---------------------------------------------------------------------------
+
+
+def _backup_manager(request: Request):
+    from .backup import BackupManager
+
+    mgr = getattr(request.app.state, "backup", None)
+    if mgr is None:
+        mgr = BackupManager(APP_ROOT, _knowledge_manager(request))
+        request.app.state.backup = mgr
+    return mgr
+
+
+class BackupRestoreReq(BaseModel):
+    disk: dict[str, Any]
+    # "merge" keeps existing conversations; "replace" wipes agent history first.
+    mode: str = Field("merge", pattern="^(merge|replace)$")
+
+
+@app.get("/api/backup/disk")
+def backup_export_disk(request: Request) -> dict[str, Any]:
+    """Return the on-disk portion of a full backup."""
+    return _backup_manager(request).export_disk()
+
+
+@app.post("/api/backup/disk")
+def backup_import_disk(request: Request, req: BackupRestoreReq) -> dict[str, Any]:
+    """Restore the on-disk portion of a full backup."""
+    try:
+        return _backup_manager(request).import_disk(
+            req.disk, replace=(req.mode == "replace")
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:  # noqa: BLE001 - surface restore failures cleanly
+        raise HTTPException(status_code=400, detail=f"恢复失败：{e}") from e
+
+
+# ---------------------------------------------------------------------------
 # On-device text translation (built on the local text brain)
 # ---------------------------------------------------------------------------
 

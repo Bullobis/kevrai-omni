@@ -21,16 +21,25 @@ function makeStorage() {
 
 let store;
 let putCalls;
+let diskPutCalls;
 
 beforeEach(() => {
   store = makeStorage();
   globalThis.localStorage = store;
   putCalls = [];
+  diskPutCalls = [];
   // preload bridge mock
   window.kevrai = {
     getSettings: async () => ({ theme: "dark", modelDir: "/models", hfToken: "hf_abc" }),
     putSettings: async (s) => { putCalls.push(s); return s; },
     getAppVersion: async () => "3.4.2",
+    backupDiskGet: async () => ({
+      version: 1,
+      knowledge: [{ format: "kevrai-kb", version: 1 }],
+      agent_memory: { version: 1, sessions: [], preferences: {} },
+      brain: { type: "auto" },
+    }),
+    backupDiskPut: async (p) => { diskPutCalls.push(p); return { knowledge_bases: 1 }; },
   };
 });
 
@@ -50,12 +59,15 @@ test("exportData 生成正确结构（version / timestamp / appVersion / data）
   store.setItem("kevrai-locale", "zh-CN");
 
   const out = await dp.exportData();
-  assert.equal(out.kevraiExportVersion, 1);
+  assert.equal(out.kevraiExportVersion, 2);
   assert.match(out.exportedAt, /^\d{4}-\d{2}-\d{2}T/);
   assert.equal(out.appVersion, "3.4.2");
   assert.ok(out.data, "data 对象存在");
   assert.equal(out.data.settings.theme, "dark");
   assert.equal(out.data.settings.hfToken, "hf_abc");
+  assert.ok(out.data.disk, "disk 磁盘态存在");
+  assert.equal(out.data.disk.brain.type, "auto");
+  assert.equal(out.data.disk.knowledge.length, 1);
   assert.deepEqual(out.data.favorites, ["a", "b"]);
   assert.deepEqual(out.data.recent, ["c"]);
   assert.deepEqual(out.data.cmdRecent, { cmd1: 111 });
@@ -105,10 +117,34 @@ test("parseImport 缺失 kevraiExportVersion 抛错", () => {
   assert.throws(() => dp.parseImport(JSON.stringify({ data: {} })), /缺少导出版本号/);
 });
 
-test("parseImport 版本 >1 给出不兼容错误", () => {
+test("parseImport 版本 >2 给出不兼容错误", () => {
   assert.throws(
-    () => dp.parseImport(JSON.stringify({ kevraiExportVersion: 2, data: {} })),
-    /不支持的导出版本 v2/
+    () => dp.parseImport(JSON.stringify({ kevraiExportVersion: 3, data: {} })),
+    /不支持的导出版本 v3/
+  );
+});
+
+test("parseImport v2 含 disk 通过校验并保留", () => {
+  const parsed = dp.parseImport(JSON.stringify({
+    kevraiExportVersion: 2,
+    data: {
+      disk: {
+        version: 1, knowledge: [], brain: { type: "auto" },
+        agent_memory: { version: 1, sessions: [], preferences: {} },
+      },
+    },
+  }));
+  assert.equal(parsed.version, 2);
+  assert.ok(parsed.data.disk);
+  assert.equal(parsed.data.disk.brain.type, "auto");
+});
+
+test("parseImport disk 不是对象抛错", () => {
+  assert.throws(
+    () => dp.parseImport(JSON.stringify({
+      kevraiExportVersion: 2, data: { disk: "nope" },
+    })),
+    /disk 不是对象/
   );
 });
 
@@ -217,4 +253,30 @@ test("导入失败（parseImport 抛错）不触碰现有数据", () => {
   store.setItem("kevrai:favorites", JSON.stringify(["keep"]));
   assert.throws(() => dp.parseImport("{bad"), /不是有效的 JSON/);
   assert.deepEqual(JSON.parse(store.getItem("kevrai:favorites")), ["keep"]);
+});
+
+test("importData 恢复磁盘态：调用 backupDiskPut 并带 mode", async () => {
+  const disk = {
+    version: 1, knowledge: [], brain: { type: "auto" },
+    agent_memory: { version: 1, sessions: [], preferences: {} },
+  };
+  const parsed = dp.parseImport(JSON.stringify({
+    kevraiExportVersion: 2,
+    data: { disk, settings: {}, favorites: [], recent: [] },
+  }));
+  const stats = await dp.importData(parsed, "replace");
+  assert.equal(diskPutCalls.length, 1);
+  assert.equal(diskPutCalls[0].mode, "replace");
+  assert.deepEqual(diskPutCalls[0].disk, disk);
+  assert.deepEqual(stats.disk, { knowledge_bases: 1 });
+});
+
+test("importData 无 disk 时不调用 backupDiskPut", async () => {
+  const parsed = dp.parseImport(JSON.stringify({
+    kevraiExportVersion: 1,
+    data: { settings: {}, favorites: [], recent: [] },
+  }));
+  const stats = await dp.importData(parsed, "merge");
+  assert.equal(diskPutCalls.length, 0);
+  assert.equal(stats.disk, null);
 });
