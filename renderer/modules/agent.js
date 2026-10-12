@@ -14,6 +14,7 @@ import { attachTokenCounter } from "./token-estimate.js";
 import { attachSlashMenu } from "./agent-slash.js";
 import { personaOptionsHtml } from "./agent-persona-ui.js";
 import { renderMarkdown } from "./md-render.js";
+import { StreamBubble } from "./agent-stream.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -813,27 +814,26 @@ async function _sendMessage() {
   _appendMessage("user", message, false);
   input.value = "";
   // In "confirm" mode the run parks on each tool call; poll for pending
-  // approvals so the cards appear while agentChat() is still awaiting.
+  // approvals so the cards appear while the run is still in flight.
   _startApprovalPolling();
 
   try {
-    const res = unwrap(await api.agentChat({
-      message,
-      session_id: _sessionId,
-    }));
-
-    // Surface the live tool being invoked in the status line.
-    if (res.steps && res.steps.length > 0) {
-      for (const step of res.steps) {
-        if (step.action_tool) {
-          thinkingText.textContent = `${t("agent.callingTool")}: ${step.action_tool}`;
-          await new Promise((r) => setTimeout(r, 120));
+    const res = await _runAgentTurn(message, thinking, thinkingText);
+    // The streaming path renders its own bubble(s); only the REST fallback needs
+    // a fresh append here.
+    if (!res.fromStream) {
+      // Surface the live tool being invoked in the status line.
+      if (res.steps && res.steps.length > 0) {
+        for (const step of res.steps) {
+          if (step.action_tool) {
+            thinkingText.textContent = `${t("agent.callingTool")}: ${step.action_tool}`;
+            await new Promise((r) => setTimeout(r, 120));
+          }
         }
       }
+      const traceHtml = _renderTrace(res.steps || []);
+      _appendMessage("assistant", res.answer, false, res.tools_used || [], null, traceHtml);
     }
-
-    const traceHtml = _renderTrace(res.steps);
-    _appendMessage("assistant", res.answer, false, res.tools_used || [], null, traceHtml);
     _loadSessionList();
   } catch (e) {
     _appendMessage("assistant", `请求失败：${esc(e.message || e)}`, false);
@@ -847,6 +847,96 @@ async function _sendMessage() {
     input.focus();
     _stopApprovalPolling();
   }
+}
+
+// Run one agent turn, preferring token-by-token streaming over the agent
+// WebSocket. Falls back to the blocking REST chat when streaming is unavailable
+// (older sidecar / socket error) so the user still gets an answer.
+async function _runAgentTurn(message, thinking, thinkingText) {
+  try {
+    return await _sendViaStream(message, thinking, thinkingText);
+  } catch (e) {
+    console.warn("agent stream unavailable, falling back to REST:", e);
+    const res = unwrap(await api.agentChat({ message, session_id: _sessionId }));
+    return { ...res, fromStream: false };
+  }
+}
+
+// Open /ws/agent/{sid}, send the message, and render the answer live.
+// Resolves with { fromStream:true, answer, steps, tools_used }. Rejects when the
+// socket cannot be established (so _runAgentTurn can fall back to REST).
+function _sendViaStream(message, thinking, thinkingText) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let ws = null;
+    const fail = (err) => { if (!settled) { settled = true; try { ws && ws.close(); } catch (_) {} reject(err); } };
+
+    api.agentWsInfo().then((r) => {
+      const info = unwrap(r);
+      if (!info || !info.baseUrl || !info.token) {
+        fail(new Error("missing agent ws info"));
+        return;
+      }
+      const url = `${info.baseUrl}/ws/agent/${encodeURIComponent(_sessionId)}?token=${encodeURIComponent(info.token)}`;
+      ws = new WebSocket(url);
+      let bubble = null;
+      const steps = [];
+
+      ws.onopen = () => ws.send(JSON.stringify({ message }));
+
+      ws.onmessage = (ev) => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+        if (msg.event === "step") {
+          steps.push(msg);
+          if (msg.action_tool) {
+            thinkingText.textContent = `${t("agent.callingTool")}: ${msg.action_tool}`;
+          }
+        } else if (msg.event === "answer_delta") {
+          if (!bubble) {
+            bubble = new StreamBubble(
+              document.getElementById("agent-messages"),
+              { renderMarkdown, esc });
+            thinking.style.display = "none";
+          }
+          bubble.appendDelta(msg.delta);
+        } else if (msg.event === "final") {
+          const traceHtml = _renderTrace(steps);
+          if (bubble) {
+            if (msg.cancelled) {
+              bubble.abort("\n\n（已取消）");
+            } else {
+              bubble.finalize(msg.answer, {
+                traceHtml, tools: msg.tools_used || [],
+                onWire: (div, text) => _wireStreamedBubble(div, text),
+              });
+            }
+          } else {
+            // No streamed deltas (e.g. rule-based mode): render the whole thing.
+            _appendMessage("assistant", msg.answer, false, msg.tools_used || [], null, traceHtml);
+          }
+          if (!settled) {
+            settled = true;
+            try { ws.close(); } catch (_) {}
+            resolve({ fromStream: true, answer: msg.answer, steps, tools_used: msg.tools_used || [] });
+          }
+        } else if (msg.event === "error") {
+          fail(new Error(msg.message || "agent error"));
+        }
+      };
+
+      ws.onerror = () => fail(new Error("stream socket error"));
+      ws.onclose = () => fail(new Error("stream closed before final"));
+    }).catch((e) => fail(e));
+  });
+}
+
+// Wire the per-message action buttons on a finalized streamed bubble (copy /
+// regenerate). Delete / copy-code are handled by the container-level delegated
+// handler in _wireMessageActions.
+function _wireStreamedBubble(div, text) {
+  div.querySelector('[data-msg-action="copy"]')?.addEventListener("click", () => _copyText(text));
+  div.querySelector('[data-msg-action="regen"]')?.addEventListener("click", () => _regenerate());
 }
 
 // ---------------------------------------------------------------------------

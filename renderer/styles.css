@@ -1613,6 +1613,13 @@ html[data-theme="light"] .skeleton-card::after {
 /* ---------------------------------------------------------------------------
    Markdown rendering (assistant messages)
 --------------------------------------------------------------------------- */
+.agent-msg-stream-text { white-space: pre-wrap; word-break: break-word; line-height: 1.62; }
+.agent-stream-caret {
+  display: inline-block; width: 8px; height: 1em; margin-left: 1px;
+  vertical-align: text-bottom; background: var(--accent, #4f8cff);
+  animation: agent-stream-blink 1s steps(2, start) infinite;
+}
+@keyframes agent-stream-blink { to { visibility: hidden; } }
 .agent-msg-md { white-space: normal; word-break: break-word; }
 .agent-msg-md > *:first-child { margin-top: 0; }
 .agent-msg-md > *:last-child { margin-bottom: 0; }

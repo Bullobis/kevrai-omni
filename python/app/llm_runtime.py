@@ -267,6 +267,161 @@ class TextBrainManager:
             except Exception as e:  # noqa: BLE001
                 raise BrainModelError(f"回答生成失败: {e}") from e
 
+    # ------------------------------------------------------------------
+    def answer_stream(
+        self,
+        repo: str,
+        question: str,
+        *,
+        system: str = "",
+        max_new_tokens: int = 512,
+        should_stop=None,
+    ):
+        """Stream a standalone answer token-by-token (chat template).
+
+        Mirrors :meth:`answer` prompt construction (system + user through the
+        model's chat template) but yields incremental text deltas as they decode,
+        via a Transformers ``TextIteratorStreamer`` running ``generate`` on a
+        background thread (``skip_prompt=True``). The leading ``<think>…``
+        reasoning block a Qwen3-style model emits is held back — it is NOT
+        streamed — and only the post-``</think>`` answer is yielded, matching
+        :func:`strip_reasoning`.
+
+        Returns a generator: iterate it to receive ``str`` deltas; the generator's
+        return value (``StopIteration.value``) is the full, reasoning-stripped
+        answer. ``should_stop`` (a callable -> bool) is polled after each token
+        so a cancel request interrupts decode promptly.
+        """
+        if not question or not str(question).strip():
+            raise BrainParamError("question is empty")
+        max_new_tokens = int(max_new_tokens)
+        if not (1 <= max_new_tokens <= 4096):
+            raise BrainParamError("max_new_tokens must be within [1,4096]")
+        return self._answer_stream_iter(
+            repo, question, system=system,
+            max_new_tokens=max_new_tokens, should_stop=should_stop,
+        )
+
+    def _answer_stream_iter(
+        self,
+        repo: str,
+        question: str,
+        *,
+        system: str,
+        max_new_tokens: int,
+        should_stop,
+    ):
+        with self._lock:
+            self._open(repo)
+            try:
+                torch = self._torch
+                tf = self._tf
+                tok = self._tokenizer
+                messages: list[dict[str, str]] = []
+                if system and str(system).strip():
+                    messages.append({"role": "system", "content": system})
+                messages.append({"role": "user", "content": question})
+                # The final user-facing answer should stream straight away: a
+                # Qwen3-style model otherwise opens a long ``<think>…`` block
+                # that (especially on CPU) can swallow the whole token budget
+                # before closing, so nothing becomes visible. Ask the template
+                # to skip reasoning; templates that do not support the kwarg
+                # fall back to the plain template (the incremental strip below
+                # still holds any leading reasoning back).
+                try:
+                    prompt_text = tok.apply_chat_template(
+                        messages, tokenize=False, add_generation_prompt=True,
+                        enable_thinking=False,
+                    )
+                except TypeError:
+                    prompt_text = tok.apply_chat_template(
+                        messages, tokenize=False, add_generation_prompt=True
+                    )
+                ids = tok(prompt_text, add_special_tokens=False)["input_ids"]
+                budget = self._context_size() - max_new_tokens
+                if budget < 64:
+                    raise BrainParamError(
+                        "max_new_tokens too large for the model context window"
+                    )
+                if len(ids) > budget:
+                    ids = ids[-budget:]
+                input_ids = torch.tensor([ids], dtype=torch.long)
+
+                streamer = tf.TextIteratorStreamer(
+                    tok, skip_prompt=True, skip_special_tokens=True
+                )
+                stopping = None
+                if should_stop is not None:
+                    criteria = _StopOnSignal(should_stop)
+                    stopping = tf.StoppingCriteriaList([criteria])
+
+                err_holder: dict[str, BaseException] = {}
+
+                def _run() -> None:
+                    try:
+                        with torch.no_grad():
+                            self._model.generate(
+                                input_ids,
+                                max_new_tokens=max_new_tokens,
+                                do_sample=False,
+                                repetition_penalty=1.1,
+                                stopping_criteria=stopping,
+                                streamer=streamer,
+                            )
+                    except BaseException as e:  # surface to the consumer thread
+                        err_holder["e"] = e
+
+                worker = threading.Thread(target=_run, daemon=True)
+                worker.start()
+
+                # Incremental reasoning stripping: while the model is still
+                # inside an (unclosed) <think> block we hold everything back and
+                # yield nothing; once </think> arrives we stream the suffix. If
+                # there is no think block at all we stream straight away.
+                def visible(full: str) -> str:
+                    if "</think>" in full:
+                        return full.split("</think>", 1)[1]
+                    if full.lstrip().startswith("<think"):
+                        return ""  # still reasoning — hidden for now
+                    return full
+
+                pending = ""
+                emitted = 0
+                try:
+                    for chunk in streamer:
+                        if should_stop is not None:
+                            try:
+                                if should_stop():
+                                    break
+                            except Exception as e:  # noqa: BLE001
+                                log.debug("answer stop signal raised: %s", e)
+                        pending += chunk
+                        vis = visible(pending)
+                        if len(vis) > emitted:
+                            delta = vis[emitted:]
+                            emitted = len(vis)
+                            yield delta
+                        if "e" in err_holder:
+                            break
+                finally:
+                    worker.join(timeout=30)
+                if "e" in err_holder:
+                    raise BrainModelError(
+                        f"回答流式生成失败: {err_holder['e']}"
+                    ) from err_holder["e"]
+                # Reconcile with strip_reasoning: if the model never emitted a
+                # closing </think> (max tokens mid-reasoning), strip_reasoning
+                # would return the whole buffer — emit whatever we held back so
+                # the streamed total equals the persisted answer.
+                final = strip_reasoning(pending)
+                if len(final) > emitted:
+                    yield final[emitted:]
+                return final
+            except BrainError:
+                raise
+            except Exception as e:  # noqa: BLE001
+                raise BrainModelError(f"回答流式生成失败: {e}") from e
+
 
 COMPARE_MAX_MODELS = 4
 
