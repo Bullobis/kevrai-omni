@@ -501,11 +501,22 @@ async def _ws_authorize(websocket: WebSocket) -> bool:
     Closes with policy-violation (1008) when the bearer secret is missing/wrong
     or when no secret was configured at all. Returns True only when the caller
     may proceed to ``accept()``.
+
+    The bearer may arrive either in the ``Authorization`` header (as the HTTP
+    middleware uses) or, because a browser ``WebSocket`` cannot set custom
+    headers, as a ``?token=`` query parameter for the in-app renderer.
     """
-    if not _sidecar_secret() or not _bearer_matches(websocket.headers):
+    expected = _sidecar_secret()
+    if not expected:
         await websocket.close(code=1008)
         return False
-    return True
+    if _bearer_matches(websocket.headers):
+        return True
+    qtoken = str(websocket.query_params.get("token", "") or "")
+    if qtoken and hmac.compare_digest(qtoken, expected):
+        return True
+    await websocket.close(code=1008)
+    return False
 
 
 # Lightweight contextvar for log enrichment
@@ -4858,6 +4869,7 @@ async def ws_agent(websocket: WebSocket, session_id: str) -> None:
       Server sends events:
         {"event": "step", "iteration": N, "thought": "...", "action_tool": "...",
          "action_params": {...}, "observation_ok": true/false}
+        {"event": "answer_delta", "delta": "…"}   # final answer streaming, many
         {"event": "final", "answer": "...", "tools_used": [...], "duration_ms": N}
         {"event": "error", "message": "..."}
     """
@@ -4936,6 +4948,22 @@ async def ws_agent(websocket: WebSocket, session_id: str) -> None:
                     _loop.call_soon_threadsafe(_emit)
 
             agent.approval.set_callback(_on_approval)
+
+            # Final-answer token streaming: the agent forwards each answer delta
+            # as it streams from the brain, so the renderer can grow a live
+            # bubble character-by-character instead of waiting for the whole
+            # answer. The complete answer is still sent once in the "final"
+            # event (which the renderer uses to re-render as Markdown).
+            def _on_answer(delta: str, _loop=_ws_loop_ref):
+                def _emit(d=delta, loop=_loop):
+                    with contextlib.suppress(Exception):
+                        asyncio.ensure_future(websocket.send_json({
+                            "event": "answer_delta", "delta": d,
+                        }))
+                with contextlib.suppress(Exception):
+                    _loop.call_soon_threadsafe(_emit)
+
+            agent.set_answer_callback(_on_answer)
 
             # Run agent.run() on a worker thread. The ReAct body is synchronous
             # (router.chat / registry.execute block), so awaiting it inline would
@@ -5018,6 +5046,7 @@ async def ws_agent(websocket: WebSocket, session_id: str) -> None:
             finally:
                 agent.set_step_callback(None)
                 agent.approval.set_callback(None)
+                agent.set_answer_callback(None)
     except WebSocketDisconnect:
         pass
     finally:

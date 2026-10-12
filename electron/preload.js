@@ -409,6 +409,10 @@ const api = {
     assertString(opts.session_id, "session_id", 128);
     return invoke("kevrai:agent-chat", opts);
   },
+  // WebSocket endpoint + loopback secret for streaming the agent's final
+  // answer token-by-token. The renderer opens the socket itself; the secret is
+  // sent as a ?token= query parameter (browser WS cannot set headers).
+  agentWsInfo: () => invoke("kevrai:agent-ws-info"),
   agentSessions: (limit) => invoke("kevrai:agent-sessions", limit),
   agentSessionMessages: (sessionId, limit) => invoke("kevrai:agent-session-messages", sessionId, limit),
   agentRegenerate: (sessionId) => {

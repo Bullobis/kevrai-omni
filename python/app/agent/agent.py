@@ -212,6 +212,11 @@ class Agent:
         self.ctx = ctx or ToolContext()
         self.ctx.memory = memory
         self._step_callback: Callable[[AgentStep], None] | None = None
+        # Incremental final-answer callback: invoked with each ``str`` delta as
+        # the brain streams the polished answer (for a live "typing" bubble over
+        # the WebSocket). None (the default) disables streaming — the answer is
+        # only surfaced once, complete, in the AgentStep / AgentResult.
+        self._answer_callback: Callable[[str], None] | None = None
 
         # --- Tool-call approval gate ----------------------------------------
         # Per-session policy ("auto" = run everything immediately, the default;
@@ -351,6 +356,11 @@ class Agent:
         """Set a callback invoked after each ReAct step (for streaming UI)."""
         self._step_callback = cb
 
+    def set_answer_callback(self, cb: Callable[[str], None] | None) -> None:
+        """Set a callback invoked with each final-answer text delta as it
+        streams from the brain (for a live answer bubble). Pass None to stop."""
+        self._answer_callback = cb
+
     # ------------------------------------------------------------------
     # Best-effort memory persistence
     # ------------------------------------------------------------------
@@ -381,6 +391,67 @@ class Agent:
             self.memory.record_task(session_id, message[:200], tools_used, success=success)
         except Exception as e:  # noqa: BLE001 - best-effort persistence
             log.warning("agent: persist assistant result failed: %s", e)
+
+    # ------------------------------------------------------------------
+    # Streaming final answer
+    # ------------------------------------------------------------------
+    def _build_answer_question(self, message: str, steps: list[AgentStep]) -> str:
+        """Ground the streamed final answer in the tool observations gathered
+        during the ReAct loop, so the chat-template generation (which does not
+        see the raw scratchpad) still answers with the discovered facts."""
+        obs_lines: list[str] = []
+        for s in steps:
+            if not s.action_tool or not s.observation:
+                continue
+            obs_str = json.dumps(s.observation, ensure_ascii=False, default=str)
+            obs_lines.append(f"- {s.action_tool}: {obs_str[:400]}")
+        if obs_lines:
+            return (
+                f"用户请求：{message}\n\n已收集到的工具信息：\n"
+                + "\n".join(obs_lines)
+                + "\n\n请基于以上信息，用简洁的中文直接回答用户的请求。"
+            )
+        return message
+
+    def _stream_final_answer(
+        self,
+        message: str,
+        steps: list[AgentStep],
+        session_id: str,
+        extracted: str,
+    ) -> str:
+        """Produce the final answer, streaming deltas to ``_answer_callback``.
+
+        The ReAct loop already extracted a candidate answer from the last brain
+        continuation. When a UI answer-callback is wired and the router supports
+        streaming, we run a dedicated chat-template generation and forward each
+        delta live; the accumulated text becomes the final answer. Falls back to
+        ``extracted`` (the ReAct continuation text) when streaming is not
+        available, fails, or the run is cancelled mid-stream.
+        """
+        stream = getattr(self.router, "answer_stream", None)
+        if self._answer_callback is None or not callable(stream):
+            return extracted
+        question = self._build_answer_question(message, steps)
+        try:
+            gen = stream(
+                question,
+                system="",
+                max_new_tokens=REACT_TURN_TOKENS,
+                should_stop=lambda: self._is_cancelled(session_id),
+            )
+            parts: list[str] = []
+            for delta in gen:
+                if self._is_cancelled(session_id):
+                    break
+                if delta:
+                    parts.append(delta)
+                    self._answer_callback(delta)
+            streamed = "".join(parts).strip()
+        except Exception as e:  # noqa: BLE001 - never discard the extracted answer
+            log.warning("agent answer_stream failed, using extracted answer: %s", e)
+            return extracted
+        return streamed or extracted
 
     # ------------------------------------------------------------------
     # Context building
@@ -767,7 +838,14 @@ class Agent:
                     scratchpad += "\n" + _premature_correction(raw)
                     log.info("rejected premature final answer (nudge %d)", nudges)
                     continue
-                final_answer = extract_final_answer(full_output)
+                extracted = extract_final_answer(full_output)
+                final_answer = self._stream_final_answer(
+                    message, steps, session_id, extracted)
+                # A cancel may have landed mid-stream: honour it instead of
+                # treating a partial output as a finished answer.
+                if self._is_cancelled(session_id):
+                    cancelled = True
+                    break
                 step.is_final = True
                 step.final_answer = final_answer
                 steps.append(step)
@@ -787,7 +865,12 @@ class Agent:
                     log.info("rejected premature prose answer (nudge %d)", nudges)
                     continue
                 # No tool call and no final answer — treat the output as the answer
-                final_answer = raw.strip()
+                extracted = raw.strip()
+                final_answer = self._stream_final_answer(
+                    message, steps, session_id, extracted)
+                if self._is_cancelled(session_id):
+                    cancelled = True
+                    break
                 step.is_final = True
                 step.final_answer = final_answer
                 steps.append(step)

@@ -189,3 +189,42 @@ class ModelRouter:
             log.exception("agent LLM call failed")
             return {"ok": False, "error": str(e),
                     "error_type": type(e).__name__}
+
+    # ------------------------------------------------------------------
+    def answer_stream(
+        self,
+        question: str,
+        *,
+        system: str = "",
+        max_new_tokens: int = 512,
+        should_stop=None,
+    ):
+        """Stream the *final answer* as an iterator of ``str`` deltas.
+
+        The transformers brain streams token-by-token (chat template, reasoning
+        block held back). Backends without streaming (MNN, or a router that does
+        not support it) degrade to a single-chunk generator over the blocking
+        answer, so callers can iterate uniformly. The generator's return value is
+        the complete answer text.
+        """
+        kind, repo = self._backend
+        if kind == "transformers":
+            manager = self._brain()
+            return manager.answer_stream(
+                repo or "", question, system=system,
+                max_new_tokens=max_new_tokens, should_stop=should_stop,
+            )
+        # Non-streaming fallback: run the blocking chat() and emit it as one
+        # chunk so the agent's final-answer path still has something to forward.
+        res = self.chat(question, system=system, max_new_tokens=max_new_tokens,
+                        should_stop=should_stop)
+        text = ""
+        if isinstance(res, dict):
+            text = str(res.get("text") or "")
+
+        def _single_chunk():
+            if text:
+                yield text
+            return text
+
+        return _single_chunk()

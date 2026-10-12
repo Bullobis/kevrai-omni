@@ -150,6 +150,7 @@ export const api = {
   // v2.7.0 — Kevrai Agent (通用 AI 助手)
   agentStatus:          wrap("agentStatus",          () => k().agentStatus()),
   agentChat:            wrap("agentChat",            (opts) => k().agentChat(opts)),
+  agentWsInfo:          wrap("agentWsInfo",          () => k().agentWsInfo()),
   agentSessions:        wrap("agentSessions",        (limit) => k().agentSessions(limit)),
   agentSessionMessages: wrap("agentSessionMessages", (id, limit) => k().agentSessionMessages(id, limit)),
   agentRegenerate:      wrap("agentRegenerate",      (id) => k().agentRegenerate(id)),

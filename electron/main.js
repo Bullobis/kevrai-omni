@@ -1793,6 +1793,15 @@ function registerIpc() {
       method: "POST", body: opts, timeoutMs: 600_000,
     });
   });
+  // Renderer opens the agent WebSocket directly (CSP already allows
+  // ws://127.0.0.1:17890). A browser WebSocket cannot set an Authorization
+  // header, so the sidecar also accepts the loopback secret as a ?token= query
+  // parameter. Hand back the WS base URL + secret so the renderer can connect
+  // and authenticate; the secret never needs to be hardcoded in the UI.
+  ipcMain.handle("kevrai:agent-ws-info", async () => ({
+    baseUrl: `ws://${SIDECAR_HOST}:${SIDECAR_PORT}`,
+    token: sidecarSecret,
+  }));
   ipcMain.handle("kevrai:agent-sessions", async (_e, limit) => {
     const l = (typeof limit === "number" && limit > 0) ? limit : 20;
     return sidecarFetch(`/api/agent/sessions?limit=${l}`);
