@@ -185,3 +185,24 @@
   border-radius: 8px; font-size: .92em;
 }
 .btn.ghost.danger { color: #d05a5a; }
+
+/* ── Workspaces (profiles) ─────────────────────────────────────────────── */
+.ws-new-row { display: flex; gap: 8px; margin: 12px 0; }
+.ws-new-row input {
+  flex: 1; padding: 8px 10px; border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px); background: var(--card);
+  color: var(--fg);
+}
+.ws-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.ws-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 12px; border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px); background: var(--card);
+}
+.ws-row-name { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.ws-row-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.ws-active-badge {
+  font-size: var(--fs-xs, 12px); font-weight: 700; color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  padding: 1px 8px; border-radius: var(--radius-pill, 999px);
+}

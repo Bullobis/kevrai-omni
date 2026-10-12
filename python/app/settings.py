@@ -24,6 +24,11 @@ HardwareAccel = Literal["auto", "nvidia", "amd", "apple", "ascend", "cpu"]
 
 def default_data_root() -> Path:
     """Return the per-platform user data directory for Kevrai Omni."""
+    # Explicit override: an isolated workspace/profile root chosen by the
+    # host. It points at the workspace directory itself (no suffix).
+    override = os.environ.get("KEVRAI_DATA_ROOT")
+    if override and override.strip():
+        return Path(override).expanduser()
     if sys.platform.startswith("win"):
         base = Path(os.environ.get("APPDATA") or os.environ.get("LOCALAPPDATA") or Path.home())
     elif sys.platform == "darwin":

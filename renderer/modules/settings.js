@@ -11,6 +11,7 @@ import {
   downloadExport, parseImport, importData, applyImportedPreferences,
 } from "./data-portability.js";
 import { initMcpPanel } from "./mcp-servers.js";
+import { initWorkspaces } from "./workspaces.js";
 import { t, getLocale, setLocale } from "./i18n.js";
 import { scheduler, INTERVAL_PRESETS_MS, formatInterval } from "./scheduler.js";
 
@@ -67,6 +68,10 @@ export function switchSettingsSection(name) {
   if (!navBtns.length || !sections.length) return;
   navBtns.forEach((b) => b.classList.toggle("active", b.dataset.section === name));
   sections.forEach((s) => { s.hidden = s.dataset.section !== name; });
+  if (name === "workspaces") {
+    initWorkspaces().catch((e) => toast(t("workspaces.failed",
+      { err: e.message }), { kind: "err" }));
+  }
 }
 
 // ── 计划任务面板：列出调度器中的任务，可启停、改周期（即时生效+持久化）─────────

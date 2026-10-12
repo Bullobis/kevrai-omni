@@ -845,6 +845,10 @@
             <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M4.9 4.9l2.1 2.1"/><path d="M17 17l2.1 2.1"/><path d="M2 12h3"/><path d="M19 12h3"/><path d="M4.9 19.1 7 17"/><path d="M17 7l2.1-2.1"/></svg>
             <span data-i18n="settings.navGeneral">通用</span>
           </button>
+          <button type="button" class="settings-nav-btn" data-section="workspaces">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            <span data-i18n="settings.navWorkspaces">工作区</span>
+          </button>
           <button type="button" class="settings-nav-btn" data-section="tokens">
             <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></svg>
             <span data-i18n="settings.navTokens">下载与令牌</span>
@@ -916,6 +920,18 @@
               <input id="set-telemetry" type="checkbox" />
               <span data-i18n="settings.telemetry">启用遥测（匿名使用统计）</span>
             </label>
+          </section>
+
+          <section class="settings-section" data-section="workspaces" aria-label="工作区" hidden>
+            <h3 class="settings-group-title" data-i18n="workspaces.title">工作区（独立配置）</h3>
+            <p class="muted" data-i18n="workspaces.hint">每个工作区拥有独立的模型、引擎、Agent 记忆与设置；切换工作区会重启本地服务。</p>
+            <div class="ws-new-row">
+              <input id="ws-new-name" type="text" maxlength="40"
+                     data-i18n-ph="workspaces.newPh" placeholder="新工作区名称" />
+              <button type="button" class="primary" id="ws-create-btn"
+                      data-i18n="workspaces.create">新建</button>
+            </div>
+            <div id="ws-list" class="ws-list"></div>
           </section>
 
           <section class="settings-section" data-section="tokens" aria-label="下载与令牌" hidden>

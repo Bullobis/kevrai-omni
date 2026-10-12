@@ -109,6 +109,21 @@ const api = {
   checkUpdates:     () => invoke("kevrai:check-updates"),
   downloadUpdate:   () => invoke("kevrai:download-update"),
   installUpdate:    () => invoke("kevrai:install-update"),
+  // Workspaces (profiles)
+  workspaceList:    () => invoke("kevrai:workspaces:list"),
+  workspaceCreate:  (name) => invoke("kevrai:workspaces:create", name),
+  workspaceRename:  (id, name) => {
+    assertString(id, "id", 40);
+    return invoke("kevrai:workspaces:rename", id, name);
+  },
+  workspaceRemove:  (id) => {
+    assertString(id, "id", 40);
+    return invoke("kevrai:workspaces:remove", id);
+  },
+  workspaceSwitch:  (id) => {
+    assertString(id, "id", 40);
+    return invoke("kevrai:workspaces:switch", id);
+  },
   onUpdateProgress: (cb) => listen("kevrai:update-progress", cb),
   onUpdateDownloaded:(cb) => listen("kevrai:update-downloaded", cb),
   onUpdateError:    (cb) => listen("kevrai:update-error", cb),
