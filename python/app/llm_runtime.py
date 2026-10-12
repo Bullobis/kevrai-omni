@@ -11,6 +11,7 @@ chat, never just to report readiness.
 """
 from __future__ import annotations
 
+import gc
 import logging
 import threading
 from pathlib import Path
@@ -202,3 +203,116 @@ class TextBrainManager:
                 raise
             except Exception as e:  # noqa: BLE001
                 raise BrainModelError(f"大脑生成失败: {e}") from e
+
+    # ------------------------------------------------------------------
+    def unload(self) -> None:
+        """Release the loaded model/tokenizer (used between compare runs so we
+        never hold several models in RAM at once)."""
+        with self._lock:
+            self._model = None
+            self._tokenizer = None
+            self._repo = None
+            self._torch = None
+            self._tf = None
+        gc.collect()
+
+    def answer(
+        self,
+        repo: str,
+        question: str,
+        *,
+        system: str = "",
+        max_new_tokens: int = 512,
+    ) -> str:
+        """Answer a standalone user question using the model's chat template
+        (as opposed to ``generate``, which continues a raw ReAct scratchpad)."""
+        if not question or not str(question).strip():
+            raise BrainParamError("question is empty")
+        max_new_tokens = int(max_new_tokens)
+        if not (1 <= max_new_tokens <= 4096):
+            raise BrainParamError("max_new_tokens must be within [1,4096]")
+        with self._lock:
+            self._open(repo)
+            try:
+                torch = self._torch
+                tok = self._tokenizer
+                messages: list[dict[str, str]] = []
+                if system and str(system).strip():
+                    messages.append({"role": "system", "content": system})
+                messages.append({"role": "user", "content": question})
+                prompt_text = tok.apply_chat_template(
+                    messages, tokenize=False, add_generation_prompt=True
+                )
+                ids = tok(prompt_text, add_special_tokens=False)["input_ids"]
+                budget = self._context_size() - max_new_tokens
+                if budget < 64:
+                    raise BrainParamError(
+                        "max_new_tokens too large for the model context window"
+                    )
+                if len(ids) > budget:
+                    ids = ids[-budget:]
+                input_ids = torch.tensor([ids], dtype=torch.long)
+                with torch.no_grad():
+                    output = self._model.generate(
+                        input_ids,
+                        max_new_tokens=max_new_tokens,
+                        do_sample=False,
+                    )
+                generated = output[0][len(ids):]
+                return strip_reasoning(
+                    tok.decode(generated, skip_special_tokens=True)
+                )
+            except BrainError:
+                raise
+            except Exception as e:  # noqa: BLE001
+                raise BrainModelError(f"回答生成失败: {e}") from e
+
+
+COMPARE_MAX_MODELS = 4
+
+
+def strip_reasoning(text: str) -> str:
+    """Drop a Qwen3-style ``<think>…</think>`` reasoning block, leaving the
+    final answer. If no closing tag is present the text is returned as-is."""
+    s = str(text or "")
+    if "</think>" in s:
+        s = s.split("</think>", 1)[1]
+    return s.strip()
+
+
+def compare_answers(
+    manager: TextBrainManager,
+    repos: list[str],
+    question: str,
+    *,
+    system: str = "",
+    max_new_tokens: int = 512,
+) -> list[dict[str, Any]]:
+    """Ask one question to several local models and return their answers.
+
+    Models run sequentially and are unloaded after each (the host may have only
+    a few GB of RAM). A failure for one model is captured, not raised, so the
+    other answers still come back."""
+    if not isinstance(repos, (list, tuple)) or not repos:
+        raise BrainParamError("select at least one model to compare")
+    if len(repos) > COMPARE_MAX_MODELS:
+        raise BrainParamError(
+            f"at most {COMPARE_MAX_MODELS} models can be compared at once"
+        )
+    if not question or not str(question).strip():
+        raise BrainParamError("question is empty")
+    results: list[dict[str, Any]] = []
+    for repo in repos:
+        try:
+            ans = manager.answer(
+                repo, question, system=system,
+                max_new_tokens=max_new_tokens,
+            )
+            results.append({"repo": repo, "answer": ans, "error": None})
+        except BrainError as e:
+            results.append({"repo": repo, "answer": "", "error": str(e)})
+        finally:
+            unload = getattr(manager, "unload", None)
+            if callable(unload):
+                unload()  # real unload frees the model and never raises
+    return results

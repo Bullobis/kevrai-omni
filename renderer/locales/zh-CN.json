@@ -19,6 +19,7 @@
     "engines": "AI 引擎",
     "mnn": "MNN 引擎",
     "agent": "AI Agent",
+    "compareAnswers": "多模型对比",
     "ltx": "LTX-2.5 视频",
     "local": "本地模型",
     "gguf": "GGUF 仓库",
@@ -830,6 +831,18 @@
     "markAllRead": "全部已读",
     "clear": "清空",
     "delete": "删除"
+  },
+  "compareAnswers": {
+    "title": "多模型对比回答",
+    "subtitle": "选择多个本地模型，对同一个问题分别作答，并排对比。",
+    "models": "参与对比的模型（最多 4 个）",
+    "question": "问题",
+    "run": "开始对比",
+    "noModels": "暂无可选的本地大脑模型，请先在 AI Agent 页选择/安装。",
+    "running": "生成中…",
+    "pickModel": "请至少选择一个模型",
+    "pickQuestion": "请输入问题",
+    "failed": "对比失败：{err}"
   },
   "mcp": {
     "desc": "连接远程 MCP（Model Context Protocol）服务器，让 Agent 调用它们提供的外部工具。支持 streamable HTTP（地址以 /mcp 结尾）与 SSE（地址以 /sse 结尾）。",

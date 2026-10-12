@@ -159,6 +159,7 @@ export const api = {
   // v3.23.0 — local brain selection + cancel
   agentBrain:           wrap("agentBrain",           () => k().agentBrain()),
   agentSetBrain:        wrap("agentSetBrain",        (backend) => k().agentSetBrain(backend)),
+  agentCompareAnswers:  wrap("agentCompareAnswers",  (payload) => k().agentCompareAnswers(payload)),
   agentPersona:         wrap("agentPersona",         () => k().agentPersona()),
   agentSetPersona:      wrap("agentSetPersona",      (persona) => k().agentSetPersona(persona)),
   agentRenameSession:   wrap("agentRenameSession",   (id, title) => k().agentRenameSession(id, title)),
