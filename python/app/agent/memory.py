@@ -117,6 +117,16 @@ class AgentMemory:
             conn.commit()
         return cur.rowcount > 0
 
+    def rename_session(self, session_id: str, title: str) -> bool:
+        """Set a session's title. Creates the session if needed."""
+        title = (title or "").strip()
+        self.create_session(session_id, title=title)
+        with self._conn() as conn:
+            cur = conn.execute(
+                "UPDATE sessions SET title = ? WHERE id = ?", (title, session_id))
+            conn.commit()
+        return cur.rowcount > 0
+
     def touch_session(self, session_id: str) -> None:
         with self._conn() as conn:
             conn.execute(
