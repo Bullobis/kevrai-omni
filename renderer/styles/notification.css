@@ -47,7 +47,14 @@
 .notif-row.err .notif-ic { color: var(--err); }
 .notif-row.info .notif-ic { color: var(--acc2); }
 .notif-body { flex: 1 1 auto; min-width: 0; }
+.notif-line { display: flex; align-items: center; gap: 6px; }
 .notif-title { font-weight: 600; font-size: 12.5px; line-height: 1.3; }
+.notif-count {
+  flex: 0 0 auto; font-size: 10px; font-weight: 700; line-height: 1;
+  padding: 2px 5px; border-radius: 8px; color: #fff;
+  background: var(--warn); white-space: nowrap;
+}
+.notif-row.err .notif-count { background: var(--err); }
 .notif-text { font-size: 12.5px; color: var(--fg); opacity: .92; word-break: break-word; }
 .notif-time { margin-top: 3px; font-size: 11px; color: var(--mut); }
 .notif-row.read .notif-title, .notif-row.read .notif-text { opacity: .62; }
