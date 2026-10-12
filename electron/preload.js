@@ -427,6 +427,11 @@ const api = {
     assertString(backend, "backend", 200);
     return invoke("kevrai:agent-set-brain", backend);
   },
+  agentPersona: () => invoke("kevrai:agent-persona"),
+  agentSetPersona: (persona) => {
+    assertString(persona, "persona", 64);
+    return invoke("kevrai:agent-set-persona", persona);
+  },
   agentCancel: (sessionId) => {
     assertString(sessionId, "sessionId", 128);
     return invoke("kevrai:agent-cancel", sessionId);

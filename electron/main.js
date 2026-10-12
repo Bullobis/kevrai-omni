@@ -1692,6 +1692,9 @@ function registerIpc() {
   ipcMain.handle("kevrai:agent-brain", async () => sidecarFetch("/api/agent/brain"));
   ipcMain.handle("kevrai:agent-set-brain", async (_e, backend) =>
     sidecarFetch("/api/agent/brain", { method: "POST", body: { backend } }));
+  ipcMain.handle("kevrai:agent-persona", async () => sidecarFetch("/api/agent/persona"));
+  ipcMain.handle("kevrai:agent-set-persona", async (_e, persona) =>
+    sidecarFetch("/api/agent/persona", { method: "POST", body: { persona } }));
   ipcMain.handle("kevrai:agent-cancel", async (_e, sessionId) =>
     sidecarFetch("/api/agent/cancel",
       { method: "POST", body: { session_id: sessionId } }));

@@ -12,6 +12,7 @@ import {
 } from "./agent-quickphrases.js";
 import { attachTokenCounter } from "./token-estimate.js";
 import { attachSlashMenu } from "./agent-slash.js";
+import { personaOptionsHtml } from "./agent-persona-ui.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -36,6 +37,7 @@ export async function initAgent() {
   _wireMessageActions(document.getElementById("agent-messages"));
   await _refreshStatus();
   _loadBrain();
+  _loadPersona();
   _loadSkills();
   _loadSessionList();
   _loadApprovalPolicy();
@@ -60,6 +62,8 @@ function _renderShell() {
       <div class="agent-brain-bar">
         <label class="agent-brain-label" for="agent-brain-select">🧠 ${t("agent.brain")}</label>
         <select id="agent-brain-select" class="agent-brain-select" title="${t("agent.brainTitle")}"></select>
+        <label class="agent-brain-label" for="agent-persona-select">🎭 ${t("agent.persona")}</label>
+        <select id="agent-persona-select" class="agent-brain-select" title="${t("agent.personaTitle")}"></select>
         <span class="hint" id="agent-brain-hint"></span>
         <label class="agent-approval-toggle" title="开启后，Agent 每次调用工具前都会暂停等待你确认/编辑/拒绝">
           <input type="checkbox" id="agent-approval-confirm">
@@ -197,6 +201,19 @@ function _wireEvents(root) {
         await _loadBrain();
       } finally {
         brainSelect.disabled = false;
+      }
+    });
+  }
+
+  const personaSelect = $("#agent-persona-select", root);
+  if (personaSelect) {
+    personaSelect.addEventListener("change", async () => {
+      try {
+        await unwrap(api.agentSetPersona(personaSelect.value));
+        toast(t("agent.personaSelected", { name: personaSelect.selectedOptions[0]?.textContent || "" }), { kind: "ok" });
+      } catch (err) {
+        toast(t("agent.personaFailed", { err: err.message || err }), { kind: "err" });
+        await _loadPersona();
       }
     });
   }
@@ -467,6 +484,18 @@ async function _loadBrain() {
       ? t("agent.brainNote") : "";
   } catch (e) {
     console.warn("brain load failed:", e);
+  }
+}
+
+async function _loadPersona() {
+  const sel = document.getElementById("agent-persona-select");
+  if (!sel) return;
+  try {
+    const res = unwrap(await api.agentPersona());
+    sel.innerHTML = personaOptionsHtml(res.items, esc);
+    sel.value = res.persona || "general";
+  } catch (e) {
+    console.warn("persona load failed:", e);
   }
 }
 
