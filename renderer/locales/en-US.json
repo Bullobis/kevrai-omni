@@ -345,6 +345,7 @@
     "navData": "Data management",
     "navAbout": "About",
     "navMcp": "MCP Servers",
+    "navWorkspaces": "Workspaces",
     "appearancePreview": "Theme preview",
     "appearanceHint": "Switch theme under the General section. The UI follows the chosen theme automatically: dark uses low-luminance surfaces, light uses bright paper surfaces, with readable contrast for icons and text.",
     "dataDesc": "Export settings, favorites, recent usage, knowledge bases and Agent conversations to a complete JSON backup, or restore from one. The export may contain tokens — store it safely.",
@@ -843,6 +844,20 @@
     "pickModel": "Select at least one model",
     "pickQuestion": "Enter a question",
     "failed": "Comparison failed: {err}"
+  },
+  "workspaces": {
+    "title": "Workspaces (isolated profiles)",
+    "hint": "Each workspace keeps its own models, engines, agent memory and settings. Switching a workspace restarts the local service.",
+    "newPh": "New workspace name",
+    "create": "Create",
+    "active": "Active",
+    "switch": "Switch",
+    "switching": "Switching workspace and restarting the local service…",
+    "rename": "Rename",
+    "renamePh": "Workspace name",
+    "remove": "Remove",
+    "confirmRemove": "Remove this workspace? Its models and data will be deleted. This cannot be undone.",
+    "failed": "Operation failed: {err}"
   },
   "mcp": {
     "desc": "Connect remote MCP (Model Context Protocol) servers so the Agent can call the external tools they expose. Supports streamable HTTP (URL ending in /mcp) and SSE (URL ending in /sse).",

@@ -345,6 +345,7 @@
     "navData": "数据管理",
     "navAbout": "关于",
     "navMcp": "MCP 服务器",
+    "navWorkspaces": "工作区",
     "appearancePreview": "主题预览",
     "appearanceHint": "主题在「通用」分类中切换。界面自动跟随所选主题：深色为低亮度表面层级，浅色为高亮纸面层级，图标与文字对比度均保持可读。",
     "dataDesc": "导出设置、收藏、最近使用、知识库与 Agent 对话记录为 JSON 完整备份，或从备份恢复。导出文件可能包含 Token，请妥善保管。",
@@ -843,6 +844,20 @@
     "pickModel": "请至少选择一个模型",
     "pickQuestion": "请输入问题",
     "failed": "对比失败：{err}"
+  },
+  "workspaces": {
+    "title": "工作区（独立配置）",
+    "hint": "每个工作区拥有独立的模型、引擎、Agent 记忆与设置；切换工作区会重启本地服务。",
+    "newPh": "新工作区名称",
+    "create": "新建",
+    "active": "当前",
+    "switch": "切换",
+    "switching": "正在切换工作区并重启本地服务…",
+    "rename": "重命名",
+    "renamePh": "工作区名称",
+    "remove": "删除",
+    "confirmRemove": "确定删除该工作区？其中的模型与数据将被移除，此操作不可撤销。",
+    "failed": "操作失败：{err}"
   },
   "mcp": {
     "desc": "连接远程 MCP（Model Context Protocol）服务器，让 Agent 调用它们提供的外部工具。支持 streamable HTTP（地址以 /mcp 结尾）与 SSE（地址以 /sse 结尾）。",

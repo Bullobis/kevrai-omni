@@ -237,6 +237,8 @@ function sidecarEnv() {
     KEVRAI_SIDECAR_PORT: String(SIDECAR_PORT),
     KEVRAI_CATALOG_DIR: catalogResourceDir(),
     KEVRAI_SIDECAR_LOGLEVEL: "warning",
+    // Isolated profile root; "" → the sidecar uses its classic data root.
+    KEVRAI_DATA_ROOT: activeWorkspaceDir() || "",
     PYTHONUNBUFFERED: "1",
     PYTHONIOENCODING: "UTF-8",
     NODE_OPTIONS: "--max-old-space-size=2048", // belt-and-braces; python ignores but pinned per spec
@@ -620,6 +622,154 @@ async function stopSidecar(graceMs = SHUTDOWN_TIMEOUT_MS) {
     await new Promise((r) => setTimeout(r, 100));
   }
   try { sidecarProc.kill("SIGKILL"); } catch (_) {}
+}
+
+// ---------------------------------------------------------------------------
+// Workspaces (isolated profiles)
+//
+// The list of workspaces and the active id live in the *global* Electron user
+// data dir (so they are visible from every workspace). The active workspace's
+// data directory is passed to the sidecar as KEVRAI_DATA_ROOT; switching a
+// workspace restarts the sidecar against a different on-disk profile.
+//
+// The built-in "default" workspace maps to the classic data root (no override)
+// so existing installs keep their data.
+// ---------------------------------------------------------------------------
+const DEFAULT_WORKSPACE_ID = "default";
+
+function workspacesConfigPath() {
+  return path.join(userDataDir(), "workspaces.json");
+}
+
+function _defaultWorkspaceState() {
+  return {
+    active: DEFAULT_WORKSPACE_ID,
+    workspaces: [{
+      id: DEFAULT_WORKSPACE_ID, name: "Default", builtin: true, created_at: "",
+    }],
+  };
+}
+
+function loadWorkspaces() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(workspacesConfigPath(), "utf8"));
+    if (raw && Array.isArray(raw.workspaces) && raw.workspaces.length) {
+      const ids = raw.workspaces.map((w) => w.id);
+      const active = ids.includes(raw.active) ? raw.active : raw.workspaces[0].id;
+      return { active, workspaces: raw.workspaces };
+    }
+  } catch (_) { /* first run / corrupt → defaults */ }
+  return _defaultWorkspaceState();
+}
+
+function saveWorkspaces(state) {
+  fs.mkdirSync(userDataDir(), { recursive: true });
+  fs.writeFileSync(workspacesConfigPath(), JSON.stringify(state, null, 2));
+}
+
+function workspacesRoot() { return path.join(userDataDir(), "workspaces"); }
+
+function workspaceDir(id) {
+  if (id === DEFAULT_WORKSPACE_ID) return null; // classic root
+  const dir = path.join(workspacesRoot(), id);
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function activeWorkspaceDir() {
+  return workspaceDir(loadWorkspaces().active);
+}
+
+function createWorkspace(name) {
+  const state = loadWorkspaces();
+  const id = "ws_" + crypto.randomBytes(6).toString("hex");
+  const nm = (name || "").trim()
+    || "Workspace " + (state.workspaces.length + 1);
+  const ws = { id, name: nm, created_at: new Date().toISOString() };
+  state.workspaces.push(ws);
+  saveWorkspaces(state);
+  workspaceDir(id); // pre-create the data dir
+  return ws;
+}
+
+function renameWorkspace(id, name) {
+  const state = loadWorkspaces();
+  const ws = state.workspaces.find((w) => w.id === id);
+  if (!ws) throw new Error("workspace not found");
+  const nm = (name || "").trim();
+  if (!nm) throw new Error("name is empty");
+  ws.name = nm;
+  saveWorkspaces(state);
+  return ws;
+}
+
+function removeWorkspace(id) {
+  if (id === DEFAULT_WORKSPACE_ID) {
+    throw new Error("the default workspace cannot be removed");
+  }
+  const state = loadWorkspaces();
+  if (state.active === id) {
+    throw new Error("switch away from a workspace before removing it");
+  }
+  state.workspaces = state.workspaces.filter((w) => w.id !== id);
+  saveWorkspaces(state);
+  const dir = path.join(workspacesRoot(), id);
+  try { fs.rmSync(dir, { recursive: true, force: true }); } catch (_) {}
+  return { ok: true };
+}
+
+// Resolve once the sidecar TCP port is released (a process that has just
+// exited can keep its listening socket bound for a brief moment). Connecting
+// to a free port is refused; a successful connect means it is still in use.
+async function waitForPortFree(timeoutMs = 8_000) {
+  const net = require("node:net");
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const inUse = await new Promise((resolve) => {
+      const sock = net.connect({ host: SIDECAR_HOST, port: SIDECAR_PORT });
+      sock.once("connect", () => { sock.destroy(); resolve(true); });
+      sock.once("error", () => resolve(false));
+    });
+    if (!inUse) return true;
+    await new Promise((r) => setTimeout(r, 120));
+  }
+  return false;
+}
+
+async function switchWorkspace(id) {
+  const state = loadWorkspaces();
+  if (!state.workspaces.some((w) => w.id === id)) {
+    throw new Error("unknown workspace");
+  }
+  if (state.active === id) return { active: id, restarted: false };
+  state.active = id;
+  saveWorkspaces(state);
+
+  // Stop the current sidecar and wait for its port to be released.
+  await stopSidecar();
+  await waitForPortFree();
+
+  // Bring up the sidecar against the new profile. Auto-restart stays
+  // suppressed until the new process is confirmed healthy so a bind failure
+  // is retried here instead of consuming the restart budget.
+  const MAX_ATTEMPTS = 4;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    sidecarManualStop = true;
+    sidecarRestartCount = 0;
+    if (!startSidecar()) {
+      throw new Error("sidecar spawn failed after switch");
+    }
+    try {
+      const info = await waitForSidecar(15_000);
+      sidecarManualStop = false; // healthy → normal lifecycle
+      return { active: id, restarted: true, info };
+    } catch (_) {
+      await stopSidecar();
+      await waitForPortFree();
+    }
+  }
+  sidecarManualStop = false;
+  throw new Error("sidecar did not become healthy after workspace switch");
 }
 
 // ---------------------------------------------------------------------------
@@ -2041,6 +2191,17 @@ function registerIpc() {
   ipcMain.handle("kevrai:check-updates",  async () => checkForUpdates());
   ipcMain.handle("kevrai:download-update", async () => downloadUpdate());
   ipcMain.handle("kevrai:install-update",  async () => installUpdate());
+
+  // ----- Workspaces (profiles) -----
+  ipcMain.handle("kevrai:workspaces:list", async () => loadWorkspaces());
+  ipcMain.handle("kevrai:workspaces:create", async (_e, name) =>
+    createWorkspace(name));
+  ipcMain.handle("kevrai:workspaces:rename", async (_e, id, name) =>
+    renameWorkspace(id, name));
+  ipcMain.handle("kevrai:workspaces:remove", async (_e, id) =>
+    removeWorkspace(id));
+  ipcMain.handle("kevrai:workspaces:switch", async (_e, id) =>
+    switchWorkspace(id));
 }
 
 // ---------------------------------------------------------------------------
