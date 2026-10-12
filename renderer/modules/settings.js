@@ -10,6 +10,7 @@ import { overlayOpen, overlayClose } from "./overlay-fx.js";
 import {
   downloadExport, parseImport, importData, applyImportedPreferences,
 } from "./data-portability.js";
+import { initWebDavPanel } from "./webdav-backup.js";
 import { initMcpPanel } from "./mcp-servers.js";
 import { initWorkspaces } from "./workspaces.js";
 import { t, getLocale, setLocale } from "./i18n.js";
@@ -48,6 +49,7 @@ export async function openSettings() {
   fillForm(fresh);
   renderSchedulerPanel();
   initMcpPanel();
+  initWebDavPanel();
   trapFocus(overlay);
 }
 

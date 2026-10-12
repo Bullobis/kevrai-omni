@@ -1190,6 +1190,25 @@ html[data-theme="light"] .skeleton-card::after {
 .import-confirm-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
 .import-confirm[hidden] { display: none; }
 
+/* ── WebDAV cloud backup ─────────────────────────────────────────────────── */
+.webdav-block {
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line);
+}
+.webdav-title { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+.webdav-form { display: flex; flex-direction: column; gap: 10px; margin: 10px 0; }
+.webdav-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.webdav-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 160px; font-size: 12px; }
+.webdav-field > span { color: var(--mut); }
+.webdav-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
+.webdav-pull-confirm {
+  margin-top: 12px; padding: 12px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--card);
+}
+.webdav-pull-confirm[hidden] { display: none; }
+.webdav-status { margin-top: 8px; min-height: 1em; }
+.webdav-status[data-kind="ok"] { color: var(--ok, #4caf7d); }
+.webdav-status[data-kind="err"] { color: var(--err, #e06c75); }
+
 /* ── Quantization picker (install with version/quant choice) ─────────────── */
 .quant-card { width: min(580px, 96vw); }
 .quant-list {
