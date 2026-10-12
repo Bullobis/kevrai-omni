@@ -159,6 +159,8 @@ export const api = {
   // v3.23.0 — local brain selection + cancel
   agentBrain:           wrap("agentBrain",           () => k().agentBrain()),
   agentSetBrain:        wrap("agentSetBrain",        (backend) => k().agentSetBrain(backend)),
+  agentPersona:         wrap("agentPersona",         () => k().agentPersona()),
+  agentSetPersona:      wrap("agentSetPersona",      (persona) => k().agentSetPersona(persona)),
   agentCancel:          wrap("agentCancel",          (id) => k().agentCancel(id)),
   // Tool-call approval gate (confirm-before-run)
   agentApprovals:       wrap("agentApprovals",       () => k().agentApprovals()),

@@ -4221,6 +4221,26 @@ def agent_set_brain(request: Request, req: BrainReq) -> dict[str, Any]:
             "llm_ready": ready, "model_name": model_name}
 
 
+class PersonaReq(BaseModel):
+    persona: str = Field(default="general", max_length=64)
+
+
+@app.get("/api/agent/persona")
+def agent_persona(request: Request) -> dict[str, Any]:
+    """Report the selected persona and the available presets."""
+    return _get_agent(request).get_persona()
+
+
+@app.post("/api/agent/persona")
+def agent_set_persona(request: Request, req: PersonaReq) -> dict[str, Any]:
+    """Select a persona preset."""
+    agent = _get_agent(request)
+    try:
+        return agent.set_persona(req.persona)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
 @app.get("/api/agent/skills")
 def agent_skills(request: Request) -> dict[str, Any]:
     """List all pluggable skills with enabled state and bundled tool names."""

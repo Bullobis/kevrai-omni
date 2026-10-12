@@ -88,6 +88,7 @@ def _cycle_correction(tool_name: str) -> str:
 
 
 _SYSTEM_PROMPT_TEMPLATE = """你是 **Kevrai Agent**，Kevrai Omni 本地 AI 工作站的智能助手。
+{persona_block}
 你的任务是帮助用户管理和使用本地 AI 模型：搜索模型、查看模型详情、根据硬件推荐模型、
 检查已安装模型/引擎、规划下载、生成文本，以及记住用户偏好。
 
@@ -198,6 +199,9 @@ class Agent:
     ) -> None:
         self.memory = memory
         self.router = router or ModelRouter()
+        # Persona preset (role guidance injected into the reasoning brain).
+        from .personas import PersonaStore
+        self.personas = PersonaStore(memory.db_path.parent / "persona.json")
         # A SkillManager (v2.8.0) owns the active registry and rebuilds it when
         # skills are enabled/disabled. A plain registry stays supported.
         self.skills = skill_manager
@@ -321,6 +325,16 @@ class Agent:
                 log.warning("agent: persist approval policy failed: %s", e)
         return mode
 
+    def get_persona(self) -> dict[str, object]:
+        """Return the selected persona and the available presets."""
+        from .personas import list_personas
+        return {"persona": self.personas.persona, "items": list_personas()}
+
+    def set_persona(self, persona_id: str) -> dict[str, object]:
+        """Select a persona preset (persisted). Raises ValueError if unknown."""
+        self.personas.set(persona_id)
+        return self.get_persona()
+
     def set_step_callback(self, cb: Callable[[AgentStep], None] | None) -> None:
         """Set a callback invoked after each ReAct step (for streaming UI)."""
         self._step_callback = cb
@@ -378,7 +392,11 @@ class Agent:
         else:
             hardware_block = "（尚未检测，调用 check_hardware 后更新）"
 
+        from .personas import build_persona_block
+        persona_block = build_persona_block(self.personas.persona)
+
         return (_SYSTEM_PROMPT_TEMPLATE
+            .replace("{persona_block}", persona_block)
             .replace("{tools_block}", tools_block)
             .replace("{skills_block}", skills_block)
             .replace("{preferences_block}", preferences_block)
