@@ -1695,6 +1695,11 @@ function registerIpc() {
   ipcMain.handle("kevrai:agent-persona", async () => sidecarFetch("/api/agent/persona"));
   ipcMain.handle("kevrai:agent-set-persona", async (_e, persona) =>
     sidecarFetch("/api/agent/persona", { method: "POST", body: { persona } }));
+  ipcMain.handle("kevrai:agent-rename-session", async (_e, sessionId, title) =>
+    sidecarFetch(`/api/agent/sessions/${encodeURIComponent(sessionId)}/rename`,
+      { method: "POST", body: { title } }));
+  ipcMain.handle("kevrai:agent-export-session", async (_e, sessionId) =>
+    sidecarFetch(`/api/agent/sessions/${encodeURIComponent(sessionId)}/export`));
   ipcMain.handle("kevrai:agent-cancel", async (_e, sessionId) =>
     sidecarFetch("/api/agent/cancel",
       { method: "POST", body: { session_id: sessionId } }));

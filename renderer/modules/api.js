@@ -161,6 +161,8 @@ export const api = {
   agentSetBrain:        wrap("agentSetBrain",        (backend) => k().agentSetBrain(backend)),
   agentPersona:         wrap("agentPersona",         () => k().agentPersona()),
   agentSetPersona:      wrap("agentSetPersona",      (persona) => k().agentSetPersona(persona)),
+  agentRenameSession:   wrap("agentRenameSession",   (id, title) => k().agentRenameSession(id, title)),
+  agentExportSession:   wrap("agentExportSession",   (id) => k().agentExportSession(id)),
   agentCancel:          wrap("agentCancel",          (id) => k().agentCancel(id)),
   // Tool-call approval gate (confirm-before-run)
   agentApprovals:       wrap("agentApprovals",       () => k().agentApprovals()),

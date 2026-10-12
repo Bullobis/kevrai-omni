@@ -432,6 +432,15 @@ const api = {
     assertString(persona, "persona", 64);
     return invoke("kevrai:agent-set-persona", persona);
   },
+  agentRenameSession: (sessionId, title) => {
+    assertString(sessionId, "sessionId", 128);
+    assertString(title, "title", 200);
+    return invoke("kevrai:agent-rename-session", sessionId, title);
+  },
+  agentExportSession: (sessionId) => {
+    assertString(sessionId, "sessionId", 128);
+    return invoke("kevrai:agent-export-session", sessionId);
+  },
   agentCancel: (sessionId) => {
     assertString(sessionId, "sessionId", 128);
     return invoke("kevrai:agent-cancel", sessionId);

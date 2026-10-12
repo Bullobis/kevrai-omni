@@ -335,6 +335,18 @@ class Agent:
         self.personas.set(persona_id)
         return self.get_persona()
 
+    def rename_session(self, session_id: str, title: str) -> dict[str, object]:
+        """Rename a conversation."""
+        if not (title or "").strip():
+            raise ValueError("title must not be empty")
+        self.memory.rename_session(session_id, title)
+        return {"ok": True, "session_id": session_id, "title": title.strip()}
+
+    def export_session_markdown(self, session_id: str) -> str:
+        """Render a conversation as Markdown. Raises KeyError if missing."""
+        from .session_export import export_session
+        return export_session(self.memory, session_id)
+
     def set_step_callback(self, cb: Callable[[AgentStep], None] | None) -> None:
         """Set a callback invoked after each ReAct step (for streaming UI)."""
         self._step_callback = cb

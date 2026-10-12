@@ -4241,6 +4241,37 @@ def agent_set_persona(request: Request, req: PersonaReq) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail=str(e)) from None
 
 
+class SessionRenameReq(BaseModel):
+    title: str = Field(default="", max_length=200)
+
+
+@app.post("/api/agent/sessions/{session_id}/rename")
+def agent_rename_session(request: Request, session_id: str,
+                         req: SessionRenameReq) -> dict[str, Any]:
+    """Rename a conversation."""
+    agent = _get_agent(request)
+    try:
+        return agent.rename_session(session_id, req.title)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+@app.get("/api/agent/sessions/{session_id}/export")
+def agent_export_session(request: Request, session_id: str) -> Response:
+    """Download a conversation as a Markdown transcript."""
+    agent = _get_agent(request)
+    try:
+        md = agent.export_session_markdown(session_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="session not found") from None
+    return Response(
+        content=md,
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition":
+                 f'attachment; filename="session-{session_id[:8]}.md"'},
+    )
+
+
 @app.get("/api/agent/skills")
 def agent_skills(request: Request) -> dict[str, Any]:
     """List all pluggable skills with enabled state and bundled tool names."""

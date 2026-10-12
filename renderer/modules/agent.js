@@ -57,6 +57,8 @@ function _renderShell() {
         <div class="agent-actions">
           <button id="agent-new-btn" class="btn btn-sm" title="${t("agent.newSessionTitle")}">${t("agent.newSession")}</button>
           <select id="agent-session-select" class="agent-session-select" title="${t("agent.historyTitle")}"></select>
+          <button id="agent-rename-btn" class="btn btn-sm ghost" title="${t("agent.renameTitle")}">${t("agent.rename")}</button>
+          <button id="agent-export-btn" class="btn btn-sm ghost" title="${t("agent.exportSessionTitle")}">${t("agent.exportSession")}</button>
         </div>
       </div>
       <div class="agent-brain-bar">
@@ -182,6 +184,43 @@ function _wireEvents(root) {
       _loadApprovalPolicy();
     }
   });
+
+  const renameBtn = $("#agent-rename-btn", root);
+  if (renameBtn) {
+    renameBtn.addEventListener("click", async () => {
+      const current = sessionSelect.selectedOptions?.[0]?.textContent || "";
+      const title = window.prompt(t("agent.renamePrompt"), current);
+      if (title == null || !title.trim()) return;
+      try {
+        await unwrap(api.agentRenameSession(_sessionId, title.trim()));
+        toast(t("agent.renameDone"), { kind: "ok" });
+        _loadSessionList();
+      } catch (err) {
+        toast(t("agent.renameFailed", { err: err.message || err }), { kind: "err" });
+      }
+    });
+  }
+
+  const exportBtn = $("#agent-export-btn", root);
+  if (exportBtn) {
+    exportBtn.addEventListener("click", async () => {
+      try {
+        const md = unwrap(await api.agentExportSession(_sessionId));
+        const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `session-${_sessionId.slice(0, 8)}.md`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => { try { URL.revokeObjectURL(url); } catch (_) {} }, 1000);
+        toast(t("agent.exportDone"), { kind: "ok" });
+      } catch (err) {
+        toast(t("agent.exportFailed", { err: err.message || err }), { kind: "err" });
+      }
+    });
+  }
 
   const brainSelect = $("#agent-brain-select", root);
   if (brainSelect) {
