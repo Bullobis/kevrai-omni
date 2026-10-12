@@ -1,8 +1,9 @@
 // renderer/modules/notification-center.js — 通知中心：铃铛 + 未读 badge + 历史面板。
 //
 // 自动收录每条 toast（toast.js 在创建时调用 recordNotification）。历史持久化到
-// localStorage，支持单条删除、全部标记已读、清空、上限裁剪。核心状态操作为纯函数
-// （便于单测），DOM 渲染与交互在 init 中。
+// localStorage，支持单条删除、全部标记已读、清空、上限裁剪。相同“签名”（kind+
+// title+body）的通知自动合并计数并置顶（显示 ×N），避免重复警告淹没有效通知。
+// 核心状态操作为纯函数（便于单测），DOM 渲染与交互在 init 中。
 "use strict";
 
 import { t } from "./i18n.js";
@@ -14,18 +15,46 @@ const STORE_KEY = "kevrai:notifications";
 let _seq = 0;
 function nextId() { _seq += 1; return `n${Date.now().toString(36)}-${_seq}`; }
 
-// 在历史头部插入一条，裁剪到 max，返回新数组。
+// 归一化：去首尾空白、压缩内部空白。不区分大小写——大小写不同视为不同内容，避免误合并。
+function norm(s) { return String(s == null ? "" : s).trim().replace(/\s+/g, " "); }
+
+// 通知签名：kind + title + body。时间戳、计数等可变量不参与，使网络抖动产生的
+// 同一条“来源不可达”警告可被识别为同一通知。
+export function signOf(entry) {
+  const e = entry || {};
+  return `${norm(e.kind)}${norm(e.title)}${norm(e.body)}`;
+}
+
+// 在历史头部插入一条；若与已有条目签名相同则合并：计数 +1、时间刷新、置顶，
+// 并视为新事件重新置为未读（重复到达应再次提醒，但只占一条记录）。
+// 不同签名的通知各自独立。返回新数组，并裁剪到 max（丢弃最旧）。
 export function addItem(items, entry, max = MAX_ITEMS) {
-  const id = entry.id || nextId();
+  const e = entry || {};
+  const prior = Array.isArray(items) ? items.slice() : [];
+  const now = Number.isFinite(e.ts) ? e.ts : Date.now();
+  const sig = signOf(e);
+  const idx = prior.findIndex((x) => signOf(x) === sig);
+  if (idx >= 0) {
+    const hit = prior[idx];
+    const merged = {
+      ...hit,
+      count: (Number(hit.count) > 0 ? Number(hit.count) : 1) + 1,
+      ts: now,
+      read: false,
+    };
+    prior.splice(idx, 1);
+    return [merged, ...prior].slice(0, max);
+  }
   const rec = {
-    id,
-    kind: String(entry.kind || ""),
-    title: String(entry.title || ""),
-    body: String(entry.body || ""),
-    ts: Number.isFinite(entry.ts) ? entry.ts : Date.now(),
-    read: !!entry.read,
+    id: e.id || nextId(),
+    kind: String(e.kind || ""),
+    title: String(e.title || ""),
+    body: String(e.body || ""),
+    ts: now,
+    read: false,
+    count: 1,
   };
-  return [rec, ...(items || [])].slice(0, max);
+  return [rec, ...prior].slice(0, max);
 }
 
 export function withRead(items, id) {
@@ -124,7 +153,10 @@ function renderList() {
     <div class="notif-row${x.read ? " read" : ""} ${x.kind}" data-id="${x.id}">
       ${icon(x.kind)}
       <div class="notif-body">
-        ${x.title ? `<div class="notif-title"></div>` : ""}
+        <div class="notif-line">
+          ${x.title ? `<div class="notif-title"></div>` : ""}
+          ${(Number(x.count) || 1) > 1 ? `<span class="notif-count" title="×${x.count}">×${x.count}</span>` : ""}
+        </div>
         ${x.body ? `<div class="notif-text"></div>` : ""}
         <div class="notif-time">${relTime(x.ts, now)}</div>
       </div>
