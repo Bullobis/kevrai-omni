@@ -1061,15 +1061,21 @@
 
           <section class="settings-section" data-section="mcp" aria-label="MCP 服务器" hidden>
             <h3 class="settings-group-title" data-i18n="settings.navMcp">MCP 服务器</h3>
-            <p class="mut tiny" data-i18n="mcp.desc">连接远程 MCP（Model Context Protocol）服务器，让 Agent 调用它们提供的外部工具。支持 streamable HTTP（地址以 /mcp 结尾）与 SSE（地址以 /sse 结尾）。</p>
+            <p class="mut tiny" data-i18n="mcp.desc">连接 MCP（Model Context Protocol）服务器，让 Agent 调用它们提供的外部工具。支持本地 stdio（如 npx / uvx 拉起），以及 streamable HTTP（地址以 /mcp 结尾）与 SSE（地址以 /sse 结尾）。</p>
             <div class="mcp-add-form">
               <input type="text" id="mcp-add-name" class="input" data-i18n-placeholder="mcp.namePh" placeholder="名称">
               <select id="mcp-add-transport" class="input">
+                <option value="stdio">stdio (本地)</option>
                 <option value="streamable-http">streamable HTTP</option>
                 <option value="sse">SSE</option>
               </select>
               <input type="text" id="mcp-add-url" class="input mcp-url-input" data-i18n-placeholder="mcp.urlPh" placeholder="https://example.com/mcp">
+              <input type="text" id="mcp-add-command" class="input mcp-stdio-input" hidden data-i18n-placeholder="mcp.commandPh" placeholder="命令，如 npx / uvx / python">
               <button type="button" id="mcp-add-btn" class="btn btn-sm" data-i18n="mcp.add">添加</button>
+            </div>
+            <div class="mcp-stdio-extra" id="mcp-stdio-extra" hidden>
+              <textarea id="mcp-add-args" class="input" rows="2" data-i18n-placeholder="mcp.argsPh" placeholder="参数，每行一个，如：&#10;-y&#10;@modelcontextprotocol/server-everything"></textarea>
+              <textarea id="mcp-add-env" class="input" rows="2" data-i18n-placeholder="mcp.envPh" placeholder="环境变量，每行一个 KEY=VALUE，如：&#10;GITHUB_TOKEN=xxx"></textarea>
             </div>
             <div id="mcp-server-list" class="mcp-server-list"></div>
           </section>

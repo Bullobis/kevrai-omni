@@ -155,6 +155,9 @@
 .mcp-add-form .input { flex: 1 1 140px; min-width: 0; }
 .mcp-add-form select.input { flex: 0 0 auto; }
 .mcp-url-input { flex: 2 1 240px; }
+.mcp-stdio-input { flex: 2 1 240px; }
+.mcp-stdio-extra { display: flex; flex-direction: column; gap: 8px; margin: -4px 0 10px; }
+.mcp-stdio-extra textarea.input { width: 100%; resize: vertical; font-family: inherit; }
 .mcp-server-list { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
 .mcp-server-row {
   display: flex; flex-direction: column; gap: 8px;

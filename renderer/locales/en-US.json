@@ -892,12 +892,15 @@
     "failed": "Operation failed: {err}"
   },
   "mcp": {
-    "desc": "Connect remote MCP (Model Context Protocol) servers so the Agent can call the external tools they expose. Supports streamable HTTP (URL ending in /mcp) and SSE (URL ending in /sse).",
+    "desc": "Connect MCP (Model Context Protocol) servers so the Agent can call the external tools they expose. Supports local stdio (spawned via npx/uvx), plus streamable HTTP (URL ending in /mcp) and SSE (URL ending in /sse).",
     "namePh": "Name",
     "urlPh": "https://example.com/mcp",
+    "commandPh": "Command, e.g. npx / uvx / python",
+    "argsPh": "Arguments, one per line, e.g. -y",
+    "envPh": "Environment, one KEY=VALUE per line",
     "add": "Add",
     "added": "MCP server added",
-    "needFields": "Please fill in the name and URL",
+    "needFields": "Please fill in the name and required connection info",
     "empty": "No MCP servers yet. Add one above.",
     "enabled": "Enabled",
     "disabled": "Disabled",
