@@ -83,6 +83,9 @@
         <button class="pane-tab" data-tab="agent" title="AI Agent" data-i18n-title="nav.agent">
           <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span> <span class="tab-label" data-i18n="nav.agent">AI Agent</span>
         </button>
+        <button class="pane-tab" data-tab="compare-answers" title="多模型对比回答" data-i18n-title="nav.compareAnswers">
+          <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M3 7h4l-2 5z"/><path d="M21 7h-4l2 5z"/><path d="M7 21h10"/><path d="M3 7l-1 6h6z"/><path d="M21 7l1 6h-6z"/></svg></span> <span class="tab-label" data-i18n="nav.compareAnswers">多模型对比</span>
+        </button>
         <button class="pane-tab" data-tab="ltx" title="LTX-2.5 视频" data-i18n-title="nav.ltx">
           <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span> <span class="tab-label" data-i18n="nav.ltx">LTX-2.5 视频</span>
         </button>
@@ -222,6 +225,26 @@
       <!-- 短剧能力已并入本页：由内置技能 drama_studio 提供（see agent/tools/drama_tools.py） -->
       <section id="pane-agent" class="pane" aria-label="AI Agent">
         <div id="agent-root"></div>
+      </section>
+
+      <!-- Multi-model answer comparison pane -->
+      <section id="pane-compare-answers" class="pane" aria-label="多模型对比回答">
+        <div class="pane-head">
+          <h2 data-i18n="compareAnswers.title">多模型对比回答</h2>
+          <p class="muted" data-i18n="compareAnswers.subtitle">选择多个本地模型，对同一个问题分别作答，并排对比。</p>
+        </div>
+        <div class="card">
+          <label data-i18n="compareAnswers.models">参与对比的模型（最多 4 个）</label>
+          <div id="ca-models" class="ca-models"></div>
+        </div>
+        <div class="card">
+          <label for="ca-question" data-i18n="compareAnswers.question">问题</label>
+          <textarea id="ca-question" rows="3" maxlength="5000"></textarea>
+          <div class="form-actions">
+            <button class="primary" id="ca-run" data-i18n="compareAnswers.run">开始对比</button>
+          </div>
+        </div>
+        <div id="ca-results"></div>
       </section>
 
       <!-- LTX-2.5 video generation pane -->

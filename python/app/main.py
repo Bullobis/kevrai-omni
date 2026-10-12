@@ -4224,6 +4224,35 @@ def agent_set_brain(request: Request, req: BrainReq) -> dict[str, Any]:
             "llm_ready": ready, "model_name": model_name}
 
 
+class CompareAnswersReq(BaseModel):
+    repos: list[str] = Field(default_factory=list)
+    question: str = Field(default="", max_length=8000)
+    max_new_tokens: int = 512
+
+
+@app.post("/api/agent/compare-answers")
+def agent_compare_answers(req: CompareAnswersReq) -> dict[str, Any]:
+    """Ask one question to several local brain models and return their answers
+    side by side. Per-model failures are captured, not raised."""
+    from .llm_runtime import (
+        COMPARE_MAX_MODELS,
+        BrainParamError,
+        TextBrainManager,
+        compare_answers,
+    )
+
+    manager = TextBrainManager(APP_ROOT)
+    try:
+        results = compare_answers(
+            manager, req.repos, req.question,
+            max_new_tokens=req.max_new_tokens,
+        )
+    except BrainParamError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+    return {"results": results, "count": len(results),
+            "max_models": COMPARE_MAX_MODELS}
+
+
 class PersonaReq(BaseModel):
     persona: str = Field(default="general", max_length=64)
 

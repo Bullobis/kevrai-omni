@@ -505,7 +505,7 @@ function sidecarFetch(p, opts = {}) {
     // budget than the default. Clamped to a sane range.
     const timeoutMs = Math.max(1_000, Math.min(
       Number.isFinite(opts.timeoutMs) ? opts.timeoutMs : 30_000,
-      120_000,
+      600_000,
     ));
     const req = http.request({
       host: u.hostname, port: u.port, path: u.pathname + u.search,
@@ -1692,6 +1692,9 @@ function registerIpc() {
   ipcMain.handle("kevrai:agent-brain", async () => sidecarFetch("/api/agent/brain"));
   ipcMain.handle("kevrai:agent-set-brain", async (_e, backend) =>
     sidecarFetch("/api/agent/brain", { method: "POST", body: { backend } }));
+  ipcMain.handle("kevrai:agent-compare-answers", async (_e, payload) =>
+    sidecarFetch("/api/agent/compare-answers",
+      { method: "POST", body: payload, timeoutMs: 600_000 }));
   ipcMain.handle("kevrai:agent-persona", async () => sidecarFetch("/api/agent/persona"));
   ipcMain.handle("kevrai:agent-set-persona", async (_e, persona) =>
     sidecarFetch("/api/agent/persona", { method: "POST", body: { persona } }));

@@ -427,6 +427,10 @@ const api = {
     assertString(backend, "backend", 200);
     return invoke("kevrai:agent-set-brain", backend);
   },
+  agentCompareAnswers: (payload) => {
+    assertObject(payload, "payload");
+    return invoke("kevrai:agent-compare-answers", payload);
+  },
   agentPersona: () => invoke("kevrai:agent-persona"),
   agentSetPersona: (persona) => {
     assertString(persona, "persona", 64);

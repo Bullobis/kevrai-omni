@@ -26,6 +26,7 @@ import { initEmbeddings } from "./modules/embeddings.js";
 import { initKnowledge } from "./modules/knowledge.js";
 import { initSeparation } from "./modules/separation.js";
 import { initPiper } from "./modules/piper.js";
+import { initCompareAnswers } from "./modules/compare-answers.js";
 import { initMultimodal } from "./modules/multimodal.js";
 import { initMusic } from "./modules/music.js";
 import { initTranslate } from "./modules/translate.js";
@@ -298,6 +299,13 @@ function switchView(name) {
     if (root && !root.dataset.rendered) {
       root.dataset.rendered = "1";
       initPiper().catch((e) => toast(t("piper.failed", { err: e.message }), { kind: "err" }));
+    }
+  }
+  if (name === "compare-answers") {
+    const root = document.getElementById("pane-compare-answers");
+    if (root && !root.dataset.rendered) {
+      root.dataset.rendered = "1";
+      initCompareAnswers().catch((e) => toast(t("compareAnswers.failed", { err: e.message }), { kind: "err" }));
     }
   }
   if (name === "multimodal") {

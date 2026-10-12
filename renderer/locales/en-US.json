@@ -19,6 +19,7 @@
     "engines": "AI Engines",
     "mnn": "MNN Engine",
     "agent": "AI Agent",
+    "compareAnswers": "Compare Models",
     "ltx": "LTX-2.5 Video",
     "local": "Local Models",
     "gguf": "GGUF Repos",
@@ -830,6 +831,18 @@
     "markAllRead": "Mark all read",
     "clear": "Clear",
     "delete": "Delete"
+  },
+  "compareAnswers": {
+    "title": "Compare model answers",
+    "subtitle": "Pick several local models; each answers the same question, shown side by side.",
+    "models": "Models to compare (up to 4)",
+    "question": "Question",
+    "run": "Compare",
+    "noModels": "No local brain models yet. Select or install one on the AI Agent page.",
+    "running": "Generating…",
+    "pickModel": "Select at least one model",
+    "pickQuestion": "Enter a question",
+    "failed": "Comparison failed: {err}"
   },
   "mcp": {
     "desc": "Connect remote MCP (Model Context Protocol) servers so the Agent can call the external tools they expose. Supports streamable HTTP (URL ending in /mcp) and SSE (URL ending in /sse).",
