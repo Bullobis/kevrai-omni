@@ -3540,6 +3540,83 @@ def backup_import_disk(request: Request, req: BackupRestoreReq) -> dict[str, Any
 
 
 # ---------------------------------------------------------------------------
+# WebDAV cloud sync — push / pull the on-disk backup bundle to self-hosted DAV
+# ---------------------------------------------------------------------------
+
+
+def _webdav_sync(request: Request):
+    from .webdav_sync import WebDavSync
+
+    svc = getattr(request.app.state, "webdav", None)
+    if svc is None:
+        svc = WebDavSync(APP_ROOT, _knowledge_manager(request))
+        request.app.state.webdav = svc
+    return svc
+
+
+def _webdav_http(exc: Exception) -> HTTPException:
+    from .webdav_sync import WebDavError
+
+    if isinstance(exc, WebDavError):
+        return HTTPException(status_code=exc.http_status, detail=exc.message)
+    return HTTPException(status_code=502, detail=f"WebDAV 同步失败：{exc}")
+
+
+class WebDavConfigReq(BaseModel):
+    url: str = Field("", max_length=2048)
+    username: str = Field("", max_length=256)
+    # Empty / omitted password keeps the previously saved one (never returned).
+    password: str = Field("", max_length=4096)
+    remote_path: str = Field("", max_length=1024)
+
+
+class WebDavPullReq(BaseModel):
+    mode: str = Field("merge", pattern="^(merge|replace)$")
+
+
+@app.get("/api/backup/webdav/config")
+def webdav_get_config(request: Request) -> dict[str, Any]:
+    """Return saved WebDAV settings without the password."""
+    return _webdav_sync(request).get_config()
+
+
+@app.post("/api/backup/webdav/config")
+def webdav_set_config(request: Request, req: WebDavConfigReq) -> dict[str, Any]:
+    try:
+        return _webdav_sync(request).set_config(req.model_dump())
+    except Exception as e:  # noqa: BLE001
+        raise _webdav_http(e) from e
+
+
+@app.post("/api/backup/webdav/test")
+def webdav_test(request: Request, req: WebDavConfigReq) -> dict[str, Any]:
+    """Test a connection. Empty fields fall back to the saved config so the UI
+    can test the current form without first saving a half-filled password."""
+    try:
+        return _webdav_sync(request).test(req.model_dump())
+    except Exception as e:  # noqa: BLE001
+        raise _webdav_http(e) from e
+
+
+@app.post("/api/backup/webdav/push")
+def webdav_push(request: Request) -> dict[str, Any]:
+    """Export the on-disk bundle and PUT it to the remote WebDAV collection."""
+    try:
+        return _webdav_sync(request).push()
+    except Exception as e:  # noqa: BLE001
+        raise _webdav_http(e) from e
+
+
+@app.post("/api/backup/webdav/pull")
+def webdav_pull(request: Request, req: WebDavPullReq) -> dict[str, Any]:
+    """GET the remote bundle and import it (merge / replace)."""
+    try:
+        return _webdav_sync(request).pull(mode=req.mode)
+    except Exception as e:  # noqa: BLE001
+        raise _webdav_http(e) from e
+
+
+# ---------------------------------------------------------------------------
 # On-device text translation (built on the local text brain)
 # ---------------------------------------------------------------------------
 

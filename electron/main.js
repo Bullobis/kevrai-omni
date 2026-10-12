@@ -1228,6 +1228,45 @@ function registerIpc() {
       timeoutMs: 180_000,
     });
   });
+  // WebDAV cloud backup sync — config / test / push / pull.
+  ipcMain.handle("api:backup:webdav:config:get", async () =>
+    sidecarFetch("/api/backup/webdav/config", { timeoutMs: 15_000 }));
+  ipcMain.handle("api:backup:webdav:config:set", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    return sidecarFetch("/api/backup/webdav/config", {
+      method: "POST",
+      body: {
+        url: isString(payload.url, 2048) ? payload.url : "",
+        username: isString(payload.username, 256) ? payload.username : "",
+        password: typeof payload.password === "string" ? payload.password : "",
+        remote_path: isString(payload.remote_path, 1024) ? payload.remote_path : "",
+      },
+      timeoutMs: 15_000,
+    });
+  });
+  ipcMain.handle("api:backup:webdav:test", async (_e, payload) => {
+    const p = (payload && typeof payload === "object") ? payload : {};
+    return sidecarFetch("/api/backup/webdav/test", {
+      method: "POST",
+      body: {
+        url: isString(p.url, 2048) ? p.url : "",
+        username: isString(p.username, 256) ? p.username : "",
+        password: typeof p.password === "string" ? p.password : "",
+        remote_path: isString(p.remote_path, 1024) ? p.remote_path : "",
+      },
+      timeoutMs: 30_000,
+    });
+  });
+  ipcMain.handle("api:backup:webdav:push", async () =>
+    sidecarFetch("/api/backup/webdav/push", { timeoutMs: 180_000 }));
+  ipcMain.handle("api:backup:webdav:pull", async (_e, payload) => {
+    const p = (payload && typeof payload === "object") ? payload : {};
+    return sidecarFetch("/api/backup/webdav/pull", {
+      method: "POST",
+      body: { mode: p.mode === "replace" ? "replace" : "merge" },
+      timeoutMs: 180_000,
+    });
+  });
   // On-device text translation through the local brain.
   ipcMain.handle("api:translate", async (_e, payload) => {
     assert(payload && typeof payload === "object", "payload: invalid");

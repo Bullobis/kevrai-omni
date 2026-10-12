@@ -1010,6 +1010,46 @@
               </div>
               <p class="mut tiny" data-i18n="settings.importModeHint">「合并」会把备份数据追加到现有数据（去重）；「替换」会用备份数据覆盖现有收藏与设置。</p>
             </div>
+            <div class="webdav-block">
+              <h4 class="webdav-title" data-i18n="webdav.title">WebDAV 云备份</h4>
+              <p class="mut tiny" data-i18n="webdav.desc">把知识库、Agent 对话记录与大脑配置推送到自托管 WebDAV（如 Nextcloud），随时从任意设备拉回。密码仅保存在本机，不上传。</p>
+              <div class="webdav-form">
+                <label class="webdav-field">
+                  <span data-i18n="webdav.url">服务器地址</span>
+                  <input type="url" id="webdav-url" class="input" data-i18n-placeholder="webdav.urlPh" placeholder="https://nextcloud.example.com/remote.php/dav/files/you/">
+                </label>
+                <div class="webdav-row">
+                  <label class="webdav-field">
+                    <span data-i18n="webdav.username">用户名</span>
+                    <input type="text" id="webdav-username" class="input" autocomplete="off">
+                  </label>
+                  <label class="webdav-field">
+                    <span data-i18n="webdav.password">密码 / 应用令牌</span>
+                    <input type="password" id="webdav-password" class="input" autocomplete="new-password">
+                  </label>
+                </div>
+                <label class="webdav-field">
+                  <span data-i18n="webdav.remotePath">远端目录</span>
+                  <input type="text" id="webdav-remote-path" class="input" data-i18n-placeholder="webdav.remotePathPh" placeholder="kevrai-backup">
+                </label>
+              </div>
+              <div class="webdav-actions">
+                <button type="button" class="secondary" id="webdav-test-btn" data-i18n="webdav.test">测试连接</button>
+                <button type="button" class="secondary" id="webdav-save-btn" data-i18n="webdav.save">保存配置</button>
+                <button type="button" class="primary" id="webdav-push-btn" data-i18n="webdav.push">立即推送</button>
+                <button type="button" class="secondary" id="webdav-pull-btn" data-i18n="webdav.pull">拉取恢复</button>
+              </div>
+              <div class="webdav-pull-confirm" id="webdav-pull-confirm" hidden>
+                <p class="mut tiny" data-i18n="webdav.pullConfirmText">从远端恢复备份。请选择恢复方式：</p>
+                <div class="import-confirm-row">
+                  <button type="button" class="secondary" id="webdav-pull-merge" data-i18n="webdav.pullMerge">合并恢复</button>
+                  <button type="button" class="primary" id="webdav-pull-replace" data-i18n="webdav.pullReplace">替换恢复</button>
+                  <button type="button" class="ghost" id="webdav-pull-cancel" data-i18n="webdav.pullCancel">取消</button>
+                </div>
+                <p class="mut tiny" data-i18n="webdav.pullModeHint">「合并」把远端备份追加到现有会话；「替换」会先清空现有 Agent 对话再恢复。知识库始终合并（重名自动加后缀）。</p>
+              </div>
+              <p class="webdav-status mut tiny" id="webdav-status" role="status"></p>
+            </div>
           </section>
 
           <section class="settings-section" data-section="scheduler" aria-label="计划任务" hidden>

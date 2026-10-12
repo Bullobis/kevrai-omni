@@ -162,6 +162,12 @@ const api = {
   knowledgeImport:  (payload) => invoke("api:knowledge:import", payload),
   backupDiskGet:     () => invoke("api:backup:disk:get"),
   backupDiskPut:     (payload) => invoke("api:backup:disk:put", payload),
+  // WebDAV cloud backup sync.
+  webdavConfigGet:   () => invoke("api:backup:webdav:config:get"),
+  webdavConfigSet:   (payload) => invoke("api:backup:webdav:config:set", payload),
+  webdavTest:        (payload) => invoke("api:backup:webdav:test", payload),
+  webdavPush:        () => invoke("api:backup:webdav:push"),
+  webdavPull:        (payload) => invoke("api:backup:webdav:pull", payload),
   // On-device text translation.
   translate:        (payload) => invoke("api:translate", payload),
   // Demucs music source separation.
