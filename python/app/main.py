@@ -3469,6 +3469,128 @@ def knowledge_ask(request: Request, kb_id: str, req: KbAskReq) -> dict[str, Any]
         ) from e
 
 
+@app.websocket("/ws/knowledge/ask/{kb_id}")
+async def ws_knowledge_ask(websocket: WebSocket, kb_id: str) -> None:
+    """Stream a knowledge-base ask: sources first, then answer token-by-token.
+
+    Protocol (mirrors :meth:`KnowledgeBase.ask_stream_sync`):
+      Client sends JSON: {"event": "ask", "question": "...", "top_k": 4,
+                          "brain_model": "owner/name"}
+      Server sends events:
+        {"event": "sources", "sources": [...], "results": [...], ...}
+        {"event": "delta", "delta": "…"}            # many
+        {"event": "done", "answer": "...", "brain_used": bool,
+         "answer_note": "..."}
+        {"event": "error", "message": "..."}
+    """
+    if not await _ws_authorize(websocket):
+        return
+    await websocket.accept()
+
+    # Build a pseudo-request so _knowledge_manager can grab the singleton.
+    class _FakeReq:
+        app = websocket.app
+    mgr = _knowledge_manager(_FakeReq())  # type: ignore[arg-type]
+
+    try:
+        _require_kb(mgr, kb_id)
+    except knowledge_base.KnowledgeError as e:
+        await websocket.send_json({"event": "error", "message": str(e)})
+        await websocket.close()
+        return
+
+    try:
+        data = await websocket.receive_json()
+    except Exception:  # noqa: BLE001
+        await websocket.send_json({"event": "error", "message": "invalid request"})
+        await websocket.close()
+        return
+
+    if not isinstance(data, dict) or data.get("event") != "ask":
+        await websocket.send_json({"event": "error", "message": "expected event=ask"})
+        await websocket.close()
+        return
+
+    question = str(data.get("question") or "").strip()
+    if not question:
+        await websocket.send_json({"event": "error", "message": "question is empty"})
+        await websocket.close()
+        return
+    top_k = int(data.get("top_k") or knowledge_base.DEFAULT_TOP_K)
+    brain_model = str(data.get("brain_model") or "")
+
+    # Build the brain_stream callable (system, prompt) -> iterator[str].
+    brain_stream = None
+    if brain_model and "/" in brain_model:
+        from .llm_runtime import TextBrainManager
+
+        manager = TextBrainManager(APP_ROOT)
+        repo = brain_model
+
+        def brain_stream(sys_prompt: str, prompt: str, _repo: str = repo,
+                         _mgr: TextBrainManager = manager):
+            return _mgr.answer_stream(_repo, prompt, system=sys_prompt)
+
+    # Run the synchronous generator on a worker thread, forwarding events to
+    # the websocket as they arrive.
+    loop = asyncio.get_running_loop()
+    event_queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue()
+
+    def _produce() -> None:
+        try:
+            gen = mgr.ask_stream_sync(kb_id, question, top_k,
+                                      brain_stream=brain_stream)
+            for ev in gen:
+                asyncio.run_coroutine_threadsafe(
+                    event_queue.put(ev), loop
+                ).result()
+        except knowledge_base.KnowledgeError as e:
+            asyncio.run_coroutine_threadsafe(
+                event_queue.put({"event": "error", "message": str(e)}), loop
+            ).result()
+        except Exception as e:  # noqa: BLE001 — never crash the socket thread
+            asyncio.run_coroutine_threadsafe(
+                event_queue.put({"event": "error", "message": f"ask failed: {e}"}),
+                loop,
+            ).result()
+        finally:
+            # Sentinel: producer is done.
+            asyncio.run_coroutine_threadsafe(
+                event_queue.put(None), loop
+            ).result()
+
+    worker = threading.Thread(target=_produce, daemon=True)
+    worker.start()
+
+    try:
+        while True:
+            ev = await event_queue.get()
+            if ev is None:
+                break
+            etype = ev.get("type", "error")
+            # Map internal event types to websocket event names.
+            if etype == "sources":
+                await websocket.send_json({"event": "sources", **ev})
+            elif etype == "delta":
+                await websocket.send_json({"event": "answer_delta",
+                                           "delta": ev.get("delta", "")})
+            elif etype == "done":
+                await websocket.send_json({"event": "done", **ev})
+            elif etype == "error":
+                await websocket.send_json({"event": "error",
+                                           "message": ev.get("message", "unknown error")})
+                break
+    except WebSocketDisconnect:
+        pass
+    except Exception:  # noqa: BLE001
+        with contextlib.suppress(Exception):
+            await websocket.send_json({"event": "error", "message": "stream interrupted"})
+    finally:
+        worker.join(timeout=5)
+        with contextlib.suppress(Exception):
+            await websocket.close()
+
+
 @app.get("/api/knowledge/kbs/{kb_id}/export")
 def knowledge_export(request: Request, kb_id: str) -> dict[str, Any]:
     """Return a portable JSON bundle of a knowledge base for download."""

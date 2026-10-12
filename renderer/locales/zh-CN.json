@@ -1124,6 +1124,8 @@
     "import": "导入知识库",
     "exported": "已导出 {name}",
     "imported": "已导入 {name}（{n} 篇文档）",
-    "importBadJson": "所选文件不是有效的 JSON"
+    "importBadJson": "所选文件不是有效的 JSON",
+    "searching": "正在检索",
+    "noAnswer": "未生成回答，请检查知识库内容或选择回答模型"
   }
 }

@@ -7,6 +7,7 @@ import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { t } from "./i18n.js";
 import { attachTokenCounter } from "./token-estimate.js";
+import { renderMarkdown } from "./md-render.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -353,25 +354,138 @@ async function runAsk() {
   }
   const btn = $("#kb-ask-btn");
   btn.disabled = true;
+  const out = $("#kb-ask-result");
+
+  // Reset the output area.
+  if (out) out.innerHTML = `<p class="muted kb-streaming-hint">${t("knowledge.searching")}…</p>`;
+
   try {
     const brainRepo = ($("#kb-brain") && $("#kb-brain").value) || "";
-    const payload = await api.knowledgeAsk({
-      kb_id: currentKbId, question, top_k: 4, brain_model: brainRepo,
+    await runAskStream({
+      kbId: currentKbId,
+      question,
+      topK: 4,
+      brainModel: brainRepo,
+      out,
     });
-    const data = (payload && payload.body) ? payload.body : payload;
-    const out = $("#kb-ask-result");
-    const answer = data.answer
-      ? `<div class="kb-answer"><h4>${t("knowledge.answer")}</h4>` +
-        `<p>${escapeHtml(data.answer)}</p></div>`
-      : `<p class="muted">${escapeHtml(data.answer_note || "")}</p>`;
-    const sources = sourceCardsHtml(data.sources || []);
-    renderResults({ results: data.results || [] });
-    if (out) out.innerHTML = answer + sources;
   } catch (e) {
     toast(e.message, { kind: "err" });
+    if (out) out.innerHTML = `<p class="muted">${escapeHtml(e.message)}</p>`;
   } finally {
     btn.disabled = false;
   }
+}
+
+/**
+ * Stream a KB ask over WebSocket: sources first, then answer deltas, then
+ * render the final answer as Markdown. Pure orchestration — all DOM updates go
+ * through helper functions so they can be tested in isolation.
+ */
+export async function runAskStream({ kbId, question, topK, brainModel, out }) {
+  // Get sidecar connection info (baseUrl + token).
+  const infoRes = await api.agentWsInfo();
+  const info = (infoRes && infoRes.body) ? infoRes.body : infoRes;
+  if (!info || !info.baseUrl || !info.token) {
+    throw new Error("无法获取知识库流式连接信息");
+  }
+
+  const url = `${info.baseUrl}/ws/knowledge/ask/${encodeURIComponent(kbId)}?token=${encodeURIComponent(info.token)}`;
+
+  return new Promise((resolve, reject) => {
+    let ws = null;
+    let settled = false;
+    let answerBuffer = "";
+    let answerBodyEl = null;
+
+    const fail = (err) => {
+      if (settled) return;
+      settled = true;
+      try { ws && ws.close(); } catch (_) {}
+      reject(err);
+    };
+
+    try {
+      ws = new WebSocket(url);
+    } catch (e) {
+      return fail(e);
+    }
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        event: "ask",
+        question,
+        top_k: topK,
+        brain_model: brainModel || "",
+      }));
+    };
+
+    ws.onerror = () => fail(new Error("知识库流式连接失败"));
+
+    ws.onclose = () => {
+      if (!settled) {
+        // Normal close after done — resolve.
+        settled = true;
+        resolve();
+      }
+    };
+
+    ws.onmessage = (ev) => {
+      let msg;
+      try { msg = JSON.parse(ev.data); } catch { return; }
+
+      if (msg.event === "sources") {
+        // Render source cards + search results immediately.
+        const sourcesHtml = sourceCardsHtml(msg.sources || []);
+        renderResults({ results: msg.results || [] });
+        // Build the answer container placeholder.
+        const answerPlaceholder = brainModel
+          ? `<div class="kb-answer" id="kb-stream-answer">
+               <h4>${t("knowledge.answer")}</h4>
+               <div class="kb-stream-body"></div>
+             </div>`
+          : `<div class="kb-answer" id="kb-stream-answer">
+               <div class="kb-stream-body"></div>
+             </div>`;
+        if (out) out.innerHTML = answerPlaceholder + sourcesHtml;
+        answerBodyEl = out && out.querySelector(".kb-stream-body");
+
+      } else if (msg.event === "answer_delta") {
+        // Append delta to the buffer and show raw text with a blinking cursor.
+        answerBuffer += msg.delta || "";
+        if (answerBodyEl) {
+          answerBodyEl.innerHTML = escapeHtml(answerBuffer) +
+            '<span class="kb-stream-cursor"></span>';
+        }
+
+      } else if (msg.event === "done") {
+        // Terminal: render the full answer as Markdown (if brain was used),
+        // or show the context note.
+        settled = true;
+        const fullAnswer = msg.answer || "";
+        const brainUsed = !!msg.brain_used;
+        const note = msg.answer_note || "";
+
+        if (brainUsed && fullAnswer && answerBodyEl) {
+          answerBodyEl.innerHTML = renderMarkdown(fullAnswer);
+        } else if (note && answerBodyEl) {
+          answerBodyEl.innerHTML = `<p class="muted">${escapeHtml(note)}</p>`;
+        } else if (!brainUsed && !note && answerBodyEl) {
+          // No brain configured, no answer — show the context.
+          answerBodyEl.innerHTML = `<p class="muted">${t("knowledge.noAnswer")}</p>`;
+        }
+        // Remove the cursor.
+        if (answerBodyEl) {
+          const cur = answerBodyEl.querySelector(".kb-stream-cursor");
+          if (cur) cur.remove();
+        }
+        try { ws.close(); } catch (_) {}
+        resolve();
+
+      } else if (msg.event === "error") {
+        fail(new Error(msg.message || "知识库提问出错"));
+      }
+    };
+  });
 }
 
 // Populate the answer-model dropdown from the selectable local brain models.
