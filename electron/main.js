@@ -1788,7 +1788,10 @@ function registerIpc() {
   ipcMain.handle("kevrai:agent-status", async () => sidecarFetch("/api/agent/status"));
   ipcMain.handle("kevrai:agent-chat", async (_e, opts) => {
     assert(opts && typeof opts === "object", "opts: invalid");
-    return sidecarFetch("/api/agent/chat", { method: "POST", body: opts });
+    // A slow CPU brain can take several minutes for a code-length answer.
+    return sidecarFetch("/api/agent/chat", {
+      method: "POST", body: opts, timeoutMs: 600_000,
+    });
   });
   ipcMain.handle("kevrai:agent-sessions", async (_e, limit) => {
     const l = (typeof limit === "number" && limit > 0) ? limit : 20;

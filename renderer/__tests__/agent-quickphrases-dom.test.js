@@ -82,3 +82,14 @@ test("再次点击折叠按钮可收起 chips（不长期占屏）", () => {
   assert.equal(body.hidden, true);
   assert.equal(toggle.getAttribute("aria-expanded"), "false");
 });
+
+// Regression: `.agent-qp-body { display: flex }` otherwise overrides the UA
+// `[hidden] { display: none }`, so a collapsed body still occupied ~280px and
+// squeezed the message list on short windows.
+test("CSS: 折叠态 .agent-qp-body[hidden] 必须 display:none（不被 display:flex 覆盖）", () => {
+  const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  const flexRule = /\.agent-qp-body\s*\{[^}]*display:\s*flex[^}]*\}/.test(css);
+  assert.ok(flexRule, "baseline flex rule present");
+  const hiddenRule = /\.agent-qp-body\[hidden\]\s*\{[^}]*display:\s*none[^}]*\}/.test(css);
+  assert.ok(hiddenRule, ".agent-qp-body[hidden] must force display:none");
+});

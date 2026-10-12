@@ -13,6 +13,7 @@ import {
 import { attachTokenCounter } from "./token-estimate.js";
 import { attachSlashMenu } from "./agent-slash.js";
 import { personaOptionsHtml } from "./agent-persona-ui.js";
+import { renderMarkdown } from "./md-render.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -874,9 +875,15 @@ function _appendMessage(role, content, animate = false, tools = [], msgId = null
   const deleteBtn = canDelete
     ? `<button type="button" class="agent-msg-btn agent-msg-btn-danger" data-msg-action="delete-msg" title="删除此条及之后消息">🗑 删除</button>`
     : "";
+  const contentHtml = role === "assistant"
+    ? renderMarkdown(content)
+    : esc(content).replace(/\n/g, "<br>");
+  const contentCls = role === "assistant"
+    ? "agent-msg-content agent-msg-md"
+    : "agent-msg-content";
   div.innerHTML = `
     <div class="agent-msg-label">${esc(label)}</div>
-    <div class="agent-msg-content">${esc(content).replace(/\n/g, "<br>")}</div>
+    <div class="${contentCls}">${contentHtml}</div>
     ${traceHtml || ""}
     ${toolsHtml}
     <div class="agent-msg-actions">
@@ -902,6 +909,18 @@ function _wireMessageActions(container) {
         await api.openPath(openBtn.dataset.open);
       } catch (err) {
         toast(t("agent.openFailed", { err: err.message || err }), { kind: "err" });
+      }
+      return;
+    }
+    const copyCodeBtn = e.target.closest('[data-msg-action="copy-code"]');
+    if (copyCodeBtn) {
+      try {
+        const code = decodeURIComponent(escape(atob(copyCodeBtn.dataset.code || "")));
+        await navigator.clipboard.writeText(code);
+        copyCodeBtn.textContent = "✓ 已复制";
+        setTimeout(() => { copyCodeBtn.textContent = "⧉ 复制代码"; }, 1400);
+      } catch (err) {
+        toast(`复制失败：${err.message || err}`, { kind: "err" });
       }
       return;
     }

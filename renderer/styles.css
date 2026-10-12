@@ -991,6 +991,7 @@ html[data-theme="light"] .agent-msg-user { color: #fff; }
 .agent-qp-toggle.is-open { color: var(--acc); border-color: var(--bord-strong); }
 .agent-qp-toggle:focus-visible { outline: none; box-shadow: var(--focus); }
 .agent-qp-body { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.agent-qp-body[hidden] { display: none; }
 .agent-qp-group { display: flex; flex-direction: column; gap: 5px; }
 .agent-qp-group-label { font-size: var(--fs-xs); color: var(--mut); font-weight: 500; }
 .agent-qp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1608,3 +1609,60 @@ html[data-theme="light"] .skeleton-card::after {
 .slash-name { font-weight: 600; color: var(--fg); min-width: 96px; }
 .slash-desc { color: var(--mut); font-size: var(--fs-xs); }
 .slash-empty { padding: 10px; color: var(--mut); font-size: var(--fs-xs); }
+
+/* ---------------------------------------------------------------------------
+   Markdown rendering (assistant messages)
+--------------------------------------------------------------------------- */
+.agent-msg-md { white-space: normal; word-break: break-word; }
+.agent-msg-md > *:first-child { margin-top: 0; }
+.agent-msg-md > *:last-child { margin-bottom: 0; }
+.agent-msg-md .md-h { color: var(--fg); line-height: 1.3; margin: 14px 0 8px; font-weight: 650; }
+.md-h1 { font-size: 1.34em; } .md-h2 { font-size: 1.22em; } .md-h3 { font-size: 1.1em; }
+.md-h4, .md-h5, .md-h6 { font-size: 1em; }
+.agent-msg-md .md-p { margin: 8px 0; line-height: 1.62; }
+.agent-msg-md .md-hr { border: 0; border-top: 1px solid var(--border); margin: 14px 0; }
+.agent-msg-md .md-ul, .agent-msg-md .md-ol { margin: 8px 0; padding-left: 22px; line-height: 1.6; }
+.agent-msg-md li { margin: 3px 0; }
+.agent-msg-md .md-quote {
+  margin: 8px 0; padding: 6px 12px; border-left: 3px solid var(--acc);
+  background: var(--bg-1); color: var(--mut); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.agent-msg-md .md-icode {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em; background: var(--bg-1); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 1px 5px;
+}
+.agent-msg-md .md-codeblock {
+  margin: 10px 0; border: 1px solid var(--border); border-radius: var(--radius-md);
+  overflow: hidden; background: var(--bg-0);
+}
+.agent-msg-md .md-codebar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 10px; background: var(--bg-1); border-bottom: 1px solid var(--border);
+}
+.agent-msg-md .md-codelang {
+  font-size: var(--fs-xs); color: var(--mut); text-transform: lowercase;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+.agent-msg-md .md-copycode {
+  border: 1px solid var(--border); background: var(--card); color: var(--fg);
+  border-radius: var(--radius-sm); font-size: var(--fs-xs); padding: 2px 8px; cursor: pointer;
+}
+.agent-msg-md .md-copycode:hover { border-color: var(--acc); color: var(--acc); }
+.agent-msg-md .md-pre {
+  margin: 0; padding: 10px 12px; overflow-x: auto; line-height: 1.5;
+}
+.agent-msg-md .md-pre code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em; white-space: pre; color: var(--fg); background: none;
+}
+.agent-msg-md .md-table {
+  border-collapse: collapse; margin: 10px 0; width: 100%;
+  display: block; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+.agent-msg-md .md-table th, .agent-msg-md .md-table td {
+  border: 1px solid var(--border); padding: 6px 10px; text-align: left;
+}
+.agent-msg-md .md-table th { background: var(--bg-1); font-weight: 600; }
+.agent-msg-md a { color: var(--acc); text-decoration: none; }
+.agent-msg-md a:hover { text-decoration: underline; }
