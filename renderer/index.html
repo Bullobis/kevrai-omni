@@ -838,6 +838,10 @@
             <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9.5V13l2.5 2.5"/><path d="M9 2h6"/></svg>
             <span data-i18n="scheduler.nav">计划任务</span>
           </button>
+          <button type="button" class="settings-nav-btn" data-section="mcp">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M6 8h12v4a6 6 0 0 1-12 0z"/><path d="M12 18v4"/></svg>
+            <span data-i18n="settings.navMcp">MCP 服务器</span>
+          </button>
           <button type="button" class="settings-nav-btn" data-section="about">
             <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
             <span data-i18n="settings.navAbout">关于</span>
@@ -973,6 +977,21 @@
             <h3 class="settings-group-title" data-i18n="scheduler.nav">计划任务</h3>
             <p class="mut tiny" data-i18n="scheduler.desc">统一管理后台周期性任务：启停、调整周期即时生效并保存。虾聊心跳与 sidecar 健康检查共用同一调度器，不再各自独立计时。</p>
             <div id="scheduler-task-list" class="scheduler-list"></div>
+          </section>
+
+          <section class="settings-section" data-section="mcp" aria-label="MCP 服务器" hidden>
+            <h3 class="settings-group-title" data-i18n="settings.navMcp">MCP 服务器</h3>
+            <p class="mut tiny" data-i18n="mcp.desc">连接远程 MCP（Model Context Protocol）服务器，让 Agent 调用它们提供的外部工具。支持 streamable HTTP（地址以 /mcp 结尾）与 SSE（地址以 /sse 结尾）。</p>
+            <div class="mcp-add-form">
+              <input type="text" id="mcp-add-name" class="input" data-i18n-placeholder="mcp.namePh" placeholder="名称">
+              <select id="mcp-add-transport" class="input">
+                <option value="streamable-http">streamable HTTP</option>
+                <option value="sse">SSE</option>
+              </select>
+              <input type="text" id="mcp-add-url" class="input mcp-url-input" data-i18n-placeholder="mcp.urlPh" placeholder="https://example.com/mcp">
+              <button type="button" id="mcp-add-btn" class="btn btn-sm" data-i18n="mcp.add">添加</button>
+            </div>
+            <div id="mcp-server-list" class="mcp-server-list"></div>
           </section>
 
           <section class="settings-section" data-section="about" aria-label="关于" hidden>

@@ -441,6 +441,24 @@ const api = {
     assertString(sessionId, "sessionId", 128);
     return invoke("kevrai:agent-export-session", sessionId);
   },
+  // ----- Remote MCP servers -----
+  mcpListServers: () => invoke("kevrai:mcp-list-servers"),
+  mcpAddServer: (server) => invoke("kevrai:mcp-add-server", server),
+  mcpRemoveServer: (serverId) => {
+    assertString(serverId, "serverId", 64);
+    return invoke("kevrai:mcp-remove-server", serverId);
+  },
+  mcpSetEnabled: (serverId, enabled) =>
+    invoke("kevrai:mcp-set-enabled", serverId, !!enabled),
+  mcpListTools: (serverId) => {
+    assertString(serverId, "serverId", 64);
+    return invoke("kevrai:mcp-list-tools", serverId);
+  },
+  mcpCallTool: (serverId, toolName, args) => {
+    assertString(serverId, "serverId", 64);
+    assertString(toolName, "toolName", 120);
+    return invoke("kevrai:mcp-call-tool", serverId, toolName, args || {});
+  },
   agentCancel: (sessionId) => {
     assertString(sessionId, "sessionId", 128);
     return invoke("kevrai:agent-cancel", sessionId);

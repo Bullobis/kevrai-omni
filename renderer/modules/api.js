@@ -163,6 +163,12 @@ export const api = {
   agentSetPersona:      wrap("agentSetPersona",      (persona) => k().agentSetPersona(persona)),
   agentRenameSession:   wrap("agentRenameSession",   (id, title) => k().agentRenameSession(id, title)),
   agentExportSession:   wrap("agentExportSession",   (id) => k().agentExportSession(id)),
+  mcpListServers:       wrap("mcpListServers",       () => k().mcpListServers()),
+  mcpAddServer:         wrap("mcpAddServer",         (server) => k().mcpAddServer(server)),
+  mcpRemoveServer:      wrap("mcpRemoveServer",      (id) => k().mcpRemoveServer(id)),
+  mcpSetEnabled:        wrap("mcpSetEnabled",        (id, en) => k().mcpSetEnabled(id, en)),
+  mcpListTools:         wrap("mcpListTools",         (id) => k().mcpListTools(id)),
+  mcpCallTool:          wrap("mcpCallTool",          (id, tool, args) => k().mcpCallTool(id, tool, args)),
   agentCancel:          wrap("agentCancel",          (id) => k().agentCancel(id)),
   // Tool-call approval gate (confirm-before-run)
   agentApprovals:       wrap("agentApprovals",       () => k().agentApprovals()),

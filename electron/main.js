@@ -1700,6 +1700,24 @@ function registerIpc() {
       { method: "POST", body: { title } }));
   ipcMain.handle("kevrai:agent-export-session", async (_e, sessionId) =>
     sidecarFetch(`/api/agent/sessions/${encodeURIComponent(sessionId)}/export`));
+  // ----- Remote MCP servers -----
+  ipcMain.handle("kevrai:mcp-list-servers", async () =>
+    sidecarFetch("/api/mcp/servers"));
+  ipcMain.handle("kevrai:mcp-add-server", async (_e, server) =>
+    sidecarFetch("/api/mcp/servers", { method: "POST", body: server }));
+  ipcMain.handle("kevrai:mcp-remove-server", async (_e, serverId) =>
+    sidecarFetch(`/api/mcp/servers/${encodeURIComponent(serverId)}`,
+      { method: "DELETE" }));
+  ipcMain.handle("kevrai:mcp-set-enabled", async (_e, serverId, enabled) =>
+    sidecarFetch(`/api/mcp/servers/${encodeURIComponent(serverId)}/enabled`,
+      { method: "PUT", body: { enabled: !!enabled } }));
+  ipcMain.handle("kevrai:mcp-list-tools", async (_e, serverId) =>
+    sidecarFetch(`/api/mcp/servers/${encodeURIComponent(serverId)}/tools`,
+      { timeoutMs: 60_000 }));
+  ipcMain.handle("kevrai:mcp-call-tool", async (_e, serverId, toolName, args) =>
+    sidecarFetch(`/api/mcp/servers/${encodeURIComponent(serverId)}/call`,
+      { method: "POST", body: { tool_name: toolName, arguments: args || {} },
+        timeoutMs: 60_000 }));
   ipcMain.handle("kevrai:agent-cancel", async (_e, sessionId) =>
     sidecarFetch("/api/agent/cancel",
       { method: "POST", body: { session_id: sessionId } }));

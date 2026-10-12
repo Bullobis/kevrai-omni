@@ -284,6 +284,9 @@ async def _lifespan(app: FastAPI):
     app.state.multimodal = multimodal_runtime.MultimodalManager(APP_ROOT)
     # Native MusicGen text-to-music manager (reuses the transformers engine).
     app.state.music = music_runtime.MusicManager(APP_ROOT)
+    # Remote MCP (Model Context Protocol) server client manager.
+    from .mcp_manager import MCPManager
+    app.state.mcp = MCPManager(APP_ROOT)
     # Dual-source hub registry (HF + ModelScope + curated). Adapters own their
     # httpx clients, so the lifespan must aclose() them on shutdown. Wire the
     # lifespan handle to the *process singleton* (get_registry), NOT a fresh
@@ -4270,6 +4273,96 @@ def agent_export_session(request: Request, session_id: str) -> Response:
         headers={"Content-Disposition":
                  f'attachment; filename="session-{session_id[:8]}.md"'},
     )
+
+
+# ---------------------------------------------------------------------------
+# MCP (Model Context Protocol) remote servers
+# ---------------------------------------------------------------------------
+class McpServerReq(BaseModel):
+    name: str = Field(default="", max_length=80)
+    transport: str = Field(default="streamable-http")
+    url: str = Field(default="", max_length=500)
+    enabled: bool = True
+
+
+class McpCallReq(BaseModel):
+    tool_name: str = Field(default="", max_length=120)
+    arguments: dict[str, Any] = Field(default_factory=dict)
+
+
+@app.get("/api/mcp/servers")
+def mcp_list_servers(request: Request) -> dict[str, Any]:
+    """List configured MCP servers."""
+    return {"servers": request.app.state.mcp.list_servers()}
+
+
+@app.post("/api/mcp/servers", status_code=201)
+def mcp_add_server(request: Request, req: McpServerReq) -> dict[str, Any]:
+    """Add (and validate) a remote MCP server configuration."""
+    from .mcp_manager import MCPConfigError
+    try:
+        server = request.app.state.mcp.add_server(
+            req.name, req.transport, req.url, req.enabled)
+    except MCPConfigError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+    return server
+
+
+@app.delete("/api/mcp/servers/{server_id}", status_code=200)
+def mcp_remove_server(request: Request, server_id: str) -> dict[str, Any]:
+    """Remove an MCP server configuration."""
+    from .mcp_manager import MCPConfigError
+    try:
+        request.app.state.mcp.remove_server(server_id)
+    except MCPConfigError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from None
+    return {"ok": True}
+
+
+@app.put("/api/mcp/servers/{server_id}/enabled")
+def mcp_set_enabled(request: Request, server_id: str,
+                    req: dict[str, Any]) -> dict[str, Any]:
+    """Enable or disable an MCP server."""
+    from .mcp_manager import MCPConfigError
+    try:
+        return request.app.state.mcp.set_enabled(
+            server_id, bool(req.get("enabled", True)))
+    except MCPConfigError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from None
+
+
+@app.get("/api/mcp/servers/{server_id}/tools")
+async def mcp_list_tools(request: Request, server_id: str) -> dict[str, Any]:
+    """Connect to a server and list the tools it exposes."""
+    from .mcp_manager import MCPConfigError, MCPConnectionError
+    mgr = request.app.state.mcp
+    try:
+        mgr.get_server(server_id)
+        tools = await mgr.a_list_tools(server_id)
+    except MCPConfigError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from None
+    except MCPConnectionError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from None
+    return {"tools": tools}
+
+
+@app.post("/api/mcp/servers/{server_id}/call")
+async def mcp_call_tool(request: Request, server_id: str,
+                        req: McpCallReq) -> dict[str, Any]:
+    """Call a tool on an MCP server."""
+    from .mcp_manager import MCPConfigError, MCPConnectionError, MCPError
+    if not req.tool_name.strip():
+        raise HTTPException(status_code=400, detail="tool_name is required")
+    mgr = request.app.state.mcp
+    try:
+        return await mgr.a_call(server_id, req.tool_name, req.arguments)
+    except MCPConfigError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from None
+    except MCPConnectionError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from None
+    except MCPError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from None
+
 
 
 @app.get("/api/agent/skills")

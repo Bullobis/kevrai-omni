@@ -25,6 +25,7 @@ from .catalog_tools import (
 )
 from .drama_tools import DRAMA_TOOLS
 from .knowledge_tools import KNOWLEDGE_TOOLS
+from .mcp_tools import MCP_TOOLS
 from .media_engine_tools import MEDIA_ENGINE_TOOLS
 from .media_prompt_tools import MEDIA_PROMPT_TOOLS
 from .system_tools import (
@@ -188,6 +189,21 @@ KNOWLEDGE_SKILL = Skill(
     ),
 )
 
+MCP_SKILL = Skill(
+    id="mcp_servers",
+    name="MCP 外部工具",
+    description="连接远程 MCP 服务器，发现并调用它们提供的外部工具（网络、数据库、文件等）。",
+    icon="🔌",
+    category="media",
+    default_enabled=False,  # opt-in
+    tools=MCP_TOOLS,
+    guidance=(
+        "需要使用外部 MCP 工具时：先 list_mcp_tools 查看各服务器提供的工具及其参数，"
+        "再用 call_mcp_tool 传入 server_id、tool_name 与 arguments 调用；"
+        "服务器在「设置 → MCP 服务器」中添加。"
+    ),
+)
+
 BUILTIN_SKILLS: list[Skill] = [
     CORE_SKILL,
     CATALOG_SKILL,
@@ -197,6 +213,7 @@ BUILTIN_SKILLS: list[Skill] = [
     MEDIA_PROMPT_SKILL,
     MEDIA_ENGINE_SKILL,
     KNOWLEDGE_SKILL,
+    MCP_SKILL,
 ]
 
 

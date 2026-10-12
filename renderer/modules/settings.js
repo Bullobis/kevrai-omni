@@ -10,6 +10,7 @@ import { overlayOpen, overlayClose } from "./overlay-fx.js";
 import {
   downloadExport, parseImport, importData, applyImportedPreferences,
 } from "./data-portability.js";
+import { initMcpPanel } from "./mcp-servers.js";
 import { t, getLocale, setLocale } from "./i18n.js";
 import { scheduler, INTERVAL_PRESETS_MS, formatInterval } from "./scheduler.js";
 
@@ -45,6 +46,7 @@ export async function openSettings() {
   setState({ settings: fresh });
   fillForm(fresh);
   renderSchedulerPanel();
+  initMcpPanel();
   trapFocus(overlay);
 }
 

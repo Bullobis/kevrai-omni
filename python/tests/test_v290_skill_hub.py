@@ -200,6 +200,7 @@ class TestBuiltinPreserved:
                           "tts_speak", "vision_ask", "gen_image",
                           "generate_music"},
         "knowledge_retrieval": {"list_knowledge_bases", "search_knowledge"},
+        "mcp_servers": {"list_mcp_tools", "call_mcp_tool"},
     }
     EXPECTED_IDS = set(EXPECTED)
 
