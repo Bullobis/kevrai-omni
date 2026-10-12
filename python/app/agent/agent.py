@@ -609,6 +609,20 @@ class Agent:
         """Inner ReAct loop body; this run's cancel token is already reserved."""
         t0 = time.time()
 
+        # Slash commands: "/command args" -> a canonical query (works in both
+        # rule and brain modes), or a direct help/usage answer.
+        if (message or "").lstrip().startswith("/"):
+            from .slash_commands import resolve_slash
+
+            ok, resolved = resolve_slash(message)
+            if not ok:
+                help_result = AgentResult(
+                    session_id=session_id, answer=resolved, llm_used=False, model_name=""
+                )
+                help_result.duration_ms = int((time.time() - t0) * 1000)
+                return help_result
+            message = resolved
+
         # Ensure hardware info is populated (lazy, cached in ctx)
         if not self.ctx.hardware_info or hasattr(self.ctx.hardware_info, "send"):
             try:

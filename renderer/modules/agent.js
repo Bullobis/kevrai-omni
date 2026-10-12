@@ -11,6 +11,7 @@ import {
   QUICK_PHRASE_GROUPS, findPhraseById, composePhraseValue,
 } from "./agent-quickphrases.js";
 import { attachTokenCounter } from "./token-estimate.js";
+import { attachSlashMenu } from "./agent-slash.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -148,6 +149,7 @@ function _wireEvents(root) {
   const input = $("#agent-input", root);
   const sendBtn = $("#agent-send-btn", root);
   attachTokenCounter(input);
+  attachSlashMenu(input);
   const newBtn = $("#agent-new-btn", root);
   const sessionSelect = $("#agent-session-select", root);
 
