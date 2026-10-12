@@ -1065,6 +1065,19 @@ function registerIpc() {
       timeoutMs: 120_000,
     });
   });
+  // Unified full backup — on-disk state.
+  ipcMain.handle("api:backup:disk:get", async () =>
+    sidecarFetch("/api/backup/disk", { timeoutMs: 60_000 }));
+  ipcMain.handle("api:backup:disk:put", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(payload.disk && typeof payload.disk === "object", "disk: invalid");
+    const mode = payload.mode === "replace" ? "replace" : "merge";
+    return sidecarFetch("/api/backup/disk", {
+      method: "POST",
+      body: { disk: payload.disk, mode },
+      timeoutMs: 180_000,
+    });
+  });
   // On-device text translation through the local brain.
   ipcMain.handle("api:translate", async (_e, payload) => {
     assert(payload && typeof payload === "object", "payload: invalid");

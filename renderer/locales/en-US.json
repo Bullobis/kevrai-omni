@@ -345,7 +345,7 @@
     "navAbout": "About",
     "appearancePreview": "Theme preview",
     "appearanceHint": "Switch theme under the General section. The UI follows the chosen theme automatically: dark uses low-luminance surfaces, light uses bright paper surfaces, with readable contrast for icons and text.",
-    "dataDesc": "Export your settings, favorites, recent usage and other data to a JSON backup, or restore from a backup. The export includes your HuggingFace / ModelScope tokens — store it safely.",
+    "dataDesc": "Export settings, favorites, recent usage, knowledge bases and Agent conversations to a complete JSON backup, or restore from one. The export may contain tokens — store it safely.",
     "exportData": "Export data",
     "importData": "Import data…",
     "importConfirmText": "Selected “{file}” ({favs} favorites, {recents} recent). Choose how to import:",

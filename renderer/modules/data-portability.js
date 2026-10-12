@@ -14,7 +14,7 @@ import { api } from "./api.js";
 import { state } from "./state.js";
 import { applyTheme } from "./theme.js";
 
-export const EXPORT_VERSION = 1;
+export const EXPORT_VERSION = 2;
 export const RECENT_MAX = 20;
 
 const FAV_KEY = "kevrai:favorites";
@@ -101,6 +101,13 @@ export async function exportData() {
     if (!settings || typeof settings !== "object") settings = {};
   } catch (_) { /* toast 已由 api.wrap 展示；继续导出其余数据 */ }
 
+  // On-disk state (knowledge bases, agent history, brain). Best-effort: if the
+  // sidecar cannot return it we still export the frontend data rather than fail.
+  let disk = null;
+  try {
+    disk = await api.backupDiskGet();
+  } catch (_) { disk = null; }
+
   const favorites = readStringArray(FAV_KEY);
   const recent = readStringArray(RECENT_KEY);
   const cmdRecent = readObject(CMD_RECENT_KEY);
@@ -114,6 +121,7 @@ export async function exportData() {
     appVersion: await getAppVersion(),
     data: {
       settings,
+      disk,
       favorites,
       recent,
       cmdRecent,
@@ -208,6 +216,14 @@ export function parseImport(fileText) {
     }
     settings = d.settings;
   }
+  // disk：v2 可选；存在则必须是对象（磁盘知识库/会话/大脑由后端校验细节）。
+  let disk;
+  if (d.disk !== undefined && d.disk !== null) {
+    if (typeof d.disk !== "object" || Array.isArray(d.disk)) {
+      throw new Error("数据格式错误：disk 不是对象");
+    }
+    disk = d.disk;
+  }
   // preferences：可选对象。
   let preferences;
   if (d.preferences !== undefined) {
@@ -217,7 +233,7 @@ export function parseImport(fileText) {
     preferences = d.preferences;
   }
 
-  return { version, data: { settings, favorites, recent, cmdRecent, preferences } };
+  return { version, data: { settings, disk, favorites, recent, cmdRecent, preferences } };
 }
 
 // 合并去重：imported 排在前面，existing 补充其后（保持导入优先级）。
@@ -289,7 +305,21 @@ export async function importData(parsed, mode) {
     if (state) { try { state.settings = nextSettings; } catch (_) {} }
   } catch (_) { /* toast 已由 api.wrap 展示 */ }
 
-  return { favorites: nextFavorites.length, recent: nextRecent.length, settings: settingsOk };
+  // 恢复磁盘态（知识库 / Agent 会话 / 大脑）。失败不回滚已写入的前端数据，
+  // 但记录结果供调用方提示。
+  let diskResult = null;
+  if (d.disk) {
+    try {
+      diskResult = await api.backupDiskPut({ disk: d.disk, mode });
+    } catch (_) { diskResult = null; }
+  }
+
+  return {
+    favorites: nextFavorites.length,
+    recent: nextRecent.length,
+    settings: settingsOk,
+    disk: diskResult,
+  };
 }
 
 /**

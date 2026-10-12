@@ -327,3 +327,99 @@ class AgentMemory:
                 "SELECT * FROM task_history ORDER BY created_at DESC LIMIT ?", (limit,)
             ).fetchall()
         return [dict(r) for r in rows]
+
+    # ------------------------------------------------------------------
+    # Full portable dump / restore (used by the unified full backup)
+    # ------------------------------------------------------------------
+    def export_all(self) -> dict[str, Any]:
+        """Full portable dump: sessions + ordered messages + preferences."""
+        sessions: list[dict[str, Any]] = []
+        with self._conn() as conn:
+            srows = conn.execute(
+                "SELECT * FROM sessions ORDER BY updated_at DESC"
+            ).fetchall()
+            for s in srows:
+                mrows = conn.execute(
+                    "SELECT role, content, tool_name, tool_params, created_at "
+                    "FROM messages WHERE session_id=? ORDER BY id ASC",
+                    (s["id"],),
+                ).fetchall()
+                sessions.append({
+                    "id": s["id"],
+                    "title": s["title"],
+                    "created_at": s["created_at"],
+                    "updated_at": s["updated_at"],
+                    "messages": [dict(m) for m in mrows],
+                })
+        return {
+            "version": 1,
+            "sessions": sessions,
+            "preferences": self.get_all_preferences(),
+        }
+
+    def import_all(
+        self, data: dict[str, Any], *, replace: bool = False
+    ) -> dict[str, int]:
+        """Restore a dump.
+
+        - ``replace`` wipes existing sessions/messages/preferences first.
+        - merge (default) only restores a session id that has no messages yet
+          (avoids duplicating history on a repeated restore); preferences are
+          upserted.
+        """
+        sessions = data.get("sessions")
+        if not isinstance(sessions, list):
+            raise ValueError("备份数据缺少 sessions 列表")
+        now = time.time()
+        n_sessions = 0
+        n_messages = 0
+        with self._conn() as conn:
+            if replace:
+                conn.execute("DELETE FROM messages")
+                conn.execute("DELETE FROM sessions")
+                conn.execute("DELETE FROM preferences")
+            for s in sessions:
+                sid = str(s.get("id", "")).strip()
+                if not sid:
+                    continue
+                msgs = s.get("messages") or []
+                existing = conn.execute(
+                    "SELECT COUNT(*) AS c FROM messages WHERE session_id=?", (sid,)
+                ).fetchone()
+                has = existing["c"] if existing is not None else 0
+                if has and not replace:
+                    continue  # merge: never duplicate an existing session
+                conn.execute(
+                    "INSERT OR IGNORE INTO sessions (id, title, created_at, updated_at) "
+                    "VALUES (?, ?, ?, ?)",
+                    (sid, s.get("title", ""), s.get("created_at") or now,
+                     s.get("updated_at") or now),
+                )
+                title = s.get("title", "")
+                if title:
+                    conn.execute(
+                        "UPDATE sessions SET title=? WHERE id=? AND (title='' OR title IS NULL)",
+                        (title, sid),
+                    )
+                for m in msgs:
+                    conn.execute(
+                        "INSERT INTO messages "
+                        "(session_id, role, content, tool_name, tool_params, created_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?)",
+                        (sid, str(m.get("role", "user")), str(m.get("content", "")),
+                         m.get("tool_name", "") or "", m.get("tool_params", "") or "",
+                         m.get("created_at") or now),
+                    )
+                    n_messages += 1
+                n_sessions += 1
+            prefs = data.get("preferences")
+            if isinstance(prefs, dict):
+                for k, v in prefs.items():
+                    conn.execute(
+                        "INSERT INTO preferences (key, value, updated_at) VALUES (?, ?, ?) "
+                        "ON CONFLICT(key) DO UPDATE SET value=excluded.value, "
+                        "updated_at=excluded.updated_at",
+                        (str(k), json.dumps(v, ensure_ascii=False), now),
+                    )
+            conn.commit()
+        return {"sessions": n_sessions, "messages": n_messages}

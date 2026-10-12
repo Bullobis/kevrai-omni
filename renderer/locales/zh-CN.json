@@ -345,7 +345,7 @@
     "navAbout": "关于",
     "appearancePreview": "主题预览",
     "appearanceHint": "主题在「通用」分类中切换。界面自动跟随所选主题：深色为低亮度表面层级，浅色为高亮纸面层级，图标与文字对比度均保持可读。",
-    "dataDesc": "导出你的设置、收藏、最近使用等数据为 JSON 备份文件，或从备份文件恢复。导出文件包含你的 HuggingFace / ModelScope Token，请妥善保管。",
+    "dataDesc": "导出设置、收藏、最近使用、知识库与 Agent 对话记录为 JSON 完整备份，或从备份恢复。导出文件可能包含 Token，请妥善保管。",
     "exportData": "导出数据",
     "importData": "导入数据…",
     "importConfirmText": "已选择「{file}」（收藏 {favs} 个、最近使用 {recents} 条）。请选择导入方式：",
