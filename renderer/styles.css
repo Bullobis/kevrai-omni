@@ -1533,6 +1533,14 @@ html[data-theme="light"] .skeleton-card::after {
 }
 .kb-answer h4 { margin: 0 0 6px; font-size: var(--fs-sm); }
 .kb-answer p { white-space: pre-wrap; font-size: var(--fs-sm); }
+.kb-stream-body { white-space: pre-wrap; font-size: var(--fs-sm); line-height: 1.5; }
+.kb-stream-cursor {
+  display: inline-block; width: 8px; height: 1em;
+  background: var(--accent, #4a9eff); vertical-align: text-bottom;
+  margin-left: 2px; animation: kb-blink 1s step-end infinite;
+}
+@keyframes kb-blink { 50% { opacity: 0; } }
+.kb-streaming-hint { font-style: italic; }
 
 .kb-sources { margin-top: 10px; }
 .kb-sources h5 { margin: 0 0 6px; font-size: var(--fs-xs); color: var(--mut); }

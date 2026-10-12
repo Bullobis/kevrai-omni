@@ -27,6 +27,28 @@ const html = `
   </section>`;
 const { window, document } = setupDom(html);
 
+// Mock WebSocket for the streaming ask flow.
+class FakeWebSocket {
+  static instances = [];
+  constructor(url) {
+    this.url = url;
+    this.readyState = 0;
+    this.sent = [];
+    FakeWebSocket.instances.push(this);
+  }
+  send(data) { this.sent.push(data); }
+  close() { this.readyState = 3; }
+  _open() {
+    this.readyState = 1;
+    if (this.onopen) this.onopen();
+  }
+  _emit(obj) {
+    if (this.onmessage) this.onmessage({ data: JSON.stringify(obj) });
+  }
+}
+window.WebSocket = FakeWebSocket;
+globalThis.WebSocket = FakeWebSocket;
+
 let sentAsk = null;
 let sentAdd = null;
 let sentPin = null;
@@ -63,12 +85,9 @@ window.kevrai = {
       ],
     },
   }),
-  knowledgeAsk: async (payload) => {
-    sentAsk = payload;
-    return {
-      body: { answer: "ANSWER: blue", results: [{ score: 0.9, index: 0 }] },
-    };
-  },
+  agentWsInfo: async () => ({
+    body: { baseUrl: "ws://localhost:9999", token: "secret" },
+  }),
   knowledgeExport: async (kbId) => {
     sentExport = kbId;
     return {
@@ -94,26 +113,45 @@ test("brain dropdown is populated from selectable models", () => {
   assert.equal(sel.options[1].value, "HuggingFaceTB/SmolLM2-135M-Instruct");
 });
 
-test("ask sends the selected brain model", async () => {
+test("ask opens WebSocket and sends the selected brain model", async () => {
   const list = document.getElementById("kb-list");
   list.value = "kb1";
   list.dispatchEvent(new window.Event("change"));
   document.getElementById("kb-question").value = "what colour is the sky?";
   const brain = document.getElementById("kb-brain");
   brain.value = "Qwen/Qwen3-0.6B";
+
+  FakeWebSocket.instances.length = 0;
   document.getElementById("kb-ask-btn").click();
+  await new Promise((r) => setTimeout(r, 10));
+
+  assert.equal(FakeWebSocket.instances.length, 1);
+  const ws = FakeWebSocket.instances[0];
+  ws._open();
   await new Promise((r) => setTimeout(r, 5));
-  assert.ok(sentAsk);
-  assert.equal(sentAsk.brain_model, "Qwen/Qwen3-0.6B");
-  assert.equal(sentAsk.kb_id, "kb1");
+
+  assert.equal(ws.sent.length, 1);
+  const payload = JSON.parse(ws.sent[0]);
+  assert.equal(payload.brain_model, "Qwen/Qwen3-0.6B");
+  assert.equal(payload.question, "what colour is the sky?");
+  // Clean up: send a done event so the promise resolves and the button re-enables.
+  ws._emit({ event: "done", answer: "", brain_used: false, answer_note: "test" });
+  await new Promise((r) => setTimeout(r, 5));
+  ws.close();
 });
 
 test("default (no brain) sends an empty brain_model", async () => {
-  sentAsk = null;
   document.getElementById("kb-brain").value = "";
+  FakeWebSocket.instances.length = 0;
   document.getElementById("kb-ask-btn").click();
+  await new Promise((r) => setTimeout(r, 10));
+
+  const ws = FakeWebSocket.instances[0];
+  ws._open();
   await new Promise((r) => setTimeout(r, 5));
-  assert.equal(sentAsk.brain_model, "");
+
+  const payload = JSON.parse(ws.sent[0]);
+  assert.equal(payload.brain_model, "");
 });
 
 test("pinned document renders a badge and an unpin action", async () => {

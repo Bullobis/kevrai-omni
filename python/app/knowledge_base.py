@@ -1010,6 +1010,108 @@ class KnowledgeBase:
                             else "未配置生成模型，仅返回检索到的上下文"),
         }
 
+    def ask_stream_sync(self, kb_id: str, question: str,
+                        top_k: int = DEFAULT_TOP_K,
+                        brain_stream: Callable[[str, str], Any] | None = None
+                        ) -> Any:
+        """Streaming variant of :meth:`ask` — a sync generator yielding events.
+
+        Yields dicts:
+
+        * ``{"type": "sources", "sources": [...], "results": [...],
+               "pinned": [...], "context": "...", "model": "..."}`` — emitted
+          first so the UI can render source cards immediately.
+        * ``{"type": "delta", "delta": "..."}`` — one per streamed brain token
+          chunk (only when ``brain_stream`` is provided and context exists).
+        * ``{"type": "done", "answer": "...", "brain_used": bool,
+               "answer_note": "..."}`` — terminal event with the full cleaned
+          answer (the renderer re-renders it as Markdown).
+
+        ``brain_stream`` is a callable ``(system, prompt) -> iterator[str]``
+        (e.g. ``TextBrainManager.answer_stream`` bound to a repo). When it is
+        ``None`` or no context was retrieved the generator skips straight to
+        ``done`` with a note. A brain failure yields an error event instead of
+        raising, mirroring :meth:`ask`.
+        """
+        hit = self.search(kb_id, question, top_k)
+        results = hit["results"]
+        pinned = hit.get("pinned") or []
+        pinned_block = "\n\n".join(
+            f"【钉选】({p['doc_name']}) {p['text']}" for p in pinned
+        )
+        retrieved_block = "\n\n".join(
+            f"[{i + 1}] ({r['doc_name']}) {r['text']}"
+            for i, r in enumerate(results)
+        )
+        context = "\n\n".join(b for b in (pinned_block, retrieved_block) if b)
+        has_context = bool(results) or bool(pinned)
+        sources = [
+            {
+                "ref": i + 1,
+                "doc_id": r["doc_id"],
+                "doc_name": r["doc_name"],
+                "score": r["score"],
+                "excerpt": _source_excerpt(r["text"]),
+            }
+            for i, r in enumerate(results)
+        ]
+
+        # 1) Push sources first so the UI can render them immediately.
+        yield {
+            "type": "sources",
+            "kb_id": kb_id,
+            "question": question,
+            "model": hit["model"],
+            "context": context,
+            "results": results,
+            "pinned": pinned,
+            "sources": sources,
+        }
+
+        # 2) Optionally stream the brain answer.
+        answer_parts: list[str] = []
+        brain_used = False
+        brain_error: str | None = None
+
+        if brain_stream is not None and has_context:
+            system = (
+                "你是一个基于本地知识库回答问题的助手。只依据下方提供的"
+                "上下文作答；若上下文不足以回答，请明确说明。不要复述上下文。"
+                "必须先给出完整答案；可在句末用对应的来源编号标注（如 [1]、[2]），"
+                "只能引用下方已列出的编号，禁止编造来源。"
+            )
+            prompt = (
+                f"上下文：\n{context}\n\n问题：{question}\n\n"
+                "请只根据上述上下文，用与问题相同的语言，简要给出答案。\n答案："
+            )
+            try:
+                iterator = brain_stream(system, prompt)
+                for chunk in iterator:
+                    if chunk:
+                        answer_parts.append(chunk)
+                        yield {"type": "delta", "delta": chunk}
+            except Exception as e:  # noqa: BLE001 — brain failure must not crash
+                log.warning("knowledge brain stream failed: %s", e)
+                brain_error = str(e)
+
+        raw_answer = "".join(answer_parts)
+        answer = clean_brain_answer(raw_answer)
+        brain_used = bool(answer) and brain_error is None
+
+        if brain_error is not None:
+            note = f"生成模型出错：{brain_error}"
+        elif not brain_used:
+            note = "未配置生成模型，仅返回检索到的上下文"
+        else:
+            note = None
+
+        yield {
+            "type": "done",
+            "answer": answer,
+            "brain_used": brain_used,
+            "answer_note": note,
+        }
+
     # ------------------------------------------------------------------
     # Export / import (portable bundle)
     # ------------------------------------------------------------------
