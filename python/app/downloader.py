@@ -36,6 +36,13 @@ from .catalog import (
     DEFAULT_MODEL_HOSTS,
     is_host_allowed,
 )
+from .download_shards import (
+    DEFAULT_MAX_SHARDS,
+    MAX_SHARDS,
+    ShardingNotSupportedError,
+    download_sharded,
+    truncate_to_prefix,
+)
 
 
 def _host_is_blocked(url: str) -> bool:
@@ -209,8 +216,14 @@ class Downloader:
         chunk_size: int = DEFAULT_CHUNK,
         stream_retries: int = DEFAULT_STREAM_RETRIES,
         stream_backoff: tuple[float, ...] = DEFAULT_STREAM_BACKOFF,
+        shard_downloads: bool = True,
+        max_shards: int = DEFAULT_MAX_SHARDS,
     ) -> None:
         self._sem = asyncio.Semaphore(max_concurrent)
+        # 大文件分片并发下载。仅在服务器声明 Accept-Ranges 且文件足够大时生效，
+        # 其余情况自动退回单线，行为与开启前完全一致。
+        self.shard_downloads = bool(shard_downloads)
+        self.max_shards = max(1, min(int(max_shards or 1), MAX_SHARDS))
         # v2.4.1 fix: exposed for main.put_settings concurrency compare —
         # previously absent, making every PUT /api/settings raise AttributeError.
         self.max_concurrent = max_concurrent
@@ -462,7 +475,9 @@ class Downloader:
 
             # --- stream this source (with its own in-URL backoff retries) ---
             try:
-                await self._stream_with_retry(task, partial, 0)
+                # 大文件优先走分片并发；不适用时返回 False，退回原有单线流程。
+                if not await self._try_sharded(task, partial):
+                    await self._stream_with_retry(task, partial, 0)
             except asyncio.CancelledError:
                 raise
             except DownloadRefused as e:
@@ -558,6 +573,46 @@ class Downloader:
         # Small cooperative pause so a hard-down host doesn't get hammered
         # instantly; tests pass zero-backoff to stay fast.
         await asyncio.sleep(self._backoff_seconds(task.fallbacks))
+
+    async def _try_sharded(self, task: DownloadTask, partial: Path) -> bool:
+        """尝试分片并发下载，返回 True 表示字节已全部就位。
+
+        False 表示"不该分片或分片失败"，调用方应走原来的单线流程。
+        任何失败都会把 ``.partial`` 截断到连续已完成的字节数，
+        保证单线续传的前缀是完整正确的 —— 宁可少留几个字节，也不能留空洞。
+        """
+        if not self.shard_downloads:
+            return False
+        headers: dict[str, str] = {}
+        for k, v in (task.extra_headers or {}).items():
+            if k.lower() != "range" and v:
+                headers[k] = v
+        try:
+            client = await self._get_client()
+            return await download_sharded(
+                client=client,
+                url=task.url,
+                base_headers=headers,
+                partial=partial,
+                task=task,
+                chunk_size=self._chunk_size,
+                max_shards=self.max_shards,
+                emit=self._emit,
+            )
+        except asyncio.CancelledError:
+            raise
+        except ShardingNotSupportedError:
+            _truncate_partial(partial, task)
+            return False
+        except Exception as e:  # noqa: BLE001 — 分片失败一律回退，不放弃下载
+            with contextlib.suppress(Exception):
+                import logging
+
+                logging.getLogger("kevrai.downloader").debug(
+                    "sharded download failed, falling back to single stream: %s", e
+                )
+            _truncate_partial(partial, task)
+            return False
 
     async def _stream_with_retry(
         self,
@@ -723,6 +778,15 @@ class Downloader:
                 task.queue.get_nowait()
             except asyncio.QueueEmpty:
                 break
+
+
+def _truncate_partial(partial: Path, task: DownloadTask) -> None:
+    """分片失败回退单线前：截断到连续前缀并同步计数器。"""
+    try:
+        prefix = truncate_to_prefix(partial)
+    except Exception:  # noqa: BLE001 — 截断失败也只影响续传起点，不能中断下载
+        prefix = partial.stat().st_size if partial.exists() else 0
+    task.downloaded_bytes = prefix
 
 
 def _atomic_rename(src: Path, dst: Path) -> None:

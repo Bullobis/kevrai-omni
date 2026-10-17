@@ -211,8 +211,34 @@ def _bandwidth_tier(mbps: float) -> str:
     return "fast"            # >= 100 Mbps
 
 
+def _vendor_label(vendor: str) -> str:
+    """厂商中文展示名。"""
+    try:
+        from .accelerators import VENDOR_LABELS
+    except Exception:  # noqa: BLE001
+        VENDOR_LABELS = {}  # noqa: N806
+    return VENDOR_LABELS.get(vendor, vendor)
+
+
+def _vendor_weight(vendor: str) -> float:
+    """厂商生态成熟度权重；未知厂商给保守的中间值。"""
+    try:
+        from .accelerators import VENDOR_WEIGHTS
+    except Exception:  # noqa: BLE001 — 模块缺失时退回内置表
+        VENDOR_WEIGHTS = {  # noqa: N806
+            "nvidia": 1.0, "apple": 0.9, "amd": 0.7, "intel": 0.6,
+            "moorethreads": 0.45, "hygon": 0.45, "ascend": 0.4,
+            "cambricon": 0.35, "iluvatar": 0.35, "cpu": 0.1,
+        }
+    return float(VENDOR_WEIGHTS.get(vendor, 0.3))
+
+
 def _score(hw: dict[str, Any]) -> int:
-    """0-100 综合硬件评分（LLM 推理导向）。"""
+    """0-100 综合硬件评分（LLM 推理导向）。
+
+    最后一档 10 分原本只奖励 NVIDIA / Apple，导致国产加速卡与 Intel 一律 0 分。
+    现改为按厂商生态成熟度加权（见 accelerators.VENDOR_WEIGHTS）。
+    """
     ram = hw["ram_total_gb"]
     vram = hw["gpu_total_vram_gb"]
     cores = hw["cpu"]["physical_cores"]
@@ -224,8 +250,8 @@ def _score(hw: dict[str, Any]) -> int:
         score += 5
     elif hw["cpu"]["avx2"]:
         score += 3
-    if hw.get("gpu_vendor") in ("nvidia", "apple"):
-        score += 10
+    vendor = hw.get("gpu_vendor") or "cpu"
+    score += int(round(10 * _vendor_weight(vendor)))
     return max(1, min(100, int(score)))
 
 
@@ -255,6 +281,9 @@ async def detect_hardware(data_root: Path) -> dict[str, Any]:
         "gpu_name": (best_gpu.name if best_gpu else cpu["name"]),
         "gpu_best_vram_gb": round((best_gpu.vram_mb / 1024) if best_gpu else 0, 1),
         "has_discrete_gpu": has_real_gpu,
+        "gpu_vendor_label": _vendor_label(best_gpu.vendor if best_gpu else "cpu"),
+        "gpu_vendor_weight": _vendor_weight(best_gpu.vendor if best_gpu else "cpu"),
+        "gpu_labels": {g.vendor: _vendor_label(g.vendor) for g in gpus},
         "disk": _disk_info(data_root),
         "bandwidth_mbps": bandwidth_mbps,
         "bandwidth_tier": _bandwidth_tier(bandwidth_mbps),

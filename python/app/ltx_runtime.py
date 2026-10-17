@@ -330,8 +330,14 @@ class LtxManager:
             task.finished_at = time.time()
             task.elapsed_s = max(0.0, task.finished_at - task.started_at)
         except Exception as e:  # noqa: BLE001
-            task.state = TaskState.FAILED
-            task.error = f"{type(e).__name__}: {e}"
+            # v4.11.0: 取消优先于失败。用户点了取消之后，底层加载/推理很可能
+            # 因为中断而抛异常——那是取消的后果，不该报成 FAILED。
+            if task._cancel.is_set():
+                task.state = TaskState.CANCELLED
+                task.error = ""
+            else:
+                task.state = TaskState.FAILED
+                task.error = f"{type(e).__name__}: {e}"
             task.finished_at = time.time()
             task.elapsed_s = max(0.0, task.finished_at - task.started_at)
         finally:

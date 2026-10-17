@@ -56,3 +56,6 @@ htmlcov/
 
 # Remotion 渲染产物（不跟踪 mp4 等视频文件）
 remotion/out/
+
+# catalog 备份：地址修正脚本产生的临时快照，不随仓库提交
+catalog/models.bak-*.json

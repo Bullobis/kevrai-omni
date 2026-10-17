@@ -1,5 +1,5 @@
 {
-  "version": "4.10.0",
+  "version": "4.11.0",
   "updated": "2026-10-12",
   "notice": "v4.1.0：为 72 个 HF-only 模型自动补充魔搭模型广场（modelscope.cn）直链（只保留 API 验证存在的路径），国内用户免令牌即可直接下载。\nv2.9.0 数据核验：修正 14 处失效/错误仓库 slug(THUDM/glm-4-9b-chat→zai-org/GLM-4.5, Tencent-Hunyuan→tencent, xinntao/Real-ESRGAN→ai-forever, Kiteretsu77/APISR→camenduru, Fanghua-Yu/SUPIR→camenduru[非官方转存], Kim2091/4x-UltraSharp→lokCX, haoheliu/audioldm2→audioldm2-full, ASLP-lab/DiffRhythm→DiffRhythm-base, VAST-AI-Research/TripoSR→stabilityai, RVC-Boss/GPT-SoVITS→lj1995, THU-MIG/yolov10→onnx-community, hpcaitech/Open-Sora→hpcai-tech, dummy9996/MiniMax-Music3-w4a8→NidAll, buffalo_l→immich-app/buffalo_l)；清除广告软文式描述；按平台分拆 sources（GitHub/HF 各用各 slug）。",
   "categories": [
@@ -1718,7 +1718,7 @@
       "id": "hunyuanimage-3.0",
       "category": "image",
       "name": "HunyuanImage 3.0",
-      "repo": "tencent/HunyuanImage-3.0",
+      "repo": "tencent/HunyuanImage-3.0-Instruct",
       "gguf_repo": "",
       "size_gb": 157,
       "engine": [
@@ -2630,7 +2630,8 @@
         "即将推出",
         "待开源",
         "热门"
-      ]
+      ],
+      "note": "官方尚未发布可下载权重，暂无下载地址。"
     },
     {
       "id": "qwen3.8-27b",
@@ -4220,7 +4221,8 @@
         "pending",
         "即将推出",
         "待开源"
-      ]
+      ],
+      "note": "官方尚未发布可下载权重，链接仅为搜索页，暂不可下载。"
     },
     {
       "id": "minimax-h3",
@@ -4241,7 +4243,8 @@
       "sources": [
         "https://huggingface.co/Comfy-Org/MiniMax-H3/",
         "https://hf-mirror.com/Comfy-Org/MiniMax-H3/",
-        "https://modelscope.cn/models/Comfy-Org/MiniMax-H3/"
+        "https://modelscope.cn/models/Comfy-Org/MiniMax-H3/",
+        "https://modelscope.cn/models/MiniMax/MiniMax-H3"
       ],
       "primary_url": "https://huggingface.co/Comfy-Org/MiniMax-H3/",
       "hardware": {
@@ -4386,7 +4389,8 @@
         "即将推出",
         "待开源",
         "热门"
-      ]
+      ],
+      "note": "截至 2026-10，Wan-AI 官方未发布 3.0 开源权重，本条暂无可下载地址；页面上的链接只是搜索页。可用的仍是 Wan 2.2 系列。"
     },
     {
       "id": "minimax-music3",
@@ -4405,7 +4409,8 @@
       "description": "MiniMax 官方开源音乐生成模型（8B Global LLM + 0.6B Local LLM + 2.4B Flow Matching + 123M Flow-VAE），输出 32kHz 立体声 WAV，可生成带人声完整歌曲。官方推荐 sglang-omni 服务端推理，也支持 diffusers 与 ComfyUI 0.33.0+。",
       "sources": [
         "https://huggingface.co/MiniMaxAI/MiniMax-Music3",
-        "https://hf-mirror.com/MiniMaxAI/MiniMax-Music3"
+        "https://hf-mirror.com/MiniMaxAI/MiniMax-Music3",
+        "https://modelscope.cn/models/MiniMax/MiniMax-Music3"
       ],
       "primary_url": "https://huggingface.co/MiniMaxAI/MiniMax-Music3",
       "hardware": {
@@ -4507,7 +4512,8 @@
         "pending",
         "即将推出",
         "待开源"
-      ]
+      ],
+      "note": "官方尚未发布可下载权重，链接仅为搜索页，暂不可下载。"
     },
     {
       "id": "minimax-music3-comfyui",
@@ -5292,7 +5298,7 @@
       "id": "pixal3d",
       "category": "3d",
       "name": "Pixal3D",
-      "repo": "TencentARC/Pixal3D",
+      "repo": "TencentARC/Pixal3D-T",
       "gguf_repo": "",
       "size_gb": 43,
       "engine": [
@@ -10192,7 +10198,7 @@
       "id": "apple-sharp",
       "category": "3d",
       "name": "Apple Sharp（ML-Sharp）",
-      "repo": "apple/Sharp",
+      "repo": "apple/ml-sharp",
       "gguf_repo": "",
       "size_gb": 2.8,
       "engine": [
@@ -14800,5 +14806,22 @@
       ]
     }
   ],
-  "custom_sources_allowed": true
+  "custom_sources_allowed": true,
+  "url_audit": {
+    "last_fixed": "2026-10-17T12:59:55",
+    "tool": "scripts/fix_catalog_urls.py",
+    "changes": [
+      "[已修] hunyuanimage-3.0: 仓库名已是 tencent/HunyuanImage-3.0-Instruct",
+      "[已修] pixal3d: 仓库名已是 TencentARC/Pixal3D-T",
+      "[已修] apple-sharp: 仓库名已是 apple/ml-sharp",
+      "[规范化] minimax-h3: 魔搭地址去掉 www 前缀",
+      "[规范化] minimax-music3: 魔搭地址去掉 www 前缀",
+      "[已有] minimax-music3: 魔搭地址已存在",
+      "[已有] minimax-h3: 魔搭地址已存在",
+      "[标注] wan3.0: 补上「暂无可下载权重」说明",
+      "[标注] glm-5-code: 补上「暂无可下载权重」说明",
+      "[标注] happyshrimp-1.0: 补上「暂无可下载权重」说明",
+      "[标注] minimax-2k-pending: 补上「暂无可下载权重」说明"
+    ]
+  }
 }

@@ -107,6 +107,31 @@ from .importer import (
     snapshot_progress,
 )
 from .ltx_runtime import LtxBusyError, LtxManager, LtxParamError, LtxParams
+from .gen_params import (
+    PARAMS as GEN_PARAMS,
+    SCENARIOS,
+    catalogue as gen_params_catalogue,
+    describe_scenario,
+    explain,
+    explain_all,
+    scenario_values,
+)
+from .model_roles import (
+    CAPABILITIES,
+    ROLES,
+    OverrideStore,
+    capabilities_or_unknown,
+    derive_capabilities,
+    fits_budget,
+    pick_for_role,
+)
+from .three_d_runtime import (
+    ThreeDBusyError,
+    ThreeDManager,
+    ThreeDParamError,
+    ThreeDParams,
+    capabilities as three_d_capabilities,
+)
 from .recommend import recommend as recommend_models
 from .search import SearchQuery
 from .search import push_recent as search_push_recent
@@ -265,6 +290,12 @@ async def _lifespan(app: FastAPI):
     converter_service.configure_tools_dir(APP_ROOT / "tools")
     # LTX-2.5 video generation manager (outputs to data_root/outputs/ltx)
     app.state.ltx = LtxManager(APP_ROOT / "outputs" / "ltx")
+    # 3D asset generation manager (outputs to data_root/outputs/3d)
+    # v4.11.0: closes the largest runtime gap — 24 catalog 3D models were
+    # download-only before this.
+    app.state.three_d = ThreeDManager(APP_ROOT / "outputs" / "3d")
+    # v4.11.0: 用户钉住的模型槽位（与出厂目录分离，覆盖层不污染 catalog）
+    app.state.role_pins = OverrideStore()
     # Faster Whisper speech recognition manager (models cached in-process).
     app.state.asr = asr_runtime.AsrManager(APP_ROOT)
     # Sentence-transformers embedding manager (models cached in-process).
@@ -3094,6 +3125,257 @@ def ltx_outputs(request: Request) -> dict[str, Any]:
 
 
 # ===========================================================================
+# v4.11.0 — 3D asset generation runtime (image-to-3D / text-to-3D)
+# ===========================================================================
+
+def _three_d_manager(request: Request) -> ThreeDManager:
+    mgr = getattr(request.app.state, "three_d", None)
+    if mgr is None:
+        mgr = ThreeDManager(APP_ROOT / "outputs" / "3d")
+        request.app.state.three_d = mgr
+    return mgr
+
+
+@app.get("/api/3d/capabilities")
+def three_d_caps(request: Request) -> dict[str, Any]:
+    """Report whether 3D generation can run here, and what's missing."""
+    cap = three_d_capabilities()
+    cap["outputs_dir"] = str(_three_d_manager(request).output_root)
+    return cap
+
+
+class ThreeDGenerateReq(BaseModel):
+    model_config = {"protected_namespaces": ()}  # model_id 字段合法
+    mode: str = "i23d"
+    prompt: str = Field(min_length=1, max_length=2000)
+    negative_prompt: str = ""
+    model_id: str = "stabilityai/TripoSR"
+    preset: str = "fast"
+    image_path: str = ""
+    resolution: int = 256
+    num_inference_steps: int = 20
+    guidance_scale: float = 5.0
+    seed: int = -1
+    output_format: str = "glb"
+    max_faces: int = 100000
+    bake_texture: bool = True
+    remove_background: bool = True
+    enable_model_cpu_offload: bool = False
+
+
+@app.post("/api/3d/generate")
+def three_d_generate(request: Request, req: ThreeDGenerateReq) -> dict[str, Any]:
+    params = ThreeDParams(
+        mode=req.mode, prompt=req.prompt, negative_prompt=req.negative_prompt,
+        model_id=req.model_id[:256], preset=req.preset, image_path=req.image_path,
+        resolution=req.resolution, num_inference_steps=req.num_inference_steps,
+        guidance_scale=req.guidance_scale, seed=req.seed,
+        output_format=req.output_format, max_faces=req.max_faces,
+        bake_texture=req.bake_texture, remove_background=req.remove_background,
+        enable_model_cpu_offload=req.enable_model_cpu_offload,
+    )
+    mgr = _three_d_manager(request)
+    try:
+        task = mgr.start(params)
+    except ThreeDParamError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except ThreeDBusyError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    return {"ok": True, "task": task.snapshot()}
+
+
+@app.get("/api/3d/tasks")
+def three_d_tasks(request: Request) -> dict[str, Any]:
+    mgr = _three_d_manager(request)
+    return {"tasks": mgr.list_tasks(), "active": mgr.active()}
+
+
+@app.get("/api/3d/tasks/{task_id}")
+def three_d_task_status(request: Request, task_id: str) -> dict[str, Any]:
+    if not _MODEL_ID_RE.fullmatch(task_id or ""):
+        raise HTTPException(status_code=400, detail="invalid task id")
+    mgr = _three_d_manager(request)
+    task = mgr.get(task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="task not found")
+    return task.snapshot()
+
+
+@app.post("/api/3d/tasks/{task_id}/cancel")
+def three_d_task_cancel(request: Request, task_id: str) -> dict[str, Any]:
+    if not _MODEL_ID_RE.fullmatch(task_id or ""):
+        raise HTTPException(status_code=400, detail="invalid task id")
+    mgr = _three_d_manager(request)
+    if not mgr.cancel(task_id):
+        raise HTTPException(status_code=404, detail="task not found or already finished")
+    return {"ok": True, "task_id": task_id}
+
+
+@app.get("/api/3d/outputs")
+def three_d_outputs(request: Request) -> dict[str, Any]:
+    """List generated 3D assets (newest first)."""
+    root = _three_d_manager(request).output_root
+    exts = (".glb", ".gltf", ".obj", ".ply", ".usdz", ".fbx")
+    items: list[dict[str, Any]] = []
+    if root.is_dir():
+        for f in sorted(root.glob("*"), key=lambda p: p.stat().st_mtime, reverse=True)[:100]:
+            if f.suffix.lower() in exts:
+                st = f.stat()
+                items.append({
+                    "name": f.name,
+                    "path": str(f),
+                    "size_bytes": st.st_size,
+                    "mtime": st.st_mtime,
+                    "format": f.suffix.lower().lstrip("."),
+                })
+    return {"outputs": items, "count": len(items), "dir": str(root)}
+
+
+# ===========================================================================
+# v4.11.0 — model capability tags + role slots (Cherry Studio 借鉴)
+# ===========================================================================
+
+def _role_store(request: Request) -> OverrideStore:
+    store = getattr(request.app.state, "role_pins", None)
+    if store is None:
+        store = OverrideStore()
+        request.app.state.role_pins = store
+    return store
+
+
+def _installed_ids() -> set[str]:
+    """已安装模型的 id 集合（本地 registry）。"""
+    try:
+        return {e.get("id") for e in load_local_registry(MODELS_DIR) if e.get("id")}
+    except Exception:  # noqa: BLE001 — 目录不存在/损坏时视作"未安装任何模型"
+        return set()
+
+
+def _catalog_dicts() -> list[dict[str, Any]]:
+    return [m.model_dump() for m in CATALOG.models]
+
+
+@app.get("/api/roles")
+def roles_index(request: Request, vram_budget: float | None = None) -> dict[str, Any]:
+    """每个用途槽位当前用哪个模型 + 为什么。
+
+    借鉴 Cherry Studio：模型按用途分槽（对话/后台小任务/复杂思考/看图/画图…），
+    新用户不必理解协议与参数就能直接用。
+    """
+    if vram_budget is not None and (vram_budget <= 0 or vram_budget > 1024):
+        raise HTTPException(status_code=400, detail="vram_budget must be 0..1024 GB")
+    store = _role_store(request)
+    out = store.resolve(_catalog_dicts(), vram_budget, _installed_ids())
+    return {
+        "roles": out,
+        "vocabulary": list(CAPABILITIES),
+        "slots": {k: {"label": v["label"], "hint": v["hint"]} for k, v in ROLES.items()},
+        "installed": sorted(_installed_ids()),
+        "vram_budget": vram_budget,
+    }
+
+
+class RolePinReq(BaseModel):
+    role: str
+    model_id: str = Field(min_length=1, max_length=256)
+
+
+@app.post("/api/roles/pin")
+def roles_pin(request: Request, req: RolePinReq) -> dict[str, Any]:
+    """用户手动指定某槽位用哪个模型（覆盖自动选择）。"""
+    store = _role_store(request)
+    try:
+        store.pin(req.role, req.model_id)
+    except KeyError as e:
+        raise HTTPException(status_code=400, detail=f"unknown role: {req.role}") from e
+    return {"ok": True, "role": req.role, "model_id": req.model_id}
+
+
+@app.delete("/api/roles/pin/{role}")
+def roles_unpin(request: Request, role: str) -> dict[str, Any]:
+    """恢复该槽位的自动选择。"""
+    if role not in ROLES:
+        raise HTTPException(status_code=400, detail=f"unknown role: {role}")
+    _role_store(request).unpin(role)
+    return {"ok": True, "role": role}
+
+
+@app.get("/api/roles/capabilities")
+def roles_capabilities(request: Request) -> dict[str, Any]:
+    """列出全部模型的能力标签（含用户覆盖）。
+
+    能力来自 catalog 的结构化字段（category / modality / tags），
+    不靠模型 ID 猜；无法确定的显示 unknown。
+    """
+    store = _role_store(request)
+    items = []
+    for m in _catalog_dicts():
+        items.append({
+            "id": m.get("id"),
+            "name": m.get("name"),
+            "category": m.get("category"),
+            "capabilities": store.capabilities_for(m),
+            "derived": derive_capabilities(m),
+            "overridden": m.get("id") in store.cap_overrides,
+        })
+    return {"capabilities": items, "count": len(items), "vocabulary": list(CAPABILITIES)}
+
+
+@app.get("/api/roles/fit")
+def roles_fit(vram_budget: float) -> dict[str, Any]:
+    """按显存预算筛选可运行的模型（前端选档位时用）。"""
+    if not (0 < vram_budget <= 1024):
+        raise HTTPException(status_code=400, detail="vram_budget must be 0..1024 GB")
+    fits = [m.get("id") for m in _catalog_dicts() if fits_budget(m, vram_budget)]
+    return {"vram_budget": vram_budget, "fits": fits, "count": len(fits)}
+
+
+# ===========================================================================
+# v4.11.0 — 生成参数"人话化"（Cherry Studio 借鉴）
+# ===========================================================================
+
+class GenParamsReq(BaseModel):
+    values: dict[str, float] = Field(default_factory=dict)
+
+
+@app.get("/api/params")
+def params_catalogue() -> dict[str, Any]:
+    """全部生成参数的人话说明 + 场景档位（前端据此渲染滑块）。"""
+    return gen_params_catalogue()
+
+
+@app.get("/api/params/scenarios/{key}")
+def params_scenario(key: str) -> dict[str, Any]:
+    if key not in SCENARIOS:
+        raise HTTPException(status_code=400, detail=f"unknown scenario: {key}")
+    return describe_scenario(key)
+
+
+@app.get("/api/params/explain")
+def params_explain(key: str, value: float) -> dict[str, Any]:
+    """解释"这个参数取这个值意味着什么"。"""
+    if key not in GEN_PARAMS:
+        raise HTTPException(status_code=400, detail=f"unknown param: {key}")
+    return explain(key, value)
+
+
+@app.post("/api/params/explain-all")
+def params_explain_all(req: GenParamsReq) -> dict[str, Any]:
+    """批量解释一整套参数（前端调参面板用）。"""
+    unknown = [k for k in req.values if k not in GEN_PARAMS]
+    if unknown:
+        raise HTTPException(status_code=400, detail=f"unknown params: {unknown}")
+    return {"params": explain_all(req.values)}
+
+
+@app.get("/api/params/scenario-values/{key}")
+def params_scenario_values(key: str) -> dict[str, Any]:
+    if key not in SCENARIOS:
+        raise HTTPException(status_code=400, detail=f"unknown scenario: {key}")
+    return {"scenario": key, "values": scenario_values(key)}
+
+
+# ===========================================================================
 # v3.16.0 — Faster Whisper speech recognition (CTranslate2)
 # ===========================================================================
 
@@ -3257,6 +3539,8 @@ def knowledge_capabilities(request: Request) -> dict[str, Any]:
         "engine_installed": installed,
         "kb_count": len(kb.list_kbs()),
         "supported_extensions": sorted(knowledge_base.SUPPORTED_EXTENSIONS),
+        "retrieval_modes": list(knowledge_base.RETRIEVAL_MODES),
+        "default_retrieval_mode": knowledge_base.DEFAULT_RETRIEVAL_MODE,
     }
 
 
@@ -3430,6 +3714,8 @@ def knowledge_set_pin(request: Request, kb_id: str, doc_id: str,
 class KbSearchReq(BaseModel):
     query: str = Field(..., min_length=1)
     top_k: int = knowledge_base.DEFAULT_TOP_K
+    # "dense" (default, cosine) | "bm25" (keywords only) | "hybrid" (RRF).
+    mode: str = knowledge_base.DEFAULT_RETRIEVAL_MODE
 
 
 @app.post("/api/knowledge/kbs/{kb_id}/search")
@@ -3437,7 +3723,7 @@ def knowledge_search(request: Request, kb_id: str, req: KbSearchReq) -> dict[str
     mgr = _knowledge_manager(request)
     _require_kb(mgr, kb_id)
     try:
-        return mgr.search(kb_id, req.query, req.top_k)
+        return mgr.search(kb_id, req.query, req.top_k, mode=req.mode)
     except knowledge_base.KnowledgeError as e:
         raise HTTPException(
             status_code=_knowledge_status_for(e), detail=str(e)
@@ -3450,6 +3736,8 @@ class KbAskReq(BaseModel):
     # Optional transformers brain repo (e.g. "Qwen/Qwen2.5-1.5B-Instruct").
     # Empty/omitted → return retrieved context only.
     brain_model: str = Field("", max_length=200)
+    # "dense" (default, cosine) | "bm25" (keywords only) | "hybrid" (RRF).
+    mode: str = knowledge_base.DEFAULT_RETRIEVAL_MODE
 
 
 @app.post("/api/knowledge/kbs/{kb_id}/ask")
@@ -3468,7 +3756,8 @@ def knowledge_ask(request: Request, kb_id: str, req: KbAskReq) -> dict[str, Any]
             return manager.generate(repo, prompt, system=system)
 
     try:
-        return mgr.ask(kb_id, req.question, req.top_k, brain=brain)
+        return mgr.ask(kb_id, req.question, req.top_k, brain=brain,
+                       mode=req.mode)
     except knowledge_base.KnowledgeError as e:
         raise HTTPException(
             status_code=_knowledge_status_for(e), detail=str(e)
@@ -3523,6 +3812,7 @@ async def ws_knowledge_ask(websocket: WebSocket, kb_id: str) -> None:
         await websocket.close()
         return
     top_k = int(data.get("top_k") or knowledge_base.DEFAULT_TOP_K)
+    mode = str(data.get("mode") or knowledge_base.DEFAULT_RETRIEVAL_MODE)
     brain_model = str(data.get("brain_model") or "")
 
     # Build the brain_stream callable (system, prompt) -> iterator[str].
@@ -3545,6 +3835,7 @@ async def ws_knowledge_ask(websocket: WebSocket, kb_id: str) -> None:
     def _produce() -> None:
         try:
             gen = mgr.ask_stream_sync(kb_id, question, top_k,
+                                      mode=mode,
                                       brain_stream=brain_stream)
             for ev in gen:
                 asyncio.run_coroutine_threadsafe(

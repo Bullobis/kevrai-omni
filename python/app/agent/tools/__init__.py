@@ -36,6 +36,7 @@ from .system_tools import (
     list_engines,
     set_preference,
 )
+from .web_tools import WEB_TOOLS
 from .writing_tools import WRITING_TOOLS
 
 # ---------------------------------------------------------------------------
@@ -204,6 +205,22 @@ MCP_SKILL = Skill(
     ),
 )
 
+WEB_SKILL = Skill(
+    id="web_search",
+    name="联网搜索",
+    description="在自主任务中搜索公网：返回标题、链接与摘要（SearXNG 优先，可回退 DuckDuckGo）。",
+    icon="🌐",
+    category="web",
+    default_enabled=False,  # opt-in: 联网必须由用户主动开启
+    tools=WEB_TOOLS,
+    guidance=(
+        "仅当本机知识/模型目录不足以回答（如查最新版本、价格、官方文档）时使用 web_search。"
+        "优先在「设置」中填入自托管 SearXNG 地址以获得稳定无限制的结果；未配置时使用 DuckDuckGo。"
+        "拿到结果后必须依据返回的真实链接与摘要作答，并附上来源链接；"
+        "若工具返回错误或结果为空，必须如实告知「未检索到」，严禁编造链接或事实。"
+    ),
+)
+
 BUILTIN_SKILLS: list[Skill] = [
     CORE_SKILL,
     CATALOG_SKILL,
@@ -213,6 +230,7 @@ BUILTIN_SKILLS: list[Skill] = [
     MEDIA_PROMPT_SKILL,
     MEDIA_ENGINE_SKILL,
     KNOWLEDGE_SKILL,
+    WEB_SKILL,
     MCP_SKILL,
 ]
 
@@ -247,6 +265,7 @@ def all_skill_tools() -> list[Any]:
 
 __all__ = [
     "ALL_TOOLS",
+    "WEB_SKILL",
     "BUILTIN_SKILLS",
     "build_default_registry",
     "build_skill_manager",

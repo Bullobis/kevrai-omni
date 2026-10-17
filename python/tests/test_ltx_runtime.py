@@ -319,3 +319,63 @@ def test_negative_fps():
 def test_float_steps_rejected():
     with pytest.raises(LtxParamError):
         _make_params(num_inference_steps=1.5).validate()
+
+
+# ---------- v4.11.0: cancel takes precedence over failure ----------
+
+def test_cancel_during_load_ends_cancelled_not_failed(tmp_path, monkeypatch):
+    """用户点了取消之后，即便底层加载抛异常，也必须报 CANCELLED。
+
+    v4.11.0 修复：原先 ``_run_safe`` 把取消后的一切异常都记成 FAILED，
+    用户点了取消却看到"生成失败"，语义是错的。
+    """
+    import threading
+
+    from app import ltx_runtime
+
+    release = threading.Event()
+
+    def _slow_loader(model_id, mode, task=None):
+        release.wait(timeout=5)
+        raise ltx_runtime.LtxEngineMissing("stop")
+
+    monkeypatch.setattr(ltx_runtime, "_load_pipeline", _slow_loader)
+    mgr = LtxManager(tmp_path / "ltx")
+    task = mgr.start(_make_params())
+    try:
+        for _ in range(150):
+            if mgr.get(task.id).state != TaskState.QUEUED:
+                break
+            time.sleep(0.01)
+        assert mgr.cancel(task.id) is True
+        release.set()
+        for _ in range(300):
+            if mgr.get(task.id).state in (
+                TaskState.DONE, TaskState.FAILED, TaskState.CANCELLED
+            ):
+                break
+            time.sleep(0.01)
+        snap = mgr.get(task.id).snapshot()
+        assert snap["state"] == TaskState.CANCELLED
+        assert snap["error"] == ""
+    finally:
+        release.set()
+
+
+def test_failure_without_cancel_still_reports_failed(tmp_path, monkeypatch):
+    """回归保护：没有取消时，普通失败仍然必须是 FAILED。"""
+    from app import ltx_runtime
+
+    def _boom(model_id, mode, task=None):
+        raise ltx_runtime.LtxEngineMissing("no engine")
+
+    monkeypatch.setattr(ltx_runtime, "_load_pipeline", _boom)
+    mgr = LtxManager(tmp_path / "ltx")
+    task = mgr.start(_make_params())
+    for _ in range(300):
+        if mgr.get(task.id).state == TaskState.FAILED:
+            break
+        time.sleep(0.01)
+    snap = mgr.get(task.id).snapshot()
+    assert snap["state"] == TaskState.FAILED
+    assert "LtxEngineMissing" in snap["error"]

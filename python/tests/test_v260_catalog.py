@@ -38,7 +38,8 @@ def _engines():
     ("qwen3.8-max", "Qwen/Qwen3.8-2.4T-A95B"),
     ("qwen3.8-27b", "Qwen/Qwen3.8-27B"),
     ("trellis2", "microsoft/TRELLIS.2-4B"),
-    ("hunyuanimage-3.0", "tencent/HunyuanImage-3.0"),
+    # v4.10.1: 官方仓库名带 -Instruct 后缀；此前写成 HunyuanImage-3.0 无法解析
+    ("hunyuanimage-3.0", "tencent/HunyuanImage-3.0-Instruct"),
     ("seedvr2", "ByteDance-Seed/SeedVR2-3B"),
     ("direct3d-s2", "wushuang98/Direct3D-S2"),
     ("triposr", "stabilityai/TripoSR"),  # v2.9.1: HF org is stabilityai (VAST-AI-Research has no HF models)

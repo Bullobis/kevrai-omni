@@ -288,8 +288,33 @@ async def detect() -> list[GPUInfo]:
         if isinstance(r, BaseException):
             continue
         out.extend(r)
+
+    # 国产加速卡 + Intel（摩尔线程 / 天数 / 寒武纪 / 海光 / Intel）
+    # 延迟导入：accelerators 依赖本模块的 GPUInfo，避免循环导入。
+    try:
+        from .accelerators import detect_accelerators
+
+        extra = await detect_accelerators()
+        # 重新编号，避免与上面已探测到的设备 index 冲突
+        base = len(out)
+        for i, g in enumerate(extra):
+            g.index = base + i
+            out.append(g)
+    except Exception:  # noqa: BLE001 — 探测失败不能影响主流程
+        pass
+
     if out:
         return out
+
+    # 最后兜底：厂商工具都没装时，用系统信息（lspci / WMI）尽力识别
+    try:
+        from .accelerators import detect_by_system
+
+        sys_gpus = await asyncio.to_thread(detect_by_system)
+        if sys_gpus:
+            return sys_gpus
+    except Exception:  # noqa: BLE001
+        pass
 
     # Fallback: report the CPU so the UI never shows a totally empty list.
     cpu_name = _cpu_name()

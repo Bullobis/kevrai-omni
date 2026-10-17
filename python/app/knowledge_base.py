@@ -44,6 +44,15 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from .retrieval import (
+    HYBRID_CANDIDATE_POOL,
+    MODE_BM25,
+    MODE_DENSE,
+    MODE_HYBRID,
+    RETRIEVAL_MODES,
+    fuse_dense_bm25,
+    hybrid_rank,
+)
 from .settings import default_data_root
 
 log = logging.getLogger("kevrai.knowledge")
@@ -58,6 +67,11 @@ IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp"}
 DEFAULT_CHUNK_SIZE = 600
 DEFAULT_CHUNK_OVERLAP = 80
 DEFAULT_TOP_K = 4
+# Retrieval strategy: "dense" (cosine only, historical), "bm25" (lexical
+# only, works without an embedding engine) or "hybrid" (RRF fusion).
+DEFAULT_RETRIEVAL_MODE = MODE_DENSE
+# How many lexical candidates enter the RRF fusion per side.
+HYBRID_CANDIDATE_POOL = 50
 MAX_CHUNK_SIZE = 4000
 MAX_OVERLAP_RATIO = 0.5  # overlap must stay below half the chunk size
 MAX_CONTENT_BYTES = 8 * 1024 * 1024  # 8 MiB of raw text per document
@@ -1050,53 +1064,119 @@ class KnowledgeBase:
         return self._read_json(path)
 
     def search(self, kb_id: str, query: str,
-               top_k: int = DEFAULT_TOP_K) -> dict[str, Any]:
+               top_k: int = DEFAULT_TOP_K,
+               mode: str = DEFAULT_RETRIEVAL_MODE) -> dict[str, Any]:
+        """Rank chunks for ``query``.
+
+        ``mode`` selects the retrieval strategy:
+
+        * ``"dense"``  — cosine over embeddings (the historical behaviour and
+          still the default; results and scores are byte-identical to before);
+        * ``"bm25"``   — pure Okapi BM25 over chunk text, no embedding engine
+          required, so retrieval keeps working when it is missing;
+        * ``"hybrid"`` — both rankings fused with Reciprocal Rank Fusion. When
+          the embedding engine is missing this degrades to ``bm25``.
+
+        Unknown modes raise :class:`KnowledgeParamError` rather than silently
+        falling back, so a typo in the UI is surfaced instead of hiding.
+        """
         meta = self._load_meta(kb_id)
         query = (query or "").strip()
         if not query:
             raise KnowledgeParamError("query is empty")
-        if self._embedder is None:
-            raise KnowledgeEngineMissing("未配置嵌入引擎，无法检索")
+        mode = str(mode or DEFAULT_RETRIEVAL_MODE).strip().lower()
+        if mode not in RETRIEVAL_MODES:
+            raise KnowledgeParamError(
+                f"unsupported retrieval mode: {mode!r} "
+                f"(expected one of {', '.join(RETRIEVAL_MODES)})"
+            )
         top_k = max(1, min(int(top_k or DEFAULT_TOP_K), 50))
 
         pinned = self._load_pinned(kb_id)
         store = self._load_chunks(kb_id)
         if not store:
             return {"kb_id": kb_id, "query": query, "model": meta["model"],
-                    "results": [], "pinned": pinned}
+                    "mode": mode, "results": [], "pinned": pinned}
 
-        qvec = self._embed(meta["model"], [query])["embeddings"][0]
-        scored = []
-        for rec in store:
-            vec = rec.get("embedding") or []
-            if len(vec) != len(qvec):
-                continue
-            scored.append((_cosine(qvec, vec), rec))
-        scored.sort(key=lambda t: t[0], reverse=True)
-        results = [
-            {
-                "score": round(score, 6),
-                "chunk_id": rec["id"],
-                "doc_id": rec["doc_id"],
-                "doc_name": rec.get("doc_name", ""),
-                "index": rec.get("index", 0),
-                "text": rec["text"],
-            }
-            for score, rec in scored[:top_k]
-        ]
-        return {"kb_id": kb_id, "query": query, "model": meta["model"],
-                "results": results, "pinned": pinned}
+        dense_failed: str | None = None
+        ranked: list[tuple[int, float]] = []
+        if mode in (MODE_DENSE, MODE_HYBRID):
+            if self._embedder is None:
+                if mode == MODE_DENSE:
+                    raise KnowledgeEngineMissing("未配置嵌入引擎，无法检索")
+                dense_failed = "嵌入引擎未安装，已降级为关键词检索"
+            else:
+                qvec = self._embed(meta["model"], [query])["embeddings"][0]
+                scored: list[tuple[float, int]] = []
+                for idx, rec in enumerate(store):
+                    vec = rec.get("embedding") or []
+                    if len(vec) != len(qvec):
+                        continue
+                    scored.append((_cosine(qvec, vec), idx))
+                scored.sort(key=lambda t: (-t[0], t[1]))
+                ranked = [(idx, score) for score, idx in scored[:top_k]]
+
+        lexical: list[tuple[int, float]] = []
+        if mode in (MODE_BM25, MODE_HYBRID):
+            lexical = hybrid_rank(store, query, candidate_pool=HYBRID_CANDIDATE_POOL)
+
+        if mode == MODE_HYBRID:
+            if ranked and lexical:
+                fused = fuse_dense_bm25(ranked, lexical)
+                # Record which side(s) actually contributed each hit.
+                dense_hit = {i for i, _ in ranked}
+                lex_hit = {i for i, _ in lexical}
+                ranked = [
+                    (idx, score) for idx, score in fused
+                    if idx in dense_hit or idx in lex_hit
+                ]
+                provenance = {
+                    idx: ("both" if idx in lex_hit else "dense")
+                    for idx, _ in ranked
+                }
+            elif lexical:
+                ranked = list(lexical)
+                provenance = {idx: "bm25" for idx, _ in ranked}
+            else:
+                ranked = list(ranked)
+                provenance = {idx: "dense" for idx, _ in ranked}
+        elif mode == MODE_BM25:
+            ranked = list(lexical)
+            provenance = {idx: "bm25" for idx, _ in ranked}
+        else:
+            provenance = {idx: "dense" for idx, _ in ranked}
+
+        results = []
+        for idx, score in ranked[:top_k]:
+            rec = store[idx]
+            results.append(
+                {
+                    "score": round(float(score), 6),
+                    "chunk_id": rec["id"],
+                    "doc_id": rec["doc_id"],
+                    "doc_name": rec.get("doc_name", ""),
+                    "index": rec.get("index", 0),
+                    "text": rec["text"],
+                    "match": provenance.get(idx, "dense"),
+                }
+            )
+        payload = {"kb_id": kb_id, "query": query, "model": meta["model"],
+                   "mode": mode, "results": results, "pinned": pinned}
+        if dense_failed:
+            payload["warning"] = dense_failed
+        return payload
 
     def ask(self, kb_id: str, question: str,
             top_k: int = DEFAULT_TOP_K,
-            brain: Callable[[str, str], str] | None = None) -> dict[str, Any]:
+            brain: Callable[[str, str], str] | None = None,
+            mode: str = DEFAULT_RETRIEVAL_MODE) -> dict[str, Any]:
         """Retrieve context for ``question`` and optionally ground a brain answer.
 
         ``brain`` is an optional ``(system, prompt) -> answer`` callable supplied
         by the route layer. When it is missing the response still carries the
         retrieved chunks and a flag noting that no generator is configured.
         """
-        hit = self.search(kb_id, question, top_k)
+        hit = self.search(kb_id, question, top_k, mode=mode)
         results = hit["results"]
         pinned = hit.get("pinned") or []
         # Pinned documents are injected verbatim *before* the retrieved chunks,
@@ -1145,6 +1225,7 @@ class KnowledgeBase:
             "kb_id": kb_id,
             "question": question,
             "model": hit["model"],
+            "mode": hit.get("mode", mode),
             "context": context,
             "results": results,
             "pinned": pinned,
@@ -1157,7 +1238,8 @@ class KnowledgeBase:
 
     def ask_stream_sync(self, kb_id: str, question: str,
                         top_k: int = DEFAULT_TOP_K,
-                        brain_stream: Callable[[str, str], Any] | None = None
+                        brain_stream: Callable[[str, str], Any] | None = None,
+                        mode: str = DEFAULT_RETRIEVAL_MODE
                         ) -> Any:
         """Streaming variant of :meth:`ask` — a sync generator yielding events.
 
@@ -1178,7 +1260,7 @@ class KnowledgeBase:
         ``done`` with a note. A brain failure yields an error event instead of
         raising, mirroring :meth:`ask`.
         """
-        hit = self.search(kb_id, question, top_k)
+        hit = self.search(kb_id, question, top_k, mode=mode)
         results = hit["results"]
         pinned = hit.get("pinned") or []
         pinned_block = "\n\n".join(
@@ -1207,6 +1289,7 @@ class KnowledgeBase:
             "kb_id": kb_id,
             "question": question,
             "model": hit["model"],
+            "mode": hit.get("mode", mode),
             "context": context,
             "results": results,
             "pinned": pinned,
