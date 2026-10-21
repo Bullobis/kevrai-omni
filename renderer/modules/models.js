@@ -13,6 +13,7 @@ import {
 import { t } from "./i18n.js";
 import { pickQuantization } from "./quant-picker.js";
 import { pickRevision, buildDownloadArgs } from "./revision-picker.js";
+import { planInstall, planReasonKey, PLAN } from "./plan-install.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -362,6 +363,22 @@ function syncSelectedCards() {
   });
 }
 
+// v4.11.1 — 引擎路由信息：异步查询后端，结果插到详情面板顶部。
+// 失败时显示"未知"，绝不猜一个引擎出来。
+async function _renderEngineRoute(host, detail) {
+  const slot = host.querySelector("#engine-route-slot");
+  if (!slot) return;
+  const engines = Array.isArray(detail.engine) ? detail.engine
+                : (detail.engine ? [detail.engine] : []);
+  try {
+    const { fetchEngineRoute, renderRouteRow } = await import("./engine-route.js");
+    const res = await fetchEngineRoute(api, engines, { modelId: detail.id || "" });
+    slot.innerHTML = renderRouteRow(res, t);
+  } catch (_) {
+    slot.innerHTML = `<div class="engine-route-row warn">${t("engineRoute.unknown")}</div>`;
+  }
+}
+
 async function installItem(item) {
   const engines = Array.isArray(item.engine) ? item.engine
                 : (item.engine ? [item.engine] : []);
@@ -369,44 +386,83 @@ async function installItem(item) {
     toast(t("toast.engineNotSpecified"), { kind: "warn" });
     return;
   }
+
+  // v4.11.0 — 让用户自己选引擎。
+  //
+  // 以前这里写死 `installEngine(engines[0])`：支持 llama.cpp / mnn /
+  // transformers 多个引擎的模型，装出来的永远是目录里的第一个，用户没有
+  // 选择余地。注释声称"详情面板里可以换"，但那上面只有"装引擎"按钮，
+  // 装完不下权重，不是同一件事。
+  let chosenEngine = engines[0];
+  if (engines.length > 1) {
+    const { pickEngine, applyEngineChoice } = await import("./engine-picker.js");
+    const res = await pickEngine({
+      engines,
+      modelId: item.id || "",
+      modelName: item.name || "",
+      t,
+    });
+    if (!res) return;   // 取消 = 中止安装，不能退回默认引擎偷偷装
+    applyEngineChoice(res, item.id || "");
+    chosenEngine = res.engine;
+  }
+
   // Make sure the preferred engine is present; multi-engine models can pick a
   // different engine from the detail panel.
   try {
-    await api.installEngine(engines[0]);
+    await api.installEngine(chosenEngine);
   } catch (_) { /* toast shown by api */ }
 
   // GGUF models ship several revisions (branches/tags) and quantizations.
   // First pick a revision (defaulting to main, skipped when there is no
   // choice), then pick a quantization off that revision, then download the
   // chosen shard(s) at the chosen revision.
+  let revision = "main";
+  let pickedFiles = null;
+  let pickedRepo = "";
+
   if (item.gguf_repo) {
     const rev = await pickRevision(item, api);
     if (rev === null) return;  // user cancelled revision picker → abort install
-    const revision = (rev && rev.revision) || "main";
+    revision = (rev && rev.revision) || "main";
 
     const pick = await pickQuantization(item, api, revision);
     if (!pick) return;  // user cancelled
     if (pick.error) { toast(pick.error, { kind: "warn" }); return; }
-    if (pick.files && pick.files.length) {
-      try {
-        await api.hubDownload(buildDownloadArgs({
-          repo: pick.repo || rev.repo || item.gguf_repo,
-          files: pick.files,
-          revision,
-        }));
-        toast(t("toast.downloadStarted", { file: item.name || item.id }),
-              { kind: "ok" });
-      } catch (e) {
-        toast(String((e && e.message) || e), { kind: "err" });
-      }
-    }
+    // 空数组 ≠ 取消：它表示"没识别出任何量化档"。以前这里 `if (pick.files…)`
+    // 直接静默 return，用户点了安装却什么都没下。现在交给后端自动挑文件。
+    pickedFiles = (pick && pick.files) || null;
+    pickedRepo = (pick && pick.repo) || (rev && rev.repo) || "";
+  }
+
+  // v4.11.0 — 下载决策集中到 planInstall：它把"能下什么"变成显式的
+  // 三种结果（指定分片 / 自动挑文件 / 真的无东西可下），而不是散落在
+  // if 分支里。真实 bug：165 个没有 gguf_repo 的模型走到这里时旧代码
+  // 只装引擎就 return，权重从未下载。
+  const plan = planInstall(item, {
+    revision,
+    files: pickedFiles || undefined,
+    repo: pickedRepo || undefined,
+  });
+
+  if (plan.kind === PLAN.NOTHING) {
+    toast(t(planReasonKey(plan.reason)), { kind: "warn" });
     return;
   }
 
-  // Single-format models: the engine is the prerequisite (original behaviour).
-  toast(engines.length > 1
-    ? t("toast.installingEngineAlt", { engine: engines[0], alt: engines.slice(1).join("/") })
-    : t("toast.installingEngine", { engine: engines[0] }), { kind: "ok" });
+  try {
+    const res = await api.hubDownload(plan.args);
+    const body = (res && res.body) || res || {};
+    if (body.auto_files_picked) {
+      toast(t("toast.downloadStartedAuto", { file: item.name || item.id }),
+            { kind: "ok" });
+    } else {
+      toast(t("toast.downloadStarted", { file: item.name || item.id }),
+            { kind: "ok" });
+    }
+  } catch (e) {
+    toast(String((e && e.message) || e), { kind: "err" });
+  }
 }
 
 export function populateCategoryFilter() {
@@ -502,6 +558,12 @@ export async function showDetail(item) {
     .find((r) => r.owner_repo === (detail.owner_repo || detail.repo));
 
   host.innerHTML = renderDetail(detail, ggufForModel);
+
+  // v4.11.1 — 显示"这个模型实际会用哪个引擎、走哪个端点"。
+  // 以前前端自己猜（装的时候写死 engines[0]），而 settings 里的
+  // default_engine_id 全仓库无人读取。现在后端是唯一决策点，这里只负责
+  // 如实显示结果——包括"该引擎没有应用内加载端点"。
+  _renderEngineRoute(host, detail);
 
   // v2.3.0 — lazy-load the model's own gguf_repo file list AFTER the panel
   // is already on screen (cold enumeration may take ~10s on first hit).
