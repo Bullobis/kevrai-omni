@@ -11,7 +11,11 @@
     "winRestore": "Restore",
     "winClose": "Close",
     "windowControls": "Window controls",
-    "categoryNav": "Category navigation"
+    "categoryNav": "Category navigation",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "confirm": "Confirm"
   },
   "nav": {
     "market": "Model Market",
@@ -33,7 +37,18 @@
     "multimodal": "Vision Chat",
     "music": "Music Studio",
     "knowledge": "Knowledge Base",
-    "translate": "Translate"
+    "translate": "Translate",
+    "groupStart": "Get started",
+    "groupCreate": "Create",
+    "groupSense": "Understand",
+    "groupAgent": "Assistant",
+    "groupSystem": "Hardware & system",
+    "groupRepo": "Model repos",
+    "manageTitle": "Manage sidebar",
+    "manageAria": "Manage sidebar",
+    "manageHint": "Tick the entries you want in the sidebar. Untick the ones you rarely use (at least one must stay).",
+    "showAll": "Show all",
+    "keepOne": "At least one entry must stay visible, otherwise there is no way back into the UI."
   },
   "header": {
     "downloads": "Downloads",
@@ -480,7 +495,11 @@
     "installingEngine": "Installing engine {engine}",
     "installingEngineAlt": "Installing engine {engine} (alternatives: {alt})",
     "uninstalledEngine": "Uninstalled {id}",
-    "mnnRepoStart": "Starting MNN model download (direct from repo)"
+    "mnnRepoStart": "Starting MNN model download (direct from repo)",
+    "downloadStartedAuto": "Picked weight files automatically, downloading: {file}",
+    "installNothingNoItem": "No model information to install",
+    "installNothingNoRepo": "No published weight URL for this model yet (awaiting official release)",
+    "installNothingGeneric": "Nothing to download"
   },
   "cmdpal": {
     "title": "Command palette",
@@ -1131,5 +1150,30 @@
     "importBadJson": "Selected file is not valid JSON",
     "searching": "Searching",
     "noAnswer": "No answer generated. Check KB content or select a brain model."
+  },
+  "sidebar": {
+    "manageTitle": "Manage sidebar",
+    "manageAria": "Manage sidebar",
+    "manageHint": "Tick the entries you want in the sidebar. Untick the ones you rarely use (at least one must stay).",
+    "showAll": "Show all",
+    "keepOne": "At least one entry must stay visible, otherwise there is no way back into the UI."
+  },
+  "enginePick": {
+    "title": "Choose an inference engine",
+    "hint": "This model supports several engines — pick one to run it with",
+    "rememberForModel": "Remember this choice (for this model only)",
+    "useAsDefault": "Use as the default engine for all models"
+  },
+  "engineRoute": {
+    "title": "Runtime engine",
+    "runtimeMnn": "MNN runtime (/api/mnn/load)",
+    "runtimeLlamacpp": "llama.cpp (engine manager)",
+    "runtimeOther": "Other engine",
+    "noEndpoint": "No in-app loading endpoint yet",
+    "srcExplicit": "from your choice",
+    "srcDefault": "from your default engine setting",
+    "srcCatalog": "from catalog order",
+    "srcNone": "no engine declared",
+    "unknown": "unknown"
   }
 }
