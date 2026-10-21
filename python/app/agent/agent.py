@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from .approval import ApprovalManager
+from .history import build_history_block
 from .memory import AgentMemory
 from .model_router import ModelRouter
 from .tool_registry import (
@@ -486,18 +487,14 @@ class Agent:
             .replace("{hardware_block}", hardware_block))
 
     def _build_history_block(self, session_id: str, n: int = 10) -> str:
+        # v4.11.0 — 原来是 `content[:500]`：只留头、不留尾、不留标记。
+        # 模型拿到一段看起来完整、实则被砍掉的内容，既看不到结尾的结论，
+        # 也无从察觉被截断。改为走 history.build_history_block：保留头尾 +
+        # 显式标记，并修正另外两个不变式（必须以 user 开头、结尾不留半轮）。
         msgs = self.memory.get_recent_messages(session_id, n=n) if self.memory else []
         if not msgs:
             return ""
-        lines = []
-        for m in msgs:
-            role = m.get("role", "")
-            content = str(m.get("content", ""))[:500]
-            if role == "user":
-                lines.append(f"用户: {content}")
-            elif role == "assistant":
-                lines.append(f"助手: {content}")
-        return "\n".join(lines)
+        return build_history_block(msgs)
 
     # ------------------------------------------------------------------
     # Rule-based fallback (no LLM loaded)
