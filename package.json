@@ -1,7 +1,7 @@
 {
   "name": "kevrai-omni",
   "productName": "Kevrai Omni",
-  "version": "4.11.0",
+  "version": "4.11.1",
   "description": "Kevrai Omni — one-click local AI workstation (LLM/TTS/Image/Video/3D/Audio/Super-Resolution). MiniMax-Music3 music generation, LTX-2.5 video, super search, llama.cpp + MNN dual engine, hardware-aware recommendation.",
   "main": "electron/main.js",
   "scripts": {
@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "electron": "^33.0.0",
+    "electron": "33.4.11",
     "electron-builder": "^25.0.0",
     "jsdom": "^30.1.1"
   },
