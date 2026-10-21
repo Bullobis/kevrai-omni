@@ -244,6 +244,76 @@ html[data-theme="light"] .skip-link { color: #fff; }
    clicks reach the button underneath. */
 .app-shell .tab-label { pointer-events: none; }
 
+/* ---------- 侧边栏分组（v4.11.0） ----------
+   19 个入口原先是一条平铺长列表，找不到重点。现在按用途分成 6 组，
+   组头可折叠，且每个入口都可以单独隐藏（Cherry Studio 的做法：
+   侧栏只显示"钉住"的项，其余从管理面板里放出来）。
+
+   折叠态（64px 图标轨道）下组头退化成一条细分隔线——放不下文字，
+   但仍保留可点击的折叠热区，避免用户以为分组消失。 */
+.sidebar .nav-group { display: flex; flex-direction: column; }
+.sidebar .nav-group + .nav-group { margin-top: 2px; }
+.sidebar .nav-group-head {
+  display: flex; align-items: center; justify-content: center;
+  width: 48px; height: 22px; margin: 2px auto;
+  padding: 0; background: transparent; border: 0; cursor: pointer;
+  color: var(--mut); border-radius: var(--r-2);
+}
+.sidebar .nav-group-head::before {
+  content: ""; width: 26px; height: 1px; background: var(--bord); display: block;
+}
+.sidebar .nav-group-head .grp-label { display: none; }
+.sidebar .nav-group-head .grp-chevron { display: none; }
+.sidebar .nav-group-head:hover::before { background: var(--mut); }
+.sidebar .nav-group-head:focus-visible { outline: none; box-shadow: var(--focus); }
+
+/* 收起的组：隐藏其下所有 tab。用 display:none 而不是 max-height，
+   这样被隐藏的按钮不会进入 Tab 焦点顺序（可访问性要求）。 */
+.sidebar .nav-group[data-collapsed="true"] .nav-group-body { display: none; }
+
+/* 用户隐藏的单个入口 */
+.sidebar .nav-group-body > .pane-tab[data-hidden="true"] { display: none; }
+
+/* ---------- 展开态下的分组 ---------- */
+.app-shell.sidebar-expanded .sidebar .nav-group-head {
+  width: 100%; height: 26px; margin: 6px 0 2px;
+  justify-content: space-between; padding: 0 10px;
+}
+.app-shell.sidebar-expanded .sidebar .nav-group-head::before { display: none; }
+.app-shell.sidebar-expanded .sidebar .nav-group-head .grp-label {
+  display: block;
+  font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--mut); font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.app-shell.sidebar-expanded .sidebar .nav-group-head .grp-chevron {
+  display: block; flex: 0 0 auto; width: 0; height: 0; margin-left: 6px;
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  transition: transform .15s ease;
+}
+.sidebar .nav-group[data-collapsed="true"] .grp-chevron { transform: rotate(-90deg); }
+.sidebar .nav-group[data-collapsed="true"] .nav-group-head { opacity: .75; }
+
+/* ---------- 侧边栏管理面板 ---------- */
+.sidebar-manager-list { display: flex; flex-direction: column; gap: 2px; max-height: 52vh; overflow-y: auto; }
+.sidebar-manager-group {
+  font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--mut); font-weight: 600; padding: 10px 4px 4px;
+}
+.sidebar-manager-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 8px; border-radius: var(--r-2); cursor: pointer;
+}
+.sidebar-manager-row:hover { background: var(--card); }
+.sidebar-manager-row input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--acc); flex: 0 0 auto; }
+.sidebar-manager-row .sm-label { font-size: var(--fs-sm); }
+.sidebar-manager-foot {
+  display: flex; gap: 8px; justify-content: space-between;
+  align-items: center; margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--bord);
+}
+
 /* ---------- Main column ---------- */
 .main { padding: 18px 22px; overflow-y: auto; outline: none; min-width: 0; }
 .pane { display: none; }
@@ -1700,3 +1770,34 @@ html[data-theme="light"] .skeleton-card::after {
 .agent-msg-md .md-table th { background: var(--bg-1); font-weight: 600; }
 .agent-msg-md a { color: var(--acc); text-decoration: none; }
 .agent-msg-md a:hover { text-decoration: underline; }
+
+/* ---------- 引擎选择面板（v4.11.0） ----------
+   多引擎模型安装时弹出，取代原来写死 engines[0] 的行为。 */
+.engine-pick-list { display: flex; flex-direction: column; gap: 4px; margin: 12px 0; }
+.engine-pick-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: var(--r-2); cursor: pointer;
+  border: 1px solid var(--bord); background: var(--card);
+}
+.engine-pick-row:hover { border-color: var(--acc); }
+.engine-pick-row input[type=radio] { width: 15px; height: 15px; accent-color: var(--acc); flex: 0 0 auto; }
+.engine-pick-row .ep-name { font-size: var(--fs-sm); font-family: var(--mono, monospace); }
+.engine-pick-flag {
+  display: flex; align-items: center; gap: 8px;
+  font-size: var(--fs-sm); color: var(--mut); padding: 4px 2px; cursor: pointer;
+}
+.engine-pick-flag input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--acc); }
+.overlay-card .spacer { flex: 1 1 auto; }
+
+/* ---------- 引擎路由信息（v4.11.1） ---------- */
+.engine-route-row {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px;
+  padding: 8px 10px; border-radius: var(--r-2);
+  border: 1px solid var(--bord); background: var(--card);
+  font-size: var(--fs-sm); margin-bottom: 10px;
+}
+.engine-route-row.warn { border-color: var(--warn, #b45309); }
+.engine-route-row .er-label { color: var(--mut); }
+.engine-route-row .er-value { font-weight: 650; font-family: var(--mono, monospace); }
+.engine-route-row .er-src, .engine-route-row .er-rt { color: var(--mut); }
+.engine-route-row .er-note { flex-basis: 100%; color: var(--mut); }
