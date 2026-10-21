@@ -11,7 +11,11 @@
     "winRestore": "还原",
     "winClose": "关闭",
     "windowControls": "窗口控制",
-    "categoryNav": "分类导航"
+    "categoryNav": "分类导航",
+    "cancel": "取消",
+    "save": "保存",
+    "close": "关闭",
+    "confirm": "确定"
   },
   "nav": {
     "market": "模型市场",
@@ -33,7 +37,18 @@
     "multimodal": "多模态对话",
     "music": "音乐生成",
     "knowledge": "知识库",
-    "translate": "翻译"
+    "translate": "翻译",
+    "groupStart": "开始使用",
+    "groupCreate": "创作生成",
+    "groupSense": "听懂看懂",
+    "groupAgent": "智能助手",
+    "groupSystem": "硬件与系统",
+    "groupRepo": "模型仓库",
+    "manageTitle": "管理侧边栏",
+    "manageAria": "管理侧边栏",
+    "manageHint": "勾选要在侧边栏显示的入口，取消勾选可把不常用的收起来（至少保留一个）。",
+    "showAll": "全部显示",
+    "keepOne": "至少要保留一个入口，否则界面就没有入口可点了。"
   },
   "header": {
     "downloads": "下载",
@@ -480,7 +495,11 @@
     "installingEngine": "正在安装引擎 {engine}",
     "installingEngineAlt": "正在安装引擎 {engine}（另可选 {alt}）",
     "uninstalledEngine": "已卸载 {id}",
-    "mnnRepoStart": "开始下载 MNN 模型（仓库直下）"
+    "mnnRepoStart": "开始下载 MNN 模型（仓库直下）",
+    "downloadStartedAuto": "已自动挑选权重并开始下载：{file}",
+    "installNothingNoItem": "没有可安装的模型信息",
+    "installNothingNoRepo": "该模型尚未公布权重下载地址（等待官方开源）",
+    "installNothingGeneric": "没有可下载的内容"
   },
   "cmdpal": {
     "title": "命令面板",
@@ -1131,5 +1150,30 @@
     "importBadJson": "所选文件不是有效的 JSON",
     "searching": "正在检索",
     "noAnswer": "未生成回答，请检查知识库内容或选择回答模型"
+  },
+  "sidebar": {
+    "manageTitle": "管理侧边栏",
+    "manageAria": "管理侧边栏",
+    "manageHint": "勾选要在侧边栏显示的入口，取消勾选可把不常用的收起来（至少保留一个）。",
+    "showAll": "全部显示",
+    "keepOne": "至少要保留一个入口，否则界面就没有入口可点了。"
+  },
+  "enginePick": {
+    "title": "选择推理引擎",
+    "hint": "这个模型支持多个引擎，选一个来运行",
+    "rememberForModel": "记住这个选择（仅对该模型）",
+    "useAsDefault": "设为所有模型的默认引擎"
+  },
+  "engineRoute": {
+    "title": "运行引擎",
+    "runtimeMnn": "走 MNN 运行时（/api/mnn/load）",
+    "runtimeLlamacpp": "走 llama.cpp（引擎管理）",
+    "runtimeOther": "其他引擎",
+    "noEndpoint": "当前没有应用内加载端点",
+    "srcExplicit": "来自你的选择",
+    "srcDefault": "来自设置里的默认引擎",
+    "srcCatalog": "来自目录顺序",
+    "srcNone": "未声明引擎",
+    "unknown": "未知"
   }
 }
