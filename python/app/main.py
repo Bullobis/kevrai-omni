@@ -1547,10 +1547,6 @@ async def hub_download(request: Request, body: HubDownloadReq) -> dict[str, Any]
     if not is_valid_repo(body.repo):
         raise HTTPException(status_code=400, detail={"error": "bad_repo", "repo": body.repo})
     files = [str(f) for f in (body.files or []) if isinstance(f, str) and f]
-    if not files:
-        raise HTTPException(status_code=400, detail="files required")
-    if len(files) > 200:
-        raise HTTPException(status_code=400, detail="too many files (max 200)")
 
     reg = _get_hub(request)
     try:
@@ -1564,6 +1560,33 @@ async def hub_download(request: Request, body: HubDownloadReq) -> dict[str, Any]
         raise HTTPException(status_code=502, detail=_hub_error_detail(e, body.hub, body.repo)) from e
 
     by_path = {str(f.get("path") or ""): f for f in listing.get("files", [])}
+
+    # v4.11.0 — 未显式给出 files 时，由后端按权重/配置挑文件。
+    #
+    # 目录里 165/259 个模型没有 gguf_repo，前端拿不到具体的分片路径，
+    # 旧流程因此走到"只装引擎、从不下载权重"的分支（用户看到 toast 以为装
+    # 好了，本地目录却是空的）。auto_pick 原先只负责**换源**（在镜像里挑最快
+    # 的 URL），不负责挑文件，所以这里补上真正的文件挑选。
+    auto_files_picked = False
+    if not files:
+        if not body.auto_pick:
+            raise HTTPException(status_code=400, detail="files required")
+        from .repo_picker import pick_repo_files
+        files = pick_repo_files(listing.get("files", []))
+        auto_files_picked = True
+        if not files:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": "no_weight_files",
+                    "hub": body.hub,
+                    "repo": body.repo,
+                    "hint": "仓库里没有识别到可下载的权重文件",
+                },
+            )
+    if len(files) > 200:
+        raise HTTPException(status_code=400, detail="too many files (max 200)")
+
     download_root = Path(settings.resolved_download_dir())
     dest_root = hub_dest_root(download_root, body.hub, body.repo)
 
@@ -1654,7 +1677,10 @@ async def hub_download(request: Request, body: HubDownloadReq) -> dict[str, Any]
         for stale in sorted(jobs, key=lambda k: jobs[k].get("created_at", 0))[:100]:
             jobs.pop(stale, None)
     return {"job_id": job_id, "dest_root": str(dest_root),
-            "tasks": tasks_out, "skipped": skipped}
+            "tasks": tasks_out, "skipped": skipped,
+            # v4.11.0 — 让前端能区分"用户选的"和"后端代挑的"，
+            # 代挑时提示一句，避免用户疑惑为什么下了一堆没见过的文件。
+            "auto_files_picked": auto_files_picked}
 
 
 @app.get("/api/hub/jobs/{job_id}")
@@ -2046,6 +2072,10 @@ class MnnLoadReq(BaseModel):
     model_config = {"protected_namespaces": ()}
     model_dir: str
     model_name: str = ""
+    # 可选：调用方声明它认为该用哪个引擎。与解析结果不符时**明确拒绝**
+    # 而不是照常加载——否则会把一个 mnn 模型塞进 MNN 之外、或反过来，
+    # 用户看到的行为与他选的引擎对不上，且毫无提示。
+    engine: str = ""
 
 
 class MnnChatReq(BaseModel):
@@ -2086,8 +2116,69 @@ def mnn_status() -> dict[str, Any]:
     return st
 
 
+@app.get("/api/engine/route")
+def engine_route(
+    request: Request,
+    engine: str = "",
+    model_id: str = "",
+) -> dict[str, Any]:
+    """解析"这个模型该用哪个引擎、走哪个端点"。
+
+    单一真相源：前端不再自己判断，避免各处规则不一致。
+    ``default_engine_id`` 也是在这里第一次被真正消费。
+
+    - ``engine``：逗号分隔的候选（模型的 engine 字段）
+    - ``model_id``：仅用于诊断回显
+    """
+    from .engine_router import EngineResolveError, resolve_engine
+
+    settings = _get_settings(request)
+    candidates = [c.strip() for c in (engine or "").split(",") if c.strip()]
+    try:
+        res = resolve_engine(
+            candidates,
+            explicit=None,  # 显式选择走下面的 engine_explicit
+            default_engine_id=getattr(settings, "default_engine_id", None),
+        )
+    except EngineResolveError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    res["model_id"] = model_id
+    return res
+
+
+@app.post("/api/engine/route")
+def engine_route_resolve(req: dict[str, Any], request: Request) -> dict[str, Any]:
+    """同上，但允许显式指定引擎（POST 体：candidates / explicit）。"""
+    from .engine_router import EngineResolveError, resolve_engine
+
+    settings = _get_settings(request)
+    try:
+        res = resolve_engine(
+            req.get("candidates"),
+            explicit=req.get("explicit") or None,
+            default_engine_id=getattr(settings, "default_engine_id", None),
+        )
+    except EngineResolveError as e:
+        raise HTTPException(
+            status_code=409, detail={"error": "engine_not_available", "message": str(e)}
+        ) from e
+    return res
+
+
 @app.post("/api/mnn/load")
 async def mnn_load(req: MnnLoadReq, request: Request) -> dict[str, Any]:
+    # v4.11.1 — 调用方声明了引擎但不是 mnn → 明确拒绝。
+    # 这个端点只能跑 MNN；静默加载会让用户以为自己在用他选的引擎。
+    if req.engine and req.engine.strip().lower() not in ("mnn",):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "error": "engine_mismatch",
+                "requested": req.engine,
+                "endpoint": "/api/mnn/load",
+                "message": f"/api/mnn/load 只能加载 mnn 引擎，收到 {req.engine!r}",
+            },
+        )
     d = Path(req.model_dir).expanduser()
     if not d.is_dir():
         raise HTTPException(status_code=404, detail=f"model dir not found: {req.model_dir}")
