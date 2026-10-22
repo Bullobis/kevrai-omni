@@ -43,6 +43,49 @@ _WHISPER_LANGS = {
 }
 
 
+#: ASR 后端引擎。faster-whisper 走 CTranslate2；sensevoice 走 funasr。
+ENGINE_WHISPER = "faster-whisper"
+ENGINE_SENSEVOICE = "sensevoice"
+
+#: 模型仓库 -> 应使用的引擎。
+#:
+#: 判定不能靠"名字里有没有 whisper"这种模糊匹配 —— 判错会用一个引擎去加载
+#: 另一个引擎的权重，报错信息完全指不到真正原因。
+MODEL_ENGINE: dict[str, str] = {
+    "FunAudioLLM/SenseVoiceSmall": ENGINE_SENSEVOICE,
+    "iic/SenseVoiceSmall": ENGINE_SENSEVOICE,
+    "Qwen/Qwen3-ASR-0.6B": ENGINE_SENSEVOICE,
+    "Qwen/Qwen3-ASR-1.7B": ENGINE_SENSEVOICE,
+}
+
+#: SenseVoice 系列支持的语言（阿里官方列出）。
+SENSEVOICE_LANGS = {
+    "auto": "自动检测",
+    "zh": "普通话",
+    "en": "英语",
+    "ja": "日语",
+    "ko": "韩语",
+    "yue": "粤语",
+}
+
+#: SenseVoice 需要的推理依赖。装了哪个就用哪个，都不装就明确说要装哪个。
+SENSEVOICE_DEPS = ("funasr", "modelscope")
+
+
+def engine_for_model(repo: str) -> str:
+    """判定一个仓库该用哪个 ASR 引擎。未登记的按 Whisper 处理（既有行为）。"""
+    key = (repo or "").strip().lower().rstrip("/")
+    for known, eng in MODEL_ENGINE.items():
+        if key == known.lower():
+            return eng
+    # 尾名匹配：本地目录可能只有最后一段
+    tail = key.split("/")[-1]
+    for known, eng in MODEL_ENGINE.items():
+        if tail == known.lower().split("/")[-1]:
+            return eng
+    return ENGINE_WHISPER
+
+
 class AsrError(Exception):
     """Base error for the ASR runtime."""
 
@@ -183,7 +226,20 @@ class AsrManager:
 
     def load(self, repo: str, *, device: str = "auto",
              compute_type: str = "auto") -> tuple[Any, Any, str, str]:
-        """Return ``(model, faster_whisper, resolved_source, compute_type)``."""
+        """Return ``(model, engine_module, resolved_source, compute_type)``.
+
+        SenseVoice 走独立路径：它不走 CTranslate2，也没有 compute_type
+        概念，硬套 Whisper 的参数会直接崩。
+        """
+        if engine_for_model(repo) == ENGINE_SENSEVOICE:
+            source = resolve_model_source(repo, self.data_root)
+            key = (str(source), "sensevoice", "")
+            with self._lock:
+                model = self._cache.get(key)
+                if model is None:
+                    model = self._load_sensevoice(repo, source)
+                    self._cache[key] = model
+            return model, None, str(source), "default"
         fw = import_faster_whisper(self.data_root)
         source = resolve_model_source(repo, self.data_root)
         if device == "auto":
@@ -206,6 +262,96 @@ class AsrManager:
                     raise AsrModelError(f"无法加载模型 {repo}：{e}") from e
                 self._cache[key] = model
         return model, fw, str(source), compute_type
+
+    def _load_sensevoice(self, repo: str, source: Any) -> Any:
+        """加载 SenseVoice / Qwen3-ASR。
+
+        走 funasr（阿里官方推理库）。依赖缺失时明确说要装什么，
+        而不是抛一个裸 ImportError —— 用户看不懂 ModuleNotFoundError
+        和本项目的关系。
+        """
+        try:
+            from funasr import AutoModel  # type: ignore
+        except ImportError as e:
+            raise AsrEngineMissing(
+                f"SenseVoice 需要推理依赖 funasr：pip install funasr"
+                f"（原始错误：{e}）"
+            ) from e
+        try:
+            return AutoModel(model=str(source), trust_remote_code=True)
+        except Exception as e:  # noqa: BLE001
+            raise AsrModelError(f"无法加载 SenseVoice 模型 {repo}：{e}") from e
+
+    def transcribe_sensevoice(
+        self,
+        model: Any,
+        audio: str | Path | bytes,
+        *,
+        language: str | None = None,
+    ) -> dict[str, Any]:
+        """用 SenseVoice 转写，返回与 Whisper 路径一致的结构。
+
+        两个引擎的返回字段不同（funasr 给的是带 ITN 的文本列表），
+        这里统一规整，让上层不需要区分引擎。
+        """
+        path = self._materialise_audio(audio)
+        kwargs: dict[str, Any] = {"input": str(path)}
+        lang = (language or "auto").lower()
+        kwargs["language"] = lang if lang in SENSEVOICE_LANGS else "auto"
+        try:
+            res = model.generate(**kwargs)
+        except TypeError:
+            # 不同 funasr 版本的参数名不完全一致，退回最小调用。
+            try:
+                res = model.generate(input=str(path))
+            except Exception as e:  # noqa: BLE001
+                raise AsrModelError(f"SenseVoice 转写失败：{e}") from e
+        except Exception as e:  # noqa: BLE001
+            raise AsrModelError(f"SenseVoice 转写失败：{e}") from e
+
+        text = self._extract_sensevoice_text(res)
+        return {
+            "text": text,
+            "language": kwargs["language"],
+            "duration": None,
+            "segments": [],
+            "engine": ENGINE_SENSEVOICE,
+        }
+
+    @staticmethod
+    def _extract_sensevoice_text(res: Any) -> str:
+        """从 funasr 返回里取文本。
+
+        funasr 的返回是 list[dict]，文本在 "text" 键里，且可能带 ITN 标记
+        （如 "<|zh|><|NEUTRAL|><|Speech|> 你好"），需要剥掉这些标签。
+        """
+        import re
+
+        raw = ""
+        if isinstance(res, (list, tuple)) and res:
+            first = res[0]
+            if isinstance(first, dict):
+                raw = str(first.get("text") or "")
+            else:
+                raw = str(first)
+        elif isinstance(res, dict):
+            raw = str(res.get("text") or "")
+        else:
+            raw = str(res or "")
+        # 剥掉 <|...|> 形式的标签
+        return re.sub(r"<\|[^|]*\|>", "", raw).strip()
+
+    @staticmethod
+    def _materialise_audio(audio: str | Path | bytes) -> Path:
+        """把 bytes 落盘成临时文件；路径原样返回。"""
+        if isinstance(audio, (bytes, bytearray)):
+            import tempfile
+
+            fd, tmp = tempfile.mkstemp(suffix=".wav")
+            with os.fdopen(fd, "wb") as fh:
+                fh.write(bytes(audio))
+            return Path(tmp)
+        return Path(audio)
 
     def transcribe(self, repo: str, audio: str | Path | bytes, *,
                    language: str | None = None, task: str = "transcribe",
@@ -319,6 +465,20 @@ def capabilities(data_root: Path | None = None) -> dict[str, Any]:
                 compute_types = sorted(ctranslate2.get_supported_compute_types("cuda"))
         except Exception:  # noqa: BLE001 — capability probe must stay non-fatal
             log.debug("faster-whisper capability probe failed", exc_info=True)
+
+    # SenseVoice 可用性单独探测：它依赖 funasr，和 faster-whisper 无关。
+    sensevoice_ready = False
+    sensevoice_missing: list[str] = []
+    for dep in SENSEVOICE_DEPS:
+        try:
+            __import__(dep)
+            sensevoice_ready = True
+            break
+        except ImportError:
+            sensevoice_missing.append(dep)
+    if sensevoice_ready:
+        sensevoice_missing = []
+
     return {
         "engine": ENGINE_ID,
         "installed": installed,
@@ -326,4 +486,12 @@ def capabilities(data_root: Path | None = None) -> dict[str, Any]:
         "cuda_available": cuda,
         "cuda_compute_types": compute_types,
         "version": fw_version,
+        "engines": {
+            ENGINE_WHISPER: {"installed": installed},
+            ENGINE_SENSEVOICE: {
+                "installed": sensevoice_ready,
+                "missing_deps": sensevoice_missing,
+                "languages": sorted(SENSEVOICE_LANGS),
+            },
+        },
     }
