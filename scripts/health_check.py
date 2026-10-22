@@ -256,6 +256,120 @@ def check_gpu() -> Check:
     return Check("显卡 / 加速卡", OK, desc, extra={"vendor": vendor})
 
 
+def check_install_path() -> Check:
+    """检查安装路径是否含有会让本地 AI 软件崩溃的字符。
+
+    这是排障 FAQ 里最高频的一条：中文路径、空格、Windows 保留名会让
+    PyTorch / llama.cpp / PyInstaller 产物的加载失败，而报错信息往往
+    完全指不到真正原因（表现为"找不到文件"或莫名其妙的编码错误）。
+    """
+    root = _repo_root()
+    path = str(root)
+    problems: list[str] = []
+
+    # 非 ASCII（中文、日文等）
+    if any(ord(ch) > 127 for ch in path):
+        problems.append("路径含非 ASCII 字符（中文等）")
+    # 空格
+    if " " in path:
+        problems.append("路径含空格")
+    # Windows 保留设备名（CON/PRN/AUX/NUL/COM1-9/LPT1-9），作为独立路径段出现才危险
+    reserved = {"CON", "PRN", "AUX", "NUL"} | {f"COM{i}" for i in range(1, 10)} | {
+        f"LPT{i}" for i in range(1, 10)
+    }
+    for part in Path(path).parts:
+        if part.upper().rstrip(". ") in reserved:
+            problems.append(f"路径段使用了 Windows 保留名 '{part}'")
+
+    if not problems:
+        return Check("安装路径", "ok", f"{path}（无中文/空格/保留名）")
+
+    return Check(
+        "安装路径",
+        "fail",
+        "；".join(problems),
+        how=(
+            "建议把项目移到纯英文、无空格的短路径下，例如 "
+            + ("C:\\ai\\kevrai" if os.name == "nt" else "/opt/kevrai")
+            + "。移动后重新运行体检。"
+            "多数'找不到模型/编码错误'都源于此。"
+        ),
+    )
+
+
+#: 已知会把本地 AI 软件的 DLL / 模型加载误判为病毒的杀软进程名。
+#: 这是经验清单，不是完整枚举；命中只提示加白，不做任何改动。
+AV_PROCESS_HINTS = (
+    "360", "qhsafe", "zhudongfangyu",  # 360 安全卫士/杀毒
+    "huorong", "hipstray", "usysdiag",  # 火绒
+    "avp", "klnagent",  # 卡巴斯基
+    "mcafee", "mfe",  # McAfee
+    "avguard", "avg",  # AVG / Avira
+    "bdagent", "bdservicehost",  # Bitdefender
+    "norton", "symantec",  # 诺顿
+    "tmbmsrv", "tmccsf",  # 趋势
+    "safemon", "kxe",  # 金山
+)
+
+
+def check_antivirus() -> Check:
+    """提示常见杀软可能拦截 DLL / 模型文件加载。
+
+    只在 Windows 上扫描进程列表；其他平台返回 skip。这条检查只能提示，
+    不判断是否真的拦截了 —— 那需要看具体日志。
+    """
+    if os.name != "nt":
+        return Check("杀毒软件", "skip", "非 Windows 平台，跳过")
+
+    try:
+        import subprocess
+
+        r = subprocess.run(
+            ["tasklist", "/FO", "CSV", "/NH"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if r.returncode != 0:
+            return Check("杀毒软件", "skip", "无法读取进程列表")
+        names = r.stdout.lower()
+    except Exception:  # noqa: BLE001
+        return Check("杀毒软件", "skip", "无法读取进程列表")
+
+    hits = [name for name in AV_PROCESS_HINTS if name in names]
+    if not hits:
+        return Check("杀毒软件", "ok", "未发现常见杀软进程")
+
+    return Check(
+        "杀毒软件",
+        "warn",
+        f"检测到 {len(hits)} 类安全软件进程：{', '.join(sorted(set(hits)))}",
+        how=(
+            "若出现 DLL 加载失败、模型文件莫名消失、py 进程被终止，"
+            "请把项目目录与数据目录加入杀软白名单。"
+            "（本项只作提示，不做任何修改。）"
+        ),
+    )
+
+
+def find_free_port(start: int, tries: int = 50) -> int | None:
+    """从 start 起找一个可绑定的空闲端口。找不到返回 None。"""
+    import socket
+
+    for port in range(start, start + tries):
+        for family in (socket.AF_INET, socket.AF_INET6):
+            try:
+                with socket.socket(family, socket.SOCK_STREAM) as s:
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    s.bind(("" if family == socket.AF_INET else "::", port))
+                    return port
+            except OSError:
+                continue
+        # 双栈都试过再进下一个端口
+        continue
+    return None
+
+
 def check_port(port: int) -> Check:
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -264,12 +378,21 @@ def check_port(port: int) -> Check:
     except Exception as e:  # noqa: BLE001
         return Check("端口占用", SKIP, f"无法检测端口 {port}：{e}")
     if busy:
+        # 不能只建议 port+1：那个端口很可能同样被占用，用户照着改还是失败。
+        # 这里给的是"已实际绑定成功验证过"的空闲端口。
+        alt = find_free_port(port + 1)
+        if alt is None:
+            return Check(
+                f"端口占用 · {port}", WARN,
+                f"端口 {port} 已被占用，且附近未找到空闲端口",
+                f"请手动关闭占用程序后重试",
+            )
         return Check(
             f"端口占用 · {port}", WARN,
             f"端口 {port} 已被占用，sidecar 会启动失败或自动换端口",
-            f"关掉占用该端口的程序，或设置环境变量换端口：\n"
-            f"  Windows:  set KEVRAI_SIDECAR_PORT={port + 1}\n"
-            f"  Linux/mac: export KEVRAI_SIDECAR_PORT={port + 1}",
+            f"关掉占用该端口的程序，或换到已验证空闲的端口 {alt}：\n"
+            f"  Windows:   set KEVRAI_SIDECAR_PORT={alt}\n"
+            f"  Linux/mac: export KEVRAI_SIDECAR_PORT={alt}",
         )
     return Check(f"端口占用 · {port}", OK, f"端口 {port} 空闲")
 
@@ -436,6 +559,7 @@ def run_checks(port: int, with_network: bool) -> list[Check]:
     checks: list[Check] = [
         check_python_version(),
         check_platform(),
+        check_install_path(),
     ]
     data_root = _data_root()
     checks += [
@@ -444,6 +568,7 @@ def run_checks(port: int, with_network: bool) -> list[Check]:
         check_frontend_toolchain(),
         check_frontend_deps(root),
         check_gpu(),
+        check_antivirus(),
         check_port(port),
         check_disk(data_root),
         check_write_permission(data_root),
