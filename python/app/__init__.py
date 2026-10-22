@@ -1,6 +1,6 @@
 """Kevrai Omni — inference orchestration sidecar (FastAPI)."""
 
-__version__ = "4.11.2"
+__version__ = "4.12.0"
 
 #: Canonical HTTP User-Agent for every outbound request the sidecar makes.
 #: Single source of truth — modules MUST import this instead of hardcoding a
