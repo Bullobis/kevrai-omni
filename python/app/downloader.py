@@ -17,6 +17,8 @@ Design goals:
 """
 from __future__ import annotations
 
+import re
+
 import asyncio
 import contextlib
 import hashlib
@@ -59,18 +61,172 @@ def _host_is_blocked(url: str) -> bool:
 
 
 class DownloadStatus(str, Enum):
+    """任务状态机。
+
+    PENDING → DOWNLOADING ⇄ PAUSED → VERIFYING → DONE
+                  │                                 
+                  ├→ FAILED                         
+                  ├→ CANCELLED（用户主动取消）       
+                  └→ EXPIRED（看门狗判定"无推进"）   
+    """
     PENDING = "pending"
     DOWNLOADING = "downloading"
+    PAUSED = "paused"
     VERIFYING = "verifying"
     DONE = "done"
     FAILED = "failed"
     CANCELLED = "cancelled"
+    #: 看门狗判定为"长时间没有任何字节推进"的悬挂任务。
+    EXPIRED = "expired"
 
 
 #: 终态：任务不会再自己改变状态。
 TERMINAL_STATUSES: frozenset[DownloadStatus] = frozenset(
-    {DownloadStatus.DONE, DownloadStatus.FAILED, DownloadStatus.CANCELLED}
+    {
+        DownloadStatus.DONE,
+        DownloadStatus.FAILED,
+        DownloadStatus.CANCELLED,
+        DownloadStatus.EXPIRED,
+    }
 )
+
+#: 看门狗：进行中任务多久没有任何推进就算悬挂。
+#:
+#: 判据是"**是否有推进**"而不是"谁持有引用"。一个任务的 asyncio.Task
+#: 可能因为 sidecar 内部异常而永远不再被 await，引用还在、字典里也有它，
+#: 但它其实已经死了 —— 引用计数看不出这件事，只有推进能看出来。
+DEFAULT_STALL_TIMEOUT_S = 600.0
+#: 看门狗巡检间隔。
+DEFAULT_WATCHDOG_INTERVAL_S = 30.0
+#: 磁盘预留空间：剩余低于此值时拒绝新下载。
+#:
+#: 不预检的后果是"下到一半才发现盘满了"。那时任务已经跑了几小时，失败
+#: 的代价远高于启动时拒绝。
+DEFAULT_MIN_FREE_BYTES = 2 * 1024**3
+class InsufficientDiskSpace(RuntimeError):
+    """磁盘剩余空间不足以容纳这次下载。"""
+
+    def __init__(self, path: str, free: int, needed: int):
+        super().__init__(
+            f"磁盘空间不足：目标位置 {path} 剩余 {free / 1024**3:.1f} GB，"
+            f"本次下载至少需要 {needed / 1024**3:.1f} GB"
+        )
+        self.path = path
+        self.free = free
+        self.needed = needed
+
+
+@dataclass(frozen=True)
+class OrphanPartial:
+    """上次进程遗留的半截文件。"""
+
+    partial: Path
+    #: 已下载的字节数。
+    size: int
+    #: 距最后一次写入过去了多少秒。
+    age_s: float
+    #: 是否已被判定为"陈旧"（超过 STALE_PARTIAL_AGE_S）。
+    stale: bool
+
+
+@dataclass(frozen=True)
+class RecoveryPlan:
+    """对一个孤儿 partial 的处置方案。plan_recovery 的产物，本身不做任何动作。"""
+
+    partial: Path
+    strategy: RecoveryStrategy
+    action: str
+    reason: str
+    delete_partial: bool
+
+
+#: HF resolve/main 会随上游推送漂移到新 commit。钉住 revision 后，同一个
+#: URL 永远返回同一份字节 —— 这是"哈希校验"能成立的前提（否则哈希本身也
+#: 会随上游更新而变，校验变成形同虚设）。
+_HF_RESOLVE_RE = re.compile(
+    r"^(?P<prefix>https://[^/]+)/(?P<repo>[^/]+/[^/]+)/resolve/(?P<rev>[^/]+)/(?P<rest>.+)$"
+)
+
+
+def pin_revision(url: str, revision: str) -> str:
+    """把一个 HF resolve URL 的 revision 钉到指定 commit。
+
+    非 HF resolve 形式的 URL 原样返回 —— 不能因为想钉就破坏别的源。
+    """
+    if not revision:
+        return url
+    m = _HF_RESOLVE_RE.match(url)
+    if not m:
+        return url
+    return (
+        f"{m.group('prefix')}/{m.group('repo')}/resolve/{revision}/{m.group('rest')}"
+    )
+
+
+def is_revision_pinned(url: str) -> bool:
+    """URL 里的 revision 是否已经是 40 位 commit sha（而不是 main 这类分支名）。"""
+    m = _HF_RESOLVE_RE.match(url)
+    if not m:
+        return False
+    return bool(re.fullmatch(r"[0-9a-f]{40}", m.group("rev")))
+
+
+def free_disk_bytes(path: str | os.PathLike[str]) -> int:
+    """返回目标路径所在磁盘的剩余字节数。取不到就返回 0（拒绝而非放行）。"""
+    try:
+        st = os.statvfs(os.fspath(path))
+    except OSError:
+        return 0
+    return st.f_bavail * st.f_frsize
+
+
+def dir_free_bytes(path: str | os.PathLike[str]) -> int:
+    """返回目标文件**父目录**所在磁盘的剩余字节数。
+
+    父目录可能还不存在（首次下载），逐级向上找第一个存在的祖先。
+    """
+    p = Path(path).expanduser()
+    cur = p.parent if p.suffix else p
+    for _ in range(8):
+        if cur.exists():
+            return free_disk_bytes(cur)
+        parent = cur.parent
+        if parent == cur:
+            break
+        cur = parent
+    return free_disk_bytes(Path.cwd())
+
+
+class RecoveryStrategy(str, Enum):
+    """sidecar 重启后，磁盘上半截任务的处置方式。
+
+    Cherry Studio 的 JobManager 要求每种任务类型**显式声明**恢复策略，因为
+    不同任务的"自动续跑"代价差别巨大：重新嵌入一个知识库要花真金白银的
+    API 费用，而重新下载一个文件只是带宽。本项目把它下沉到每个任务上。
+    """
+
+    #: 自动续传：保留 .partial，重启后接着下。要求进度文件可靠。
+    RESUME = "resume"
+    #: 标记失败，等用户手动重试。用于自动续跑可能有代价/有风险的场景。
+    MANUAL = "manual"
+    #: 丢弃半截文件，下次从头开始。用于源可能已变的场景。
+    DISCARD = "discard"
+
+
+#: 默认策略。下载是幂等的纯带宽消耗，自动续传代价最低，故默认 RESUME。
+DEFAULT_RECOVERY = RecoveryStrategy.RESUME
+
+#: 半截文件超过这个时长没被碰过，就认为它是"上一次进程遗留"而不是刚中断的。
+#:
+#: 判断依据只能是 mtime —— 进程重启后内存里的所有状态都没了，磁盘上的
+#: mtime 是唯一能说明"最后一次有人动它是什么时候"的证据。
+STALE_PARTIAL_AGE_S = 3600.0
+
+#: 被视为"有推进"的最小新增字节数。
+#:
+#: 不能是 >0：某些源会每隔几秒发一个 keep-alive 字节，任务看起来一直在动，
+#: 实际带宽接近 0。用阈值能识别这种"假推进"。
+DEFAULT_STALL_MIN_BYTES = 64 * 1024
 
 #: 终态任务在内存里的保留上限。
 #:
@@ -167,6 +323,16 @@ class DownloadTask:
     finished_at: float = 0.0
     queue: asyncio.Queue[dict[str, Any]] = field(default_factory=asyncio.Queue)
     cancel_event: asyncio.Event = field(default_factory=asyncio.Event)
+    #: 最近一次"有推进"的时间戳（monotonic）。看门狗据此判定悬挂。
+    last_progress_at: float = field(default_factory=time.monotonic)
+    #: 看门狗记录的最近一次已确认字节数，用于判断是否达到"有推进"阈值。
+    _stall_mark_bytes: int = 0
+    #: 跨进程重启后的恢复策略。见 RecoveryStrategy。
+    recovery: RecoveryStrategy = DEFAULT_RECOVERY
+    #: 期望的模型 revision（commit sha）。锁定了才不会被上游静默换内容。
+    expected_revision: str | None = None
+    #: 完整性校验失败过（哈希对不上）。比"下载失败"严重一个量级。
+    integrity_failed: bool = False
     speed_bps: float = 0.0
     final_sha256: str | None = None
     # Ordered fallback chain of mirror URLs for the *same* file. ``url`` always
@@ -200,6 +366,8 @@ class DownloadTask:
             "source_index": self.source_index,
             "fallbacks": self.fallbacks,
             "candidates": list(self.candidates),
+            "integrity_failed": self.integrity_failed,
+            "expected_revision": self.expected_revision,
         }
 
 
@@ -236,6 +404,10 @@ class Downloader:
         shard_downloads: bool = True,
         max_shards: int = DEFAULT_MAX_SHARDS,
         max_retained_finished: int = DEFAULT_MAX_RETAINED_FINISHED,
+        stall_timeout_s: float = DEFAULT_STALL_TIMEOUT_S,
+        watchdog_interval_s: float = DEFAULT_WATCHDOG_INTERVAL_S,
+        stall_min_bytes: int = DEFAULT_STALL_MIN_BYTES,
+        min_free_bytes: int = DEFAULT_MIN_FREE_BYTES,
     ) -> None:
         self._sem = asyncio.Semaphore(max_concurrent)
         # 大文件分片并发下载。仅在服务器声明 Accept-Ranges 且文件足够大时生效，
@@ -249,6 +421,15 @@ class Downloader:
         self._tasks_lock = asyncio.Lock()
         # 终态任务的保留上限（见 DEFAULT_MAX_RETAINED_FINISHED 的说明）。
         self._max_retained_finished = max(1, int(max_retained_finished or 1))
+        # --- 看门狗：把"无推进"的进行中任务转 EXPIRED ---
+        self._stall_timeout = float(stall_timeout_s or 0)
+        self._watchdog_interval = max(1.0, float(watchdog_interval_s or 0))
+        self._stall_min_bytes = max(0, int(stall_min_bytes or 0))
+        # <=0 表示禁用看门狗（测试与不需要的部署场景）。
+        self._watchdog_enabled = self._stall_timeout > 0
+        self._watchdog_task: asyncio.Task | None = None
+        # 磁盘预留：<=0 表示不做预检。
+        self._min_free_bytes = max(0, int(min_free_bytes or 0))
         # Single-flight by resolved destination: a second `start()` for the same
         # file while one is already in flight must not open a second writer onto
         # the same `.partial` (the old check only looked at the *final* dest,
@@ -280,6 +461,7 @@ class Downloader:
         sha256: str | None = None,
         extra_headers: dict[str, str] | None = None,
         candidates: list[str] | None = None,
+        declared_bytes: int | None = None,
     ) -> str:
         """Start a new download. Returns the task_id.
 
@@ -296,9 +478,14 @@ class Downloader:
 
         Raises `DownloadRefused` only for unsupported scheme / missing host.
         Raises `FileExistsError` if the destination already exists.
+        Raises `InsufficientDiskSpace` if the target disk cannot hold the file.
         """
         dest_path = Path(dest).expanduser().resolve()
         dest_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # 磁盘预检：启动前拒绝，好过下到一半才发现盘满。
+        if self._min_free_bytes > 0:
+            self._check_disk_space(dest_path, declared_bytes)
         # Build the ordered fallback chain: primary first, then deduped extras.
         ordered = self._build_candidate_chain(url, candidates)
         # Validate url. When the task carries an Authorization credential
@@ -334,6 +521,7 @@ class Downloader:
         # Run in background without awaiting — caller polls via `progress()` /
         # subscribes to `task.queue`.
         asyncio.create_task(self._run(task))
+        self._ensure_watchdog()
         return task.id
 
     async def cancel(self, task_id: str) -> bool:
@@ -352,6 +540,202 @@ class Downloader:
         if t is None:
             return None
         return t.snapshot()
+
+    def _check_disk_space(
+        self, dest_path: Path, declared_bytes: int | None = None
+    ) -> None:
+        """校验目标磁盘剩余空间。不足则抛 InsufficientDiskSpace。
+
+        `declared_bytes` 来自 catalog 里登记的已知大小。未知时**只用预留值
+        校验，不猜大小** —— 拿一个"保守估计值"去拒绝，会把小文件下载一起
+        挡掉（典型：磁盘只剩 5GB，一个 200MB 的模型也下不了）。
+
+        大小未知的情况由 `_check_disk_space_midflight` 兜底：一旦响应头给出
+        了真实长度，就在早期再校验一次。
+        """
+        # 开关放在这里而不是调用方：预检被禁用时，任何调用路径都不该拒绝。
+        if self._min_free_bytes <= 0:
+            return
+        needed = int(declared_bytes or 0)
+        if needed < 0:
+            needed = 0
+        # 已有部分下载时，只需要补上差额。
+        partial = Path(str(dest_path) + ".partial")
+        try:
+            have = partial.stat().st_size if partial.exists() else 0
+        except OSError:
+            have = 0
+        needed = max(0, needed - have)
+
+        free = dir_free_bytes(dest_path)
+        # 取不到剩余空间（0）时按"不足"处理：宁可拒绝，也不让任务跑几小时后
+        # 才发现盘满。
+        if free < needed + self._min_free_bytes:
+            raise InsufficientDiskSpace(
+                str(dest_path), free, needed + self._min_free_bytes
+            )
+
+    @staticmethod
+    def scan_orphan_partials(
+        directory: str | os.PathLike[str],
+        stale_after_s: float = STALE_PARTIAL_AGE_S,
+        now: float | None = None,
+    ) -> list[OrphanPartial]:
+        """扫描目录里上次进程遗留的半截文件。
+
+        进程重启后内存状态全部丢失，磁盘上的 `.partial` 是唯一证据。这里不
+        做恢复动作，只把"有哪些、多久没动、按当前策略该怎么处置"列出来，
+        由调用方（sidecar 启动流程）决定。
+
+        找不到进度文件、`mtime` 取不到等异常一律按"无法判定"处理并原样
+        列出，绝不静默丢弃用户的已下载字节。
+        """
+        now = time.time() if now is None else now
+        root = Path(directory)
+        out: list[OrphanPartial] = []
+        if not root.is_dir():
+            return out
+        try:
+            entries = sorted(root.rglob("*.partial"))
+        except OSError:
+            return out
+        for p in entries:
+            try:
+                st = p.stat()
+                size = st.st_size
+                age = max(0.0, now - st.st_mtime)
+            except OSError:
+                # 取不到就按"刚中断 + 大小未知"列出，交给调用方决定。
+                out.append(OrphanPartial(p, 0, 0.0, False))
+                continue
+            stale = age >= stale_after_s
+            out.append(OrphanPartial(p, size, age, stale))
+        return out
+
+    @classmethod
+    def plan_recovery(
+        cls,
+        orphan: OrphanPartial,
+        strategy: RecoveryStrategy = DEFAULT_RECOVERY,
+    ) -> RecoveryPlan:
+        """按策略给出对一个孤儿 partial 的处置方案（纯函数，不动磁盘）。"""
+        if strategy is RecoveryStrategy.RESUME:
+            return RecoveryPlan(
+                orphan.partial,
+                strategy,
+                "resume",
+                f"保留已下载的 {orphan.size / 1024**2:.1f} MB，从断点继续",
+                delete_partial=False,
+            )
+        if strategy is RecoveryStrategy.MANUAL:
+            return RecoveryPlan(
+                orphan.partial,
+                strategy,
+                "mark-failed",
+                "标记为失败，等用户在界面上手动重试",
+                delete_partial=False,
+            )
+        return RecoveryPlan(
+            orphan.partial,
+            strategy,
+            "discard",
+            "丢弃半截文件，下次从头下载",
+            delete_partial=True,
+        )
+
+    def _check_disk_space_midflight(
+        self, dest_path: Path, total_bytes: int, have_bytes: int
+    ) -> None:
+        """响应头给出真实长度后的早期校验。
+
+        启动前不知道大小，拿到 Content-Length 就知道能不能装下了。这时失败
+        的代价远小于"下到 99% 才发现盘满"。
+        """
+        if self._min_free_bytes <= 0 or total_bytes <= 0:
+            return
+        remaining = max(0, total_bytes - have_bytes)
+        free = dir_free_bytes(dest_path)
+        if free < remaining + self._min_free_bytes:
+            raise InsufficientDiskSpace(
+                str(dest_path), free, remaining + self._min_free_bytes
+            )
+
+    def _ensure_watchdog(self) -> None:
+        """懒启动看门狗。没有进行中任务时它自己退出，不留常驻后台任务。"""
+        if not self._watchdog_enabled:
+            return
+        t = self._watchdog_task
+        if t is not None and not t.done():
+            return
+        self._watchdog_task = asyncio.create_task(self._watchdog_loop())
+
+    async def _watchdog_loop(self) -> None:
+        """定期巡检：把长时间无推进的进行中任务转成 EXPIRED。"""
+        try:
+            while True:
+                await asyncio.sleep(self._watchdog_interval)
+                expired = await self.reap_stalled()
+                # 没有进行中任务了就退出，避免常驻。
+                if not expired and not await self._has_inflight():
+                    return
+        except asyncio.CancelledError:
+            raise
+        finally:
+            self._watchdog_task = None
+
+    async def _has_inflight(self) -> bool:
+        async with self._tasks_lock:
+            return any(
+                t.status not in TERMINAL_STATUSES for t in self._tasks.values()
+            )
+
+    def mark_progress(self, task: DownloadTask, downloaded: int) -> bool:
+        """记录一次推进。返回是否足以刷新"存活"时间戳。
+
+        只有**新增字节达到阈值**才算推进。某些源会持续发极少量
+        keep-alive 字节，看起来一直在动、实际带宽接近 0；只判断"字节数变了"
+        会让这种假推进永远骗过看门狗。
+        """
+        gained = downloaded - task._stall_mark_bytes
+        if gained < self._stall_min_bytes:
+            return False
+        task._stall_mark_bytes = downloaded
+        task.last_progress_at = time.monotonic()
+        return True
+
+    async def reap_stalled(self, now: float | None = None) -> list[str]:
+        """把所有超时无推进的进行中任务转 EXPIRED，返回被回收的任务 id。
+
+        转 EXPIRED 前会先置 cancel_event：底层的下载协程可能还卡在读超时里，
+        不主动取消它会继续写 .partial，和后续重试打架。
+        """
+        if not self._watchdog_enabled:
+            return []
+        now = time.monotonic() if now is None else now
+        doomed: list[DownloadTask] = []
+        async with self._tasks_lock:
+            for t in self._tasks.values():
+                if t.status in TERMINAL_STATUSES:
+                    continue
+                if now - t.last_progress_at >= self._stall_timeout:
+                    doomed.append(t)
+        out: list[str] = []
+        for t in doomed:
+            t.cancel_event.set()
+            t.status = DownloadStatus.EXPIRED
+            t.finished_at = time.time()
+            t.error = (
+                f"stalled: no progress for "
+                f"{now - t.last_progress_at:.0f}s"
+            )
+            await self._emit(t, "expired", extra={"error": t.error})
+            out.append(t.id)
+        if out:
+            async with self._tasks_lock:
+                for t in doomed:
+                    t.extra_headers.clear()
+                self._prune_finished_locked()
+        return out
 
     def _prune_finished_locked(self) -> int:
         """淘汰最老的终态任务。调用方必须持有 ``_tasks_lock``。
@@ -471,9 +855,13 @@ class Downloader:
                 try:
                     await self._download_pipeline(task, partial)
                 except asyncio.CancelledError:  # noqa: PERF203
-                    task.status = DownloadStatus.CANCELLED
-                    task.finished_at = time.time()
-                    await self._emit(task, "cancelled")
+                    # 看门狗可能已经把它判成 EXPIRED 了（并顺手置了
+                    # cancel_event）。EXPIRED 比 CANCELLED 信息更具体 ——
+                    # 一个是"用户点的"，一个是"自己卡死的"，不能互相覆盖。
+                    if task.status is not DownloadStatus.EXPIRED:
+                        task.status = DownloadStatus.CANCELLED
+                        task.finished_at = time.time()
+                        await self._emit(task, "cancelled")
                     return
                 except DownloadRefused as e:
                     task.status = DownloadStatus.FAILED
@@ -482,10 +870,18 @@ class Downloader:
                     await self._emit(task, "failed", extra={"error": str(e)})
                     return
                 except Exception as e:  # noqa: BLE001
-                    task.status = DownloadStatus.FAILED
-                    task.error = f"{type(e).__name__}: {e}"
-                    task.finished_at = time.time()
-                    await self._emit(task, "failed", extra={"error": task.error})
+                    if task.status is not DownloadStatus.EXPIRED:
+                        # 取消优先于失败：用户点了取消之后，即便底层加载/推理
+                        # 因为中断而抛异常，那也是取消的后果，不该报成 FAILED
+                        # 吓用户一跳。
+                        if task.cancel_event.is_set():
+                            task.status = DownloadStatus.CANCELLED
+                            task.error = None
+                        else:
+                            task.status = DownloadStatus.FAILED
+                            task.error = f"{type(e).__name__}: {e}"
+                        task.finished_at = time.time()
+                        await self._emit(task, "failed", extra={"error": task.error})
                     return
         finally:
             # Release the single-flight slot for this destination so a later
@@ -523,6 +919,8 @@ class Downloader:
 
         resume0 = partial.stat().st_size if partial.exists() else 0
         task.downloaded_bytes = resume0
+        task._stall_mark_bytes = resume0
+        task.last_progress_at = time.monotonic()
         await self._emit(task, "started", extra={
             "resume_from": resume0,
             "candidates": list(ordered),
@@ -581,6 +979,24 @@ class Downloader:
             if task.expected_sha256 and actual.lower() != task.expected_sha256.lower():
                 errors.append(
                     f"{url}: sha256 mismatch expected {task.expected_sha256}, got {actual}"
+                )
+                # 完整性事件要单独发，不能只混在"下载失败"里。
+                # "下到了错误的内容"比"没下下来"危险一个数量级：前者会被
+                # 当成可用的模型加载，污染的是后续所有推理结果。
+                task.integrity_failed = True
+                await self._emit(
+                    task,
+                    "integrity_failed",
+                    extra={
+                        "url": url,
+                        "expected": task.expected_sha256,
+                        "actual": actual,
+                        "severity": "critical",
+                        "message": (
+                            "文件哈希与期望值不符，已丢弃下载内容。"
+                            "这可能是镜像源被污染或文件在传输中损坏。"
+                        ),
+                    },
                 )
                 if is_last or task.cancel_event.is_set():
                     # Last source: drop the corrupt partial and surface a
@@ -832,6 +1248,9 @@ class Downloader:
                 except ValueError:
                     task.total_bytes = 0
 
+            # 拿到了真实长度，趁早校验一次能不能装下。
+            self._check_disk_space_midflight(partial, task.total_bytes, resume_from)
+
             task.status = DownloadStatus.DOWNLOADING
             partial.parent.mkdir(parents=True, exist_ok=True)
 
@@ -847,6 +1266,8 @@ class Downloader:
                         continue
                     fh.write(chunk)
                     task.downloaded_bytes += len(chunk)
+                    # 刷新看门狗的"存活"时间戳（达到阈值才刷新，防假推进）。
+                    self.mark_progress(task, task.downloaded_bytes)
 
                     now = loop.time()
                     if now - last_tick >= 0.25:
