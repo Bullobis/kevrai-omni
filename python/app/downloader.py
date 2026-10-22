@@ -67,6 +67,23 @@ class DownloadStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
+#: 终态：任务不会再自己改变状态。
+TERMINAL_STATUSES: frozenset[DownloadStatus] = frozenset(
+    {DownloadStatus.DONE, DownloadStatus.FAILED, DownloadStatus.CANCELLED}
+)
+
+#: 终态任务在内存里的保留上限。
+#:
+#: 以前 ``_tasks`` 只增不减 —— 每个下载过的文件都永久留下一个 DownloadTask，
+#: 连带它的 asyncio.Queue / Event 和 ``extra_headers``（里面有 gated 仓库的
+#: Bearer token）。下几十个模型、成百上千个文件后，字典无限增长，前端轮询
+#: ``list_tasks()`` 也越来越慢，而 token 一直驻留内存。
+#:
+#: 保留最近 N 个终态任务（按完成时间淘汰最老的），既能让前端读到刚完成的
+#: 校验结果，又不会无界增长。进行中的任务**永不**被淘汰。
+DEFAULT_MAX_RETAINED_FINISHED = 200
+
+
 # ---------------------------------------------------------------------------
 # URL validation (permissive by default)
 # ---------------------------------------------------------------------------
@@ -218,6 +235,7 @@ class Downloader:
         stream_backoff: tuple[float, ...] = DEFAULT_STREAM_BACKOFF,
         shard_downloads: bool = True,
         max_shards: int = DEFAULT_MAX_SHARDS,
+        max_retained_finished: int = DEFAULT_MAX_RETAINED_FINISHED,
     ) -> None:
         self._sem = asyncio.Semaphore(max_concurrent)
         # 大文件分片并发下载。仅在服务器声明 Accept-Ranges 且文件足够大时生效，
@@ -229,6 +247,8 @@ class Downloader:
         self.max_concurrent = max_concurrent
         self._tasks: dict[str, DownloadTask] = {}
         self._tasks_lock = asyncio.Lock()
+        # 终态任务的保留上限（见 DEFAULT_MAX_RETAINED_FINISHED 的说明）。
+        self._max_retained_finished = max(1, int(max_retained_finished or 1))
         # Single-flight by resolved destination: a second `start()` for the same
         # file while one is already in flight must not open a second writer onto
         # the same `.partial` (the old check only looked at the *final* dest,
@@ -306,9 +326,7 @@ class Downloader:
             # instead of opening a second writer onto the same partial.
             existing_id = self._inflight_dests.get(str(dest_path))
             existing = self._tasks.get(existing_id) if existing_id else None
-            if existing is not None and existing.status not in {
-                DownloadStatus.DONE, DownloadStatus.FAILED, DownloadStatus.CANCELLED
-            }:
+            if existing is not None and existing.status not in TERMINAL_STATUSES:
                 return existing.id
             self._tasks[task.id] = task
             self._inflight_dests[str(dest_path)] = task.id
@@ -323,7 +341,7 @@ class Downloader:
             t = self._tasks.get(task_id)
         if t is None:
             return False
-        if t.status in {DownloadStatus.DONE, DownloadStatus.FAILED, DownloadStatus.CANCELLED}:
+        if t.status in TERMINAL_STATUSES:
             return True
         t.cancel_event.set()
         return True
@@ -334,6 +352,45 @@ class Downloader:
         if t is None:
             return None
         return t.snapshot()
+
+    def _prune_finished_locked(self) -> int:
+        """淘汰最老的终态任务。调用方必须持有 ``_tasks_lock``。
+
+        只淘汰终态（DONE/FAILED/CANCELLED）；进行中的任务一律保留 —— 淘汰
+        它们会让调用方拿到 404，而下载其实还在跑。
+
+        返回被淘汰的数量。
+        """
+        finished = [t for t in self._tasks.values() if t.status in TERMINAL_STATUSES]
+        if len(finished) <= self._max_retained_finished:
+            return 0
+        # 按完成时间升序，最老的先淘汰。finished_at 为 0（异常路径没设到）
+        # 时用 started_at 兜底，保证排序稳定可预期。
+        finished.sort(key=lambda t: (t.finished_at or 0.0, t.started_at or 0.0))
+        doomed = finished[: len(finished) - self._max_retained_finished]
+        for t in doomed:
+            t.extra_headers.clear()
+            self._tasks.pop(t.id, None)
+        return len(doomed)
+
+    async def prune_finished(self) -> int:
+        """主动淘汰多余的终态任务，返回淘汰数量。"""
+        async with self._tasks_lock:
+            return self._prune_finished_locked()
+
+    async def forget(self, task_id: str) -> bool:
+        """显式丢弃一条任务记录。
+
+        只对终态任务生效：进行中的任务被丢弃后调用方再也查不到它，而下载
+        仍在后台跑，等于凭空丢失一个可取消的句柄。
+        """
+        async with self._tasks_lock:
+            t = self._tasks.get(task_id)
+            if t is None or t.status not in TERMINAL_STATUSES:
+                return False
+            t.extra_headers.clear()
+            self._tasks.pop(task_id, None)
+            return True
 
     async def list_tasks(self) -> list[dict[str, Any]]:
         async with self._tasks_lock:
@@ -436,6 +493,12 @@ class Downloader:
             async with self._tasks_lock:
                 if self._inflight_dests.get(str(task.dest_path)) == task.id:
                     self._inflight_dests.pop(str(task.dest_path), None)
+                # 凭证用完即弃。任务对象要留着给前端查最终校验结果，但已经
+                # 进入终态的任务再也不会发请求，Bearer token 不该继续驻留
+                # 内存（gated 仓库的 token 属于长期凭据）。
+                if task.status in TERMINAL_STATUSES:
+                    task.extra_headers.clear()
+                self._prune_finished_locked()
 
     async def _download_pipeline(self, task: DownloadTask, partial: Path) -> None:
         """Stream → verify → rename, with per-mirror fallback.
@@ -656,6 +719,35 @@ class Downloader:
                     await self._emit(task, "retry", extra={"attempt": attempt, "status": status})
                     await asyncio.sleep(self._backoff_seconds(attempt))
                     continue
+
+                # 416 Range Not Satisfiable —— 服务端在说"你要的起点超出了
+                # 我这个文件的长度"。只可能因为磁盘上的 .partial 比服务端
+                # 当前的文件还大（典型：HF 上这个文件被重新上传过，变小了）。
+                #
+                # 不做处理的话：每次重试都从同样的偏移续传，每次都 416，
+                # 任务永久失败且无法自愈，磁盘上还一直躺着一堆对不上当前
+                # 源的旧字节。
+                #
+                # 这里删 partial 是安全的（与"进度文件损坏"那类情况不同）：
+                # 416 是服务端**明确**拒绝这些字节，它们已被证明对不上当前
+                # 源，留着没有任何意义。重置后从头下一遍即可自愈，代价是
+                # 重下，而不是永久卡死。
+                if status == 416 and current_resume > 0 and not task.cancel_event.is_set():
+                    reset_ok = self._reset_partial(partial)
+                    await self._emit(
+                        task, "range_reset",
+                        extra={
+                            "attempt": attempt,
+                            "discarded_bytes": current_resume,
+                            "reset_ok": reset_ok,
+                        },
+                    )
+                    if not reset_ok:
+                        raise
+                    task.downloaded_bytes = 0
+                    task.total_bytes = 0
+                    if attempt < max_attempts:
+                        continue
                 raise
             except httpx.TransportError as e:
                 # LocalProtocolError == our own misuse; retrying won't help.
@@ -669,6 +761,28 @@ class Downloader:
                     await asyncio.sleep(self._backoff_seconds(attempt))
                     continue
                 raise
+
+    @staticmethod
+    def _reset_partial(partial: Path) -> bool:
+        """把 .partial 清零（连同它的分片进度文件）。
+
+        仅在服务端用 416 明确拒绝已有字节时调用。返回是否成功。
+        """
+        try:
+            with partial.open("wb"):
+                pass
+        except OSError:
+            return False
+        # 分片进度记的是旧的（更大的）长度，留着会让下一次续传按旧计划走。
+        try:
+            from .download_shards import _progress_path
+
+            ppath = _progress_path(partial)
+            if ppath.exists():
+                ppath.unlink()
+        except Exception:  # noqa: BLE001 — 进度文件清不掉不影响主流程
+            pass
+        return True
 
     def _backoff_seconds(self, attempt: int) -> float:
         idx = min(attempt - 1, len(self._stream_backoff) - 1)
