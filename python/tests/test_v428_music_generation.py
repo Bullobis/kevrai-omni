@@ -122,7 +122,8 @@ def test_capabilities_missing_engine(tmp_path):
     cap = mr.capabilities(tmp_path)
     assert cap["installed"] is False
     assert cap["engine"] == "transformers"
-    assert len(cap["models"]) == 4
+    # 不再硬编码数量：模型表会随接入新引擎增长（已加入 ACE-Step 与 Music3）。
+    assert len(cap["models"]) == len(mr.KNOWN_MODELS)
     assert cap["duration_range_s"] == [1, 60]
 
 
