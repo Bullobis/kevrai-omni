@@ -103,6 +103,70 @@ OUTPUT_FORMATS = ("glb", "obj", "ply")
 #: 各格式是否需要 trimesh（PLY 也可由部分 pipeline 直接产出，这里保守要求）。
 _FORMAT_NEEDS_TRIMESH = {"glb": True, "obj": False, "ply": False}
 
+#: 3D 模型的许可与门槛事实。
+#:
+#: 这一栏必须结构化暴露，不能只写在注释里。3D 领域的许可差异极大，而且
+#: Hunyuan3D 带有**地区排除**（欧盟/英国/韩国不可商用）—— 这是"下载了就能
+#: 商用"这个普遍误解里后果最严重的一条。
+MODEL_LICENSES: dict[str, dict[str, Any]] = {
+    "triposr": {
+        "license": "MIT",
+        "commercial": "true",
+        "vram_gb": "约 6GB",
+        "note": (
+            "纯 MIT，无任何用户上限或地区排除，是三者中最无限制的。"
+            "单图约 0.5 秒出网格（A100 实测），但只有顶点色、无 PBR 材质，"
+            "保真度已被 TRELLIS.2 与 Hunyuan3D 超越。"
+        ),
+    },
+    "trellis": {
+        "license": "MIT",
+        "commercial": "true",
+        "vram_gb": "16GB 起",
+        "note": (
+            "模型与多数代码为 MIT；少数渲染子模块带其他许可，"
+            "完整商用前需做一次依赖核查。输出带 PBR 的 GLB。"
+            "TRELLIS.2 本身只支持单图输入，不支持文生 3D 与多视角；"
+            "需要高斯/辐射场输出请用原始的 TRELLIS。"
+        ),
+    },
+    "hunyuan3d": {
+        "license": "腾讯社区许可",
+        "commercial": "conditional",
+        "vram_gb": "10GB（仅几何）／约 29GB（含纹理）",
+        "note": (
+            "**非** Apache/MIT：有月活用户数上限，且**排除欧盟、英国、韩国**"
+            "的商用。质量最高、输入选项最多（GLB/OBJ、多视角变体、"
+            "纹理-only 模式），但没有文生 3D 权重——其文生 3D 是在前面"
+            "串一个文生图模型实现的。"
+        ),
+    },
+    "stable-fast-3d": {
+        "license": "MIT",
+        "commercial": "true",
+        "vram_gb": "低",
+        "note": "轻量单图重建，速度快，保真度低于上述三者。",
+    },
+}
+
+
+def license_for_model(model_id: str) -> dict[str, Any]:
+    """返回某个 3D 模型的许可事实。
+
+    未登记的返回 unknown —— 绝不默认成"可商用"。
+    """
+    key = (model_id or "").strip().lower()
+    for known, info in MODEL_LICENSES.items():
+        if known in key:
+            return dict(info)
+    return {
+        "license": "unknown",
+        "commercial": "unknown",
+        "vram_gb": "unknown",
+        "note": "该模型未在许可清单中登记，商用前请自行核对官方许可。",
+    }
+
+
 #: 支持的模式。t23d（文生 3D）依赖模型本身支持，TripoSR 不支持——会在校验时拒绝。
 MODES = ("i23d", "t23d")
 
@@ -696,6 +760,7 @@ def capabilities() -> dict[str, Any]:
         "modes": list(MODES),
         "output_formats": list(OUTPUT_FORMATS),
         "t23d_unsupported_models": list(_T23D_UNSUPPORTED),
+        "licenses": MODEL_LICENSES,
         "note": (
             "3D 运行时已接线。TripoSR 门槛最低（6GB，单图约 5 秒，MIT 许可）；"
             "Hunyuan3D-2 / TRELLIS 质量更高但需要 8–16GB 显存，且部分需从官方仓库安装配套代码。"
