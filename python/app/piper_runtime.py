@@ -54,6 +54,60 @@ MIN_LENGTH_SCALE = 0.5
 MAX_LENGTH_SCALE = 3.0
 
 
+#: Kokoro —— 82M 参数、Apache-2.0 可商用、CPU 即可实时。
+#: 相比 Piper（偏机械、22kHz），Kokoro 是 2026 年本地 TTS 的性价比首选。
+#: 注意：Kokoro 无声音克隆，只有预设音色；需要克隆应另选 Chatterbox（MIT）。
+KOKORO_VOICE_PREFIX = "kokoro:"
+
+#: Kokoro 音色命名形如 "af_heart"：首字母是语言代码，第二个字母是性别。
+#: 这里只登记常见音色用于校验，实际可用音色以 kokoro 包为准。
+KOKORO_LANG_CODES = {
+    "a": "美式英语",
+    "b": "英式英语",
+    "j": "日语",
+    "z": "普通话",
+    "e": "西班牙语",
+    "f": "法语",
+    "h": "印地语",
+    "i": "意大利语",
+    "p": "巴西葡萄牙语",
+}
+
+#: Kokoro 默认采样率（kokoro 包输出 24kHz）。
+KOKORO_SAMPLE_RATE = 24000
+
+
+def is_kokoro_voice(voice_id: str) -> bool:
+    """判断一个 voice_id 是否属于 Kokoro 引擎。
+
+    支持两种写法：显式前缀 ``kokoro:af_heart``，或直接写 ``af_heart``。
+    后者只在它**不可能是 Piper 音色**时才成立 —— Piper 的音色 id 一律
+    形如 ``en_US-libritts_r-medium``（含连字符且以语言地区开头），
+    所以不含连字符、形如 ``xx_yyy`` 的按 Kokoro 处理是安全的。
+    """
+    vid = (voice_id or "").strip()
+    if not vid:
+        return False
+    if vid.lower().startswith(KOKORO_VOICE_PREFIX):
+        return True
+    # Piper 音色一定带 "-" 且以语言代码开头（en_US / zh_CN ...）
+    if "-" in vid:
+        return False
+    # Kokoro 形如 af_heart / zf_xiaobei：两段下划线分隔，首段 2 字符
+    parts = vid.split("_")
+    if len(parts) != 2 or len(parts[0]) != 2:
+        return False
+    return parts[0][0] in KOKORO_LANG_CODES
+
+
+def kokoro_voice_id(voice_id: str) -> str:
+    """剥掉 ``kokoro:`` 前缀，返回 kokoro 包认识的音色名。"""
+    vid = (voice_id or "").strip()
+    if vid.lower().startswith(KOKORO_VOICE_PREFIX):
+        return vid[len(KOKORO_VOICE_PREFIX):].strip()
+    return vid
+
+
 class PiperError(RuntimeError):
     """Base error for the Piper runtime."""
 
@@ -156,6 +210,57 @@ class PiperManager:
         self._voices[voice_id] = voice
         return voice
 
+    # -- kokoro ------------------------------------------------------------
+    def _load_kokoro(self, lang_code: str) -> Any:
+        """加载 Kokoro pipeline。依赖缺失时明确说要装什么。"""
+        try:
+            from kokoro import KPipeline  # type: ignore
+        except ImportError as e:
+            raise PiperEngineMissing(
+                "Kokoro 需要推理依赖：pip install kokoro"
+                f"（原始错误：{e}）"
+            ) from e
+        key = f"kokoro:{lang_code}"
+        pipe = self._voices.get(key)
+        if pipe is None:
+            try:
+                pipe = KPipeline(lang_code=lang_code)
+            except Exception as e:  # noqa: BLE001
+                raise PiperVoiceError(f"无法加载 Kokoro（{lang_code}）：{e}") from e
+            self._voices[key] = pipe
+        return pipe
+
+    def synthesize_kokoro(self, voice_id: str, text: str) -> dict[str, Any]:
+        """用 Kokoro 合成语音，返回与 Piper 路径一致的结构。
+
+        Kokoro 的 KPipeline 按"段落生成器"返回，长文本会产出多段音频；
+        这里把各段拼接成一条连续音频，避免上层拿到半截。
+        """
+        import numpy as np
+        import wave
+
+        voice = kokoro_voice_id(voice_id)
+        lang_code = voice[0] if voice else "a"
+        pipe = self._load_kokoro(lang_code)
+
+        chunks: list[Any] = []
+        try:
+            for _gs, _ps, audio in pipe(text, voice=voice):
+                chunks.append(np.asarray(audio, dtype="float32"))
+        except Exception as e:  # noqa: BLE001
+            raise PiperVoiceError(f"Kokoro 合成失败：{e}") from e
+
+        if not chunks:
+            raise PiperVoiceError("Kokoro 未产出任何音频")
+
+        audio = chunks[0] if len(chunks) == 1 else np.concatenate(chunks)
+        return {
+            "audio": audio,
+            "sample_rate": KOKORO_SAMPLE_RATE,
+            "voice": voice_id,
+            "engine": "kokoro",
+        }
+
     # -- synthesis ----------------------------------------------------------
     def synthesize(
         self,
@@ -167,6 +272,9 @@ class PiperManager:
         if not text or not str(text).strip():
             raise PiperParamError("text is empty")
         text = str(text)
+        # Kokoro 走独立路径：音色体系与采样率都和 Piper 不同，不能混用。
+        if is_kokoro_voice(voice_id):
+            return self.synthesize_kokoro(voice_id, text)
         if len(text) > MAX_TEXT_LEN:
             raise PiperParamError(f"text exceeds {MAX_TEXT_LEN} characters")
         if length_scale is None:
