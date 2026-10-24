@@ -35,6 +35,9 @@ from typing import Any
 # huggingface_hub import 之前设置，因为它会在 import 时读取该变量。
 os.environ.setdefault("HF_ENDPOINT",
                       os.environ.get("KEVRAI_HF_ENDPOINT", "https://hf-mirror.com"))
+# 禁用 huggingface_hub 的 xet 后端，否则 MNN/部分模型会直连
+# cas-server.xethub.hf.co（未授权 401），绕过 HF_ENDPOINT 镜像。
+os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
 from fastapi import (
     FastAPI,

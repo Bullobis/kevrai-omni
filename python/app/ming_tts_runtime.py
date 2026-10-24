@@ -6,11 +6,17 @@
 from __future__ import annotations
 
 import io
+import os
 import wave
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+# MNN/huggingface_hub 默认走 xet 后端（cas-server.xethub.hf.co），会绕过
+# HF_ENDPOINT 镜像且对未授权请求返回 401。禁用 xet，强制走普通 HTTP 下载，
+# 这样 HF_ENDPOINT=hf-mirror.com 才真正生效。
+os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
 
 class MingTTSError(Exception):
