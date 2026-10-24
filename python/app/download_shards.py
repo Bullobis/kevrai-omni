@@ -157,18 +157,38 @@ def _load_or_create_plan(partial: Path, total: int, max_shards: int) -> ShardPla
     若磁盘上的进度与当前文件总大小不一致（服务端文件变了），丢弃重建。
     """
     ppath = _progress_path(partial)
-    if partial.exists() and ppath.exists():
+    if ppath.exists():
+        # 必须先初始化：读取/解析被 suppress 吞掉异常时 plan 会是未绑定状态。
+        plan: ShardPlan | None = None
         with contextlib.suppress(OSError, json.JSONDecodeError), ppath.open(
             encoding="utf-8"
         ) as fh:
             plan = ShardPlan.from_json(json.load(fh))
-        if plan is not None and plan.total == total:
-            return plan
-        # 进度失效（文件被替换/截断）
+
+        if plan is not None:
+            if plan.total == total:
+                # 进度与当前文件一致 —— 直接续跑。
+                return plan
+            # 服务端文件变了（长度不同）：旧内容和旧进度都不可信，必须重建。
+            # 这里删 partial 是安全的，因为长度已变，任何旧字节都无意义。
+            with contextlib.suppress(OSError):
+                ppath.unlink()
+            with contextlib.suppress(OSError):
+                partial.unlink()
+            return plan_shards(total, max_shards)
+
+        # 进度文件损坏（版本不对 / JSON 坏了 / 字段缺失）。
+        #
+        # 这里**绝不能删 partial**。旧代码把"损坏"和"文件变了"同等处理，
+        # 一并 unlink 了 partial —— 一个已经下了几十 GB 的文件，只因为旁边
+        # 几 KB 的进度文件写坏了就整份作废。长度没变，重新分片覆盖写即可
+        # 得到正确结果（每个分片只写自己那段，最后统一 truncate 到 total），
+        # 代价是重下一遍，而不是丢掉一遍。
         with contextlib.suppress(OSError):
             ppath.unlink()
-        with contextlib.suppress(OSError):
-            partial.unlink()
+        return plan_shards(total, max_shards)
+
+    # 没有进度文件：全新开始（或由调用方走单线续传）。
     return plan_shards(total, max_shards)
 
 

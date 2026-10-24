@@ -150,11 +150,24 @@ test("样式表：展开态规则必须存在（删掉它测试就要转红）",
 
 test("真实 index.html 里每个导航项都带 tab-label（折叠态才有东西可展开）", () => {
   const indexHtml = fs.readFileSync(path.resolve(here, "..", "index.html"), "utf8");
-  const labelCount = (indexHtml.match(/class="tab-label"/g) || []).length;
-  const tabCount = (indexHtml.match(/class="pane-tab/g) || []).length;
-  assert.ok(tabCount >= 10, `导航项应至少有 10 个，实际 ${tabCount}`);
-  assert.equal(labelCount, tabCount + 1,
-    "每个 pane-tab 加底部设置按钮都应有 tab-label，缺一个展开后就是空白项");
+  // v4.11.0：原来是全局计数 labelCount === tabCount + 1，那个 +1 指的是底部
+  // 设置按钮。侧边栏又加了「管理侧边栏」按钮后总数变了，计数断言立刻就失效
+  // ——但它并没有真的检查"每个按钮都有标签"。改成逐个按钮检查，新增按钮时
+  // 不再需要回来改这个常数。
+  const tabs = indexHtml.match(/<button class="pane-tab[\s\S]*?<\/button>/g) || [];
+  assert.ok(tabs.length >= 10, `导航项应至少有 10 个，实际 ${tabs.length}`);
+  for (const t of tabs) {
+    const id = (t.match(/data-tab="([^"]+)"/) || [])[1] || "?";
+    assert.match(t, /class="tab-label"/, `导航项 ${id} 缺少 tab-label，展开后是空白项`);
+  }
+  // 底部操作按钮同理（设置、管理侧边栏等），逐个检查而不是数总数。
+  const foot = indexHtml.match(/<div class="sidebar-foot">[\s\S]*?<\/div>/);
+  if (foot) {
+    const footBtns = foot[0].match(/<button[\s\S]*?<\/button>/g) || [];
+    for (const b of footBtns) {
+      assert.match(b, /class="tab-label"/, "底部按钮缺少 tab-label，展开后是空白项");
+    }
+  }
 });
 
 test("语义色：浅色主题必须有 --ok/--warn/--err 覆写值", () => {

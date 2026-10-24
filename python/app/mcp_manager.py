@@ -152,10 +152,23 @@ class MCPManager:
         if server["transport"] == "stdio":
             from mcp import StdioServerParameters
             from mcp.client.stdio import stdio_client
-            # The SDK spawns the command as an argv list (no shell), merges the
-            # given env over the default environment, and on exit closes stdin,
-            # waits for graceful exit, then escalates SIGTERM -> SIGKILL for
-            # the whole process tree — so callers never leak a child process.
+            # The SDK spawns the command as an argv list (no shell), and on
+            # exit closes stdin, waits for graceful exit, then escalates
+            # SIGTERM -> SIGKILL for the whole process tree — so callers never
+            # leak a child process.
+            #
+            # **环境变量这块必须说清楚，否则排障会走很大弯路：**
+            # SDK 确实会把我们给的 env 合并进"默认环境"，但它的"默认环境"
+            # **不是完整的 ``os.environ``**，而是 SDK 自己维护的一份白名单
+            # （``get_default_environment()`` 只取 ``DEFAULT_INHERITED_ENV_VARS``，
+            # 含 PATH 一类，但**不含 PYTHONPATH**）。
+            #
+            # 后果：子进程不会继承父进程里没在白名单上的变量。典型踩坑是
+            # 用 ``--target`` / 虚拟环境跑的应用——父进程靠 PYTHONPATH 找到
+            # 依赖，子进程却没有，于是报
+            # ``ModuleNotFoundError: No module named 'mcp.server'``
+            # 这种看起来像"mcp 没装"、实则只是环境没传过去的错。
+            # 需要哪个变量，就在 ``add_server(env=...)`` 里显式给出。
             params = StdioServerParameters(
                 command=server["command"],
                 args=list(server.get("args") or []),

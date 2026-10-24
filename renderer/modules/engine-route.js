@@ -36,8 +36,10 @@ export async function fetchEngineRoute(api, candidates, { modelId = "" } = {}) {
   const list = (Array.isArray(candidates) ? candidates : [candidates])
     .filter((x) => typeof x === "string" && x.trim());
   try {
-    const res = await api.get(`/api/engine/route?engine=${encodeURIComponent(list.join(","))}`
-      + (modelId ? `&model_id=${encodeURIComponent(modelId)}` : ""));
+    // 走正式通道：api.engineRoute -> preload -> api:engine:route -> 后端。
+    // 此前这里写的是 api.get(...)，而 api.js 从无 get 方法，必然抛
+    // "api.get is not a function"，使模型页的引擎信息永远显示"未知"。
+    const res = await api.engineRoute({ engine: list, model_id: modelId });
     const body = (res && res.body) || res || {};
     if (!body || typeof body !== "object") return { ok: false, error: "bad_response" };
     return { ok: true, data: body };

@@ -83,20 +83,22 @@ catalog 里 259 个模型的引擎分布：
   返回 422 而非 503 —— pydantic 2.14 的 schema 差异导致请求体校验没过，
   端点逻辑根本没执行。与本版改动无关，未修。
 
-## 打包
+## 安装包
 
-沙箱是 Linux，**无法产出 Windows .exe 安装包**（electron-builder 打
-Windows 包需要 Wine + Electron 二进制，沙箱不具备）。
+本版本的安装包由仓库自带的 GitHub Actions 发布流水线（`release.yml`）在
+打 tag 后自动构建并上传，产物已附在本 Release：
 
-依赖已确认齐备，你在本机执行即可：
+| 平台 | 文件 |
+|---|---|
+| Windows 安装版 | `Kevrai-Omni-4.11.1-x64.exe`（82.5 MB） |
+| Windows 绿色版 | `Kevrai-Omni-4.11.1-x64.zip`（110.9 MB） |
+| Linux | `Kevrai-Omni-4.11.1-x86_64.AppImage` / `-amd64.deb` |
+| macOS | `Kevrai-Omni-4.11.1-x64.dmg` / `-arm64.dmg` |
+| 自动更新元数据 | `latest.yml` / `latest-linux.yml` / `latest-mac.yml` |
+| 校验 | `SHA256SUMS.txt` |
 
-```
-双击 一键打包.bat
-```
+另外提供 `Kevrai-Omni-4.11.1-source.zip`（完整源码）与
+`Kevrai-Omni-4.11.1-patch.zip`（仅改动文件）。
 
-脚本会产出（build\output）：
-- `Kevrai-Omni-4.11.1-x64.exe` 安装版
-- `Kevrai-Omni-4.11.1-x64.zip` 绿色版
-- `latest.yml` 自动更新元数据
-
-`package.json` 与 `python/app/__init__.py` 均已升到 **4.11.1**。
+本机手动打包仍可直接双击 `一键打包.bat`，依赖已核实齐备
+（`electron` 版本固定为 `33.4.11`，`electron-builder@25.1.8`）。

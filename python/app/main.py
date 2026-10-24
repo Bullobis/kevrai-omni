@@ -50,6 +50,8 @@ from . import (
     USER_AGENT,
     __version__,
     asr_runtime,
+    comfyui_music,
+    comfyui_runtime,
     demucs_runtime,
     embedding_runtime,
     knowledge_base,
@@ -3466,6 +3468,43 @@ def params_scenario_values(key: str) -> dict[str, Any]:
     return {"scenario": key, "values": scenario_values(key)}
 
 
+class ParamsResolveReq(BaseModel):
+    """解析"这套参数最终是什么、每一项从哪来"。
+
+    借鉴 Local Dream 的三级优先级：**用户覆盖 > 模型自带 > 场景 > 全局默认**，
+    逐字段合并，且外部值一律校验（越界 clamp、未知枚举丢弃）。
+
+    字段名有两个坑（都踩过）：不能叫 ``model_config``（pydantic v2 保留名，
+    会让模型类直接无法构造）；也不宜以 ``model_`` 开头（protected namespace，
+    会触发警告）。这里用 ``recommended`` 表示"模型自带推荐值"。
+    """
+    scenario: str | None = None
+    recommended: dict[str, Any] | None = None
+    overrides: dict[str, Any] | None = None
+
+
+@app.post("/api/params/resolve")
+def params_resolve(req: ParamsResolveReq) -> dict[str, Any]:
+    """解析最终参数值 + 每一项来自哪一级 + 哪些值被修正/忽略。
+
+    前端据此显示"这个默认值是模型推荐的，不是全局的"，
+    以及"你填的 80 步被压到了 50 步"。
+    """
+    from .model_param_defaults import describe_resolution, resolve_defaults
+
+    if req.scenario and req.scenario not in SCENARIOS:
+        raise HTTPException(status_code=400, detail=f"unknown scenario: {req.scenario}")
+    res = resolve_defaults(
+        scenario=req.scenario,
+        model_config=req.recommended,
+        overrides=req.overrides,
+    )
+    return {
+        **res.to_dict(),
+        "notes": describe_resolution(res),
+    }
+
+
 # ===========================================================================
 # v3.16.0 — Faster Whisper speech recognition (CTranslate2)
 # ===========================================================================
@@ -4214,6 +4253,17 @@ def separation_capabilities() -> dict[str, Any]:
     return demucs_runtime.capabilities(APP_ROOT)
 
 
+#: 允许流式返回的音频后缀 -> MIME。RoFormer（audio-separator）默认输出 FLAC，
+#: 只放行 .wav 会让它的产物一律 404。
+_AUDIO_SUFFIXES = {
+    ".wav": "audio/wav",
+    ".flac": "audio/flac",
+    ".mp3": "audio/mpeg",
+    ".ogg": "audio/ogg",
+    ".m4a": "audio/mp4",
+}
+
+
 def _separation_kwargs(model: str, device: str, shifts: int,
                        overlap: float, jobs: int) -> dict[str, Any]:
     return {
@@ -4284,10 +4334,237 @@ def separation_stream(job_id: str, stem: str) -> FileResponse:
     if not str(base).startswith(str(sep_root)):
         raise HTTPException(status_code=400, detail="bad job id")
     target = (base / stem).resolve()
-    if not str(target).startswith(str(base)) or target.suffix != ".wav" \
+    # Demucs 只写 .wav，但 RoFormer 走 audio-separator，其默认输出是 FLAC
+    # （构造参数不兼容时还会退回默认值）。只放行 .wav 会让 RoFormer 的
+    # 产物一律 404，而报错只说"stem not found"，根本指不到是格式问题。
+    if not str(target).startswith(str(base)) \
+            or target.suffix.lower() not in _AUDIO_SUFFIXES \
             or not target.is_file():
-        raise HTTPException(status_code=404, detail="stem not found")
-    return FileResponse(target, media_type="audio/wav", filename=target.name)
+        raise HTTPException(
+            status_code=404,
+            detail=f"stem not found（允许的格式：{sorted(_AUDIO_SUFFIXES)}）",
+        )
+    media = _AUDIO_SUFFIXES[target.suffix.lower()]
+    return FileResponse(target, media_type=media, filename=target.name)
+
+
+# ---------------------------------------------------------------------------
+# ComfyUI 通用后端（图像 / 视频 / 音乐）
+# ---------------------------------------------------------------------------
+# v4.13.0 就写了 comfyui_runtime，但当时**没有接任何路由** ——
+# 模块存在、测试通过，可用户侧根本调不到。这里补上真正的接线。
+
+
+def _comfyui_base_url() -> str:
+    """ComfyUI 地址。默认本机 8188，可用环境变量覆盖。"""
+    return os.environ.get("KEVRAI_COMFYUI_URL", "").strip() \
+        or comfyui_runtime.DEFAULT_BASE_URL
+
+
+def _comfyui_client(base_url: str | None = None,
+                    timeout: float | None = None) -> comfyui_runtime.ComfyUIClient:
+    return comfyui_runtime.ComfyUIClient(
+        base_url or _comfyui_base_url(),
+        timeout=float(timeout) if timeout else 30.0,
+    )
+
+
+class ComfyUISubmitReq(BaseModel):
+    workflow: dict[str, Any]
+    base_url: str | None = None
+    fix_seeds: bool = True
+    job_class: str = "image"
+
+
+class ComfyUIMusicReq(BaseModel):
+    template_id: str = "ace-step-1.5-turbo"
+    tags: str = ""
+    lyrics: str = ""
+    duration_s: float = 120.0
+    bpm: int = 120
+    seed: int = 0
+    steps: int | None = None
+    cfg: float | None = None
+    language: str = "en"
+    keyscale: str = "C major"
+    timesignature: str = "4"
+    generate_audio_codes: bool = True
+    shift: float = 1.73
+    filename_prefix: str = "audio/kevrai-music"
+    # 只构建不执行：拿去自己改 / 存档 / 在 ComfyUI 里手动跑。
+    build_only: bool = True
+    base_url: str | None = None
+    wait: bool = False
+    timeout: float | None = None
+
+
+@app.get("/api/comfyui/status")
+def comfyui_status(base_url: str | None = None) -> dict[str, Any]:
+    """探测 ComfyUI 是否可用，并返回系统信息。
+
+    连不上时**返回 available=False 而不是抛 500** —— 状态探测的用途就是
+    告诉用户"没连上"，抛异常会让前端拿不到任何可用信息。
+    """
+    url = base_url or _comfyui_base_url()
+    client = _comfyui_client(url)
+    try:
+        stats = client.system_stats()
+        return {"available": True, "base_url": url, "system": stats}
+    except Exception as e:  # noqa: BLE001 — 探测失败就是"不可用"这个答案
+        return {"available": False, "base_url": url, "error": str(e)}
+    finally:
+        client.close()
+
+
+@app.get("/api/comfyui/music/templates")
+def comfyui_music_templates() -> dict[str, Any]:
+    """列出可用的音乐工作流模板。"""
+    return {
+        "templates": comfyui_music.list_templates(),
+        "limits": {
+            "duration_s": [comfyui_music.MIN_DURATION_S, comfyui_music.MAX_DURATION_S],
+            "bpm": [comfyui_music.MIN_BPM, comfyui_music.MAX_BPM],
+            "timesignature": list(comfyui_music.TIMESIGNATURES),
+            "languages": list(comfyui_music.LANGUAGES),
+            "keyscales": list(comfyui_music.KEYSCALES),
+        },
+    }
+
+
+@app.post("/api/comfyui/music/build")
+def comfyui_music_build(req: ComfyUIMusicReq) -> Response:
+    """只构建音乐工作流，不执行。"""
+    try:
+        built = comfyui_music.build_music_workflow(
+            req.template_id,
+            tags=req.tags,
+            lyrics=req.lyrics,
+            duration_s=req.duration_s,
+            bpm=req.bpm,
+            seed=req.seed,
+            steps=req.steps,
+            cfg=req.cfg,
+            language=req.language,
+            keyscale=req.keyscale,
+            timesignature=req.timesignature,
+            generate_audio_codes=req.generate_audio_codes,
+            shift=req.shift,
+            filename_prefix=req.filename_prefix,
+        )
+    except comfyui_music.MusicTemplateError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    return JSONResponse(built)
+
+
+@app.post("/api/comfyui/music/generate")
+def comfyui_music_generate(req: ComfyUIMusicReq) -> Response:
+    """构建并提交音乐工作流。``wait=true`` 时同步等待结果。"""
+    try:
+        built = comfyui_music.build_music_workflow(
+            req.template_id,
+            tags=req.tags,
+            lyrics=req.lyrics,
+            duration_s=req.duration_s,
+            bpm=req.bpm,
+            seed=req.seed,
+            steps=req.steps,
+            cfg=req.cfg,
+            language=req.language,
+            keyscale=req.keyscale,
+            timesignature=req.timesignature,
+            generate_audio_codes=req.generate_audio_codes,
+            shift=req.shift,
+            filename_prefix=req.filename_prefix,
+        )
+    except comfyui_music.MusicTemplateError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    if req.build_only:
+        return JSONResponse(built)
+
+    client = _comfyui_client(req.base_url, req.timeout)
+    try:
+        prompt_id, fixes = client.submit(
+            built["workflow"], fix_seeds=False, job_class="audio")
+        result: dict[str, Any] = {
+            "prompt_id": prompt_id,
+            "seed_fixed": built["seed_fixed"] + fixes,
+            "template": built["template"],
+            "base_url": client.base_url,
+        }
+        if req.wait:
+            result["result"] = client.wait(
+                prompt_id,
+                timeout=comfyui_runtime.DEFAULT_TIMEOUTS["audio"] if req.timeout is None
+                else float(req.timeout),
+            )
+        return JSONResponse(result)
+    except comfyui_runtime.ComfyUIUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except comfyui_runtime.ComfyUIError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    finally:
+        client.close()
+
+
+@app.post("/api/comfyui/submit")
+def comfyui_submit(req: ComfyUISubmitReq) -> Response:
+    """提交任意 ComfyUI 工作流。"""
+    client = _comfyui_client(req.base_url)
+    try:
+        prompt_id, fixes = client.submit(
+            req.workflow, fix_seeds=req.fix_seeds, job_class=req.job_class)
+    except comfyui_runtime.ComfyUIUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except comfyui_runtime.ComfyUIError as e:
+        # ComfyUI 的 400 里带着"哪个节点哪个输入不对"，必须原样透传。
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    finally:
+        client.close()
+    return JSONResponse({"prompt_id": prompt_id, "seed_fixed": fixes,
+                         "base_url": client.base_url})
+
+
+@app.get("/api/comfyui/history/{prompt_id}")
+def comfyui_history(prompt_id: str, base_url: str | None = None) -> Response:
+    """查询任务结果；未完成返回 ``{"done": false}``。"""
+    client = _comfyui_client(base_url)
+    try:
+        data = client.history(prompt_id)
+    except comfyui_runtime.ComfyUIUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except comfyui_runtime.ComfyUIError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    finally:
+        client.close()
+    if data is None:
+        return JSONResponse({"done": False, "prompt_id": prompt_id})
+    return JSONResponse({"done": True, "prompt_id": prompt_id, "result": data})
+
+
+@app.get("/api/comfyui/queue")
+def comfyui_queue(base_url: str | None = None) -> Response:
+    client = _comfyui_client(base_url)
+    try:
+        return JSONResponse(client.queue())
+    except comfyui_runtime.ComfyUIUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    finally:
+        client.close()
+
+
+@app.post("/api/comfyui/free")
+def comfyui_free(base_url: str | None = None,
+                 unload_models: bool = True,
+                 free_memory: bool = True) -> Response:
+    """释放 ComfyUI 显存。连续跑不同模型不释放会 OOM。"""
+    client = _comfyui_client(base_url)
+    try:
+        ok = client.free(unload_models=unload_models, free_memory=free_memory)
+    except comfyui_runtime.ComfyUIUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    finally:
+        client.close()
+    return JSONResponse({"freed": bool(ok)})
 
 
 # ---------------------------------------------------------------------------
@@ -4308,6 +4585,10 @@ class PiperSynthReq(BaseModel):
     text: str
     length_scale: float | None = 1.0
     use_cuda: bool = False
+    # 声音克隆（Chatterbox）专用；Piper/Kokoro 忽略这两个字段。
+    reference_audio: str | None = None
+    exaggeration: float = 0.5
+    cfg_weight: float = 0.5
 
 
 @app.get("/api/tts-piper/capabilities")
@@ -4321,6 +4602,16 @@ def piper_synthesize_route(
 ) -> Response:
     mgr = _piper_manager(request)
     try:
+        if piper_runtime.is_chatterbox_voice(req.voice_id):
+            return JSONResponse(
+                mgr.synthesize_chatterbox(
+                    req.voice_id,
+                    req.text,
+                    reference_audio=req.reference_audio,
+                    exaggeration=req.exaggeration,
+                    cfg_weight=req.cfg_weight,
+                )
+            )
         return JSONResponse(
             mgr.synthesize(
                 req.voice_id,
@@ -4335,16 +4626,54 @@ def piper_synthesize_route(
         raise HTTPException(status_code=code, detail=str(e)) from e
 
 
+# --- 声音克隆档案（Chatterbox 参考音频）------------------------------------
+
+@app.get("/api/tts-piper/clones")
+def piper_list_clones_route() -> dict[str, Any]:
+    """列出已保存的克隆音色档案。"""
+    return {"voices": piper_runtime.list_cloned_voices(APP_ROOT)}
+
+
+@app.post("/api/tts-piper/clones")
+async def piper_upload_clone_route(
+    name: str,
+    file: UploadFile = File(...),  # noqa: B008 — FastAPI DI pattern
+) -> Response:
+    """上传一份参考音频，保存为可复用的克隆档案。"""
+    suffix = Path(file.filename or "").suffix or ".wav"
+    data = await file.read()
+    try:
+        saved = piper_runtime.save_reference_sample(APP_ROOT, name, data, suffix)
+    except piper_runtime.PiperParamError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    return JSONResponse(saved)
+
+
+@app.delete("/api/tts-piper/clones/{name}")
+def piper_delete_clone_route(name: str) -> dict[str, Any]:
+    """删除一份克隆档案。"""
+    try:
+        removed = piper_runtime.delete_reference_sample(APP_ROOT, name)
+    except piper_runtime.PiperParamError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    if not removed:
+        raise HTTPException(status_code=404, detail=f"clone not found: {name}")
+    return {"removed": True, "name": name}
+
+
 @app.get("/api/tts-piper/stream")
 def piper_stream_route(job_id: str) -> FileResponse:
-    # Hard-bound to data_root/tts/piper/<job_id>.wav to prevent traversal.
-    tts_root = (APP_ROOT / "tts" / "piper").resolve()
+    # Hard-bound to data_root/tts/{piper,chatterbox}/<job_id>.wav to prevent
+    # traversal. 两个目录都要查：chatterbox 的克隆产物落在自己的子目录，
+    # 只查 piper 会让克隆出来的音频永远 404，而错误信息还指不到原因。
     if not re.fullmatch(r"[A-Za-z0-9._-]+", job_id):
         raise HTTPException(status_code=400, detail="bad job id")
-    target = (tts_root / f"{job_id}.wav").resolve()
-    if not str(target).startswith(str(tts_root)) or not target.is_file():
-        raise HTTPException(status_code=404, detail="audio not found")
-    return FileResponse(target, media_type="audio/wav", filename=target.name)
+    for sub in ("piper", "chatterbox"):
+        tts_root = (APP_ROOT / "tts" / sub).resolve()
+        target = (tts_root / f"{job_id}.wav").resolve()
+        if str(target).startswith(str(tts_root)) and target.is_file():
+            return FileResponse(target, media_type="audio/wav", filename=target.name)
+    raise HTTPException(status_code=404, detail="audio not found")
 
 
 # ---------------------------------------------------------------------------

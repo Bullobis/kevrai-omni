@@ -668,6 +668,8 @@ class _MnnSubprocessClient:
             "loading": False, "error": "", "loaded_at": 0.0, "chat_count": 0,
         }
         self._watchdog_stop = threading.Event()
+        #: 子进程代际编号；看门狗线程靠它判断自己是否已过期。
+        self._gen = 0
         self._killed_by_us = False
 
     # -- lifecycle -----------------------------------------------------------
@@ -695,7 +697,19 @@ class _MnnSubprocessClient:
         if not (isinstance(msg, tuple) and msg and msg[0] == "ready"):
             self._kill()
             raise RuntimeError(f"MNN 子进程未正常就绪: {msg!r}")
-        threading.Thread(target=self._watchdog_loop, daemon=True).start()
+        # **每一代子进程配一个自己的看门狗，并且让它认得"自己是哪一代"。**
+        #
+        # 为什么需要代际：子进程崩溃后自动重启是常态路径，而 ``_kill()``
+        # 并不停掉看门狗。旧的看门狗醒来时会读到 ``self._proc``——那是
+        # **新**子进程了，看起来"还活着"，于是它以为没事继续循环，永远
+        # 不退出。崩一次堆一条线程，跑久了线程数一路涨，而这类泄漏不会
+        # 报错、只会越来越慢，极难往这里想。
+        #
+        # 所以给每次启动编号，线程只认自己的号：号不对就退出。
+        self._gen += 1
+        threading.Thread(
+            target=self._watchdog_loop, args=(self._gen,), daemon=True,
+        ).start()
 
     def _kill(self) -> None:
         self._killed_by_us = True
@@ -705,6 +719,15 @@ class _MnnSubprocessClient:
                     self._proc.kill()
             with contextlib.suppress(Exception):
                 self._proc.join(timeout=5)
+        # **必须显式关闭管道。** ``self._conn = None`` 只是丢掉引用，
+        # 底层的 fd 并不会因此释放。每次 ``_ensure_started()`` 都会新建一对
+        # Pipe，而子进程崩掉自动重启是常态路径——不 close 的话，每崩一次
+        # 就永久泄漏一个 fd，长时间跑（或反复 OOM）会把 fd 表耗尽，
+        # 表现为"莫名其妙打不开文件"，极难往这里想。
+        # 顺序上先杀进程再关管道，避免子进程往已关闭的 pipe 写入。
+        if self._conn is not None:
+            with contextlib.suppress(Exception):
+                self._conn.close()
         self._proc = None
         self._conn = None
         self._state["loaded"] = False
@@ -720,10 +743,17 @@ class _MnnSubprocessClient:
                     self._conn.recv()
         self._kill()
 
-    def _watchdog_loop(self) -> None:
+    def _watchdog_loop(self, gen: int) -> None:
         """Detect idle crashes (segfault / OOM between calls) without touching
-        the pipe (no contention with in-flight calls)."""
+        the pipe (no contention with in-flight calls).
+
+        ``gen`` 是本线程守护的那一代子进程编号。编号一旦对不上，说明
+        ``_ensure_started()`` 已经起了新的一代、本线程成了孤儿，必须退出
+        —— 否则它会把新进程误当成自己守护的对象而永远赖着不走。
+        """
         while not self._watchdog_stop.wait(3.0):
+            if self._gen != gen:
+                return  # 已被新的一代取代
             proc = self._proc
             if proc is None:
                 return

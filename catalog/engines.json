@@ -1,727 +1,727 @@
 {
-  "version": "4.11.0",
-  "updated": "2026-10-12",
-  "engines": [
-    {
-      "id": "llama.cpp",
-      "name": "llama.cpp",
-      "category": "llm",
-      "description": "ggml-org/llama.cpp — 本地 GGUF LLM 推理引擎，支持 CPU/GPU 多后端。",
-      "github": "ggml-org/llama.cpp",
-      "license": "MIT",
-      "platforms": {
-        "windows-x64": "https://github.com/ggml-org/llama.cpp/releases",
-        "linux-x64": "https://github.com/ggml-org/llama.cpp/releases",
-        "darwin-arm64": "https://github.com/ggml-org/llama.cpp/releases"
-      },
-      "size_mb": 250,
-      "trending": true,
-      "sources": [
-        "https://github.com/ggml-org/llama.cpp/releases/latest",
-        "https://github.com/ggml-org/llama.cpp",
-        "https://github.com/ggml-org/llama.cpp/releases"
-      ]
-    },
-    {
-      "id": "vllm",
-      "name": "vLLM",
-      "category": "llm",
-      "description": "vllm-project/vllm — 高吞吐 LLM 推理服务（多 GPU）。",
-      "github": "vllm-project/vllm",
-      "install": "pip",
-      "pypi": "vllm",
-      "license": "Apache-2.0",
-      "size_mb": 800,
-      "trending": true,
-      "sources": [
-        "https://pypi.org/simple/vllm/",
-        "https://mirrors.aliyun.com/pypi/simple/vllm/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/vllm/",
-        "https://mirrors.huaweicloud.com/repository/pypi/simple/vllm/",
-        "https://mirrors.cloud.tencent.com/pypi/simple/vllm/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/vllm/",
-        "https://github.com/vllm-project/vllm/releases/latest",
-        "https://github.com/vllm-project/vllm"
-      ]
-    },
-    {
-      "id": "mnn",
-      "name": "MNN (alibaba)",
-      "category": "llm",
-      "description": "alibaba/MNN — 阿里端侧推理引擎，CPU 汇编级优化 + GPU(Metal/OpenCL/Vulkan/CUDA)。2.3.0 起内置 Python LLM 运行时（pip 包自带 MNN.llm），可加载官方预转换模型（taobao-mnn 组织）对话推理。",
-      "github": "alibaba/MNN",
-      "install": "pip",
-      "pypi": "MNN",
-      "license": "Apache-2.0",
-      "size_mb": 60,
-      "trending": true,
-      "sources": [
-        "https://pypi.org/simple/mnn/",
-        "https://mirrors.aliyun.com/pypi/simple/mnn/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/mnn/",
-        "https://mirrors.huaweicloud.com/repository/pypi/simple/mnn/",
-        "https://mirrors.cloud.tencent.com/pypi/simple/mnn/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/mnn/",
-        "https://github.com/alibaba/MNN/releases/latest",
-        "https://github.com/alibaba/MNN",
-        "https://gitcode.com/alibaba/MNN",
-        "https://gitcode.com/GitHub_Trending/mn/MNN"
-      ],
-      "version": "3.7.2",
-      "runtime": "python-llm",
-      "model_source": {
-        "huggingface": "https://huggingface.co/taobao-mnn",
-        "modelscope": "https://modelscope.cn/organization/MNN",
-        "note": "官方预转换 MNN 格式模型（int4 量化，开箱即用）"
-      },
-      "source_note": "GitHub 不可达时优先走 gitcode.com 镜像：网页仓库 gitcode.com/alibaba/MNN （自动重定向至 GitHub_Trending/mn/MNN），git clone 通路已验证可用 （git://gitcode.com/GitHub_Trending/mn/MNN.git，1374 refs）；网页 raw/archive 直链对程序化下载返回 SPA 壳，不作为下载源"
-    },
-    {
-      "id": "onnxruntime",
-      "name": "ONNX Runtime",
-      "category": "lightweight",
-      "description": "microsoft/onnxruntime — 跨平台 ONNX 推理，超分/检测/CLIP 主力。",
-      "github": "microsoft/onnxruntime",
-      "install": "pip",
-      "pypi": "onnxruntime-gpu",
-      "license": "MIT",
-      "size_mb": 200,
-      "trending": true,
-      "sources": [
-        "https://pypi.org/simple/onnxruntime-gpu/",
-        "https://mirrors.aliyun.com/pypi/simple/onnxruntime-gpu/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/onnxruntime-gpu/",
-        "https://mirrors.huaweicloud.com/repository/pypi/simple/onnxruntime-gpu/",
-        "https://mirrors.cloud.tencent.com/pypi/simple/onnxruntime-gpu/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/onnxruntime-gpu/",
-        "https://github.com/microsoft/onnxruntime/releases/latest",
-        "https://github.com/microsoft/onnxruntime"
-      ]
-    },
-    {
-      "id": "diffusers",
-      "name": "Diffusers (HuggingFace)",
-      "category": "diffusion",
-      "description": "huggingface/diffusers — 图像/视频/音频扩散模型统一接口。",
-      "github": "huggingface/diffusers",
-      "install": "pip",
-      "pypi": "diffusers",
-      "license": "Apache-2.0",
-      "size_mb": 50,
-      "trending": true,
-      "sources": [
-        "https://pypi.org/simple/diffusers/",
-        "https://mirrors.aliyun.com/pypi/simple/diffusers/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/diffusers/",
-        "https://mirrors.huaweicloud.com/repository/pypi/simple/diffusers/",
-        "https://mirrors.cloud.tencent.com/pypi/simple/diffusers/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/diffusers/",
-        "https://github.com/huggingface/diffusers/releases/latest",
-        "https://github.com/huggingface/diffusers"
-      ]
-    },
-    {
-      "id": "comfyui",
-      "name": "ComfyUI",
-      "category": "diffusion",
-      "description": "comfyanonymous/ComfyUI — 节点式扩散模型工作流引擎。",
-      "github": "comfyanonymous/ComfyUI",
-      "license": "GPL-3.0",
-      "size_mb": 80,
-      "trending": true,
-      "sources": [
-        "https://github.com/comfyanonymous/ComfyUI/releases/latest",
-        "https://github.com/comfyanonymous/ComfyUI"
-      ]
-    },
-    {
-      "id": "ltx-video",
-      "name": "LTX-Video Engine (LTX-2.5)",
-      "category": "diffusion",
-      "description": "Lightricks/LTX-2.5 官方推理引擎（diffusers 管线）：文生视频/图生视频，12GB 显存近实时生成，支持 LoRA 与 IC-LoRA 生态（Relight/Foley/Clean Plate）。pip 安装 torch+diffusers+transformers+accelerate+imageio 后即可在应用内一键生成。",
-      "github": "Lightricks/LTX-Video",
-      "install": "pip",
-      "pypi": "diffusers",
-      "license": "LTX-Open",
-      "size_mb": 3500,
-      "trending": true,
-      "runtime": "ltx-2.5",
-      "pip_packages": [
-        "torch",
-        "diffusers",
-        "transformers",
-        "accelerate",
-        "imageio",
-        "imageio-ffmpeg",
-        "safetensors"
-      ],
-      "sources": [
-        "https://pypi.org/simple/diffusers/",
-        "https://mirrors.aliyun.com/pypi/simple/diffusers/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/diffusers/",
-        "https://mirrors.cloud.tencent.com/pypi/simple/diffusers/",
-        "https://github.com/Lightricks/LTX-Video",
-        "https://huggingface.co/Lightricks/LTX-2.5",
-        "https://hf-mirror.com/Lightricks/LTX-2.5"
-      ]
-    },
-    {
-      "id": "kokoro-engine",
-      "name": "Kokoro TTS Engine",
-      "category": "tts",
-      "description": "Kokoro 82M TTS 推理引擎（CPU 实时）。",
-      "github": "hexgrad/Kokoro",
-      "install": "pip",
-      "pypi": "kokoro",
-      "license": "Apache-2.0",
-      "size_mb": 5,
-      "trending": true,
-      "sources": [
-        "https://pypi.org/simple/kokoro/",
-        "https://mirrors.aliyun.com/pypi/simple/kokoro/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/kokoro/",
-        "https://mirrors.huaweicloud.com/repository/pypi/simple/kokoro/",
-        "https://mirrors.cloud.tencent.com/pypi/simple/kokoro/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/kokoro/",
-        "https://github.com/hexgrad/Kokoro/releases/latest",
-        "https://github.com/hexgrad/Kokoro"
-      ]
-    },
-    {
-      "id": "fish-speech",
-      "name": "Fish Speech Engine",
-      "category": "tts",
-      "description": "fishaudio/fish-speech — 多语言/克隆 TTS 推理。",
-      "github": "fishaudio/fish-speech",
-      "license": "Apache-2.0",
-      "size_mb": 30,
-      "trending": true,
-      "sources": [
-        "https://github.com/fishaudio/fish-speech/releases/latest",
-        "https://github.com/fishaudio/fish-speech"
-      ]
-    },
-    {
-      "id": "f5-tts",
-      "name": "F5-TTS Engine",
-      "category": "tts",
-      "description": "SWivid/F5-TTS — 流式零样本 TTS 推理。",
-      "github": "SWivid/F5-TTS",
-      "license": "MIT",
-      "size_mb": 25,
-      "trending": true,
-      "sources": [
-        "https://github.com/SWivid/F5-TTS/releases/latest",
-        "https://github.com/SWivid/F5-TTS"
-      ]
-    },
-    {
-      "id": "cosyvoice",
-      "name": "CosyVoice Engine",
-      "category": "tts",
-      "description": "FunAudioLLM/CosyVoice — 通义 TTS 推理。",
-      "github": "FunAudioLLM/CosyVoice",
-      "license": "Apache-2.0",
-      "size_mb": 20,
-      "trending": true,
-      "sources": [
-        "https://github.com/FunAudioLLM/CosyVoice/releases/latest",
-        "https://github.com/FunAudioLLM/CosyVoice"
-      ]
-    },
-    {
-      "id": "spark-tts",
-      "name": "Spark-TTS Engine",
-      "category": "tts",
-      "description": "SparkAudio/Spark-TTS — BiCodec + LLM 流式 TTS。",
-      "github": "SparkAudio/Spark-TTS",
-      "license": "Apache-2.0",
-      "size_mb": 15,
-      "trending": true,
-      "sources": [
-        "https://github.com/SparkAudio/Spark-TTS/releases/latest",
-        "https://github.com/SparkAudio/Spark-TTS"
-      ]
-    },
-    {
-      "id": "chatterbox",
-      "name": "Chatterbox Engine",
-      "category": "tts",
-      "description": "resemble-ai/chatterbox — 情感/克隆 TTS。",
-      "github": "resemble-ai/chatterbox",
-      "license": "Apache-2.0",
-      "size_mb": 15,
-      "trending": true,
-      "sources": [
-        "https://github.com/resemble-ai/chatterbox/releases/latest",
-        "https://github.com/resemble-ai/chatterbox"
-      ]
-    },
-    {
-      "id": "indextts",
-      "name": "IndexTTS Engine",
-      "category": "tts",
-      "description": "index-tts/index-tts — 工业级 TTS 推理。",
-      "github": "index-tts/index-tts",
-      "license": "Apache-2.0",
-      "size_mb": 20,
-      "trending": true,
-      "sources": [
-        "https://github.com/index-tts/index-tts/releases/latest",
-        "https://github.com/index-tts/index-tts"
-      ]
-    },
-    {
-      "id": "hunyuan3d",
-      "name": "Hunyuan3D Engine",
-      "category": "3d",
-      "description": "tencent/Hunyuan3D-2 — 几何+纹理 PBR 推理。",
-      "github": "tencent/Hunyuan3D-2",
-      "license": "Tencent",
-      "size_mb": 150,
-      "trending": true,
-      "sources": [
-        "https://github.com/tencent/Hunyuan3D-2/releases/latest",
-        "https://github.com/tencent/Hunyuan3D-2"
-      ]
-    },
-    {
-      "id": "trellis",
-      "name": "TRELLIS Engine",
-      "category": "3d",
-      "description": "microsoft/TRELLIS — 结构化 3D 生成推理。",
-      "github": "microsoft/TRELLIS",
-      "license": "MIT",
-      "size_mb": 120,
-      "trending": true,
-      "sources": [
-        "https://github.com/microsoft/TRELLIS/releases/latest",
-        "https://github.com/microsoft/TRELLIS"
-      ]
-    },
-    {
-      "id": "triposr",
-      "name": "TripoSR Engine",
-      "category": "3d",
-      "description": "VAST-AI-Research/TripoSR — 单图秒级 3D 重建推理。",
-      "github": "VAST-AI-Research/TripoSR",
-      "license": "MIT",
-      "size_mb": 40,
-      "trending": true,
-      "sources": [
-        "https://github.com/VAST-AI-Research/TripoSR/releases/latest",
-        "https://github.com/VAST-AI-Research/TripoSR"
-      ]
-    },
-    {
-      "id": "direct3d-s2",
-      "name": "Direct3D-S2 Engine",
-      "category": "3d",
-      "description": "DreamTechAI/Direct3D-S2 — 直生 3D 大模型推理。",
-      "github": "DreamTechAI/Direct3D-S2",
-      "license": "Apache-2.0",
-      "size_mb": 80,
-      "trending": true,
-      "sources": [
-        "https://github.com/DreamTechAI/Direct3D-S2/releases/latest",
-        "https://github.com/DreamTechAI/Direct3D-S2"
-      ]
-    },
-    {
-      "id": "triposg",
-      "name": "TripoSG Engine",
-      "category": "3d",
-      "description": "VAST-AI-Research/TripoSG — 图像到高质量 3D。",
-      "github": "VAST-AI-Research/TripoSG",
-      "license": "MIT",
-      "size_mb": 30,
-      "trending": true,
-      "sources": [
-        "https://github.com/VAST-AI-Research/TripoSG/releases/latest",
-        "https://github.com/VAST-AI-Research/TripoSG"
-      ]
-    },
-    {
-      "id": "partcrafter",
-      "name": "PartCrafter Engine",
-      "category": "3d",
-      "description": "wgsxm/PartCrafter — 部件级 3D 生成。",
-      "github": "wgsxm/PartCrafter",
-      "license": "Apache-2.0",
-      "size_mb": 60,
-      "trending": true,
-      "sources": [
-        "https://github.com/wgsxm/PartCrafter/releases/latest",
-        "https://github.com/wgsxm/PartCrafter"
-      ]
-    },
-    {
-      "id": "insightface",
-      "name": "InsightFace",
-      "category": "vision",
-      "description": "deepinsight/insightface — 人脸检测/识别/对齐。",
-      "github": "deepinsight/insightface",
-      "install": "pip",
-      "pypi": "insightface",
-      "license": "MIT",
-      "size_mb": 100,
-      "trending": false,
-      "sources": [
-        "https://pypi.org/simple/insightface/",
-        "https://mirrors.aliyun.com/pypi/simple/insightface/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/insightface/",
-        "https://mirrors.huaweicloud.com/repository/pypi/simple/insightface/",
-        "https://mirrors.cloud.tencent.com/pypi/simple/insightface/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/insightface/",
-        "https://github.com/deepinsight/insightface/releases/latest",
-        "https://github.com/deepinsight/insightface"
-      ]
-    },
-    {
-      "id": "sglang",
-      "name": "SGLang",
-      "category": "llm",
-      "description": "sgl-project/sglang — 高吞吐 LLM 推理框架（vLLM 竞品，多 GPU / PD 分离）。",
-      "github": "sgl-project/sglang",
-      "install": "pip",
-      "pypi": "sglang",
-      "license": "Apache-2.0",
-      "size_mb": 800,
-      "trending": true,
-      "sources": [
-        "https://pypi.org/simple/sglang/",
-        "https://mirrors.aliyun.com/pypi/simple/sglang/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/sglang/",
-        "https://mirrors.cloud.tencent.com/pypi/simple/sglang/",
-        "https://github.com/sgl-project/sglang/releases/latest",
-        "https://github.com/sgl-project/sglang"
-      ]
-    },
-    {
-      "id": "ollama",
-      "name": "Ollama",
-      "category": "llm",
-      "description": "ollama/ollama — 一键本地 LLM 运行器（GGUF，自带模型库）。",
-      "github": "ollama/ollama",
-      "install": "binary",
-      "license": "MIT",
-      "size_mb": 1000,
-      "trending": true,
-      "platforms": {
-        "windows-x64": "https://ollama.com/download/OllamaSetup.exe",
-        "linux-x64": "https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tar.zst",
-        "darwin-arm64": "https://github.com/ollama/ollama/releases/latest/download/Ollama-darwin.zip"
-      },
-      "sources": [
-        "https://github.com/ollama/ollama/releases/latest",
-        "https://github.com/ollama/ollama"
-      ]
-    },
-    {
-      "id": "sglang-omni",
-      "name": "SGLang-Omni",
-      "category": "llm",
-      "description": "sgl-project/sglang-omni — 多模态/音频生成服务框架；MiniMax-Music3 官方推荐推理路线，sgl-omni serve --model-path MiniMaxAI/MiniMax-Music3 一行起服务（支持单卡/双卡部署）。",
-      "github": "sgl-project/sglang-omni",
-      "install": "source",
-      "license": "Apache-2.0",
-      "size_mb": 1500,
-      "trending": true,
-      "sources": [
-        "https://github.com/sgl-project/sglang-omni",
-        "https://sgl-project.github.io/sglang-omni/cookbook/minimax_music3.html"
-      ]
-    },
-    {
-      "id": "comfyui-fl-minimaxmusic3",
-      "name": "ComfyUI-FL-MiniMaxMusic3",
-      "category": "diffusion",
-      "description": "filliptm/ComfyUI-FL-MiniMaxMusic3 — Music3 专用 ComfyUI 节点包（FL MiniMax Music 3），支持模型加载/生成/LoRA 训练；ComfyUI Manager 搜索 FL MiniMax Music 3 安装。",
-      "github": "filliptm/ComfyUI-FL-MiniMaxMusic3",
-      "install": "zip",
-      "license": "Apache-2.0",
-      "size_mb": 30,
-      "trending": true,
-      "sources": [
-        "https://github.com/filliptm/ComfyUI-FL-MiniMaxMusic3",
-        "https://github.com/filliptm/ComfyUI-FL-MiniMaxMusic3/releases"
-      ],
-      "source_note": "ComfyUI 自定义节点包，通过 ComfyUI Manager 搜索 \"FL MiniMax Music 3\" 安装；无独立二进制。"
-    },
-    {
-      "id": "mlx",
-      "name": "MLX（Apple）",
-      "category": "llm",
-      "description": "ml-explore/mlx — Apple Silicon 统一内存机器学习框架；MLX 量化模型在 Mac 上本地运行。",
-      "github": "ml-explore/mlx",
-      "install": "pip",
-      "pypi": "mlx",
-      "license": "MIT",
-      "size_mb": 400,
-      "trending": true,
-      "sources": [
-        "https://pypi.org/simple/mlx/",
-        "https://mirrors.aliyun.com/pypi/simple/mlx/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/mlx/",
-        "https://mirrors.cloud.tencent.com/pypi/simple/mlx/",
-        "https://github.com/ml-explore/mlx"
-      ]
-    },
-    {
-      "id": "hunyuanworld",
-      "name": "HunyuanWorld Engine",
-      "category": "3d",
-      "description": "Tencent-Hunyuan/HunyuanWorld-1.0 — 腾讯 3D 世界生成/重建系列（World/Voyager/Mirror/HY-World/WorldPlay）推理代码。",
-      "github": "Tencent-Hunyuan/HunyuanWorld-1.0",
-      "install": "source",
-      "license": "腾讯社区许可（地域限制）",
-      "size_mb": 500,
-      "trending": true,
-      "sources": [
-        "https://github.com/Tencent-Hunyuan/HunyuanWorld-1.0",
-        "https://github.com/Tencent-Hunyuan/HunyuanWorld-1.0/releases"
-      ]
-    },
-    {
-      "id": "sam3d",
-      "name": "SAM 3D Engine（Meta）",
-      "category": "3d",
-      "description": "facebookresearch/sam-3d-objects — Meta SAM 3D Objects/Body 单图 3D 重建（Gaussian splat）推理。",
-      "github": "facebookresearch/sam-3d-objects",
-      "install": "source",
-      "license": "Meta SAM License",
-      "size_mb": 300,
-      "trending": true,
-      "sources": [
-        "https://github.com/facebookresearch/sam-3d-objects",
-        "https://github.com/facebookresearch/sam-3d-objects/releases"
-      ]
-    },
-    {
-      "id": "pixal3d",
-      "name": "Pixal3D Engine",
-      "category": "3d",
-      "description": "TencentARC/Pixal3D — 腾讯 ARC 单图高保真 3D 资产生成推理代码。",
-      "github": "TencentARC/Pixal3D",
-      "install": "source",
-      "license": "MIT",
-      "size_mb": 200,
-      "trending": true,
-      "sources": [
-        "https://github.com/TencentARC/Pixal3D",
-        "https://github.com/TencentARC/Pixal3D/releases"
-      ]
-    },
-    {
-      "id": "4danyone",
-      "name": "4DAnyone Engine",
-      "category": "3d",
-      "description": "ant-research/4DAnyone — 浙大+蚂蚁 4D 动态数字人生成（手机视频→4D 人体重建）推理代码。",
-      "github": "ant-research/4DAnyone",
-      "install": "source",
-      "license": "其他（other）",
-      "size_mb": 500,
-      "trending": true,
-      "sources": [
-        "https://github.com/ant-research/4DAnyone",
-        "https://github.com/ant-research/4DAnyone/releases"
-      ]
-    },
-    {
-      "id": "transformers",
-      "name": "Transformers",
-      "category": "lightweight",
-      "description": "huggingface/transformers — HuggingFace 官方推理运行时，LLM/TTS/音频/视觉全类模型的 pipeline 加载器，模型目录中 transformers-only 条目的通用后端。",
-      "github": "huggingface/transformers",
-      "install": "pip",
-      "pypi": "transformers==5.18.0",
-      "license": "Apache-2.0",
-      "size_mb": 60,
-      "trending": true,
-      "sources": [
-        "https://pypi.org/simple/transformers/",
-        "https://mirrors.aliyun.com/pypi/simple/transformers/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/transformers/",
-        "https://mirrors.huaweicloud.com/repository/pypi/simple/transformers/",
-        "https://mirrors.cloud.tencent.com/pypi/simple/transformers/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/transformers/",
-        "https://github.com/huggingface/transformers/releases/latest",
-        "https://github.com/huggingface/transformers"
-      ],
-      "pip_extra": [
-        "torch",
-        "accelerate>=0.34",
-        "pillow",
-        "scikit-learn"
-      ]
-    },
-    {
-      "id": "gpt-sovits",
-      "name": "GPT-SoVITS",
-      "category": "tts",
-      "description": "RVC-Boss/GPT-SoVITS — 少样本语音克隆与中英日韩 TTS（v2/v3/v4 底模），5 分钟语音微调，WebUI 一键推理；官方源码安装路线。",
-      "github": "RVC-Boss/GPT-SoVITS",
-      "install": "source",
-      "license": "MIT",
-      "size_mb": 1500,
-      "trending": true,
-      "sources": [
-        "https://github.com/RVC-Boss/GPT-SoVITS/releases/latest",
-        "https://github.com/RVC-Boss/GPT-SoVITS"
-      ]
-    },
-    {
-      "id": "faster-whisper",
-      "name": "Faster Whisper",
-      "category": "general",
-      "description": "CTranslate2 后端的 Whisper 语音识别（CPU/CUDA，比原版更快、更省显存）。",
-      "github": "SYSTRAN/faster-whisper",
-      "install": "pip",
-      "pypi": "faster-whisper==1.2.1",
-      "license": "MIT",
-      "size_mb": 120,
-      "platforms": {
-        "linux-x64": "https://github.com/SYSTRAN/faster-whisper/releases/latest",
-        "windows-x64": "https://github.com/SYSTRAN/faster-whisper/releases/latest",
-        "darwin-arm64": "https://github.com/SYSTRAN/faster-whisper/releases/latest",
-        "darwin-x64": "https://github.com/SYSTRAN/faster-whisper/releases/latest"
-      },
-      "trending": true,
-      "sources": [
-        "https://pypi.org/simple/faster-whisper/",
-        "https://mirrors.aliyun.com/pypi/simple/faster-whisper/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/faster-whisper/",
-        "https://mirrors.huaweicloud.com/repository/pypi/simple/faster-whisper/",
-        "https://mirrors.cloud.tencent.com/pypi/simple/faster-whisper/",
-        "https://github.com/SYSTRAN/faster-whisper/releases/latest",
-        "https://github.com/SYSTRAN/faster-whisper"
-      ],
-      "pip_extra": [
-        "av>=13,<19"
-      ]
-    },
-    {
-      "id": "sentence-transformers",
-      "name": "Sentence Transformers",
-      "category": "general",
-      "description": "基于 Transformers 的文本向量嵌入（sentence-transformers），用于语义检索、相似度计算与 RAG，CPU/CUDA 均可。",
-      "github": "huggingface/sentence-transformers",
-      "install": "pip",
-      "pypi": "sentence-transformers==6.1.0",
-      "license": "Apache-2.0",
-      "size_mb": 120,
-      "platforms": {
-        "linux-x64": "https://github.com/huggingface/sentence-transformers/releases/latest",
-        "windows-x64": "https://github.com/huggingface/sentence-transformers/releases/latest",
-        "darwin-arm64": "https://github.com/huggingface/sentence-transformers/releases/latest",
-        "darwin-x64": "https://github.com/huggingface/sentence-transformers/releases/latest"
-      },
-      "trending": true,
-      "sources": [
-        "https://pypi.org/simple/sentence-transformers/",
-        "https://mirrors.aliyun.com/pypi/simple/sentence-transformers/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/sentence-transformers/",
-        "https://mirrors.cloud.tencent.com/pypi/simple/sentence-transformers/",
-        "https://github.com/huggingface/sentence-transformers"
-      ]
-    },
-    {
-      "id": "demucs",
-      "name": "Demucs",
-      "category": "general",
-      "description": "Meta 开源的音源分离（混合 Transformer），将歌曲分离为人声、鼓、贝斯等音轨，CPU/CUDA 均可。项目已归档但版本稳定。",
-      "github": "facebookresearch/demucs",
-      "install": "pip",
-      "pypi": "demucs==4.1.0",
-      "license": "MIT",
-      "size_mb": 90,
-      "platforms": {
-        "linux-x64": "https://github.com/facebookresearch/demucs/releases",
-        "windows-x64": "https://github.com/facebookresearch/demucs/releases",
-        "darwin-arm64": "https://github.com/facebookresearch/demucs/releases",
-        "darwin-x64": "https://github.com/facebookresearch/demucs/releases"
-      },
-      "trending": true,
-      "sources": [
-        "https://pypi.org/simple/demucs/",
-        "https://mirrors.aliyun.com/pypi/simple/demucs/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/demucs/",
-        "https://github.com/facebookresearch/demucs"
-      ]
-    },
-    {
-      "id": "piper",
-      "name": "Piper",
-      "category": "tts",
-      "description": "快速的本地神经语音合成（ONNX Runtime），CPU 即可实时运行、可完全离线，支持多种语言与发音人。",
-      "github": "rhasspy/piper",
-      "install": "pip",
-      "pypi": "piper-tts==1.8.0",
-      "license": "GPL-3.0",
-      "size_mb": 70,
-      "platforms": {
-        "linux-x64": "https://github.com/rhasspy/piper/releases",
-        "windows-x64": "https://github.com/rhasspy/piper/releases",
-        "darwin-arm64": "https://github.com/rhasspy/piper/releases",
-        "darwin-x64": "https://github.com/rhasspy/piper/releases"
-      },
-      "trending": true,
-      "sources": [
-        "https://pypi.org/simple/piper-tts/",
-        "https://mirrors.aliyun.com/pypi/simple/piper-tts/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/piper-tts/",
-        "https://github.com/rhasspy/piper",
-        "https://huggingface.co/rhasspy/piper-voices"
-      ]
-    },
-    {
-      "id": "rapidocr",
-      "name": "RapidOCR",
-      "category": "general",
-      "description": "轻量本地 OCR（ONNX Runtime CPU），识别图片中的中英文文字，可完全离线；用于把图片、扫描件文字纳入知识库检索。",
-      "github": "RapidAI/RapidOCR",
-      "install": "pip",
-      "pypi": "rapidocr==3.10.0",
-      "pip_extra": [
-        "onnxruntime"
-      ],
-      "license": "Apache-2.0",
-      "size_mb": 80,
-      "platforms": {
-        "linux-x64": "https://github.com/RapidAI/RapidOCR/releases",
-        "windows-x64": "https://github.com/RapidAI/RapidOCR/releases",
-        "darwin-arm64": "https://github.com/RapidAI/RapidOCR/releases",
-        "darwin-x64": "https://github.com/RapidAI/RapidOCR/releases"
-      },
-      "trending": true,
-      "sources": [
-        "https://pypi.org/simple/rapidocr/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/rapidocr/",
-        "https://github.com/RapidAI/RapidOCR"
-      ]
-    },
-    {
-      "id": "pymupdf",
-      "name": "PyMuPDF",
-      "category": "general",
-      "description": "高性能 PDF 渲染与处理（MuPDF），用于把扫描件/图片版 PDF 逐页渲染为图片，再交由 OCR 识别文字。",
-      "github": "ArtifexSoftware/PyMuPDF",
-      "install": "pip",
-      "pypi": "PyMuPDF==1.28.2",
-      "license": "AGPL-3.0",
-      "size_mb": 25,
-      "platforms": {
-        "linux-x64": "https://github.com/ArtifexSoftware/PyMuPDF/releases",
-        "windows-x64": "https://github.com/ArtifexSoftware/PyMuPDF/releases",
-        "darwin-arm64": "https://github.com/ArtifexSoftware/PyMuPDF/releases",
-        "darwin-x64": "https://github.com/ArtifexSoftware/PyMuPDF/releases"
-      },
-      "trending": false,
-      "sources": [
-        "https://pypi.org/simple/PyMuPDF/",
-        "https://pypi.tuna.tsinghua.edu.cn/simple/PyMuPDF/",
-        "https://github.com/ArtifexSoftware/PyMuPDF"
-      ]
-    }
-  ]
+ "version": "4.14.0",
+ "updated": "2026-10-12",
+ "engines": [
+  {
+   "id": "llama.cpp",
+   "name": "llama.cpp",
+   "category": "llm",
+   "description": "ggml-org/llama.cpp — 本地 GGUF LLM 推理引擎，支持 CPU/GPU 多后端。",
+   "github": "ggml-org/llama.cpp",
+   "license": "MIT",
+   "platforms": {
+    "windows-x64": "https://github.com/ggml-org/llama.cpp/releases",
+    "linux-x64": "https://github.com/ggml-org/llama.cpp/releases",
+    "darwin-arm64": "https://github.com/ggml-org/llama.cpp/releases"
+   },
+   "size_mb": 250,
+   "trending": true,
+   "sources": [
+    "https://github.com/ggml-org/llama.cpp/releases/latest",
+    "https://github.com/ggml-org/llama.cpp",
+    "https://github.com/ggml-org/llama.cpp/releases"
+   ]
+  },
+  {
+   "id": "vllm",
+   "name": "vLLM",
+   "category": "llm",
+   "description": "vllm-project/vllm — 高吞吐 LLM 推理服务（多 GPU）。",
+   "github": "vllm-project/vllm",
+   "install": "pip",
+   "pypi": "vllm",
+   "license": "Apache-2.0",
+   "size_mb": 800,
+   "trending": true,
+   "sources": [
+    "https://pypi.org/simple/vllm/",
+    "https://mirrors.aliyun.com/pypi/simple/vllm/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/vllm/",
+    "https://mirrors.huaweicloud.com/repository/pypi/simple/vllm/",
+    "https://mirrors.cloud.tencent.com/pypi/simple/vllm/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/vllm/",
+    "https://github.com/vllm-project/vllm/releases/latest",
+    "https://github.com/vllm-project/vllm"
+   ]
+  },
+  {
+   "id": "mnn",
+   "name": "MNN (alibaba)",
+   "category": "llm",
+   "description": "alibaba/MNN — 阿里端侧推理引擎，CPU 汇编级优化 + GPU(Metal/OpenCL/Vulkan/CUDA)。2.3.0 起内置 Python LLM 运行时（pip 包自带 MNN.llm），可加载官方预转换模型（taobao-mnn 组织）对话推理。",
+   "github": "alibaba/MNN",
+   "install": "pip",
+   "pypi": "MNN",
+   "license": "Apache-2.0",
+   "size_mb": 60,
+   "trending": true,
+   "sources": [
+    "https://pypi.org/simple/mnn/",
+    "https://mirrors.aliyun.com/pypi/simple/mnn/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/mnn/",
+    "https://mirrors.huaweicloud.com/repository/pypi/simple/mnn/",
+    "https://mirrors.cloud.tencent.com/pypi/simple/mnn/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/mnn/",
+    "https://github.com/alibaba/MNN/releases/latest",
+    "https://github.com/alibaba/MNN",
+    "https://gitcode.com/alibaba/MNN",
+    "https://gitcode.com/GitHub_Trending/mn/MNN"
+   ],
+   "version": "3.7.2",
+   "runtime": "python-llm",
+   "model_source": {
+    "huggingface": "https://huggingface.co/taobao-mnn",
+    "modelscope": "https://modelscope.cn/organization/MNN",
+    "note": "官方预转换 MNN 格式模型（int4 量化，开箱即用）"
+   },
+   "source_note": "GitHub 不可达时优先走 gitcode.com 镜像：网页仓库 gitcode.com/alibaba/MNN （自动重定向至 GitHub_Trending/mn/MNN），git clone 通路已验证可用 （git://gitcode.com/GitHub_Trending/mn/MNN.git，1374 refs）；网页 raw/archive 直链对程序化下载返回 SPA 壳，不作为下载源"
+  },
+  {
+   "id": "onnxruntime",
+   "name": "ONNX Runtime",
+   "category": "lightweight",
+   "description": "microsoft/onnxruntime — 跨平台 ONNX 推理，超分/检测/CLIP 主力。",
+   "github": "microsoft/onnxruntime",
+   "install": "pip",
+   "pypi": "onnxruntime-gpu",
+   "license": "MIT",
+   "size_mb": 200,
+   "trending": true,
+   "sources": [
+    "https://pypi.org/simple/onnxruntime-gpu/",
+    "https://mirrors.aliyun.com/pypi/simple/onnxruntime-gpu/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/onnxruntime-gpu/",
+    "https://mirrors.huaweicloud.com/repository/pypi/simple/onnxruntime-gpu/",
+    "https://mirrors.cloud.tencent.com/pypi/simple/onnxruntime-gpu/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/onnxruntime-gpu/",
+    "https://github.com/microsoft/onnxruntime/releases/latest",
+    "https://github.com/microsoft/onnxruntime"
+   ]
+  },
+  {
+   "id": "diffusers",
+   "name": "Diffusers (HuggingFace)",
+   "category": "diffusion",
+   "description": "huggingface/diffusers — 图像/视频/音频扩散模型统一接口。",
+   "github": "huggingface/diffusers",
+   "install": "pip",
+   "pypi": "diffusers",
+   "license": "Apache-2.0",
+   "size_mb": 50,
+   "trending": true,
+   "sources": [
+    "https://pypi.org/simple/diffusers/",
+    "https://mirrors.aliyun.com/pypi/simple/diffusers/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/diffusers/",
+    "https://mirrors.huaweicloud.com/repository/pypi/simple/diffusers/",
+    "https://mirrors.cloud.tencent.com/pypi/simple/diffusers/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/diffusers/",
+    "https://github.com/huggingface/diffusers/releases/latest",
+    "https://github.com/huggingface/diffusers"
+   ]
+  },
+  {
+   "id": "comfyui",
+   "name": "ComfyUI",
+   "category": "diffusion",
+   "description": "comfyanonymous/ComfyUI — 节点式扩散模型工作流引擎。",
+   "github": "comfyanonymous/ComfyUI",
+   "license": "GPL-3.0",
+   "size_mb": 80,
+   "trending": true,
+   "sources": [
+    "https://github.com/comfyanonymous/ComfyUI/releases/latest",
+    "https://github.com/comfyanonymous/ComfyUI"
+   ]
+  },
+  {
+   "id": "ltx-video",
+   "name": "LTX-Video Engine (LTX-2.5)",
+   "category": "diffusion",
+   "description": "Lightricks/LTX-2.5 官方推理引擎（diffusers 管线）：文生视频/图生视频，12GB 显存近实时生成，支持 LoRA 与 IC-LoRA 生态（Relight/Foley/Clean Plate）。pip 安装 torch+diffusers+transformers+accelerate+imageio 后即可在应用内一键生成。",
+   "github": "Lightricks/LTX-Video",
+   "install": "pip",
+   "pypi": "diffusers",
+   "license": "LTX-Open",
+   "size_mb": 3500,
+   "trending": true,
+   "runtime": "ltx-2.5",
+   "pip_packages": [
+    "torch",
+    "diffusers",
+    "transformers",
+    "accelerate",
+    "imageio",
+    "imageio-ffmpeg",
+    "safetensors"
+   ],
+   "sources": [
+    "https://pypi.org/simple/diffusers/",
+    "https://mirrors.aliyun.com/pypi/simple/diffusers/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/diffusers/",
+    "https://mirrors.cloud.tencent.com/pypi/simple/diffusers/",
+    "https://github.com/Lightricks/LTX-Video",
+    "https://huggingface.co/Lightricks/LTX-2.5",
+    "https://hf-mirror.com/Lightricks/LTX-2.5"
+   ]
+  },
+  {
+   "id": "kokoro-engine",
+   "name": "Kokoro TTS Engine",
+   "category": "tts",
+   "description": "Kokoro 82M TTS 推理引擎（CPU 实时）。",
+   "github": "hexgrad/Kokoro",
+   "install": "pip",
+   "pypi": "kokoro",
+   "license": "Apache-2.0",
+   "size_mb": 5,
+   "trending": true,
+   "sources": [
+    "https://pypi.org/simple/kokoro/",
+    "https://mirrors.aliyun.com/pypi/simple/kokoro/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/kokoro/",
+    "https://mirrors.huaweicloud.com/repository/pypi/simple/kokoro/",
+    "https://mirrors.cloud.tencent.com/pypi/simple/kokoro/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/kokoro/",
+    "https://github.com/hexgrad/Kokoro/releases/latest",
+    "https://github.com/hexgrad/Kokoro"
+   ]
+  },
+  {
+   "id": "fish-speech",
+   "name": "Fish Speech Engine",
+   "category": "tts",
+   "description": "fishaudio/fish-speech — 多语言/克隆 TTS 推理。",
+   "github": "fishaudio/fish-speech",
+   "license": "Apache-2.0",
+   "size_mb": 30,
+   "trending": true,
+   "sources": [
+    "https://github.com/fishaudio/fish-speech/releases/latest",
+    "https://github.com/fishaudio/fish-speech"
+   ]
+  },
+  {
+   "id": "f5-tts",
+   "name": "F5-TTS Engine",
+   "category": "tts",
+   "description": "SWivid/F5-TTS — 流式零样本 TTS 推理。",
+   "github": "SWivid/F5-TTS",
+   "license": "MIT",
+   "size_mb": 25,
+   "trending": true,
+   "sources": [
+    "https://github.com/SWivid/F5-TTS/releases/latest",
+    "https://github.com/SWivid/F5-TTS"
+   ]
+  },
+  {
+   "id": "cosyvoice",
+   "name": "CosyVoice Engine",
+   "category": "tts",
+   "description": "FunAudioLLM/CosyVoice — 通义 TTS 推理。",
+   "github": "FunAudioLLM/CosyVoice",
+   "license": "Apache-2.0",
+   "size_mb": 20,
+   "trending": true,
+   "sources": [
+    "https://github.com/FunAudioLLM/CosyVoice/releases/latest",
+    "https://github.com/FunAudioLLM/CosyVoice"
+   ]
+  },
+  {
+   "id": "spark-tts",
+   "name": "Spark-TTS Engine",
+   "category": "tts",
+   "description": "SparkAudio/Spark-TTS — BiCodec + LLM 流式 TTS。",
+   "github": "SparkAudio/Spark-TTS",
+   "license": "Apache-2.0",
+   "size_mb": 15,
+   "trending": true,
+   "sources": [
+    "https://github.com/SparkAudio/Spark-TTS/releases/latest",
+    "https://github.com/SparkAudio/Spark-TTS"
+   ]
+  },
+  {
+   "id": "chatterbox",
+   "name": "Chatterbox Engine",
+   "category": "tts",
+   "description": "resemble-ai/chatterbox — 情感/克隆 TTS。",
+   "github": "resemble-ai/chatterbox",
+   "license": "Apache-2.0",
+   "size_mb": 15,
+   "trending": true,
+   "sources": [
+    "https://github.com/resemble-ai/chatterbox/releases/latest",
+    "https://github.com/resemble-ai/chatterbox"
+   ]
+  },
+  {
+   "id": "indextts",
+   "name": "IndexTTS Engine",
+   "category": "tts",
+   "description": "index-tts/index-tts — 工业级 TTS 推理。",
+   "github": "index-tts/index-tts",
+   "license": "Apache-2.0",
+   "size_mb": 20,
+   "trending": true,
+   "sources": [
+    "https://github.com/index-tts/index-tts/releases/latest",
+    "https://github.com/index-tts/index-tts"
+   ]
+  },
+  {
+   "id": "hunyuan3d",
+   "name": "Hunyuan3D Engine",
+   "category": "3d",
+   "description": "tencent/Hunyuan3D-2 — 几何+纹理 PBR 推理。",
+   "github": "tencent/Hunyuan3D-2",
+   "license": "Tencent",
+   "size_mb": 150,
+   "trending": true,
+   "sources": [
+    "https://github.com/tencent/Hunyuan3D-2/releases/latest",
+    "https://github.com/tencent/Hunyuan3D-2"
+   ]
+  },
+  {
+   "id": "trellis",
+   "name": "TRELLIS Engine",
+   "category": "3d",
+   "description": "microsoft/TRELLIS — 结构化 3D 生成推理。",
+   "github": "microsoft/TRELLIS",
+   "license": "MIT",
+   "size_mb": 120,
+   "trending": true,
+   "sources": [
+    "https://github.com/microsoft/TRELLIS/releases/latest",
+    "https://github.com/microsoft/TRELLIS"
+   ]
+  },
+  {
+   "id": "triposr",
+   "name": "TripoSR Engine",
+   "category": "3d",
+   "description": "VAST-AI-Research/TripoSR — 单图秒级 3D 重建推理。",
+   "github": "VAST-AI-Research/TripoSR",
+   "license": "MIT",
+   "size_mb": 40,
+   "trending": true,
+   "sources": [
+    "https://github.com/VAST-AI-Research/TripoSR/releases/latest",
+    "https://github.com/VAST-AI-Research/TripoSR"
+   ]
+  },
+  {
+   "id": "direct3d-s2",
+   "name": "Direct3D-S2 Engine",
+   "category": "3d",
+   "description": "DreamTechAI/Direct3D-S2 — 直生 3D 大模型推理。",
+   "github": "DreamTechAI/Direct3D-S2",
+   "license": "Apache-2.0",
+   "size_mb": 80,
+   "trending": true,
+   "sources": [
+    "https://github.com/DreamTechAI/Direct3D-S2/releases/latest",
+    "https://github.com/DreamTechAI/Direct3D-S2"
+   ]
+  },
+  {
+   "id": "triposg",
+   "name": "TripoSG Engine",
+   "category": "3d",
+   "description": "VAST-AI-Research/TripoSG — 图像到高质量 3D。",
+   "github": "VAST-AI-Research/TripoSG",
+   "license": "MIT",
+   "size_mb": 30,
+   "trending": true,
+   "sources": [
+    "https://github.com/VAST-AI-Research/TripoSG/releases/latest",
+    "https://github.com/VAST-AI-Research/TripoSG"
+   ]
+  },
+  {
+   "id": "partcrafter",
+   "name": "PartCrafter Engine",
+   "category": "3d",
+   "description": "wgsxm/PartCrafter — 部件级 3D 生成。",
+   "github": "wgsxm/PartCrafter",
+   "license": "Apache-2.0",
+   "size_mb": 60,
+   "trending": true,
+   "sources": [
+    "https://github.com/wgsxm/PartCrafter/releases/latest",
+    "https://github.com/wgsxm/PartCrafter"
+   ]
+  },
+  {
+   "id": "insightface",
+   "name": "InsightFace",
+   "category": "vision",
+   "description": "deepinsight/insightface — 人脸检测/识别/对齐。",
+   "github": "deepinsight/insightface",
+   "install": "pip",
+   "pypi": "insightface",
+   "license": "MIT",
+   "size_mb": 100,
+   "trending": false,
+   "sources": [
+    "https://pypi.org/simple/insightface/",
+    "https://mirrors.aliyun.com/pypi/simple/insightface/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/insightface/",
+    "https://mirrors.huaweicloud.com/repository/pypi/simple/insightface/",
+    "https://mirrors.cloud.tencent.com/pypi/simple/insightface/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/insightface/",
+    "https://github.com/deepinsight/insightface/releases/latest",
+    "https://github.com/deepinsight/insightface"
+   ]
+  },
+  {
+   "id": "sglang",
+   "name": "SGLang",
+   "category": "llm",
+   "description": "sgl-project/sglang — 高吞吐 LLM 推理框架（vLLM 竞品，多 GPU / PD 分离）。",
+   "github": "sgl-project/sglang",
+   "install": "pip",
+   "pypi": "sglang",
+   "license": "Apache-2.0",
+   "size_mb": 800,
+   "trending": true,
+   "sources": [
+    "https://pypi.org/simple/sglang/",
+    "https://mirrors.aliyun.com/pypi/simple/sglang/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/sglang/",
+    "https://mirrors.cloud.tencent.com/pypi/simple/sglang/",
+    "https://github.com/sgl-project/sglang/releases/latest",
+    "https://github.com/sgl-project/sglang"
+   ]
+  },
+  {
+   "id": "ollama",
+   "name": "Ollama",
+   "category": "llm",
+   "description": "ollama/ollama — 一键本地 LLM 运行器（GGUF，自带模型库）。",
+   "github": "ollama/ollama",
+   "install": "binary",
+   "license": "MIT",
+   "size_mb": 1000,
+   "trending": true,
+   "platforms": {
+    "windows-x64": "https://ollama.com/download/OllamaSetup.exe",
+    "linux-x64": "https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tar.zst",
+    "darwin-arm64": "https://github.com/ollama/ollama/releases/latest/download/Ollama-darwin.zip"
+   },
+   "sources": [
+    "https://github.com/ollama/ollama/releases/latest",
+    "https://github.com/ollama/ollama"
+   ]
+  },
+  {
+   "id": "sglang-omni",
+   "name": "SGLang-Omni",
+   "category": "llm",
+   "description": "sgl-project/sglang-omni — 多模态/音频生成服务框架；MiniMax-Music3 官方推荐推理路线，sgl-omni serve --model-path MiniMaxAI/MiniMax-Music3 一行起服务（支持单卡/双卡部署）。",
+   "github": "sgl-project/sglang-omni",
+   "install": "source",
+   "license": "Apache-2.0",
+   "size_mb": 1500,
+   "trending": true,
+   "sources": [
+    "https://github.com/sgl-project/sglang-omni",
+    "https://sgl-project.github.io/sglang-omni/cookbook/minimax_music3.html"
+   ]
+  },
+  {
+   "id": "comfyui-fl-minimaxmusic3",
+   "name": "ComfyUI-FL-MiniMaxMusic3",
+   "category": "diffusion",
+   "description": "filliptm/ComfyUI-FL-MiniMaxMusic3 — Music3 专用 ComfyUI 节点包（FL MiniMax Music 3），支持模型加载/生成/LoRA 训练；ComfyUI Manager 搜索 FL MiniMax Music 3 安装。",
+   "github": "filliptm/ComfyUI-FL-MiniMaxMusic3",
+   "install": "zip",
+   "license": "Apache-2.0",
+   "size_mb": 30,
+   "trending": true,
+   "sources": [
+    "https://github.com/filliptm/ComfyUI-FL-MiniMaxMusic3",
+    "https://github.com/filliptm/ComfyUI-FL-MiniMaxMusic3/releases"
+   ],
+   "source_note": "ComfyUI 自定义节点包，通过 ComfyUI Manager 搜索 \"FL MiniMax Music 3\" 安装；无独立二进制。"
+  },
+  {
+   "id": "mlx",
+   "name": "MLX（Apple）",
+   "category": "llm",
+   "description": "ml-explore/mlx — Apple Silicon 统一内存机器学习框架；MLX 量化模型在 Mac 上本地运行。",
+   "github": "ml-explore/mlx",
+   "install": "pip",
+   "pypi": "mlx",
+   "license": "MIT",
+   "size_mb": 400,
+   "trending": true,
+   "sources": [
+    "https://pypi.org/simple/mlx/",
+    "https://mirrors.aliyun.com/pypi/simple/mlx/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/mlx/",
+    "https://mirrors.cloud.tencent.com/pypi/simple/mlx/",
+    "https://github.com/ml-explore/mlx"
+   ]
+  },
+  {
+   "id": "hunyuanworld",
+   "name": "HunyuanWorld Engine",
+   "category": "3d",
+   "description": "Tencent-Hunyuan/HunyuanWorld-1.0 — 腾讯 3D 世界生成/重建系列（World/Voyager/Mirror/HY-World/WorldPlay）推理代码。",
+   "github": "Tencent-Hunyuan/HunyuanWorld-1.0",
+   "install": "source",
+   "license": "腾讯社区许可（地域限制）",
+   "size_mb": 500,
+   "trending": true,
+   "sources": [
+    "https://github.com/Tencent-Hunyuan/HunyuanWorld-1.0",
+    "https://github.com/Tencent-Hunyuan/HunyuanWorld-1.0/releases"
+   ]
+  },
+  {
+   "id": "sam3d",
+   "name": "SAM 3D Engine（Meta）",
+   "category": "3d",
+   "description": "facebookresearch/sam-3d-objects — Meta SAM 3D Objects/Body 单图 3D 重建（Gaussian splat）推理。",
+   "github": "facebookresearch/sam-3d-objects",
+   "install": "source",
+   "license": "Meta SAM License",
+   "size_mb": 300,
+   "trending": true,
+   "sources": [
+    "https://github.com/facebookresearch/sam-3d-objects",
+    "https://github.com/facebookresearch/sam-3d-objects/releases"
+   ]
+  },
+  {
+   "id": "pixal3d",
+   "name": "Pixal3D Engine",
+   "category": "3d",
+   "description": "TencentARC/Pixal3D — 腾讯 ARC 单图高保真 3D 资产生成推理代码。",
+   "github": "TencentARC/Pixal3D",
+   "install": "source",
+   "license": "MIT",
+   "size_mb": 200,
+   "trending": true,
+   "sources": [
+    "https://github.com/TencentARC/Pixal3D",
+    "https://github.com/TencentARC/Pixal3D/releases"
+   ]
+  },
+  {
+   "id": "4danyone",
+   "name": "4DAnyone Engine",
+   "category": "3d",
+   "description": "ant-research/4DAnyone — 浙大+蚂蚁 4D 动态数字人生成（手机视频→4D 人体重建）推理代码。",
+   "github": "ant-research/4DAnyone",
+   "install": "source",
+   "license": "其他（other）",
+   "size_mb": 500,
+   "trending": true,
+   "sources": [
+    "https://github.com/ant-research/4DAnyone",
+    "https://github.com/ant-research/4DAnyone/releases"
+   ]
+  },
+  {
+   "id": "transformers",
+   "name": "Transformers",
+   "category": "lightweight",
+   "description": "huggingface/transformers — HuggingFace 官方推理运行时，LLM/TTS/音频/视觉全类模型的 pipeline 加载器，模型目录中 transformers-only 条目的通用后端。",
+   "github": "huggingface/transformers",
+   "install": "pip",
+   "pypi": "transformers==5.18.0",
+   "license": "Apache-2.0",
+   "size_mb": 60,
+   "trending": true,
+   "sources": [
+    "https://pypi.org/simple/transformers/",
+    "https://mirrors.aliyun.com/pypi/simple/transformers/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/transformers/",
+    "https://mirrors.huaweicloud.com/repository/pypi/simple/transformers/",
+    "https://mirrors.cloud.tencent.com/pypi/simple/transformers/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/transformers/",
+    "https://github.com/huggingface/transformers/releases/latest",
+    "https://github.com/huggingface/transformers"
+   ],
+   "pip_extra": [
+    "torch",
+    "accelerate>=0.34",
+    "pillow",
+    "scikit-learn"
+   ]
+  },
+  {
+   "id": "gpt-sovits",
+   "name": "GPT-SoVITS",
+   "category": "tts",
+   "description": "RVC-Boss/GPT-SoVITS — 少样本语音克隆与中英日韩 TTS（v2/v3/v4 底模），5 分钟语音微调，WebUI 一键推理；官方源码安装路线。",
+   "github": "RVC-Boss/GPT-SoVITS",
+   "install": "source",
+   "license": "MIT",
+   "size_mb": 1500,
+   "trending": true,
+   "sources": [
+    "https://github.com/RVC-Boss/GPT-SoVITS/releases/latest",
+    "https://github.com/RVC-Boss/GPT-SoVITS"
+   ]
+  },
+  {
+   "id": "faster-whisper",
+   "name": "Faster Whisper",
+   "category": "general",
+   "description": "CTranslate2 后端的 Whisper 语音识别（CPU/CUDA，比原版更快、更省显存）。",
+   "github": "SYSTRAN/faster-whisper",
+   "install": "pip",
+   "pypi": "faster-whisper==1.2.1",
+   "license": "MIT",
+   "size_mb": 120,
+   "platforms": {
+    "linux-x64": "https://github.com/SYSTRAN/faster-whisper/releases/latest",
+    "windows-x64": "https://github.com/SYSTRAN/faster-whisper/releases/latest",
+    "darwin-arm64": "https://github.com/SYSTRAN/faster-whisper/releases/latest",
+    "darwin-x64": "https://github.com/SYSTRAN/faster-whisper/releases/latest"
+   },
+   "trending": true,
+   "sources": [
+    "https://pypi.org/simple/faster-whisper/",
+    "https://mirrors.aliyun.com/pypi/simple/faster-whisper/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/faster-whisper/",
+    "https://mirrors.huaweicloud.com/repository/pypi/simple/faster-whisper/",
+    "https://mirrors.cloud.tencent.com/pypi/simple/faster-whisper/",
+    "https://github.com/SYSTRAN/faster-whisper/releases/latest",
+    "https://github.com/SYSTRAN/faster-whisper"
+   ],
+   "pip_extra": [
+    "av>=13,<19"
+   ]
+  },
+  {
+   "id": "sentence-transformers",
+   "name": "Sentence Transformers",
+   "category": "general",
+   "description": "基于 Transformers 的文本向量嵌入（sentence-transformers），用于语义检索、相似度计算与 RAG，CPU/CUDA 均可。",
+   "github": "huggingface/sentence-transformers",
+   "install": "pip",
+   "pypi": "sentence-transformers==6.1.0",
+   "license": "Apache-2.0",
+   "size_mb": 120,
+   "platforms": {
+    "linux-x64": "https://github.com/huggingface/sentence-transformers/releases/latest",
+    "windows-x64": "https://github.com/huggingface/sentence-transformers/releases/latest",
+    "darwin-arm64": "https://github.com/huggingface/sentence-transformers/releases/latest",
+    "darwin-x64": "https://github.com/huggingface/sentence-transformers/releases/latest"
+   },
+   "trending": true,
+   "sources": [
+    "https://pypi.org/simple/sentence-transformers/",
+    "https://mirrors.aliyun.com/pypi/simple/sentence-transformers/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/sentence-transformers/",
+    "https://mirrors.cloud.tencent.com/pypi/simple/sentence-transformers/",
+    "https://github.com/huggingface/sentence-transformers"
+   ]
+  },
+  {
+   "id": "demucs",
+   "name": "Demucs",
+   "category": "general",
+   "description": "Meta 开源的音源分离（混合 Transformer），将歌曲分离为人声、鼓、贝斯等音轨，CPU/CUDA 均可。项目已归档但版本稳定。",
+   "github": "facebookresearch/demucs",
+   "install": "pip",
+   "pypi": "demucs==4.1.0",
+   "license": "MIT",
+   "size_mb": 90,
+   "platforms": {
+    "linux-x64": "https://github.com/facebookresearch/demucs/releases",
+    "windows-x64": "https://github.com/facebookresearch/demucs/releases",
+    "darwin-arm64": "https://github.com/facebookresearch/demucs/releases",
+    "darwin-x64": "https://github.com/facebookresearch/demucs/releases"
+   },
+   "trending": true,
+   "sources": [
+    "https://pypi.org/simple/demucs/",
+    "https://mirrors.aliyun.com/pypi/simple/demucs/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/demucs/",
+    "https://github.com/facebookresearch/demucs"
+   ]
+  },
+  {
+   "id": "piper",
+   "name": "Piper",
+   "category": "tts",
+   "description": "快速的本地神经语音合成（ONNX Runtime），CPU 即可实时运行、可完全离线，支持多种语言与发音人。",
+   "github": "rhasspy/piper",
+   "install": "pip",
+   "pypi": "piper-tts==1.8.0",
+   "license": "GPL-3.0",
+   "size_mb": 70,
+   "platforms": {
+    "linux-x64": "https://github.com/rhasspy/piper/releases",
+    "windows-x64": "https://github.com/rhasspy/piper/releases",
+    "darwin-arm64": "https://github.com/rhasspy/piper/releases",
+    "darwin-x64": "https://github.com/rhasspy/piper/releases"
+   },
+   "trending": true,
+   "sources": [
+    "https://pypi.org/simple/piper-tts/",
+    "https://mirrors.aliyun.com/pypi/simple/piper-tts/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/piper-tts/",
+    "https://github.com/rhasspy/piper",
+    "https://huggingface.co/rhasspy/piper-voices"
+   ]
+  },
+  {
+   "id": "rapidocr",
+   "name": "RapidOCR",
+   "category": "general",
+   "description": "轻量本地 OCR（ONNX Runtime CPU），识别图片中的中英文文字，可完全离线；用于把图片、扫描件文字纳入知识库检索。",
+   "github": "RapidAI/RapidOCR",
+   "install": "pip",
+   "pypi": "rapidocr==3.10.0",
+   "pip_extra": [
+    "onnxruntime"
+   ],
+   "license": "Apache-2.0",
+   "size_mb": 80,
+   "platforms": {
+    "linux-x64": "https://github.com/RapidAI/RapidOCR/releases",
+    "windows-x64": "https://github.com/RapidAI/RapidOCR/releases",
+    "darwin-arm64": "https://github.com/RapidAI/RapidOCR/releases",
+    "darwin-x64": "https://github.com/RapidAI/RapidOCR/releases"
+   },
+   "trending": true,
+   "sources": [
+    "https://pypi.org/simple/rapidocr/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/rapidocr/",
+    "https://github.com/RapidAI/RapidOCR"
+   ]
+  },
+  {
+   "id": "pymupdf",
+   "name": "PyMuPDF",
+   "category": "general",
+   "description": "高性能 PDF 渲染与处理（MuPDF），用于把扫描件/图片版 PDF 逐页渲染为图片，再交由 OCR 识别文字。",
+   "github": "ArtifexSoftware/PyMuPDF",
+   "install": "pip",
+   "pypi": "PyMuPDF==1.28.2",
+   "license": "AGPL-3.0",
+   "size_mb": 25,
+   "platforms": {
+    "linux-x64": "https://github.com/ArtifexSoftware/PyMuPDF/releases",
+    "windows-x64": "https://github.com/ArtifexSoftware/PyMuPDF/releases",
+    "darwin-arm64": "https://github.com/ArtifexSoftware/PyMuPDF/releases",
+    "darwin-x64": "https://github.com/ArtifexSoftware/PyMuPDF/releases"
+   },
+   "trending": false,
+   "sources": [
+    "https://pypi.org/simple/PyMuPDF/",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/PyMuPDF/",
+    "https://github.com/ArtifexSoftware/PyMuPDF"
+   ]
+  }
+ ]
 }

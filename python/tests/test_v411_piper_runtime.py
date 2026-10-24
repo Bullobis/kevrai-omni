@@ -218,3 +218,58 @@ def test_route_engine_missing(monkeypatch, tmp_path):
         "/api/tts-piper/synthesize", json={"voice_id": "en_US-lessac-medium", "text": "hi"}
     )
     assert r.status_code == 503
+
+
+# --------------------------------------------------------------------------
+# 引擎缺失时不得先去下载语音模型
+# --------------------------------------------------------------------------
+
+
+def test_engine_missing_short_circuits_before_voice_download(monkeypatch, tmp_path):
+    """引擎没装时，必须先报 503，**一次下载都不该发起**。
+
+    守的是 ``synthesize()`` 里的调用顺序：``import_piper()`` 必须在
+    ``load_voice()`` 之前。反过来的话，引擎缺失会先撞上语音下载失败，
+    变成 422 "download failed"——报错指向网络，真正原因（没装引擎）
+    被掩盖，用户还白等一次几十 MB 的下载。
+
+    这里用 spy 记录 load_voice 是否被调用：没被调用 = 确实短路了。
+    """
+    calls: list[str] = []
+
+    def boom(data_root=None):
+        raise prt.PiperEngineMissing("not installed")
+
+    def spy_load_voice(voice_id, use_cuda=False):
+        calls.append(voice_id)
+        raise AssertionError("load_voice 不应被调用：引擎缺失应先短路")
+
+    monkeypatch.setattr(prt, "import_piper", boom)
+    monkeypatch.setattr(prt.PiperManager, "load_voice", spy_load_voice)
+
+    mgr = prt.PiperManager(tmp_path)
+    with pytest.raises(prt.PiperEngineMissing):
+        mgr.synthesize("en_US-lessac-medium", "hello")
+
+    assert calls == [], f"引擎缺失时仍发起了语音下载/加载：{calls}"
+
+
+def test_engine_present_still_proceeds_to_voice_load(monkeypatch, tmp_path):
+    """反向验证：引擎装了的情况下，仍然要走到 load_voice。
+
+    只测"短路"是不够的——如果把 import_piper 提前后又不走后续逻辑，
+    上一条测试也会过，但功能就废了。这条确保正向路径没被破坏。
+    """
+    calls: list[str] = []
+
+    monkeypatch.setattr(prt, "import_piper", lambda data_root=None: types.SimpleNamespace())
+    monkeypatch.setattr(
+        prt.PiperManager, "load_voice",
+        lambda self, voice_id, use_cuda=False: (calls.append(voice_id) or object()),
+    )
+    # 后续的 wave 写出会失败，这里只关心"是否走到了 load_voice"
+    mgr = prt.PiperManager(tmp_path)
+    with pytest.raises(Exception):  # noqa: B017 - 后面步骤失败无所谓
+        mgr.synthesize("en_US-lessac-medium", "hello")
+
+    assert calls == ["en_US-lessac-medium"], f"引擎可用时未走到 load_voice：{calls}"

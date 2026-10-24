@@ -48,6 +48,29 @@ _POLL_INTERVAL_SECONDS = 0.2
 
 VALID_POLICIES = ("auto", "confirm")
 
+#: 持久化里可能出现的等价写法。大小写与空白差异不算"不认识的值"，
+#: 它们必须被还原成同一个策略，否则一次格式变化就会让用户的选择失效。
+_POLICY_ALIASES = {
+    "auto": "auto",
+    "automatic": "auto",
+    "confirm": "confirm",
+    "ask": "confirm",
+    "manual": "confirm",
+}
+
+
+def normalize_policy(value: object) -> str | None:
+    """把任意输入收敛成合法策略名，认不出来返回 None。
+
+    与 Operit 的 ``PermissionLevel.fromString`` 同一思路：先做 tolerant 解析
+    （大小写 / 空白 / 同义别名），再判断。区别在于**认不出来时的方向**——
+    见 :meth:`ApprovalManager.load_policies` 里的取舍说明。
+    """
+    if not isinstance(value, str):
+        return None
+    key = value.strip().lower()
+    return _POLICY_ALIASES.get(key)
+
 
 @dataclass
 class ApprovalRequest:
@@ -129,23 +152,50 @@ class ApprovalManager:
 
         Raises ``ValueError`` for anything else. Returns the normalised mode.
         """
-        mode = (mode or "auto").strip().lower()
-        if mode not in VALID_POLICIES:
+        normalized = normalize_policy(mode if isinstance(mode, str) else "")
+        if normalized is None:
             raise ValueError(f"invalid approval policy: {mode!r}")
         with self._lock:
-            self._policies[session_id] = mode
-        return mode
+            self._policies[session_id] = normalized
+        return normalized
 
     def get_policy(self, session_id: str) -> str:
         with self._lock:
             return self._policies.get(session_id, "auto")
 
-    def load_policies(self, mapping: dict[str, str]) -> None:
-        """Bulk-load persisted policies (best-effort; unknown modes ignored)."""
+    def load_policies(self, mapping: dict[str, str]) -> dict[str, list[str]]:
+        """Bulk-load persisted policies (best-effort).
+
+        Returns ``{"unknown": [...session ids...]}``：这些会话的存档值无法识别。
+
+        **为什么认不出来时要按 ``"confirm"`` 处理（而不是沿用默认的 ``auto``）：**
+
+        这是一个**审批闸门**，失败方向决定安全性质。存档值来自
+        :meth:`set_policy`（只可能写入合法值），因此读不回来只可能是
+        ——损坏、跨版本格式变化、或旧版遗留。若此时静默回落到 ``auto``，
+        用户以为"每次询问"还开着，工具却已经不经确认直接执行了：
+        **静默 fail-open 是这里最坏的结果**。
+
+        认不出来 → 回落到需要确认的一侧，并记 warning，让问题可见：
+        宁可多问一次，也不能在用户不知情的情况下放行。
+        （Operit 的 ``PermissionLevel.fromString`` 对未知值同样回落到 ASK。）
+        """
+        unknown: list[str] = []
         with self._lock:
             for sid, mode in mapping.items():
-                if mode in VALID_POLICIES:
-                    self._policies[sid] = mode
+                normalized = normalize_policy(mode)
+                if normalized is None:
+                    unknown.append(str(sid))
+                    normalized = "confirm"
+                self._policies[sid] = normalized
+        if unknown:
+            log.warning(
+                "approval: %d persisted policy value(s) unreadable, "
+                "falling back to 'confirm' (fail-closed) for: %s",
+                len(unknown),
+                ", ".join(unknown[:10]) + ("..." if len(unknown) > 10 else ""),
+            )
+        return {"unknown": unknown}
 
     # ------------------------------------------------------------------
     # Streaming callback

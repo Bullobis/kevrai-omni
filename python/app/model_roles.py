@@ -24,8 +24,11 @@ and the catalog UI use it safely.
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import Any, Iterable
+
+log = logging.getLogger("kevrai.model_roles")
 
 # ---------------------------------------------------------------------------
 # Capability vocabulary
@@ -229,18 +232,51 @@ def capabilities_or_unknown(model: dict[str, Any]) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+def _coerce_vram(value: Any) -> float | None:
+    """把目录里的显存字段收敛成 GB 数值；认不出来返回 None。
+
+    与 Operit ``WorkflowExecutor.parseDoubleOrNullStrict`` 同一态度：
+    **数值判断绝不"看着像"就算过**。目录是手工维护的 JSON，写成
+    ``"min_vram_gb": "8"`` 是很自然的手误；若直接当成"不认识"丢掉，
+    就会回落成 0 = "未知" = **fits anything**——把一个 40GB 的模型
+    推荐给 8GB 显存的用户，等他下完 40GB 才发现跑不起来。
+
+    所以：能解析的数字（含数字字符串）一律解析；解析不了的记 warning 后
+    仍按"未知"处理，但**必须留下痕迹**，不能静默。
+    """
+    if isinstance(value, bool):  # bool 是 int 的子类，绝不能当显存用
+        return None
+    if isinstance(value, (int, float)):
+        v = float(value)
+        return v if v > 0 and v == v and v not in (float("inf"), float("-inf")) else None
+    if isinstance(value, str):
+        t = value.strip().replace("GB", "").replace("gb", "").strip()
+        if not t:
+            return None
+        try:
+            v = float(t)
+        except ValueError:
+            log.warning("model_roles: unreadable VRAM value %r (model %r)", value, None)
+            return None
+        return v if v > 0 and v == v else None
+    return None
+
+
 def _vram_need(model: dict[str, Any]) -> float:
     """Conservative VRAM requirement: prefer the *minimum* the vendor states.
 
     Falls back to the nominal value, then to 0 (unknown) — we never invent a
     number. A 0 means "unknown", and the selector treats unknown as "fits
     anything" rather than excluding the model (better to offer than to hide).
+
+    Numeric strings are accepted (see :func:`_coerce_vram`) so a hand-edited
+    catalog entry does not silently degrade to "fits anything".
     """
     hw = model.get("hardware") or {}
     for key in ("min_vram_gb", "vram_gb"):
-        v = hw.get(key)
-        if isinstance(v, (int, float)) and v > 0:
-            return float(v)
+        got = _coerce_vram(hw.get(key))
+        if got is not None:
+            return got
     return 0.0
 
 

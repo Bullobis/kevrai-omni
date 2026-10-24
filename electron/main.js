@@ -1425,6 +1425,155 @@ function registerIpc() {
     return sidecarFetch(`/api/models/${encodeURIComponent(id)}/gguf-files${suffix}`);
   });
   ipcMain.handle("api:gguf-repos",    async () => sidecarFetch("/api/gguf-repos"));
+  // 引擎路由：问后端"这个模型该用哪个引擎、走哪个端点"。
+  // 后端 /api/engine/route 早已存在，但此前没有任何 IPC 桥接，前端
+  // engine-route.js 只能自己拼 URL 调 api.get()（该方法根本不存在）→
+  // 打开模型页必抛 TypeError。这里补上正式通道。
+  ipcMain.handle("api:engine:route", async (_e, params) => {
+    const p = params && typeof params === "object" ? params : {};
+    const engine = Array.isArray(p.engine) ? p.engine : [];
+    assert(engine.every((x) => isString(x, 128)), "engine: invalid");
+    const modelId = isString(p.model_id, 256) ? p.model_id : "";
+    const q = new URLSearchParams();
+    if (engine.length) q.set("engine", engine.join(","));
+    if (modelId) q.set("model_id", modelId);
+    const suffix = q.toString() ? `?${q.toString()}` : "";
+    return sidecarFetch(`/api/engine/route${suffix}`);
+  });
+
+  // ------------------------------------------------------------------
+  // 通道补全：以下后端路由此前只有实现、没有任何 IPC 桥接，等于 UI 上不存在。
+  // 统一在此补齐，命名沿用 api:<域>:<动作> 约定。
+  // ------------------------------------------------------------------
+
+  // 用途槽位（Cherry Studio 式分槽选模）
+  ipcMain.handle("api:roles", async (_e, opts) => {
+    const o = (opts && typeof opts === "object") ? opts : {};
+    const qs = Number.isFinite(Number(o.vram_budget))
+      ? `?vram_budget=${encodeURIComponent(String(o.vram_budget))}` : "";
+    return sidecarFetch(`/api/roles${qs}`);
+  });
+  ipcMain.handle("api:roles:capabilities", async () =>
+    sidecarFetch("/api/roles/capabilities"));
+  ipcMain.handle("api:roles:fit", async (_e, vramBudget) => {
+    const v = Number(vramBudget);
+    assert(Number.isFinite(v) && v > 0, "vram_budget: invalid");
+    return sidecarFetch(`/api/roles/fit?vram_budget=${encodeURIComponent(String(v))}`);
+  });
+  ipcMain.handle("api:roles:pin", async (_e, payload) => {
+    assert(payload && isString(payload.role, 64), "role: invalid");
+    const modelId = isString(payload.model_id, 256) ? payload.model_id : "";
+    return sidecarFetch("/api/roles/pin", {
+      method: "POST", body: { role: payload.role, model_id: modelId },
+    });
+  });
+  ipcMain.handle("api:roles:unpin", async (_e, role) => {
+    assert(isString(role, 64), "role: invalid");
+    return sidecarFetch(`/api/roles/pin/${encodeURIComponent(role)}`, { method: "DELETE" });
+  });
+
+  // 参数人话化
+  ipcMain.handle("api:params", async () => sidecarFetch("/api/params"));
+  ipcMain.handle("api:params:explain", async (_e, p) => {
+    const o = (p && typeof p === "object") ? p : {};
+    assert(isString(o.key, 128), "key: invalid");
+    const v = Number(o.value);
+    assert(Number.isFinite(v), "value: invalid");
+    const qs = new URLSearchParams({ key: o.key, value: String(v) });
+    return sidecarFetch(`/api/params/explain?${qs.toString()}`);
+  });
+  ipcMain.handle("api:params:scenario", async (_e, key) => {
+    assert(isString(key, 128), "key: invalid");
+    return sidecarFetch(`/api/params/scenarios/${encodeURIComponent(key)}`);
+  });
+  ipcMain.handle("api:params:scenario-values", async (_e, key) => {
+    assert(isString(key, 128), "key: invalid");
+    return sidecarFetch(`/api/params/scenario-values/${encodeURIComponent(key)}`);
+  });
+  // Agent 可用工具清单（此前后端有实现、UI 无任何通道）
+  ipcMain.handle("api:agent:tools", async () => sidecarFetch("/api/agent/tools"));
+  ipcMain.handle("api:params:explain-all", async (_e, payload) => {
+    const body = (payload && typeof payload === "object") ? payload : {};
+    return sidecarFetch("/api/params/explain-all", { method: "POST", body });
+  });
+
+  // 声音克隆（TTS）
+  ipcMain.handle("api:tts-piper:clones", async () =>
+    sidecarFetch("/api/tts-piper/clones"));
+  ipcMain.handle("api:tts-piper:clone-create", async (_e, payload) => {
+    assert(payload && isString(payload.name, 128), "name: invalid");
+    const data = payload.file && payload.file.data;
+    assert(data && data.length, "file: invalid");
+    const file = {
+      filename: isString(payload.file.filename, 256) ? payload.file.filename : "ref.wav",
+      contentType: isString(payload.file.contentType, 128)
+        ? payload.file.contentType : "application/octet-stream",
+      data: Buffer.from(data),
+    };
+    const mp = buildMultipart({ name: payload.name }, file);
+    return sidecarFetch("/api/tts-piper/clones", {
+      method: "POST", rawBody: mp.body,
+      headers: { "Content-Type": mp.contentType }, timeoutMs: 180_000,
+    });
+  });
+  ipcMain.handle("api:tts-piper:clone-delete", async (_e, name) => {
+    assert(isString(name, 128), "name: invalid");
+    return sidecarFetch(`/api/tts-piper/clones/${encodeURIComponent(name)}`,
+      { method: "DELETE" });
+  });
+
+  // 3D 生成
+  ipcMain.handle("api:3d:capabilities", async () =>
+    sidecarFetch("/api/3d/capabilities"));
+  ipcMain.handle("api:3d:generate", async (_e, payload) =>
+    sidecarFetch("/api/3d/generate", { method: "POST", body: payload || {} }));
+  ipcMain.handle("api:3d:tasks", async () => sidecarFetch("/api/3d/tasks"));
+  ipcMain.handle("api:3d:task", async (_e, taskId) => {
+    assert(isString(taskId, 128), "task_id: invalid");
+    return sidecarFetch(`/api/3d/tasks/${encodeURIComponent(taskId)}`);
+  });
+  ipcMain.handle("api:3d:cancel", async (_e, taskId) => {
+    assert(isString(taskId, 128), "task_id: invalid");
+    return sidecarFetch(`/api/3d/tasks/${encodeURIComponent(taskId)}/cancel`,
+      { method: "POST" });
+  });
+  ipcMain.handle("api:3d:outputs", async () => sidecarFetch("/api/3d/outputs"));
+
+  // ComfyUI 通用后端
+  ipcMain.handle("api:comfyui:status", async (_e, baseUrl) => {
+    const qs = isString(baseUrl, 512) ? `?base_url=${encodeURIComponent(baseUrl)}` : "";
+    return sidecarFetch(`/api/comfyui/status${qs}`);
+  });
+  ipcMain.handle("api:comfyui:music-templates", async () =>
+    sidecarFetch("/api/comfyui/music/templates"));
+  ipcMain.handle("api:comfyui:music-build", async (_e, payload) =>
+    sidecarFetch("/api/comfyui/music/build", { method: "POST", body: payload || {} }));
+  ipcMain.handle("api:comfyui:music-generate", async (_e, payload) =>
+    sidecarFetch("/api/comfyui/music/generate", { method: "POST", body: payload || {},
+      timeoutMs: 600_000 }));
+  ipcMain.handle("api:comfyui:submit", async (_e, payload) =>
+    sidecarFetch("/api/comfyui/submit", { method: "POST", body: payload || {} }));
+  ipcMain.handle("api:comfyui:history", async (_e, p) => {
+    const o = (p && typeof p === "object") ? p : {};
+    assert(isString(o.prompt_id, 128), "prompt_id: invalid");
+    const qs = isString(o.base_url, 512)
+      ? `?base_url=${encodeURIComponent(o.base_url)}` : "";
+    return sidecarFetch(`/api/comfyui/history/${encodeURIComponent(o.prompt_id)}${qs}`);
+  });
+  ipcMain.handle("api:comfyui:queue", async (_e, baseUrl) => {
+    const qs = isString(baseUrl, 512) ? `?base_url=${encodeURIComponent(baseUrl)}` : "";
+    return sidecarFetch(`/api/comfyui/queue${qs}`);
+  });
+  ipcMain.handle("api:comfyui:free", async (_e, baseUrl) => {
+    const qs = isString(baseUrl, 512) ? `?base_url=${encodeURIComponent(baseUrl)}` : "";
+    return sidecarFetch(`/api/comfyui/free${qs}`, { method: "POST" });
+  });
+
+  // 人声分离：对已下载模型直接分离（无上传）
+  ipcMain.handle("api:separation:separate-local", async (_e, payload) =>
+    sidecarFetch("/api/separation/separate-local",
+      { method: "POST", body: payload || {}, timeoutMs: 600_000 }));
+
   ipcMain.handle("api:engines",       async () => sidecarFetch("/api/engines"));
   ipcMain.handle("api:engines:install", async (_e, engine_id) => {
     assert(isString(engine_id, 128), "engine_id: invalid");

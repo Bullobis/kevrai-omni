@@ -218,3 +218,70 @@ def test_rapid_sequential_calls_no_loss(subprocess_mode, monkeypatch):
         # chat_count must track exactly the number of successful calls.
     st = mnn_runtime.status()
     assert st["chat_count"] == 30, f"chat_count drift: {st['chat_count']} != 30"
+
+
+# ---------------------------------------------------------------------------
+# 5. 看门狗线程必须认得自己是"哪一代"，过期就退出
+# ---------------------------------------------------------------------------
+
+class _CountingEvent:
+    """替代 ``threading.Event``：记录被 wait 了几次，绝不真的睡。
+
+    顺带带一个安全阀——wait 到一定次数就返回 True，这样万一被测代码真的
+    修坏了（变成死循环），测试是失败而不是把整个套件挂住。
+    """
+
+    def __init__(self, max_waits: int = 5):
+        self.waits = 0
+        self.max_waits = max_waits
+
+    def wait(self, timeout=None):  # noqa: D102 - test double
+        self.waits += 1
+        return self.waits >= self.max_waits
+
+    def set(self):  # noqa: D102 - test double
+        pass
+
+    def is_set(self):  # noqa: D102 - test double
+        return False
+
+
+def test_stale_watchdog_exits_immediately(subprocess_mode):
+    """代际对不上的看门狗必须立刻退出，不能赖着。
+
+    守的是子进程崩溃自动重启这条**常态路径**：``_kill()`` 不停看门狗，
+    旧线程醒来时读到的 ``self._proc`` 已经是新进程了，看着"还活着"，
+    于是永远不退出——崩一次堆一条线程，跑久了越来越慢却不报错。
+    代际编号就是为了让旧线程认出自己已经过期。
+    """
+    client = mnn_runtime._get_client()
+    client._ensure_started()
+
+    ev = _CountingEvent()
+    original = client._watchdog_stop
+    client._watchdog_stop = ev
+    try:
+        # 传一个**过期**的代号：应当只 wait 一次就返回
+        client._watchdog_loop(client._gen + 1)
+    finally:
+        client._watchdog_stop = original
+        client._kill()
+
+    assert ev.waits == 1, f"过期的看门狗没有立即退出（wait 了 {ev.waits} 次）"
+
+
+def test_current_watchdog_exits_when_no_process(subprocess_mode):
+    """代号正确但进程已不在，同样要退出（不是空转）。"""
+    client = mnn_runtime._get_client()
+    client._ensure_started()
+    client._kill()  # 进程清空
+
+    ev = _CountingEvent()
+    original = client._watchdog_stop
+    client._watchdog_stop = ev
+    try:
+        client._watchdog_loop(client._gen)
+    finally:
+        client._watchdog_stop = original
+
+    assert ev.waits == 1, f"进程已不在时看门狗未退出（wait 了 {ev.waits} 次）"

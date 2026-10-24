@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from pathlib import Path
 from typing import Any
 
@@ -430,3 +431,59 @@ async def test_cancel_stops_sharded_download(tmp_path: Path) -> None:
             client=client, url="http://x/f", base_headers={}, partial=partial,  # type: ignore[arg-type]
             task=task, chunk_size=1 << 20, max_shards=4, emit=_noop_emit,
         )
+
+
+# ---------------------------------------------------------------------------
+# 进度文件损坏时不得删除已下载内容（回归）
+# ---------------------------------------------------------------------------
+
+def test_corrupt_progress_file_keeps_downloaded_partial(tmp_path):
+    """进度文件写坏了，不能把已经下好的 partial 一起删掉。
+
+    旧代码把"进度损坏"和"服务端文件变了"当作同一种情况处理，两者都执行
+    `partial.unlink()`。长度没变时，重新分片覆盖写即可得到正确结果；
+    删文件意味着几十 GB 的下载成果只因几 KB 的进度文件坏掉就作废。
+    """
+    from app.download_shards import _load_or_create_plan, _progress_path
+
+    partial = tmp_path / "model.gguf.partial"
+    partial.write_bytes(b"x" * 4096)          # 已下载的内容
+    ppath = _progress_path(partial)
+    ppath.write_text("{ this is not valid json", encoding="utf-8")
+
+    plan = _load_or_create_plan(partial, total=4096, max_shards=4)
+    assert partial.exists(), "partial 必须保留"
+    assert plan.total == 4096
+    assert all(s[2] == 0 for s in plan.shards), "损坏的进度不能当作已有进展"
+    assert not ppath.exists(), "坏进度文件应被清理"
+
+
+def test_changed_remote_size_still_resets(tmp_path):
+    """服务端文件长度变了才需要重建——这种情况旧内容确实无意义。"""
+    from app.download_shards import _load_or_create_plan, _progress_path, plan_shards
+
+    partial = tmp_path / "m.partial"
+    partial.write_bytes(b"y" * 1000)
+    ppath = _progress_path(partial)
+    old = plan_shards(1000, 2)
+    ppath.write_text(json.dumps(old.to_json()), encoding="utf-8")
+
+    plan = _load_or_create_plan(partial, total=2048, max_shards=2)
+    assert plan.total == 2048
+    assert not partial.exists(), "长度变了，旧内容必须丢弃"
+
+
+def test_valid_progress_is_resumed(tmp_path):
+    """正常进度应当被续跑，不能动 partial。"""
+    from app.download_shards import _load_or_create_plan, _progress_path, plan_shards
+
+    partial = tmp_path / "m.partial"
+    partial.write_bytes(b"z" * 1000)
+    ppath = _progress_path(partial)
+    old = plan_shards(1000, 2)
+    old.shards[0][2] = old.shards[0][1] - old.shards[0][0] + 1   # 第一片已完成
+    ppath.write_text(json.dumps(old.to_json()), encoding="utf-8")
+
+    plan = _load_or_create_plan(partial, total=1000, max_shards=2)
+    assert plan.shards[0][2] > 0, "第一片进度应被保留"
+    assert partial.exists()

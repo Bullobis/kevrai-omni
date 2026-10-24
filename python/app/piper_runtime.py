@@ -11,6 +11,7 @@ imported via a sys.path bootstrap, mirroring the other optional runtimes.
 from __future__ import annotations
 
 import logging
+import re
 import sys
 import time
 import urllib.request
@@ -108,6 +109,219 @@ def kokoro_voice_id(voice_id: str) -> str:
     return vid
 
 
+#: Chatterbox —— Resemble AI 的零样本声音克隆 TTS，MIT 许可、可商用。
+#: 与 Kokoro 的分工：Kokoro 只有 54 个预设音色、无克隆；
+#: 需要"用自己的声音说话"就必须走 Chatterbox。
+#:
+#: 三条必须如实告知用户的事实（写入 CHATTERBOX_NOTES，UI 必须展示）：
+#: 1. 输出带 Perth 神经水印（不可听、抗 MP3 压缩与剪辑）。
+#:    这是官方出于负责任 AI 的刻意设计，不是 bug，但用户有知情权。
+#: 2. 原版 0.5B 模型**仅支持英语**。中文等多语言需 Multilingual 变体。
+#: 3. pip 包名是 ``chatterbox-tts``，不是 ``chatterbox``。写错会装不上。
+CHATTERBOX_VOICE_PREFIX = "chatterbox:"
+CHATTERBOX_SAMPLE_RATE = 24000
+CHATTERBOX_PIP_NAME = "chatterbox-tts"
+
+#: 参考音频推荐时长（秒）。官方建议约 5 秒的干净单人声；
+#: 质量远比长度重要 —— 背景音乐、混响、第二个人声都会被一起编码进
+#: 说话人嵌入，然后被忠实重现。这里是提示，不是硬限制。
+CHATTERBOX_REF_MIN_S = 5.0
+CHATTERBOX_REF_MAX_S = 10.0
+#: 超出这个范围直接拒绝：太短提取不出说话人特征，太长只会徒增噪声与耗时。
+CHATTERBOX_REF_HARD_MIN_S = 1.0
+CHATTERBOX_REF_HARD_MAX_S = 60.0
+
+CHATTERBOX_NOTES = (
+    "Chatterbox（MIT，可商用）支持 5 秒样本零克隆音色。"
+    "注意：① 生成音频带 Perth 神经水印，不可听且抗剪辑；"
+    "② 原版 0.5B 仅支持英语，多语言需 Multilingual 变体；"
+    "③ 参考音频需干净单人声，背景音乐与混响会被一起克隆进去。"
+)
+
+#: 音色档案名白名单。参考音频会被写进文件系统，
+#: 名字必须受限，否则 "..\\..\\evil" 之类会造成路径穿越。
+SAFE_VOICE_NAME = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+
+
+def is_chatterbox_voice(voice_id: str) -> bool:
+    """判断 voice_id 是否走 Chatterbox 引擎。
+
+    只认显式前缀 ``chatterbox:<name>``，不像 Kokoro 那样做兜底猜测：
+    Chatterbox 的 name 是用户自定义的档案名，没有任何可依据的命名规律，
+    猜错会把 Piper/Kokoro 的音色送进克隆路径，报错完全指不到原因。
+    """
+    return (voice_id or "").strip().lower().startswith(CHATTERBOX_VOICE_PREFIX)
+
+
+def chatterbox_voice_id(voice_id: str) -> str:
+    """剥掉 ``chatterbox:`` 前缀，返回克隆档案名。"""
+    vid = (voice_id or "").strip()
+    if vid.lower().startswith(CHATTERBOX_VOICE_PREFIX):
+        return vid[len(CHATTERBOX_VOICE_PREFIX):].strip()
+    return vid
+
+
+def cloned_voices_dir(data_root: Path | str) -> Path:
+    """存放声音克隆参考音频的目录。"""
+    return Path(data_root) / "voices" / "chatterbox"
+
+
+def _wav_duration_s(path: Path) -> float | None:
+    """用标准库读 WAV 时长。非 WAV 或读不了时返回 None。
+
+    刻意不引入音频库：这里只需要一个"够用的时长检查"，
+    而 mp3/flac 的时长探测要靠 soundfile/librosa，属于不必要的重依赖。
+    读不出来就诚实返回 None，让调用方跳过时长检查，而不是猜一个数。
+    """
+    try:
+        with wave.open(str(path), "rb") as wf:
+            frames = wf.getnframes()
+            rate = wf.getframerate()
+        if rate <= 0:
+            return None
+        return frames / float(rate)
+    except Exception:  # noqa: BLE001 — 不是 WAV / 文件损坏 / 权限问题
+        return None
+
+
+def list_cloned_voices(data_root: Path | str) -> list[dict[str, Any]]:
+    """列出已保存的克隆音色档案。"""
+    root = cloned_voices_dir(data_root)
+    if not root.is_dir():
+        return []
+    out: list[dict[str, Any]] = []
+    for p in sorted(root.iterdir()):
+        if not p.is_file() or p.name.startswith("."):
+            continue
+        dur = _wav_duration_s(p)
+        out.append({
+            "name": p.stem,
+            "id": f"{CHATTERBOX_VOICE_PREFIX}{p.stem}",
+            "file": p.name,
+            "path": str(p),
+            "size_bytes": p.stat().st_size,
+            "duration_s": round(dur, 3) if dur is not None else None,
+            # 时长读不出来时明确说"未探测"，不要显示成 0 秒。
+            "duration_known": dur is not None,
+        })
+    return out
+
+
+def save_reference_sample(
+    data_root: Path | str,
+    name: str,
+    data: bytes,
+    suffix: str = ".wav",
+) -> dict[str, Any]:
+    """保存一份声音克隆参考音频。
+
+    ``name`` 必须匹配 :data:`SAFE_VOICE_NAME` —— 这是防路径穿越的硬边界，
+    因为 name 会被直接拼进文件系统路径。
+    """
+    clean = (name or "").strip()
+    if not SAFE_VOICE_NAME.fullmatch(clean):
+        raise PiperParamError(
+            f"音色名不合法：{name!r}（只允许字母、数字、点、下划线、连字符，1-64 字符）"
+        )
+    if not data:
+        raise PiperParamError("参考音频内容为空")
+    ext = (suffix or "").strip().lower()
+    if not ext.startswith("."):
+        ext = "." + ext
+    if not re.fullmatch(r"\.[a-z0-9]{1,8}", ext):
+        raise PiperParamError(f"不支持的音频扩展名：{suffix!r}")
+
+    root = cloned_voices_dir(data_root)
+    root.mkdir(parents=True, exist_ok=True)
+    dest = root / f"{clean}{ext}"
+    tmp = dest.with_suffix(dest.suffix + ".part")
+    try:
+        tmp.write_bytes(data)
+        tmp.replace(dest)
+    except Exception as e:  # noqa: BLE001
+        tmp.unlink(missing_ok=True)
+        raise PiperParamError(f"保存参考音频失败：{e}") from e
+
+    dur = _wav_duration_s(dest)
+    warning = ""
+    if dur is None:
+        warning = "无法探测时长（非 WAV 或文件不可读），已跳过时长检查。"
+    elif dur < CHATTERBOX_REF_HARD_MIN_S:
+        warning = f"参考音频仅 {dur:.1f} 秒，过短会导致克隆效果差。"
+    elif dur > CHATTERBOX_REF_HARD_MAX_S:
+        warning = f"参考音频 {dur:.1f} 秒，过长不会提升效果，只会更慢、引入更多噪声。"
+    elif not (CHATTERBOX_REF_MIN_S <= dur <= CHATTERBOX_REF_MAX_S):
+        warning = (
+            f"参考音频 {dur:.1f} 秒，官方推荐 {CHATTERBOX_REF_MIN_S:.0f}-"
+            f"{CHATTERBOX_REF_MAX_S:.0f} 秒的干净单人声。"
+        )
+    return {
+        "name": clean,
+        "id": f"{CHATTERBOX_VOICE_PREFIX}{clean}",
+        "path": str(dest),
+        "size_bytes": dest.stat().st_size,
+        "duration_s": round(dur, 3) if dur is not None else None,
+        "duration_known": dur is not None,
+        "warning": warning,
+    }
+
+
+def delete_reference_sample(data_root: Path | str, name: str) -> bool:
+    """删除一份克隆档案。返回是否真的删掉了东西。"""
+    clean = (name or "").strip()
+    if not SAFE_VOICE_NAME.fullmatch(clean):
+        raise PiperParamError(f"音色名不合法：{name!r}")
+    root = cloned_voices_dir(data_root)
+    removed = False
+    for p in root.glob(f"{clean}.*") if root.is_dir() else []:
+        if p.is_file():
+            p.unlink(missing_ok=True)
+            removed = True
+    return removed
+
+
+def resolve_reference_audio(
+    data_root: Path | str,
+    name: str,
+    explicit: str | None = None,
+) -> Path:
+    """解析出参考音频的绝对路径。
+
+    ``explicit`` 是调用方直接给出的路径。它必须落在 data_root 之内 ——
+    否则任意文件都能被当作参考音频送进模型，这是本地服务也不能开的口子。
+    """
+    root = Path(data_root).resolve()
+    if explicit:
+        cand = Path(explicit)
+        if not cand.is_absolute():
+            cand = (root / cand).resolve()
+        else:
+            cand = cand.resolve()
+        try:
+            cand.relative_to(root)
+        except ValueError as e:
+            raise PiperParamError(
+                f"参考音频路径必须位于数据目录内：{explicit}"
+            ) from e
+        if not cand.is_file():
+            raise PiperParamError(f"参考音频不存在：{cand}")
+        return cand
+
+    clean = (name or "").strip()
+    if not SAFE_VOICE_NAME.fullmatch(clean):
+        raise PiperParamError(f"音色名不合法：{name!r}")
+    d = cloned_voices_dir(root)
+    if d.is_dir():
+        for p in sorted(d.glob(f"{clean}.*")):
+            if p.is_file():
+                return p.resolve()
+    raise PiperParamError(
+        f"未找到克隆音色档案 {clean!r}。"
+        f"请先上传一份参考音频（推荐 {CHATTERBOX_REF_MIN_S:.0f}-"
+        f"{CHATTERBOX_REF_MAX_S:.0f} 秒的干净单人声）。"
+    )
+
+
 class PiperError(RuntimeError):
     """Base error for the Piper runtime."""
 
@@ -172,6 +386,45 @@ def _download(url: str, dest: Path) -> Path:
         tmp.unlink(missing_ok=True)
         raise PiperVoiceError(f"download failed: {url}: {exc}") from exc
     return dest
+
+
+def _write_chatterbox_wav(out_path: Path, wav: Any, sample_rate: int) -> None:
+    """把 Chatterbox 返回的张量写成 WAV。
+
+    优先 torchaudio（模型本来就依赖它），失败再用 numpy + 标准库 wave。
+    两条路都失败就直接抛 —— 宁可报错，也不留一个 0 字节的假 wav。
+    """
+    try:
+        import torchaudio as ta  # type: ignore
+
+        ta.save(str(out_path), wav, sample_rate)
+        if out_path.is_file() and out_path.stat().st_size > 0:
+            return
+    except Exception:  # noqa: BLE001 — 回退到纯 numpy 写入
+        LOG.debug("torchaudio save failed, falling back", exc_info=True)
+    try:
+        import numpy as np  # type: ignore
+
+        arr = np.asarray(
+            wav.detach().cpu().numpy() if hasattr(wav, "detach") else wav,
+            dtype="float32",
+        )
+    except Exception as e:  # noqa: BLE001
+        raise PiperVoiceError(f"无法读取 Chatterbox 输出的音频数据：{e}") from e
+    if arr.ndim > 1:
+        # (channels, samples) 或 (samples, channels) 都压成单声道/多声道交错
+        arr = arr.squeeze()
+    if arr.ndim > 1:
+        arr = arr.T
+    arr = np.clip(arr, -1.0, 1.0)
+    pcm = (arr * 32767.0).astype("<i2")
+    with wave.open(str(out_path), "wb") as wf:
+        wf.setnchannels(pcm.shape[1] if pcm.ndim > 1 else 1)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
+        wf.writeframes(pcm.tobytes())
+    if not out_path.is_file() or out_path.stat().st_size == 0:
+        raise PiperVoiceError("写出 WAV 失败：文件为空")
 
 
 class PiperManager:
@@ -261,6 +514,122 @@ class PiperManager:
             "engine": "kokoro",
         }
 
+    # -- chatterbox（声音克隆） -------------------------------------------
+    def _load_chatterbox(self, device: str = "auto") -> Any:
+        """加载 Chatterbox 模型。依赖缺失时给出**准确的** pip 包名。"""
+        try:
+            from chatterbox.tts import ChatterboxTTS  # type: ignore
+        except ImportError as e:
+            raise PiperEngineMissing(
+                f"Chatterbox 需要推理依赖：pip install {CHATTERBOX_PIP_NAME}"
+                f"（原始错误：{e}）"
+            ) from e
+        if device == "auto":
+            device = self._chatterbox_device()
+        key = f"chatterbox:{device}"
+        model = self._voices.get(key)
+        if model is None:
+            try:
+                model = ChatterboxTTS.from_pretrained(device=device)
+            except Exception as e:  # noqa: BLE001
+                raise PiperVoiceError(
+                    f"无法加载 Chatterbox（device={device}）：{e}"
+                ) from e
+            self._voices[key] = model
+        return model
+
+    @staticmethod
+    def _chatterbox_device() -> str:
+        """按可用性选 device。探测失败一律退回 cpu，绝不猜。"""
+        try:
+            import torch  # type: ignore
+
+            if torch.cuda.is_available():
+                return "cuda"
+            if getattr(torch.backends, "mps", None) is not None \
+                    and torch.backends.mps.is_available():
+                return "mps"
+        except Exception:  # noqa: BLE001 — torch 没装 / 后端不可用
+            pass
+        return "cpu"
+
+    def synthesize_chatterbox(
+        self,
+        voice_id: str,
+        text: str,
+        reference_audio: str | None = None,
+        exaggeration: float = 0.5,
+        cfg_weight: float = 0.5,
+        device: str = "auto",
+    ) -> dict[str, Any]:
+        """用 Chatterbox 克隆音色合成语音。
+
+        与 Kokoro/Piper 的关键差异：Chatterbox **必须有参考音频**，
+        没有参考音频就没有"被克隆的音色"这回事。因此这里在加载模型之前
+        先解析参考音频 —— 顺序反了会让用户等几分钟加载完才被告知缺素材。
+        """
+        name = chatterbox_voice_id(voice_id)
+        if not name:
+            raise PiperParamError(
+                "Chatterbox 需要指定克隆档案名，写法：chatterbox:<名字>"
+            )
+        ref = resolve_reference_audio(self.data_root, name, reference_audio)
+
+        for label, val in (("exaggeration", exaggeration), ("cfg_weight", cfg_weight)):
+            if not isinstance(val, (int, float)) or not 0.0 <= float(val) <= 1.0:
+                raise PiperParamError(f"{label} 必须在 [0, 1] 之间，当前为 {val!r}")
+
+        model = self._load_chatterbox(device)
+        used_device = "auto" if device == "auto" else device
+        if used_device == "auto":
+            used_device = self._chatterbox_device()
+
+        try:
+            wav = model.generate(
+                text,
+                audio_prompt_path=str(ref),
+                exaggeration=float(exaggeration),
+                cfg_weight=float(cfg_weight),
+            )
+        except TypeError as e:
+            # 不同版本的 generate() 签名不同（早期版本不支持 exaggeration）。
+            # 降级到最小签名再试一次，而不是直接把 TypeError 抛给用户。
+            LOG.warning("chatterbox generate 签名不匹配，降级重试：%s", e)
+            try:
+                wav = model.generate(text, audio_prompt_path=str(ref))
+            except Exception as e2:  # noqa: BLE001
+                raise PiperVoiceError(f"Chatterbox 合成失败：{e2}") from e2
+        except Exception as e:  # noqa: BLE001
+            raise PiperVoiceError(f"Chatterbox 合成失败：{e}") from e
+
+        if wav is None:
+            raise PiperVoiceError("Chatterbox 未产出任何音频")
+
+        job_id = time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8]
+        out_dir = Path(self.data_root) / "tts" / "chatterbox"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_path = out_dir / f"{job_id}.wav"
+        sample_rate = int(getattr(model, "sr", CHATTERBOX_SAMPLE_RATE) or CHATTERBOX_SAMPLE_RATE)
+        _write_chatterbox_wav(out_path, wav, sample_rate)
+
+        duration = _wav_duration_s(out_path) or 0.0
+        return {
+            "engine": "chatterbox",
+            "job_id": job_id,
+            "voice": voice_id,
+            "path": str(out_path),
+            "sample_rate": sample_rate,
+            "duration_s": round(duration, 3),
+            "size_bytes": out_path.stat().st_size if out_path.exists() else 0,
+            "reference": str(ref),
+            "exaggeration": float(exaggeration),
+            "cfg_weight": float(cfg_weight),
+            "device": used_device,
+            # 水印事实随结果一起返回：用户有知情权，且这是官方刻意设计。
+            "watermarked": True,
+            "watermark_note": "输出含 Perth 神经水印（不可听、抗 MP3 压缩与剪辑）。",
+        }
+
     # -- synthesis ----------------------------------------------------------
     def synthesize(
         self,
@@ -275,6 +644,9 @@ class PiperManager:
         # Kokoro 走独立路径：音色体系与采样率都和 Piper 不同，不能混用。
         if is_kokoro_voice(voice_id):
             return self.synthesize_kokoro(voice_id, text)
+        # Chatterbox 走克隆路径：必须有参考音频，且带水印。
+        if is_chatterbox_voice(voice_id):
+            return self.synthesize_chatterbox(voice_id, text)
         if len(text) > MAX_TEXT_LEN:
             raise PiperParamError(f"text exceeds {MAX_TEXT_LEN} characters")
         if length_scale is None:
@@ -282,6 +654,17 @@ class PiperManager:
         length_scale = float(length_scale)
         if not (MIN_LENGTH_SCALE <= length_scale <= MAX_LENGTH_SCALE):
             raise PiperParamError(f"length_scale must be within [{MIN_LENGTH_SCALE},{MAX_LENGTH_SCALE}]")
+
+        # **先确认引擎在，再去下载语音模型。**
+        #
+        # 顺序反了的后果很具体、也很容易被人忽略：``load_voice()`` 会联网
+        # 下载几十 MB 的语音权重，而"Piper 引擎没装"这件事要等到后面的
+        # ``import_piper()`` 才会暴露。于是引擎缺失本来应该是 503（明确的
+        # "没装"），却会先撞上语音下载失败，变成 422 "download failed"——
+        # 报错指向网络或文件，**真正的原因被完全掩盖**，用户还白等一次下载。
+        #
+        # 提前一次调用：装了就继续，没装立刻 503，不做任何下载。
+        self.import_piper()
 
         voice = self.load_voice(voice_id, use_cuda=use_cuda)
         # Build a per-request synthesis config (length/speed). Optional knob:
@@ -368,4 +751,34 @@ def capabilities(data_root: Path | str) -> dict[str, Any]:
         "engine_dir": str(target),
         "version": version,
         "voices": [{"id": v["id"], "label": v["label"], "lang": v["lang"]} for v in KNOWN_VOICES],
+        "kokoro": {
+            "engine": "kokoro",
+            "installed": _module_available("kokoro"),
+            "pip": "kokoro",
+            "voices_hint": "af_heart 等预设音色（无克隆）",
+        },
+        "chatterbox": {
+            "engine": "chatterbox",
+            "installed": _module_available("chatterbox"),
+            "pip": CHATTERBOX_PIP_NAME,
+            "sample_rate": CHATTERBOX_SAMPLE_RATE,
+            "ref_recommended_s": [CHATTERBOX_REF_MIN_S, CHATTERBOX_REF_MAX_S],
+            "notes": CHATTERBOX_NOTES,
+            "cloned_voices": list_cloned_voices(root),
+        },
     }
+
+
+def _module_available(name: str) -> bool:
+    """探测一个可选推理包是否可导入。
+
+    只做 import 探测，不实例化模型 —— capabilities 是给 UI 快速调用的，
+    加载 0.5B 模型会让这个接口卡住几十秒。
+    """
+    try:
+        import importlib
+
+        importlib.import_module(name)
+        return True
+    except Exception:  # noqa: BLE001 — 未安装 / 依赖破损都算不可用
+        return False

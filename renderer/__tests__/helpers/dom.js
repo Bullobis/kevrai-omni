@@ -33,6 +33,11 @@ export function setupDom(bodyHtml = '<div id="host"></div>', opts = {}) {
 
   globalThis.window = window;
   globalThis.document = window.document;
+  // v4.11.0：`navigator` 原先没有挂到 globalThis。浏览器里它是全局对象，
+  // 模块直接写 `navigator.xxx` 是合法的；换用另一个 jsdom 版本后（不同版本
+  // 对 globalThis 的暴露面不同）依赖它的测试会抛 ReferenceError。显式挂上，
+  // 让测试环境更贴近浏览器，也避免这类"换版本就崩"的脆弱性。
+  if (!globalThis.navigator && window.navigator) globalThis.navigator = window.navigator;
   globalThis.requestAnimationFrame = requestAnimationFrame;
   globalThis.cancelAnimationFrame = cancelAnimationFrame;
   // A handful of constructors used when dispatching events in tests.

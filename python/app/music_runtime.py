@@ -573,4 +573,3 @@ def license_info(model_id_or_repo: str) -> dict[str, str]:
                 return dict(info)
 
     return _unknown_license()
-    return _unknown_license()

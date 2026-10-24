@@ -214,6 +214,44 @@ const api = {
   ggufRepos:     () => invoke("api:gguf-repos"),
 
   // ----- Engines -----
+  engineRoute:   (params) => invoke("api:engine:route", params || {}),
+
+  // ----- 通道补全：后端早已实现、此前无桥接的能力 -----
+  // 用途槽位
+  roles:            (opts) => invoke("api:roles", opts || {}),
+  rolesCapabilities: () => invoke("api:roles:capabilities"),
+  rolesFit:         (vram) => invoke("api:roles:fit", vram),
+  rolesPin:         (payload) => invoke("api:roles:pin", payload),
+  rolesUnpin:       (role) => invoke("api:roles:unpin", role),
+  // 参数人话化
+  paramsCatalogue:  () => invoke("api:params"),
+  paramsExplain:    (p) => invoke("api:params:explain", p),
+  paramsScenario:   (key) => invoke("api:params:scenario", key),
+  paramsScenarioValues: (key) => invoke("api:params:scenario-values", key),
+  agentTools:       () => invoke("api:agent:tools"),
+  paramsExplainAll: (p) => invoke("api:params:explain-all", p || {}),
+  // 声音克隆
+  piperListClones:  () => invoke("api:tts-piper:clones"),
+  piperCreateClone: (payload) => invoke("api:tts-piper:clone-create", payload),
+  piperDeleteClone: (name) => invoke("api:tts-piper:clone-delete", name),
+  // 3D 生成
+  threeDCapabilities: () => invoke("api:3d:capabilities"),
+  threeDGenerate:     (payload) => invoke("api:3d:generate", payload),
+  threeDTasks:        () => invoke("api:3d:tasks"),
+  threeDTask:         (id) => invoke("api:3d:task", id),
+  threeDCancel:       (id) => invoke("api:3d:cancel", id),
+  threeDOutputs:      () => invoke("api:3d:outputs"),
+  // ComfyUI 通用后端
+  comfyuiStatus:         (baseUrl) => invoke("api:comfyui:status", baseUrl || ""),
+  comfyuiMusicTemplates: () => invoke("api:comfyui:music-templates"),
+  comfyuiMusicBuild:     (payload) => invoke("api:comfyui:music-build", payload),
+  comfyuiMusicGenerate:  (payload) => invoke("api:comfyui:music-generate", payload),
+  comfyuiSubmit:         (payload) => invoke("api:comfyui:submit", payload),
+  comfyuiHistory:        (p) => invoke("api:comfyui:history", p),
+  comfyuiQueue:          (baseUrl) => invoke("api:comfyui:queue", baseUrl || ""),
+  comfyuiFree:           (baseUrl) => invoke("api:comfyui:free", baseUrl || ""),
+  // 分离：本地文件直分离
+  separationSeparateLocal: (payload) => invoke("api:separation:separate-local", payload),
   engines:       () => invoke("api:engines"),
   listEngines:   () => invoke("api:engines"),
   installEngine: (id) => {

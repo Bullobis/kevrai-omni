@@ -619,6 +619,21 @@ async function bootstrap() {
   // side-effecting bootstrap that tests cannot import.
   initSidebarToggle(t);
 
+  // v4.11.0 — 侧边栏分组折叠 + 按项隐藏。必须在 initSidebarToggle 之后：
+  // 分组状态写入 data-* 属性，折叠态样式依赖它们，两者共用同一棵 DOM。
+  try {
+    const { applySidebarGroups, wireSidebarGroups, openSidebarManager } =
+      await import("./modules/sidebar-groups.js");
+    applySidebarGroups(document);
+    wireSidebarGroups(document);
+    document.addEventListener("click", (e) => {
+      if (e.target.closest("[data-action=manage-sidebar]")) {
+        e.preventDefault();
+        openSidebarManager({ t }).then(() => applySidebarGroups(document));
+      }
+    });
+  } catch (_) { /* 分组是渐进增强，失败不影响主流程 */ }
+
   // v3.0.0 — Token field show/hide toggle
   document.querySelectorAll(".token-toggle").forEach((btn) => {
     btn.addEventListener("click", () => {

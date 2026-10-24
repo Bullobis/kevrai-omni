@@ -59,6 +59,20 @@ def _write_server(tmp_path) -> tuple[object, object]:
     return script, pid_file
 
 
+def _child_env(pid_file) -> dict[str, str]:
+    """构造传给 stdio 子进程的环境。
+
+    PYTHONPATH 必须**显式**传：MCP SDK 给子进程的环境是它自己的白名单，
+    **不含** PYTHONPATH。在 --target / venv 装的依赖下，少了这一项子进程
+    会报 "No module named 'mcp.server'"——看起来像 mcp 没装，实际只是环境
+    没继承过去。详见 app/mcp_manager.py 的注释。
+    """
+    env = {"DEMO_PID_FILE": str(pid_file)}
+    if os.environ.get("PYTHONPATH"):
+        env["PYTHONPATH"] = os.environ["PYTHONPATH"]
+    return env
+
+
 def _pid_alive(pid: int) -> bool:
     try:
         os.kill(pid, 0)
@@ -117,7 +131,7 @@ async def _stdio_loopback(tmp_path):
         "demo", "stdio",
         command=sys.executable,
         args=[str(script)],
-        env={"DEMO_PID_FILE": str(pid_file)},
+        env=_child_env(pid_file),
     )
     tools = await mgr.a_list_tools(added["id"])
     result = await mgr.a_call(added["id"], "add", {"a": 40, "b": 2})
@@ -144,7 +158,7 @@ async def _stdio_reverse_call(tmp_path):
         "demo", "stdio",
         command=sys.executable,
         args=[str(script)],
-        env={"DEMO_PID_FILE": str(pid_file)},
+        env=_child_env(pid_file),
     )
     return await mgr.a_call(added["id"], "reverse", {"text": "abc"})
 
