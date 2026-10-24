@@ -153,7 +153,7 @@ def _resolve_seed(seed: int) -> int:
         raise ImageTemplateError(f"seed 必须是整数，当前为 {seed!r}") from e
     if s <= 0:
         # ComfyUI 种子是 64 位；留出余量，避免极端值在 JSON/节点侧出问题。
-        s = random.randint(1, 2**53 - 1)
+        s = random.randint(1, 2**53 - 1)  # noqa: S311 — 生图种子无需加密强度
     return s
 
 

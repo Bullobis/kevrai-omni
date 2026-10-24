@@ -54,7 +54,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import (
     FileResponse,
     JSONResponse,
-    Response,
     StreamingResponse,
 )
 from pydantic import BaseModel, Field, ValidationError
@@ -4777,7 +4776,7 @@ async def ws_comfyui_generate(websocket: WebSocket) -> None:
             async for raw in cws:
                 try:
                     msg = json.loads(raw)
-                except Exception:  # noqa: BLE001 — 非 JSON 心跳包忽略
+                except Exception:  # noqa: S112, BLE001 — 非 JSON 心跳包忽略
                     continue
                 mtype = msg.get("type")
                 if mtype == "progress":
