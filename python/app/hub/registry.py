@@ -558,7 +558,14 @@ class HubRegistry:
             page_size=max(1, min(100, int(limit))), sources=[hub],
         )
         try:
-            res = await ad.search(sub, cursor or SourceCursor())
+            res = await asyncio.wait_for(
+                ad.search(sub, cursor or SourceCursor()), timeout=8.0,
+            )
+        except asyncio.TimeoutError:
+            # 某个源（常见为魔搭在网络受限时）慢到拖垮整页：降级为空结果，
+            # 其余源照常返回，页面在 ~8s 内出结果而不是干等 18s+。
+            return PageResult(items=[], next=None, total=None, degraded=True,
+                              code="timeout", warning=f"{hub} 响应超时，已跳过")
         except Exception as e:  # noqa: BLE001 — one source must never 500 the page
             return PageResult(items=[], next=None, total=None, degraded=True,
                               code="network", warning=f"{hub} 检索异常：{str(e)[:120]}")
