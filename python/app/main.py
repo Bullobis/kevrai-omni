@@ -1234,9 +1234,9 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
     # pip 类引擎（piper/kokoro/faster-whisper…）必须走 pip install 到隔离目录，
     # 不能把 pypi 网页当 zip 下（旧逻辑报 "File is not a zip file"）。
     if cat.get("install") == "pip" and cat.get("pypi"):
-        em: EngineManager = request.app.state.engine_manager
+        em_pip: EngineManager = request.app.state.engine_manager
         result = await asyncio.to_thread(
-            em.install_pip, cat["pypi"], eid
+            em_pip.install_pip, cat["pypi"], eid
         )
         return {
             "ok": True, "engine_id": eid, "mode": "pip",
@@ -4558,7 +4558,7 @@ def comfyui_music_generate(req: ComfyUIMusicReq) -> Response:
         if req.wait:
             result["result"] = client.wait(
                 prompt_id,
-                timeout=comfyui_runtime.DEFAULT_TIMEOUTS["audio"] if req.timeout is None
+                timeout_s=comfyui_runtime.DEFAULT_TIMEOUTS["audio"] if req.timeout is None
                 else float(req.timeout),
             )
         return JSONResponse(result)
