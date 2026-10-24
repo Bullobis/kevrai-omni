@@ -1158,7 +1158,16 @@
     "promptFirst": "Text-to-3D needs a prompt",
     "imageFirst": "Image-to-3D needs an input image path",
     "submitFailed": "Failed to submit task",
-    "failed": "3D generation failed: {err}"
+    "failed": "3D generation failed: {err}",
+    "fitUnknown": "Could not detect local VRAM",
+    "fitNoGpu": "No discrete GPU detected: CPU-only will be very slow; prefer TripoSR + fast preset",
+    "fitOk": "{gb}GB VRAM available, meets {need}GB requirement",
+    "fitTight": "{gb}GB VRAM, below the recommended {need}GB",
+    "fitTightHint": "Use the fast preset and lower resolution to avoid OOM.",
+    "fitShort": "{gb}GB VRAM, far below the {need}GB requirement",
+    "fitShortHint": "Likely OOM; switch to TripoSR.",
+    "licenseOk": "Commercial use OK",
+    "licenseCond": "Commercial use has conditions (see below)"
   },
   "knowledge": {
     "title": "Knowledge Base (RAG)",

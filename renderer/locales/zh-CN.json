@@ -1158,7 +1158,16 @@
     "promptFirst": "文生 3D 需要填写提示词",
     "imageFirst": "图生 3D 需要填写输入图片路径",
     "submitFailed": "提交任务失败",
-    "failed": "3D 生成失败：{err}"
+    "failed": "3D 生成失败：{err}",
+    "fitUnknown": "无法识别本机显存",
+    "fitNoGpu": "未检测到独立显卡：纯 CPU 会很慢甚至跑不动，建议 TripoSR + fast 档",
+    "fitOk": "本机 {gb}GB 显存，满足 {need}GB 需求",
+    "fitTight": "本机 {gb}GB 显存，低于建议 {need}GB",
+    "fitTightHint": "建议切到 fast 档、降分辨率，否则可能显存溢出。",
+    "fitShort": "本机 {gb}GB 显存，远低于 {need}GB 需求",
+    "fitShortHint": "强行运行大概率 OOM；建议换 TripoSR。",
+    "licenseOk": "可商用",
+    "licenseCond": "商用有条件限制（见下）"
   },
   "knowledge": {
     "title": "知识库（RAG）",

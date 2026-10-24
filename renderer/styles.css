@@ -1870,3 +1870,20 @@ html[data-theme="light"] .skeleton-card::after {
   outline: none; border-color: var(--accent, #2563eb);
 }
 #pane-image .form-actions, #pane-3d .form-actions { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+
+/* ---- 3D 本机适配度 / 许可提示条（v4.16.1）---- */
+#3d-fit-bar.fit-bar {
+  background: var(--bg-1, #f9fafb);
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: 8px; padding: 10px 12px; font-size: var(--fs-sm, 13px);
+  display: flex; flex-direction: column; gap: 4px;
+}
+#3d-fit-bar .fit-line { font-weight: 600; }
+#3d-fit-bar .fit-detail { font-size: 12px; line-height: 1.4; }
+#3d-fit-bar .fit-lic { display: flex; gap: 6px; align-items: center; margin-top: 2px; }
+#3d-fit-bar .pill {
+  font-size: 11px; padding: 2px 8px; border-radius: 999px;
+  background: var(--stack-3, #e5e7eb); color: var(--fg, #111827);
+}
+#3d-fit-bar .pill-ok { background: #dcfce7; color: #15803d; }
+#3d-fit-bar .pill-warn { background: #fef3c7; color: #b45309; }

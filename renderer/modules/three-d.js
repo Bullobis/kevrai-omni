@@ -19,11 +19,15 @@ let pollTimer = null;
 
 // 常用模型预设（id 即 HuggingFace repo id；后端 from_pretrained 直接加载）。
 // 全部选公开可下（非 gated）的仓库，避免用户卡在 HF 登录。
+// vramMin 为公开文档/后端 MODEL_LICENSES 标注的最低显存（GB），用于本机适配提示。
 const MODELS = [
-  { id: "stabilityai/TripoSR", label: "TripoSR（MIT，6GB，最快，仅图生）", t23d: false },
-  { id: "JeffreyXiang/TRELLIS-image-large", label: "TRELLIS（MIT，PBR 网格，图生）", t23d: false },
-  { id: "tencent/Hunyuan3D-2", label: "Hunyuan3D 2（腾讯许可，文/图生，质量高）", t23d: true },
+  { id: "stabilityai/TripoSR", label: "TripoSR（MIT，最快，仅图生）", t23d: false, vramMin: 6, license: "MIT", commercial: true, note: "纯 MIT，无地区限制；仅顶点色无 PBR。" },
+  { id: "JeffreyXiang/TRELLIS-image-large", label: "TRELLIS（MIT，PBR 网格，仅图生）", t23d: false, vramMin: 16, license: "MIT", commercial: true, note: "MIT；只支持单图输入，不支持文生 3D。" },
+  { id: "tencent/Hunyuan3D-2", label: "Hunyuan3D 2（腾讯社区许可，质量高）", t23d: true, vramMin: 10, license: "腾讯社区许可", commercial: "conditional", note: "非 MIT：有月活上限，且商用排除欧盟/英国/韩国；文生 3D 实为串联文生图。" },
 ];
+
+// 本机最佳显存（GB），init 时探测一次。
+let localVram = null;
 
 function body(res) { return (res && res.body) ? res.body : res; }
 function escapeHtml(s) {
@@ -45,6 +49,50 @@ function syncModeAvailability() {
   t2.disabled = !m.t23d;
   if (t2.disabled && t2.checked) {
     $("#3d-mode-i23d").checked = true;
+  }
+  updateFit();
+}
+
+// 本机显存 vs 模型需求：显示「跑得动哪档」与许可/商用提示。
+function updateFit() {
+  const bar = $("#3d-fit-bar");
+  if (!bar) return;
+  const m = currentModel();
+  let verdict, color, detail;
+  if (localVram === null) {
+    verdict = t("3d.fitUnknown"); color = "var(--mut,#6b7280)"; detail = "";
+  } else if (localVram <= 0) {
+    verdict = t("3d.fitNoGpu"); color = "var(--warn,#b45309)"; detail = "";
+  } else if (localVram >= m.vramMin) {
+    verdict = t("3d.fitOk", { gb: localVram, need: m.vramMin });
+    color = "var(--ok,#15803d)"; detail = "";
+  } else if (localVram >= m.vramMin * 0.7) {
+    verdict = t("3d.fitTight", { gb: localVram, need: m.vramMin });
+    color = "var(--warn,#b45309)"; detail = t("3d.fitTightHint");
+  } else {
+    verdict = t("3d.fitShort", { gb: localVram, need: m.vramMin });
+    color = "var(--danger,#b91c1c)"; detail = t("3d.fitShortHint");
+  }
+  const comm = m.commercial === true
+    ? `<span class="pill pill-ok">${escapeHtml(t("3d.licenseOk"))}</span>`
+    : m.commercial === "conditional"
+      ? `<span class="pill pill-warn">${escapeHtml(t("3d.licenseCond"))}</span>`
+      : "";
+  bar.innerHTML =
+    `<div class="fit-line" style="color:${color}">● ${escapeHtml(verdict)}</div>` +
+    `<div class="fit-detail muted">${escapeHtml(m.note)} ${detail}</div>` +
+    `<div class="fit-lic"><span class="pill">${escapeHtml(m.license)}</span> ${comm}</div>`;
+}
+
+async function detectLocalVram() {
+  try {
+    const res = body(await api.hardware({}));
+    // /api/hardware 返回 {"hardware": {...}, "cached": bool}；硬件字段在 .hardware 里。
+    const hw = (res && res.hardware) ? res.hardware : res;
+    const v = hw && (hw.gpu_best_vram_gb ?? (hw.gpu && hw.gpu.best_vram_gb) ?? null);
+    localVram = (typeof v === "number" && isFinite(v)) ? v : null;
+  } catch (_) {
+    localVram = null;
   }
 }
 
@@ -172,8 +220,10 @@ export async function initThreeD() {
   inited = true;
   populateModels();
   await refreshCaps();
+  await detectLocalVram();
+  updateFit();
 
-  $("#3d-model").addEventListener("change", syncModeAvailability);
+  $("#3d-model").addEventListener("change", () => { syncModeAvailability(); });
   $("#3d-run").addEventListener("click", generate);
 
   window.addEventListener("kevrai:view-change", (e) => {
