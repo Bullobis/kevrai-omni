@@ -616,7 +616,10 @@ class EngineManager:
     @_serialized_install
     def install_pip(self, pypi_name: str, engine_id: str | None = None) -> EngineRecord:
         eid = engine_id or pypi_name
-        target = self.engine_dir() / f"pip-{pypi_name}"
+        # 目录名用引擎 id（如 piper → pip-piper），与各 runtime 的
+        # engine_target_dir 约定一致；旧逻辑按 pypi 名拼成 pip-piper-tts，
+        # 运行时 sys.path bootstrap 找不到，导致"装了却 import 不到"。
+        target = self.engine_dir() / f"pip-{eid}"
         target.mkdir(parents=True, exist_ok=True)
         cmd = [sys.executable, "-m", "pip", "install", "--target", str(target), pypi_name]
         idx = os.environ.get("KEVRAI_PIP_INDEX", "https://mirrors.tencent.com/pypi/simple/")
@@ -624,19 +627,33 @@ class EngineManager:
         self._set_state(eid, EngineState.DOWNLOADING, install_path=str(target),
                         install_mode="pip")
         try:
-            proc = subprocess.run(  # noqa: S603 — argv list built from internal constants
-                cmd, capture_output=True, text=True, timeout=900
+            # 流式读 pip 输出，把最新一行写进 active_url 作为进度文案，
+            # 让前端轮询时能看到"正在下载/安装 xx 包"而不是干等。
+            proc = subprocess.Popen(  # noqa: S603 — argv list built from internal constants
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, bufsize=1,
             )
+            last_line = ""
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                line = line.strip()
+                if line:
+                    last_line = line[:200]
+                    self._set_state(eid, EngineState.DOWNLOADING,
+                                    install_path=str(target), install_mode="pip",
+                                    active_url=last_line)
+            proc.wait(timeout=900)
+            rc = proc.returncode
         except Exception as e:
             self._set_state(eid, EngineState.FAILED,
                             last_error=f"pip exception: {e}",
                             install_mode="pip")
             raise
-        if proc.returncode != 0:
+        if rc != 0:
             self._set_state(eid, EngineState.FAILED,
-                            last_error=(proc.stderr or "")[-300:],
+                            last_error=(last_line or "pip 安装失败")[-300:],
                             install_mode="pip")
-            raise RuntimeError(f"pip install of {pypi_name} failed: rc={proc.returncode}")
+            raise RuntimeError(f"pip install of {pypi_name} failed: rc={rc}")
         self._set_state(eid, EngineState.INSTALLED,
                         install_path=str(target),
                         installed_at=_now_iso(),

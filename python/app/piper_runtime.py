@@ -25,6 +25,8 @@ LOG = logging.getLogger("kevrai.piper")
 ENGINE_ID = "piper"
 ENGINE_DIRNAME = "pip-piper"
 VOICE_REPO_BASE = "https://huggingface.co/rhasspy/piper-voices/resolve/main/"
+# 国内直连 huggingface.co 常超时/404：主站失败自动切 hf-mirror，小白无需配置。
+VOICE_REPO_MIRROR = "https://hf-mirror.com/rhasspy/piper-voices/resolve/main/"
 VOICE_REPO_ID = "rhasspy/piper-voices"
 
 # id -> (label, language, repo-relative directory, file stem)
@@ -385,6 +387,24 @@ def _download(url: str, dest: Path) -> Path:
     return dest
 
 
+def _download_voice_file(rel: str, dest: Path) -> Path:
+    """下语音文件：先试 HuggingFace 主站，失败自动切 hf-mirror。
+
+    小白用户不需要知道镜像站——主站超时/连不上时静默换源，两个源都失败才报错。
+    """
+    last: Exception | None = None
+    for base in (VOICE_REPO_BASE, VOICE_REPO_MIRROR):
+        try:
+            return _download(base + rel, dest)
+        except Exception as exc:  # noqa: BLE001 — 记下并换下一个源
+            last = exc
+            # 已下到一半的 .part 由 _download 清理，换源重试是安全的
+            continue
+    raise PiperVoiceError(
+        f"download failed (主站与镜像均不可达): {rel}: {last}"
+    )
+
+
 def _write_chatterbox_wav(out_path: Path, wav: Any, sample_rate: int) -> None:
     """把 Chatterbox 返回的张量写成 WAV。
 
@@ -442,10 +462,11 @@ class PiperManager:
         local_dir = _voices_dir(self.data_root) / spec["dir"]
         onnx = local_dir / f"{voice_id}.onnx"
         cfg = local_dir / f"{voice_id}.onnx.json"
+        stem = f"{voice_id}.onnx"
         if not onnx.is_file():
-            _download(VOICE_REPO_BASE + f"{spec['dir']}/{voice_id}.onnx", onnx)
+            _download_voice_file(f"{spec['dir']}/{stem}", onnx)
         if not cfg.is_file():
-            _download(VOICE_REPO_BASE + f"{spec['dir']}/{voice_id}.onnx.json", cfg)
+            _download_voice_file(f"{spec['dir']}/{voice_id}.onnx.json", cfg)
         return onnx, cfg
 
     def load_voice(self, voice_id: str, use_cuda: bool = False):

@@ -29,6 +29,13 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+# 国内默认让 huggingface_hub / transformers 的 from_pretrained 走镜像源，
+# 否则大模型权重直连 huggingface.co 常超时。可用 KEVRAI_HF_ENDPOINT 覆盖
+# （海外或自建镜像设为 https://huggingface.co 即可）。必须在任何
+# huggingface_hub import 之前设置，因为它会在 import 时读取该变量。
+os.environ.setdefault("HF_ENDPOINT",
+                      os.environ.get("KEVRAI_HF_ENDPOINT", "https://hf-mirror.com"))
+
 from fastapi import (
     FastAPI,
     File,
@@ -1224,6 +1231,18 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
     if eid not in ENGINES:
         raise HTTPException(status_code=404, detail=f"unknown engine: {eid}")
     cat = ENGINES[eid]
+    # pip 类引擎（piper/kokoro/faster-whisper…）必须走 pip install 到隔离目录，
+    # 不能把 pypi 网页当 zip 下（旧逻辑报 "File is not a zip file"）。
+    if cat.get("install") == "pip" and cat.get("pypi"):
+        em: EngineManager = request.app.state.engine_manager
+        result = await asyncio.to_thread(
+            em.install_pip, cat["pypi"], eid
+        )
+        return {
+            "ok": True, "engine_id": eid, "mode": "pip",
+            "pypi": cat["pypi"], "path": result.install_path,
+            "message": "installed",
+        }
     sources: list[str] = list(cat.get("sources") or [])
     plat_url = (cat.get("platforms") or {}).get(platform_key())
     if plat_url:
