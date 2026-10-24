@@ -1,31 +1,42 @@
-# Kevrai-omni v4.17.0
+## Kevrai-omni v4.17.0
 
-本版聚焦"让生图和 Agent 看得见进度、让引擎真能装上"，并修掉一批实机测试里暴露的对接问题。
+开源本地 AI 工作台：Electron 33 + 原生 HTML/CSS/JS + Python FastAPI sidecar。本版集中修复实机安装链路的一批硬伤，并新增 Ming TTS 引擎。
 
-## 新功能
+### 实机安装链路修复
 
-### 图片生成：采样进度实时可见（参考 Local Dream）
-- 新增流式 WebSocket 通道 `/ws/comfyui/generate`：提交生图后，逐帧把 ComfyUI 的采样步数（`step/total`）推回界面，实时显示进度条和百分比，不再转圈干等。
-- 连不上 ComfyUI 或流式通道时自动回退原来的同步等待，不会坏。
+**引擎安装进度条终于能动了**
+- 以前 /api/engines 只回静态字段，pip 引擎（piper、faster-whisper 等）安装时前端轮询拿不到任何进度，按钮一直干等。
+- 现在后端把 active_url / progress / downloaded_bytes / total_bytes / state 实时吐出来，pip 安装过程会显示"正在下载/安装 xx 包…"，二进制下载显示百分比和已下/总 MB。
 
-### Agent：工具执行过程实时可见（参考 Operit）
-- ReAct 循环里工具一被调用就立即向前端推送 `tool_start` 事件，界面立刻显示"正在执行：xxx"，而不是等工具跑完才知道在做什么。
+**pip 引擎装不上（unsupported kind: ''）**
+- 环境页手动装包、MNN 安装两处前端漏传 kind:"pip"，后端一律 400。已补。
 
-## 引擎安装修复
+**大脑设置空选项报错**
+- 大脑下拉切回"规则"空选项时，前端不再误调后端，直接提示。
 
-- **llama.cpp 现在真能装上了**：之前 catalog 里写的是 releases 列表页地址（HTML，被当成 zip 解压必然报 "File is not a zip file"）。安装时会实时查询最新 release，按当前操作系统自动挑选对应的 CPU 二进制资产（Linux `llama-bN-bin-ubuntu-x64.tar.gz`、Windows `llama-bN-bin-win-cpu-x64.zip`、macOS x64/arm64）。
-- 引擎卸载失败现在会弹出具体错误，不再静默无反应。
+**检查更新网络错误不再弹窗**
+- ERR_NETWORK_ACCESS_DENIED 这类网络问题只在状态行显示，不再弹错误 toast 打扰。
 
-## 稳定性与易用性
+**魔搭不再被误隐藏**
+- 网络探测慢/失败时，以前会直接把 ModelScope 源从搜索里删掉。现在只弹一次提示，魔搭源保留，你仍可手动勾选搜索。
 
-- **魔搭（ModelScope）不再被误隐藏**：源探测超时从 12s 放宽到 20s，国内冷启动较慢时也能正确探到，不会"次次跳过"魔搭。
-- **检查更新报错不再打扰用户**：网络被拒（`ERR_NETWORK_ACCESS_DENIED`）等离线场景下静默处理，只有真正的错误才提示。
-- 图片生成种子：留空或填 `-1` 表示随机种子（与主流生图软件一致），界面加了说明提示。
+### 模型市场
 
-## 工程
+**所有模型都能下载了**
+- 以前没匹配到引擎的模型会被"未指定引擎"挡回，只能手动导入。
+- 现在这类模型直接走自动挑文件下载；GGUF 模型照旧可选量化档（Q4_K_M、Q5_K_M 等）。
 
-- 清理 32 个已合并进 main 的陈旧分支。
-- 全量后端测试 2588 项通过，前端 71 个脚本语法检查通过。
+### 新引擎：Ming-3.0-tts-0.5B-MNN
 
-## 实机验证
-- 在 Linux 上实机启动 sidecar 验证健康检查、新 WebSocket 握手、llama.cpp 资产解析、魔搭搜索均正常。
+- 蚂蚁 inclusionAI 开源的 CPU 友好中英文 TTS，0.5B 量级，int8 档约 1.5GB。
+- 支持语气指令控制（instruction）、中英文混合、44.1kHz 输出。
+- 通过 ming-tts-mnn pip 包一键安装，模型走 hf-mirror 镜像下载。
+- 路由 POST /api/tts-ming/synthesize。
+
+### 验证
+
+- 后端 engine/catalog/tts 相关 479 项测试通过
+- 前端 71 个 JS 文件语法检查全过
+- mypy 未引入新错误
+
+> 注：Ming TTS 在低内存机器（<8GB）首次加载较慢，属正常现象。
