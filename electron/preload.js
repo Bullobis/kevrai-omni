@@ -250,6 +250,10 @@ const api = {
   comfyuiHistory:        (p) => invoke("api:comfyui:history", p),
   comfyuiQueue:          (baseUrl) => invoke("api:comfyui:queue", baseUrl || ""),
   comfyuiFree:           (baseUrl) => invoke("api:comfyui:free", baseUrl || ""),
+  comfyuiImageTemplates: () => invoke("api:comfyui:image-templates"),
+  comfyuiImageBuild:     (payload) => invoke("api:comfyui:image-build", payload),
+  comfyuiImageGenerate:  (payload) => invoke("api:comfyui:image-generate", payload),
+  comfyuiCheckpoints:    (baseUrl) => invoke("api:comfyui:checkpoints", baseUrl || ""),
   // 分离：本地文件直分离
   separationSeparateLocal: (payload) => invoke("api:separation:separate-local", payload),
   engines:       () => invoke("api:engines"),

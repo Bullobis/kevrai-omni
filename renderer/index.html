@@ -91,6 +91,9 @@
         <button class="pane-tab" data-tab="ltx" title="LTX-2.5 视频" data-i18n-title="nav.ltx">
           <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span> <span class="tab-label" data-i18n="nav.ltx">LTX-2.5 视频</span>
         </button>
+        <button class="pane-tab" data-tab="image" title="图片生成" data-i18n-title="nav.image">
+          <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></span> <span class="tab-label" data-i18n="nav.image">图片生成</span>
+        </button>
         <button class="pane-tab" data-tab="music" title="音乐生成" data-i18n-title="nav.music">
           <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span> <span class="tab-label" data-i18n="nav.music">音乐生成</span>
         </button>
@@ -790,6 +793,84 @@
         </div>
 
         <div class="asr-result card" id="music-result"></div>
+      </section>
+
+      <!-- ComfyUI 图片生成（SD1.5 / SDXL 文生图） -->
+      <section id="pane-image" class="pane" aria-label="图片生成">
+        <div class="pane-head">
+          <h2 data-i18n="image.title">图片生成</h2>
+          <p class="muted" id="image-engine-status" data-i18n="image.engineMissing">未检测到 ComfyUI</p>
+        </div>
+
+        <div class="asr-engine-missing" id="image-missing-card">
+          <p class="muted" data-i18n="image.missingHint">需要一个正在运行的 ComfyUI（默认本机 8188 端口）。启动 ComfyUI 后，把 Stable Diffusion 模型放到其 checkpoints 目录，再回到本页刷新。</p>
+        </div>
+
+        <div class="asr-form card" id="image-form">
+          <div class="form-row">
+            <label for="image-template" data-i18n="image.template">模型家族</label>
+            <select id="image-template"></select>
+          </div>
+          <div class="form-row">
+            <label for="image-ckpt" data-i18n="image.ckpt">Stable Diffusion 模型</label>
+            <select id="image-ckpt"></select>
+            <input id="image-ckpt-text" type="text" style="display:none;margin-top:6px"
+                   placeholder="model.safetensors" />
+          </div>
+          <div class="form-row">
+            <label for="image-prompt" data-i18n="image.prompt">提示词</label>
+            <textarea id="image-prompt" rows="3" data-i18n-placeholder="image.promptPh" placeholder="masterpiece, best quality, a cat sitting on a windowsill"></textarea>
+          </div>
+
+          <details class="adv-row">
+            <summary data-i18n="image.advanced">高级参数</summary>
+            <div class="form-grid">
+              <div class="form-row">
+                <label for="image-negative" data-i18n="image.negative">负向提示词</label>
+                <textarea id="image-negative" rows="2" placeholder="lowres, bad anatomy, ..."></textarea>
+              </div>
+              <div class="form-row">
+                <label for="image-resolution" data-i18n="image.resolution">分辨率</label>
+                <select id="image-resolution"></select>
+              </div>
+              <div class="form-row">
+                <label for="image-steps" data-i18n="image.steps">步数</label>
+                <input id="image-steps" type="number" min="1" max="100" value="20" />
+              </div>
+              <div class="form-row">
+                <label for="image-cfg" data-i18n="image.cfg">提示词相关性 CFG</label>
+                <input id="image-cfg" type="number" min="0" max="30" step="0.5" value="7" />
+              </div>
+              <div class="form-row">
+                <label for="image-sampler" data-i18n="image.sampler">采样器</label>
+                <select id="image-sampler"></select>
+              </div>
+              <div class="form-row">
+                <label for="image-scheduler" data-i18n="image.scheduler">调度器</label>
+                <select id="image-scheduler"></select>
+              </div>
+              <div class="form-row">
+                <label for="image-seed" data-i18n="image.seed">种子（0=随机）</label>
+                <input id="image-seed" type="number" min="0" value="0" />
+              </div>
+              <div class="form-row">
+                <label for="image-batch" data-i18n="image.batch">一次出几张</label>
+                <select id="image-batch">
+                  <option value="1" selected>1</option>
+                  <option value="2">2</option>
+                  <option value="4">4</option>
+                </select>
+              </div>
+            </div>
+          </details>
+
+          <div class="form-actions">
+            <button class="primary" id="image-run" data-i18n="image.run">生成图片</button>
+            <button class="ghost" id="image-free" data-i18n="image.free">释放显存</button>
+          </div>
+        </div>
+
+        <div class="asr-result card" id="image-result"></div>
       </section>
 
       <!-- On-device translation pane (dual-column) -->

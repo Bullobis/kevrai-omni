@@ -1801,3 +1801,30 @@ html[data-theme="light"] .skeleton-card::after {
 .engine-route-row .er-value { font-weight: 650; font-family: var(--mono, monospace); }
 .engine-route-row .er-src, .engine-route-row .er-rt { color: var(--mut); }
 .engine-route-row .er-note { flex-basis: 100%; color: var(--mut); }
+
+/* ---- ComfyUI 图片生成面板（v4.15.0）---- */
+#pane-image .adv-row {
+  margin: 10px 0; border-top: 1px solid var(--bord); padding-top: 8px;
+}
+#pane-image .adv-row > summary {
+  cursor: pointer; color: var(--mut); font-size: var(--fs-sm);
+  list-style: none; user-select: none;
+}
+#pane-image .adv-row > summary::before { content: "▸ "; }
+#pane-image .adv-row[open] > summary::before { content: "▾ "; }
+#pane-image .img-gallery {
+  display: grid; gap: 12px; margin-top: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+#pane-image .img-card {
+  margin: 0; border: 1px solid var(--bord); border-radius: 10px;
+  overflow: hidden; background: var(--card);
+}
+#pane-image .img-card img {
+  width: 100%; height: auto; display: block; background: #000;
+}
+#pane-image .img-card figcaption {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 6px 8px; font-size: var(--fs-sm);
+}
+#pane-image .img-download { white-space: nowrap; }

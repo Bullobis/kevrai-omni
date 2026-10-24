@@ -15,6 +15,7 @@ Hardening changes:
 from __future__ import annotations
 
 import asyncio
+import base64
 import contextlib
 import hmac
 import json
@@ -43,13 +44,19 @@ from fastapi import (
     Path as PathParam,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import (
+    FileResponse,
+    JSONResponse,
+    Response,
+    StreamingResponse,
+)
 from pydantic import BaseModel, Field, ValidationError
 
 from . import (
     USER_AGENT,
     __version__,
     asr_runtime,
+    comfyui_image,
     comfyui_music,
     comfyui_runtime,
     demucs_runtime,
@@ -4569,6 +4576,158 @@ def comfyui_free(base_url: str | None = None,
     finally:
         client.close()
     return JSONResponse({"freed": bool(ok)})
+
+
+# ---------------------------------------------------------------------------
+# ComfyUI 图片生成（SD1.5 / SDXL 文生图，v4.15.0）
+# ---------------------------------------------------------------------------
+
+class ComfyUIImageReq(BaseModel):
+    template_id: str = "sd15-txt2img"
+    ckpt_name: str = ""
+    prompt: str = ""
+    negative_prompt: str | None = None
+    steps: int | None = None
+    cfg: float | None = None
+    sampler_name: str | None = None
+    scheduler: str | None = None
+    width: int | None = None
+    height: int | None = None
+    batch_size: int = 1
+    seed: int = 0
+    filename_prefix: str = "image/kevrai"
+    base_url: str | None = None
+    wait: bool = False
+    timeout: float | None = None
+    include_images: bool = True
+
+
+@app.get("/api/comfyui/checkpoints")
+def comfyui_checkpoints(base_url: str | None = None) -> dict[str, Any]:
+    """列出 ComfyUI 中可用的 checkpoint 文件名（供前端下拉选择）。"""
+    url = base_url or _comfyui_base_url()
+    client = _comfyui_client(url)
+    try:
+        info = client.object_info("CheckpointLoaderSimple")
+    except Exception as e:  # noqa: BLE001 — 探测失败就是"不可用"
+        return {"available": False, "checkpoints": [], "base_url": url, "error": str(e)}
+    finally:
+        client.close()
+    names: list[str] = []
+    node = (info or {}).get("CheckpointLoaderSimple", {})
+    required = node.get("input", {}).get("required", {})
+    ckpt_field = required.get("ckpt_name")
+    # ComfyUI 的下拉字段是 [["a.safetensors", ...], {tooltip...}]
+    if isinstance(ckpt_field, list) and ckpt_field and isinstance(ckpt_field[0], list):
+        names = [str(x) for x in ckpt_field[0] if isinstance(x, (str, int, float))]
+    return {"available": True, "base_url": url, "checkpoints": names}
+
+
+@app.get("/api/comfyui/image/templates")
+def comfyui_image_templates() -> dict[str, Any]:
+    """列出图片模板及其默认参数（前端直接据此渲染表单）。"""
+    return {"templates": comfyui_image.list_templates()}
+
+
+@app.post("/api/comfyui/image/build")
+def comfyui_image_build(req: ComfyUIImageReq) -> Response:
+    """只构建文生图工作流，不执行（拿去自己改节点 / 存档）。"""
+    try:
+        built = comfyui_image.build_image_workflow(
+            req.template_id, ckpt_name=req.ckpt_name, prompt=req.prompt,
+            negative_prompt=req.negative_prompt, steps=req.steps, cfg=req.cfg,
+            sampler_name=req.sampler_name, scheduler=req.scheduler,
+            width=req.width, height=req.height, batch_size=req.batch_size,
+            seed=req.seed, filename_prefix=req.filename_prefix,
+        )
+    except comfyui_image.ImageTemplateError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    return JSONResponse(built)
+
+
+def _history_images_to_data_urls(
+    client: comfyui_runtime.ComfyUIClient, entry: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """把 ComfyUI history 里 SaveImage 的产物下载并转成 data URL，前端可直接 <img>。"""
+    out: list[dict[str, Any]] = []
+    outputs = (entry or {}).get("outputs") or {}
+    for _node_id, node_out in outputs.items():
+        for img in (node_out or {}).get("images") or []:
+            fn = img.get("filename")
+            if not fn:
+                continue
+            sf = img.get("subfolder", "") or ""
+            tp = img.get("type", "output") or "output"
+            try:
+                data = client.download_output(fn, sf, tp)
+                b64 = base64.b64encode(data).decode("ascii")
+                out.append({
+                    "filename": fn, "subfolder": sf, "type": tp,
+                    "url": client.view_url(fn, sf, tp),
+                    "data_url": f"data:image/png;base64,{b64}",
+                })
+            except Exception as e:  # noqa: BLE001 — 单张取失败不拖垮整批
+                out.append({"filename": fn, "subfolder": sf, "type": tp, "error": str(e)})
+    return out
+
+
+@app.post("/api/comfyui/image/generate")
+def comfyui_image_generate(req: ComfyUIImageReq) -> Response:
+    """构建并提交文生图；wait=true 时同步等待并取回图片。"""
+    try:
+        built = comfyui_image.build_image_workflow(
+            req.template_id, ckpt_name=req.ckpt_name, prompt=req.prompt,
+            negative_prompt=req.negative_prompt, steps=req.steps, cfg=req.cfg,
+            sampler_name=req.sampler_name, scheduler=req.scheduler,
+            width=req.width, height=req.height, batch_size=req.batch_size,
+            seed=req.seed, filename_prefix=req.filename_prefix,
+        )
+    except comfyui_image.ImageTemplateError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    client = _comfyui_client(req.base_url, req.timeout)
+    try:
+        prompt_id, fixes = client.submit(
+            built["workflow"], fix_seeds=False, job_class="image")
+        result: dict[str, Any] = {
+            "prompt_id": prompt_id,
+            "seed_fixed": built["seed_fixed"] + fixes,
+            "template": built["template"],
+            "params": built["params"],
+            "base_url": client.base_url,
+        }
+        if req.wait:
+            timeout_s = (
+                comfyui_runtime.DEFAULT_TIMEOUTS["image"]
+                if req.timeout is None else float(req.timeout)
+            )
+            entry = client.wait(prompt_id, timeout_s=timeout_s)
+            if req.include_images:
+                result["images"] = _history_images_to_data_urls(client, entry)
+            result["history"] = entry
+        return JSONResponse(result)
+    except comfyui_runtime.ComfyUIUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except comfyui_runtime.ComfyUIError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    finally:
+        client.close()
+
+
+@app.get("/api/comfyui/view")
+def comfyui_view(
+    filename: str, subfolder: str = "",
+    type: str = "output", base_url: str | None = None,
+) -> Response:
+    """代理取 ComfyUI 产出图，避免渲染进程直连 8188 的跨域 / 地址问题。"""
+    client = _comfyui_client(base_url)
+    try:
+        data = client.download_output(filename, subfolder, type)
+    except comfyui_runtime.ComfyUIError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    finally:
+        client.close()
+    return Response(content=data, media_type="image/png")
 
 
 # ---------------------------------------------------------------------------

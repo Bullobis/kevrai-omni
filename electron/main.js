@@ -1569,6 +1569,19 @@ function registerIpc() {
     return sidecarFetch(`/api/comfyui/free${qs}`, { method: "POST" });
   });
 
+  // ComfyUI 图片生成（SD1.5/SDXL 文生图）
+  ipcMain.handle("api:comfyui:image-templates", async () =>
+    sidecarFetch("/api/comfyui/image/templates"));
+  ipcMain.handle("api:comfyui:image-build", async (_e, payload) =>
+    sidecarFetch("/api/comfyui/image/build", { method: "POST", body: payload || {} }));
+  ipcMain.handle("api:comfyui:image-generate", async (_e, payload) =>
+    sidecarFetch("/api/comfyui/image/generate", { method: "POST", body: payload || {},
+      timeoutMs: 600_000 }));
+  ipcMain.handle("api:comfyui:checkpoints", async (_e, baseUrl) => {
+    const qs = isString(baseUrl, 512) ? `?base_url=${encodeURIComponent(baseUrl)}` : "";
+    return sidecarFetch(`/api/comfyui/checkpoints${qs}`);
+  });
+
   // 人声分离：对已下载模型直接分离（无上传）
   ipcMain.handle("api:separation:separate-local", async (_e, payload) =>
     sidecarFetch("/api/separation/separate-local",
