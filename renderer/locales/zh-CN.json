@@ -213,6 +213,7 @@
     "checkOkWithErrs": "已检查 {n} 个已安装引擎，均为最新（{errs} 个查询失败）",
     "checkFailed": "检查更新失败，请稍后重试",
     "installDone": "{id} 安装完成",
+    "dlFrom": "正在从 {host} 下载",
     "uninstallDone": "{id} 已卸载",
     "updateDone": "{id} 已更新到 {v}",
     "updateDoneNoVer": "{id} 已更新"

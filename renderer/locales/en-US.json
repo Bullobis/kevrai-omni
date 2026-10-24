@@ -213,6 +213,7 @@
     "checkOkWithErrs": "Checked {n} installed engines, all up to date ({errs} failed queries)",
     "checkFailed": "Update check failed, please retry later",
     "installDone": "{id} installed",
+    "dlFrom": "Downloading from {host}",
     "uninstallDone": "{id} uninstalled",
     "updateDone": "{id} updated to {v}",
     "updateDoneNoVer": "{id} updated"
