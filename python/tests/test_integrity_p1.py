@@ -15,7 +15,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.downloader import (  # noqa: E402
     DownloadTask,
-    Downloader,
     is_revision_pinned,
     pin_revision,
 )
@@ -136,7 +135,6 @@ def test_redact_handles_cycles_without_hanging(diag_mod):
 
 def test_diagnostics_zip_has_expected_files(diag_mod, tmp_path):
     out = tmp_path / "d.zip"
-    rc = diag_mod.main.__wrapped__ if hasattr(diag_mod.main, "__wrapped__") else None
     # 直接调用底层构建，避免 argparse
     report = diag_mod.build_report(
         type("A", (), {

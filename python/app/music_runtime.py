@@ -105,10 +105,10 @@ def _is_ace_step(source: str | Path) -> bool:
     prefixes = [p.lower() for p in ACE_STEP_PREFIXES]
     # 逐段检查：仓库名可能是 "ACE-Step/Ace-Step1.5"，本地目录可能是
     # "ace-step-1.5"，只看最后一段会漏掉 org 名里带标识的情况。
-    for seg in low.split("/"):
-        if seg and any(seg.startswith(pre) for pre in prefixes):
-            return True
-    return False
+    return any(
+        seg and any(seg.startswith(pre) for pre in prefixes)
+        for seg in low.split("/")
+    )
 
 
 class MusicError(Exception):
@@ -265,7 +265,7 @@ class MusicManager:
 
             pipe = AceStepPipeline.from_pretrained(str(source))
             return pipe, None
-        except ImportError as e:
+        except ImportError:
             tried.append("ace_step.AceStepPipeline（未安装 ace-step）")
         except Exception as e:  # noqa: BLE001
             tried.append(f"ace_step.AceStepPipeline（{type(e).__name__}: {e}）")
@@ -276,7 +276,7 @@ class MusicManager:
 
             pipe = DiffusionPipeline.from_pretrained(str(source))
             return pipe, None
-        except ImportError as e:
+        except ImportError:
             tried.append("diffusers.DiffusionPipeline（未安装 diffusers）")
         except Exception as e:  # noqa: BLE001
             tried.append(f"diffusers.DiffusionPipeline（{type(e).__name__}: {e}）")

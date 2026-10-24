@@ -13,8 +13,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.agent.tools import web_tools as wt  # noqa: E402
 from app.agent.tool_registry import ToolContext  # noqa: E402
+from app.agent.tools import web_tools as wt  # noqa: E402
 
 # If a test ever forgets to stub the transport, fail loudly instead of leaking
 # a real request. Autouse + a sentinel keeps the suite hermetic.

@@ -17,8 +17,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app import main as app_main  # noqa: E402
 from pydantic import BaseModel, ValidationError  # noqa: E402
+
+from app import main as app_main  # noqa: E402
 
 #: 历史遗留的 ``model_`` 前缀字段（改动前就存在）。
 #: 列在这里是为了**冻结**它们——不允许新增，但也不因它们的存在让测试失败。

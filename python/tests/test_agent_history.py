@@ -9,8 +9,6 @@ import os
 import sys
 from pathlib import Path
 
-import pytest
-
 os.environ.setdefault("KEVRAI_SIDECAR_SECRET", "test-sidecar-secret")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
@@ -21,7 +19,6 @@ from app.agent.history import (  # noqa: E402
     group_into_turns,
     truncate_content,
 )
-
 
 # ---------------------------------------------------------------------------
 # truncate_content：保留头尾 + 显式标记

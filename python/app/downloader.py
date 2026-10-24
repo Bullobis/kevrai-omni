@@ -17,12 +17,12 @@ Design goals:
 """
 from __future__ import annotations
 
-import re
-
 import asyncio
 import contextlib
 import hashlib
+import logging
 import os
+import re
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -64,10 +64,10 @@ class DownloadStatus(str, Enum):
     """任务状态机。
 
     PENDING → DOWNLOADING ⇄ PAUSED → VERIFYING → DONE
-                  │                                 
-                  ├→ FAILED                         
-                  ├→ CANCELLED（用户主动取消）       
-                  └→ EXPIRED（看门狗判定"无推进"）   
+                  │
+                  ├→ FAILED
+                  ├→ CANCELLED（用户主动取消）
+                  └→ EXPIRED（看门狗判定"无推进"）
     """
     PENDING = "pending"
     DOWNLOADING = "downloading"
@@ -1085,7 +1085,6 @@ class Downloader:
             return False
         except Exception as e:  # noqa: BLE001 — 分片失败一律回退，不放弃下载
             with contextlib.suppress(Exception):
-                import logging
 
                 logging.getLogger("kevrai.downloader").debug(
                     "sharded download failed, falling back to single stream: %s", e
@@ -1196,8 +1195,9 @@ class Downloader:
             ppath = _progress_path(partial)
             if ppath.exists():
                 ppath.unlink()
-        except Exception:  # noqa: BLE001 — 进度文件清不掉不影响主流程
-            pass
+        except Exception as e:  # noqa: BLE001 — 进度文件清不掉不影响主流程
+            logging.getLogger("kevrai.downloader").debug(
+                "清理进度文件失败（不影响主流程）: %s", e)
         return True
 
     def _backoff_seconds(self, attempt: int) -> float:

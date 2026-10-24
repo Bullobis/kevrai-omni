@@ -25,8 +25,9 @@ and the catalog UI use it safely.
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any
 
 log = logging.getLogger("kevrai.model_roles")
 

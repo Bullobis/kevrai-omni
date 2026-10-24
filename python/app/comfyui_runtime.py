@@ -129,7 +129,7 @@ class ComfyUIClient:
         if self._client is not None and not self._client.is_closed:
             self._client.close()
 
-    def __enter__(self) -> "ComfyUIClient":
+    def __enter__(self) -> ComfyUIClient:
         return self
 
     def __exit__(self, *exc: Any) -> None:

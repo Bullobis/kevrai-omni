@@ -26,7 +26,6 @@ import asyncio
 import contextlib
 import json
 import os
-import time
 from pathlib import Path
 from typing import Any
 
@@ -85,7 +84,7 @@ class ShardPlan:
         return {"version": 1, "total": self.total, "shards": self.shards}
 
     @classmethod
-    def from_json(cls, data: dict[str, Any]) -> "ShardPlan | None":
+    def from_json(cls, data: dict[str, Any]) -> ShardPlan | None:
         try:
             if int(data.get("version", 0)) != 1:
                 return None
@@ -273,9 +272,8 @@ async def download_sharded(
 
     # 预分配文件（稀疏占位），保证各分片 seek 写入时文件足够长
     if not partial.exists() or partial.stat().st_size != total:
-        with contextlib.suppress(OSError):
-            with partial.open("wb") as fh:
-                fh.truncate(total)
+        with contextlib.suppress(OSError), partial.open("wb") as fh:
+            fh.truncate(total)
 
     task.total_bytes = total
     base = int(getattr(task, "downloaded_bytes", 0) or 0)

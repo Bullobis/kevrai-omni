@@ -191,10 +191,7 @@ def resolve_defaults(
     # 第 3 层：模型自带推荐
     clean, cfg_res = normalize_config(model_config)
     for k, v in clean.items():
-        if k in PARAMS:
-            values[k] = v
-            sources[k] = "model"
-        elif k in _ENUM_PARAMS:
+        if k in PARAMS or k in _ENUM_PARAMS:
             values[k] = v
             sources[k] = "model"
     res.clamped = cfg_res.clamped

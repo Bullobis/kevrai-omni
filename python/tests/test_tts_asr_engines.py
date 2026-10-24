@@ -18,7 +18,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app import asr_runtime as a  # noqa: E402
 from app import piper_runtime as p  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # 1. TTS：Kokoro 音色判定
 # ---------------------------------------------------------------------------

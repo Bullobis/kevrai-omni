@@ -89,6 +89,19 @@ from .engines import (
     list_engines_status,
     load_update_cache,
 )
+from .gen_params import (
+    PARAMS as GEN_PARAMS,
+)
+from .gen_params import (
+    SCENARIOS,
+    describe_scenario,
+    explain,
+    explain_all,
+    scenario_values,
+)
+from .gen_params import (
+    catalogue as gen_params_catalogue,
+)
 from .gpu import detect as detect_gpus
 from .hardware import detect_hardware
 from .hub import (
@@ -109,30 +122,12 @@ from .importer import (
     snapshot_progress,
 )
 from .ltx_runtime import LtxBusyError, LtxManager, LtxParamError, LtxParams
-from .gen_params import (
-    PARAMS as GEN_PARAMS,
-    SCENARIOS,
-    catalogue as gen_params_catalogue,
-    describe_scenario,
-    explain,
-    explain_all,
-    scenario_values,
-)
 from .model_roles import (
     CAPABILITIES,
     ROLES,
     OverrideStore,
-    capabilities_or_unknown,
     derive_capabilities,
     fits_budget,
-    pick_for_role,
-)
-from .three_d_runtime import (
-    ThreeDBusyError,
-    ThreeDManager,
-    ThreeDParamError,
-    ThreeDParams,
-    capabilities as three_d_capabilities,
 )
 from .recommend import recommend as recommend_models
 from .search import SearchQuery
@@ -151,6 +146,15 @@ from .sources_registry import (
     SourceMeta,
     SourceRegistry,
     normalize_user_mirrors,
+)
+from .three_d_runtime import (
+    ThreeDBusyError,
+    ThreeDManager,
+    ThreeDParamError,
+    ThreeDParams,
+)
+from .three_d_runtime import (
+    capabilities as three_d_capabilities,
 )
 
 # ---------------------------------------------------------------------------

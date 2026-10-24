@@ -364,8 +364,8 @@ def _lspci_text() -> str:
     try:
         import subprocess
 
-        return subprocess.run(
-            [binpath, "-nn"],  # noqa: S603 — 固定参数
+        return subprocess.run(  # noqa: S603 — 固定参数，无用户输入
+            [binpath, "-nn"],
             capture_output=True,
             text=True,
             timeout=4,
@@ -382,12 +382,17 @@ def _windows_gpu_names() -> list[str]:
     try:
         import subprocess
 
+        # 用绝对路径解析可执行文件：既消除 S607（部分路径启动进程），
+        # 也顺带处理 PATH 里没有 powershell 的情况（直接返回空，不抛异常）。
+        ps_bin = shutil.which("powershell")
+        if not ps_bin:
+            return []
         ps = (
             "Get-CimInstance Win32_VideoController | "
             "Select-Object -ExpandProperty Name"
         )
-        out = subprocess.run(
-            ["powershell", "-NoProfile", "-Command", ps],  # noqa: S603,S607
+        out = subprocess.run(  # noqa: S603 — 固定参数，无用户输入
+            [ps_bin, "-NoProfile", "-Command", ps],
             capture_output=True,
             text=True,
             timeout=8,
@@ -457,7 +462,7 @@ def _parse_generic_json(data: Any, vendor: str) -> list[GPUInfo]:
     def walk(node: Any) -> None:
         nonlocal idx
         if isinstance(node, dict):
-            keys = {str(k).lower() for k in node.keys()}
+            keys = {str(k).lower() for k in node}
             has_name = any("name" in k or "model" in k or "product" in k for k in keys)
             has_mem = any(
                 "memory" in k or "vram" in k or "mem" in k for k in keys

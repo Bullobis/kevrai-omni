@@ -6,9 +6,7 @@
 """Tests for app.repo_picker."""
 from __future__ import annotations
 
-import pytest
-
-from app.repo_picker import pick_repo_files, total_size_of, WEIGHT_EXTS
+from app.repo_picker import WEIGHT_EXTS, pick_repo_files, total_size_of
 
 
 def _d(*pairs: tuple[str, int]) -> list[dict]:

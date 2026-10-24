@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 import sys
 import time
@@ -22,9 +23,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.downloader import (  # noqa: E402
     DEFAULT_STALL_TIMEOUT_S,
     TERMINAL_STATUSES,
+    Downloader,
     DownloadStatus,
     DownloadTask,
-    Downloader,
     InsufficientDiskSpace,
     dir_free_bytes,
 )
@@ -205,10 +206,8 @@ async def test_watchdog_starts_on_first_task():
     d._ensure_watchdog()
     assert d._watchdog_task is not None
     d._watchdog_task.cancel()
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         await d._watchdog_task
-    except asyncio.CancelledError:
-        pass
 
 
 @pytest.mark.asyncio

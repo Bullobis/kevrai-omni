@@ -5,14 +5,12 @@
 """
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 from unittest import mock
 
 import pytest
 
 from app import accelerators, gpu, hardware
-
 
 # ---------------------------------------------------------------------------
 # 单位换算

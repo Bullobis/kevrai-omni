@@ -18,7 +18,6 @@ from app.engine_router import (  # noqa: E402
     resolve_engine,
 )
 
-
 # ---------------------------------------------------------------------------
 # 优先级：explicit > default > catalog 第一个
 # ---------------------------------------------------------------------------
@@ -130,6 +129,7 @@ def test_non_string_entries_dropped():
 
 def _client():
     import httpx
+
     from app import main as app_main
 
     transport = httpx.ASGITransport(app=app_main.app)

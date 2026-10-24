@@ -70,8 +70,9 @@ DEFAULT_TOP_K = 4
 # Retrieval strategy: "dense" (cosine only, historical), "bm25" (lexical
 # only, works without an embedding engine) or "hybrid" (RRF fusion).
 DEFAULT_RETRIEVAL_MODE = MODE_DENSE
-# How many lexical candidates enter the RRF fusion per side.
-HYBRID_CANDIDATE_POOL = 50
+# HYBRID_CANDIDATE_POOL（每侧进入 RRF 融合的候选数）由 retrieval 模块定义并导入。
+# 这里**不能再定义一次**：重复定义会覆盖导入值，一旦 retrieval 侧调整，
+# 本模块仍在用旧值，融合的候选池与检索侧预期不一致，行为会微妙偏离且不报错。
 MAX_CHUNK_SIZE = 4000
 MAX_OVERLAP_RATIO = 0.5  # overlap must stay below half the chunk size
 MAX_CONTENT_BYTES = 8 * 1024 * 1024  # 8 MiB of raw text per document

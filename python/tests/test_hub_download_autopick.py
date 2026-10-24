@@ -15,7 +15,6 @@
 """
 from __future__ import annotations
 
-import asyncio
 import os
 import sys
 from pathlib import Path
@@ -29,7 +28,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import httpx  # noqa: E402
 
 from app import main as app_main  # noqa: E402
-
 
 # ---------------------------------------------------------------------------
 # 假件

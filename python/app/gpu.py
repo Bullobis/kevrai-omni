@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import logging
 import os
 import platform
 import re
@@ -300,8 +301,8 @@ async def detect() -> list[GPUInfo]:
         for i, g in enumerate(extra):
             g.index = base + i
             out.append(g)
-    except Exception:  # noqa: BLE001 — 探测失败不能影响主流程
-        pass
+    except Exception as e:  # noqa: BLE001 — 探测失败不能影响主流程
+        logging.getLogger("kevrai.gpu").debug("加速卡探测失败: %s", e)
 
     if out:
         return out
@@ -313,8 +314,8 @@ async def detect() -> list[GPUInfo]:
         sys_gpus = await asyncio.to_thread(detect_by_system)
         if sys_gpus:
             return sys_gpus
-    except Exception:  # noqa: BLE001
-        pass
+    except Exception as e:  # noqa: BLE001
+        logging.getLogger("kevrai.gpu").debug("系统信息兜底探测失败: %s", e)
 
     # Fallback: report the CPU so the UI never shows a totally empty list.
     cpu_name = _cpu_name()

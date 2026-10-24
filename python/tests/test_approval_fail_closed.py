@@ -22,7 +22,6 @@ from app.agent.approval import (  # noqa: E402
     normalize_policy,
 )
 
-
 # --- normalize_policy -------------------------------------------------------
 
 

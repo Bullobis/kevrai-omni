@@ -12,17 +12,15 @@ import os
 import sys
 from pathlib import Path
 
-import pytest
-
 os.environ.setdefault("KEVRAI_SIDECAR_SECRET", "test-sidecar-secret")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.downloader import (  # noqa: E402
     DEFAULT_MAX_RETAINED_FINISHED,
     TERMINAL_STATUSES,
+    Downloader,
     DownloadStatus,
     DownloadTask,
-    Downloader,
 )
 
 
@@ -188,7 +186,6 @@ async def test_constructor_clamps_bad_limit(tmp_path):
 
 async def test_real_download_clears_credentials(tmp_path, monkeypatch):
     """跑通真实下载路径，验证 finally 里的凭证清理确实执行。"""
-    import app.downloader as dl
 
     body = b"hello-kevrai"
 

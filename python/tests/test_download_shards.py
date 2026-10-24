@@ -13,23 +13,18 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
-from typing import Any
 
 import pytest
 
-from app import download_shards as ds
 from app.download_shards import (
     MAX_SHARDS,
     MIN_SHARD_BYTES,
-    MIN_TOTAL_BYTES,
-    ShardingNotSupportedError,
     ShardPlan,
     download_sharded,
     plan_shards,
     probe_range_support,
     truncate_to_prefix,
 )
-
 
 # ---------------------------------------------------------------------------
 # 假 HTTP 客户端

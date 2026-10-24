@@ -290,8 +290,8 @@ def searxng_base_url(ctx: ToolContext | None = None) -> str:
                 configured = (load_settings().extra or {}).get(SEARXNG_URL_SETTING)
             if isinstance(configured, str) and configured.strip():
                 return configured.strip().rstrip("/")
-        except Exception:  # noqa: BLE001 — config is optional
-            pass
+        except Exception as e:  # noqa: BLE001 — config is optional
+            log.debug("读取 SearXNG 配置失败，回退到环境变量: %s", e)
     env = os.environ.get(SEARXNG_URL_ENV, "").strip().rstrip("/")
     return env
 

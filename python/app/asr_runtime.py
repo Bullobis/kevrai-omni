@@ -330,10 +330,7 @@ class AsrManager:
         raw = ""
         if isinstance(res, (list, tuple)) and res:
             first = res[0]
-            if isinstance(first, dict):
-                raw = str(first.get("text") or "")
-            else:
-                raw = str(first)
+            raw = str(first.get("text") or "") if isinstance(first, dict) else str(first)
         elif isinstance(res, dict):
             raw = str(res.get("text") or "")
         else:

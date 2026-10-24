@@ -27,7 +27,8 @@ from __future__ import annotations
 
 import math
 import re
-from typing import Any, Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
+from typing import Any
 
 # ASCII word / number runs, and CJK ideographs (CJK Unified Ideographs + Ext A +
 # compatibility ideographs). Everything else is a separator.
@@ -109,7 +110,7 @@ class BM25:
         self._avgdl = 0.0
 
     # -- fitting ----------------------------------------------------------
-    def fit(self, texts: Iterable[str]) -> "BM25":
+    def fit(self, texts: Iterable[str]) -> BM25:
         """Index ``texts``, replacing any previously fitted corpus."""
         self._tf = []
         self._lens = []

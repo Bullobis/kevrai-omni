@@ -31,6 +31,7 @@ when nothing matches. It never silently guesses; it reports what it tried.
 from __future__ import annotations
 
 import contextlib
+import logging
 import threading
 import time
 import uuid
@@ -529,8 +530,9 @@ def _load_pipeline(model_id: str, mode: str) -> Any:
     ]
     try:
         return DiffusionPipeline.from_pretrained(model_id, trust_remote_code=True)
-    except Exception:  # noqa: BLE001 — fall through to explicit class lookup
-        pass
+    except Exception as e:  # noqa: BLE001 — fall through to explicit class lookup
+        logging.getLogger("kevrai.three_d").debug(
+            "DiffusionPipeline.from_pretrained 未命中，改按类名加载: %s", e)
 
     import diffusers
 

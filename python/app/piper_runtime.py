@@ -293,10 +293,7 @@ def resolve_reference_audio(
     root = Path(data_root).resolve()
     if explicit:
         cand = Path(explicit)
-        if not cand.is_absolute():
-            cand = (root / cand).resolve()
-        else:
-            cand = cand.resolve()
+        cand = (root / cand).resolve() if not cand.is_absolute() else cand.resolve()
         try:
             cand.relative_to(root)
         except ValueError as e:
@@ -489,8 +486,8 @@ class PiperManager:
         Kokoro 的 KPipeline 按"段落生成器"返回，长文本会产出多段音频；
         这里把各段拼接成一条连续音频，避免上层拿到半截。
         """
+
         import numpy as np
-        import wave
 
         voice = kokoro_voice_id(voice_id)
         lang_code = voice[0] if voice else "a"
@@ -550,7 +547,7 @@ class PiperManager:
                     and torch.backends.mps.is_available():
                 return "mps"
         except Exception:  # noqa: BLE001 — torch 没装 / 后端不可用
-            pass
+            LOG.debug("未检测到 CUDA/MPS，回退 CPU")
         return "cpu"
 
     def synthesize_chatterbox(
