@@ -87,7 +87,9 @@ async function runCheck() {
     r = await api.checkUpdates();
   } catch (e) {
     setStatus(t("update.checkFailed"));
-    toast(t("update.checkErrToast", { err: e?.message || e }), { kind: "err" });
+    const msg = e?.message || String(e);
+    const netErr = /network|ENOTFOUND|ECONN|ETIMEDOUT|ENETUNREACH|access_denied|offline|ERR_/i.test(msg);
+    if (!netErr) toast(t("update.checkErrToast", { err: msg }), { kind: "err" });
     return;
   }
 

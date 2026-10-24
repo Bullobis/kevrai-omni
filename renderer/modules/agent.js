@@ -229,6 +229,11 @@ function _wireEvents(root) {
     brainSelect.addEventListener("change", async () => {
       brainSelect.disabled = true;
       try {
+        if (!brainSelect.value) {
+          toast(t("agent.ruleSelected"), { kind: "ok" });
+          await _refreshStatus();
+          return;
+        }
         const r = unwrap(await api.agentSetBrain(brainSelect.value));
         toast(brainSelect.value
           ? t("agent.brainSelected", { model: brainSelect.value })

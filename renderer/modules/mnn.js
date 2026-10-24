@@ -143,7 +143,7 @@ function _renderEngineStateInner(root, el, st) {
     installBtn.disabled = true;
     installBtn.textContent = t("mnn.installing");
     try {
-      await api.envInstallPip({ name: "MNN" });
+      await api.envInstallPip({ name: "MNN", kind: "pip" });
       toast(t("mnn.installDone"), { kind: "ok" });
       await renderEngineState(root);
     } catch (_) { /* toast shown */ }

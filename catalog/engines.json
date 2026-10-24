@@ -722,6 +722,24 @@
         "https://pypi.tuna.tsinghua.edu.cn/simple/PyMuPDF/",
         "https://github.com/ArtifexSoftware/PyMuPDF"
       ]
+    },
+    {
+      "id": "ming-tts",
+      "name": "Ming-3.0 TTS (0.5B)",
+      "category": "tts",
+      "description": "蚂蚁 inclusionAI Ming-3.0-tts-0.5B 的 MNN CPU 版，中英文、内置音色、语气指令控制，int8 档约 1.5GB。",
+      "install": "pip",
+      "pypi": "ming-tts-mnn",
+      "license": "MIT",
+      "size_mb": 1600,
+      "trending": true,
+      "platforms": {
+        "linux-x64": "https://hf-mirror.com/yunfengwang/Ming-3.0-tts-0.5B-MNN"
+      },
+      "sources": [
+        "https://hf-mirror.com/yunfengwang/Ming-3.0-tts-0.5B-MNN",
+        "https://huggingface.co/inclusionAI/Ming-3.0-tts-0.5B"
+      ]
     }
   ]
 }

@@ -382,18 +382,9 @@ async function _renderEngineRoute(host, detail) {
 async function installItem(item) {
   const engines = Array.isArray(item.engine) ? item.engine
                 : (item.engine ? [item.engine] : []);
-  if (!engines.length) {
-    toast(t("toast.engineNotSpecified"), { kind: "warn" });
-    return;
-  }
-
-  // v4.11.0 — 让用户自己选引擎。
-  //
-  // 以前这里写死 `installEngine(engines[0])`：支持 llama.cpp / mnn /
-  // transformers 多个引擎的模型，装出来的永远是目录里的第一个，用户没有
-  // 选择余地。注释声称"详情面板里可以换"，但那上面只有"装引擎"按钮，
-  // 装完不下权重，不是同一件事。
-  let chosenEngine = engines[0];
+  // import_only 模型（没有匹配到引擎）不再被挡回：跳过引擎安装，
+  // 直接走 planInstall 自动挑文件下载，让所有模型都能"下载"而不只是导入。
+  let chosenEngine = engines[0] || "";
   if (engines.length > 1) {
     const { pickEngine, applyEngineChoice } = await import("./engine-picker.js");
     const res = await pickEngine({
@@ -408,10 +399,12 @@ async function installItem(item) {
   }
 
   // Make sure the preferred engine is present; multi-engine models can pick a
-  // different engine from the detail panel.
-  try {
-    await api.installEngine(chosenEngine);
-  } catch (_) { /* toast shown by api */ }
+  // different engine from the detail panel. import_only 模型无引擎则跳过。
+  if (chosenEngine) {
+    try {
+      await api.installEngine(chosenEngine);
+    } catch (_) { /* toast shown by api */ }
+  }
 
   // GGUF models ship several revisions (branches/tags) and quantizations.
   // First pick a revision (defaulting to main, skipped when there is no

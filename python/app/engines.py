@@ -875,6 +875,12 @@ def list_engines_status(
             "version": rec.version if rec else "",
             "install_path": st.get("path", "") or (rec.install_path if rec else ""),
             "message": st.get("message", ""),
+            # 实时安装/下载遥测（pip 安装时 active_url 是 pip 输出行）
+            "state": rec.state.value if rec else "",
+            "active_url": rec.active_url if rec else "",
+            "progress": rec.progress if rec else 0.0,
+            "downloaded_bytes": rec.downloaded_bytes if rec else 0,
+            "total_bytes": rec.total_bytes if rec else 0,
         })
     return out
 

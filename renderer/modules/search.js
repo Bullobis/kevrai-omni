@@ -64,16 +64,13 @@ async function probeSources() {
   }
   if (!body || !body.sources) return body;
   const online = Array.isArray(body.online) ? body.online : [];
-  const before = searchState.sources.slice();
-  // `curated` is local and always available; only remote sources can be dropped.
-  searchState.sources = searchState.sources.filter(
-    (s) => s === "curated" || !(s in body.sources) || online.includes(s)
+  // 探测失败不永久删除源（魔搭在慢网络上常被误判），只是提示。
+  // 用户仍可手动勾选魔搭搜索，搜不到再降级。
+  const offline = ["hf", "modelscope"].filter(
+    (s) => s in (body.sources || {}) && !online.includes(s)
   );
-  // Never end up with zero sources — fall back to curated rather than erroring.
-  if (!searchState.sources.length) searchState.sources = ["curated"];
-  const dropped = before.filter((s) => !searchState.sources.includes(s));
-  if (dropped.length) {
-    const names = dropped.map((s) => (s === "hf" ? "Hugging Face" : "ModelScope"));
+  if (offline.length) {
+    const names = offline.map((s) => (s === "hf" ? "Hugging Face" : "ModelScope"));
     toast(t("market.sourceUnreachable", { names: names.join(" / ") }), { kind: "warn" });
   }
   return body;

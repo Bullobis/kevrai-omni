@@ -72,6 +72,7 @@ from . import (
     mnn_runtime,
     multimodal_runtime,
     music_runtime,
+    ming_tts_runtime,
     ocr_runtime,
     piper_runtime,
 )
@@ -4917,6 +4918,27 @@ def piper_synthesize_route(
         code = 503 if isinstance(e, piper_runtime.PiperEngineMissing) else (
             400 if isinstance(e, piper_runtime.PiperParamError) else 422)
         raise HTTPException(status_code=code, detail=str(e)) from e
+
+
+# --- Ming-3.0 TTS（MNN，CPU 友好，语气控制）----------------------------------
+
+class MingTTSReq(BaseModel):
+    text: str
+    precision: str = "int8"
+    instruction: str | None = None
+    seed: int = 0
+
+
+@app.post("/api/tts-ming/synthesize")
+def ming_tts_synthesize_route(req: MingTTSReq) -> Response:
+    try:
+        data = ming_tts_runtime.synthesize(
+            req.text, data_root=APP_ROOT, precision=req.precision,
+            instruction=req.instruction, seed=req.seed,
+        )
+    except ming_tts_runtime.MingTTSError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    return Response(content=data, media_type="audio/wav")
 
 
 # --- 声音克隆档案（Chatterbox 参考音频）------------------------------------

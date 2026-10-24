@@ -233,7 +233,7 @@ async function installOrUpgrade(pkg) {
     if (pkg.version) {
       await api.envUpgrade({ name: pkg.name, mirrors });
     } else {
-      await api.envInstallPip({ name: pkg.name, mirrors });
+      await api.envInstallPip({ name: pkg.name, kind: "pip", mirrors });
     }
     toast(`${pkg.name} 完成`);
     // refresh
