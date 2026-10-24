@@ -217,12 +217,13 @@ async def test_E06_missing_fields_ok(fake_hub):
 
 
 def test_E07_page_size_clamped():
-    assert SearchSpec(page_size=100000).normalized().page_size == 100
+    # 单页最多 30 条：屏幕一屏显示不了更多，翻页用 cursor 懒加载。
+    assert SearchSpec(page_size=100000).normalized().page_size == 30
 
 
 def test_E08_bad_page_size_defaults():
     for bad in (0, -1, "abc", None):
-        assert 1 <= SearchSpec(page_size=bad).normalized().page_size <= 100
+        assert 1 <= SearchSpec(page_size=bad).normalized().page_size <= 30
 
 
 async def test_E09_empty_result_no_runaway(fake_hub):

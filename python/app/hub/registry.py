@@ -558,8 +558,11 @@ class HubRegistry:
             page_size=max(1, min(100, int(limit))), sources=[hub],
         )
         try:
+            # 魔搭等国内源在部分网络下较慢但结果重要，不能轻易跳过；
+            # 30s 只是防卡死上限——网络正常时它在时限内正常返回，只有真
+            # 卡死/黑洞网络才降级，避免"几乎次次跳过魔搭"。
             res = await asyncio.wait_for(
-                ad.search(sub, cursor or SourceCursor()), timeout=8.0,
+                ad.search(sub, cursor or SourceCursor()), timeout=30.0,
             )
         except asyncio.TimeoutError:
             # 某个源（常见为魔搭在网络受限时）慢到拖垮整页：降级为空结果，

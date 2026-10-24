@@ -581,7 +581,7 @@ class SearchSpec:
             engine=clamp_str(self.engine, 64).strip(),
             license=clamp_str(self.license, 128).strip(),
             sort=sort,
-            page_size=clamp_int(self.page_size, 30, 1, 100),
+            page_size=clamp_int(self.page_size, 30, 1, 30),
             sources=ordered,
         )
 

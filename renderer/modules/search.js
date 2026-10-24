@@ -16,7 +16,7 @@ const $ = (s) => document.querySelector(s);
 let vgrid = null;
 let searchState = {
   q: "", cat: "", engine: "", license: "", sizeBucket: "",
-  trendingOnly: false, sort: "relevance", page: 1, pageSize: 60,
+  trendingOnly: false, sort: "relevance", page: 1, pageSize: 25,
   items: [], facets: null, suggestions: [], recent: [], elapsedMs: 0, count: 0,
   loading: false,
   // v2.8.0 — hub cursor pagination
