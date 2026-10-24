@@ -1828,3 +1828,45 @@ html[data-theme="light"] .skeleton-card::after {
   gap: 8px; padding: 6px 8px; font-size: var(--fs-sm);
 }
 #pane-image .img-download { white-space: nowrap; }
+
+/* ---- 3D 生成面板（v4.16.0）---- */
+#pane-3d .form-row-inline {
+  display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+}
+#pane-3d .form-row-inline label {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+}
+#pane-3d .mm-progress {
+  height: 8px; border-radius: 4px; background: var(--stack-3, #e5e7eb);
+  overflow: hidden; margin: 8px 0;
+}
+#pane-3d .mm-progress-bar {
+  height: 100%; background: var(--accent, #2563eb);
+  transition: width .3s ease;
+}
+
+/* ---- 通用创作面板卡片样式（图片/3D 共用，v4.16.0）---- */
+#pane-image .asr-form, #pane-3d .asr-form, #pane-image .asr-result, #pane-3d .asr-result, #pane-image .asr-engine-missing, #pane-3d .asr-engine-missing {
+  background: var(--card, #fff);
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: var(--radius-md, 12px);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+#pane-image .asr-form, #pane-3d .asr-form { display: flex; flex-direction: column; gap: 12px; }
+#pane-image .asr-engine-missing, #pane-3d .asr-engine-missing { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+#pane-image .pane-head, #pane-3d .pane-head { margin-bottom: 14px; }
+#pane-image .pane-head, #pane-3d .pane-head h2 { margin: 0 0 2px; font-size: var(--fs-xl, 20px); }
+#pane-image .form-row, #pane-3d .form-row { display: flex; flex-direction: column; gap: 5px; }
+#pane-image .form-row, #pane-3d .form-row label { font-size: var(--fs-sm, 13px); color: var(--mut, #6b7280); }
+#pane-image .form-row, #pane-3d .form-row select, #pane-image .form-row, #pane-3d .form-row input[type="text"], #pane-image .form-row, #pane-3d .form-row input[type="number"],
+#pane-image .form-row, #pane-3d .form-row textarea {
+  background: var(--bg-1, #f9fafb);
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: 8px; padding: 8px 10px; font-size: var(--fs-sm, 13px);
+  color: var(--fg, #111827); width: 100%; box-sizing: border-box;
+}
+#pane-image .form-row, #pane-3d .form-row textarea:focus, #pane-image .form-row, #pane-3d .form-row input:focus, #pane-image .form-row, #pane-3d .form-row select:focus {
+  outline: none; border-color: var(--accent, #2563eb);
+}
+#pane-image .form-actions, #pane-3d .form-actions { display: flex; gap: 10px; align-items: center; margin-top: 4px; }

@@ -30,6 +30,7 @@ import { initCompareAnswers } from "./modules/compare-answers.js";
 import { initMultimodal } from "./modules/multimodal.js";
 import { initMusic } from "./modules/music.js";
 import { initImage } from "./modules/image.js";
+import { initThreeD } from "./modules/three-d.js";
 import { initTranslate } from "./modules/translate.js";
 import { renderEngines, wireEngineUpdates } from "./modules/engines.js";
 import { wireSettings, openSettings, closeSettings } from "./modules/settings.js";
@@ -335,6 +336,13 @@ function switchView(name) {
     if (root && !root.dataset.rendered) {
       root.dataset.rendered = "1";
       initImage().catch((e) => toast(t("image.failed", { err: e.message }), { kind: "err" }));
+    }
+  }
+  if (name === "3d") {
+    const root = document.getElementById("pane-3d");
+    if (root && !root.dataset.rendered) {
+      root.dataset.rendered = "1";
+      initThreeD().catch((e) => toast(t("3d.failed", { err: e.message }), { kind: "err" }));
     }
   }
   // v2.7.0 — Kevrai Agent page (init once).
