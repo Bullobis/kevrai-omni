@@ -96,7 +96,9 @@ export function renderEngines() {
         if (e) e.installed = false;
         toast(t("engines.uninstallDone", { id }), { kind: "ok" });
         renderEngines();
-      } catch (_) {}
+      } catch (e) {
+        toast(`${t("engines.uninstallFailed", { id })}：${e.message || e}`, { kind: "err" });
+      }
       b.disabled = false;
     })
   );

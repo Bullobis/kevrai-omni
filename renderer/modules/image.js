@@ -183,7 +183,7 @@ async function generate() {
   btn.disabled = true;
   btn.textContent = t("image.generating");
   try {
-    const res = await api.comfyuiImageGenerate({
+    const params = {
       template_id: tmpl.id || "sd15-txt2img",
       ckpt_name: ckpt,
       prompt,
@@ -195,17 +195,73 @@ async function generate() {
       width: w,
       height: h,
       batch_size: Number($("#image-batch").value),
-      seed: Number($("#image-seed").value || 0),
-      wait: true,
-      include_images: true,
-    });
-    renderResult(res);
+      seed: Number($("#image-seed").value.trim() === "" ? -1 : $("#image-seed").value),
+      filename_prefix: "kevrai",
+    };
+    // 优先走流式 WS（实时采样进度）；连不上时回退同步等待。
+    try {
+      await generateViaStream(params);
+    } catch (streamErr) {
+      const res = await api.comfyuiImageGenerate({ ...params, wait: true, include_images: true });
+      renderResult(res);
+    }
   } catch (e) {
     toast(e.message, { kind: "err" });
   } finally {
     btn.disabled = false;
     btn.textContent = t("image.run");
+    hideProgress();
   }
+}
+
+// 流式文生图：连 sidecar /ws/comfyui/generate，逐帧显示采样进度。
+function generateViaStream(params) {
+  return api.agentWsInfo().then((info) => new Promise((resolve, reject) => {
+    const url = `${info.baseUrl}/ws/comfyui/generate?token=${encodeURIComponent(info.token)}`;
+    const ws = new WebSocket(url);
+    let settled = false;
+    ws.onopen = () => ws.send(JSON.stringify(params));
+    ws.onmessage = (ev) => {
+      let m;
+      try { m = JSON.parse(ev.data); } catch { return; }
+      if (m.type === "progress") {
+        setProgress(m.step || 0, m.max || 1);
+      } else if (m.type === "done") {
+        settled = true;
+        renderResult({ images: m.images || [], params: m.params || {} });
+        try { ws.close(); } catch {}
+        resolve();
+      } else if (m.type === "error") {
+        settled = true;
+        try { ws.close(); } catch {}
+        reject(new Error(m.message || "生成失败"));
+      }
+    };
+    ws.onerror = () => { if (!settled) reject(new Error("stream error")); };
+    ws.onclose = () => { if (!settled) reject(new Error("stream closed")); };
+  }));
+}
+
+// 采样进度条（动态插入生成按钮下方）。
+function setProgress(step, max) {
+  const box = ensureProgressEl();
+  const pct = Math.min(100, Math.round((step / Math.max(1, max)) * 100));
+  box.innerHTML = `<div class="progress"><div class="progress-bar" style="width:${pct}%"></div></div>` +
+    `<p class="muted" style="margin:.4rem 0 0">采样中 ${step}/${max}（${pct}%）</p>`;
+}
+function ensureProgressEl() {
+  let el = $("#image-progress");
+  if (el) return el;
+  el = document.createElement("div");
+  el.id = "image-progress";
+  el.style.marginTop = ".5rem";
+  const run = $("#image-run");
+  if (run && run.parentNode) run.parentNode.insertBefore(el, run.nextSibling);
+  return el;
+}
+function hideProgress() {
+  const el = $("#image-progress");
+  if (el) el.remove();
 }
 
 async function freeMemory() {

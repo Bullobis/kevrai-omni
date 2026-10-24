@@ -956,7 +956,15 @@ function getAutoUpdater() {
       });
     });
     autoUpdater.on("error", (e) => {
-      notifyRenderer("kevrai:update-error", { message: (e && e.message) ? e.message : String(e) });
+      const msg = (e && e.message) ? e.message : String(e);
+      // 网络被拒/离线时（如 ERR_NETWORK_ACCESS_DENIED）不打扰用户，
+      // 后台静默即可；只有真出问题才通知。
+      const netErr = /network|ENOTFOUND|ECONN|ETIMEDOUT|ENETUNREACH|access_denied|offline/i.test(msg);
+      if (netErr) {
+        console.warn("[updater] skipped network error:", msg);
+        return;
+      }
+      notifyRenderer("kevrai:update-error", { message: msg });
     });
     _auInstance = autoUpdater;
     return _auInstance;

@@ -1901,3 +1901,7 @@ html[data-theme="light"] .skeleton-card::after {
 }
 .engine-card .ep-label { font-size: 12px; font-variant-numeric: tabular-nums; }
 .engine-card .ep-host { font-size: 11px; opacity: .7; }
+
+/* 生图采样进度条 */
+.progress { height: 8px; background: rgba(128,128,128,.2); border-radius: 4px; overflow: hidden; }
+.progress-bar { height: 100%; background: linear-gradient(90deg,#4f8cff,#7c5cff); transition: width .3s ease; }

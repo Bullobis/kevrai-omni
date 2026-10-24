@@ -215,6 +215,7 @@
     "installDone": "{id} installed",
     "dlFrom": "Downloading from {host}",
     "uninstallDone": "{id} uninstalled",
+    "uninstallFailed": "Failed to uninstall {id}",
     "updateDone": "{id} updated to {v}",
     "updateDoneNoVer": "{id} updated"
   },

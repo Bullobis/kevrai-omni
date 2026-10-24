@@ -215,6 +215,7 @@
     "installDone": "{id} 安装完成",
     "dlFrom": "正在从 {host} 下载",
     "uninstallDone": "{id} 已卸载",
+    "uninstallFailed": "{id} 卸载失败",
     "updateDone": "{id} 已更新到 {v}",
     "updateDoneNoVer": "{id} 已更新"
   },
@@ -1122,7 +1123,8 @@
     "cfg": "提示词相关性 CFG",
     "sampler": "采样器",
     "scheduler": "调度器",
-    "seed": "种子（0=随机）",
+    "seed": "种子（-1=随机）",
+    "seedHint": "留空或填 -1 每次随机；填固定数字可复现同一图",
     "batch": "一次出几张",
     "run": "生成图片",
     "generating": "正在生成图片…",

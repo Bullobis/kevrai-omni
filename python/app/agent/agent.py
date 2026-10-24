@@ -9,6 +9,7 @@ execute tools.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import threading
@@ -218,6 +219,8 @@ class Agent:
         # the WebSocket). None (the default) disables streaming — the answer is
         # only surfaced once, complete, in the AgentStep / AgentResult.
         self._answer_callback: Callable[[str], None] | None = None
+        # 工具开始执行时回调 (tool_name, params)，用于前端实时进度。
+        self._tool_start_callback: Callable[[str, dict], None] | None = None
 
         # --- Tool-call approval gate ----------------------------------------
         # Per-session policy ("auto" = run everything immediately, the default;
@@ -361,6 +364,10 @@ class Agent:
         """Set a callback invoked with each final-answer text delta as it
         streams from the brain (for a live answer bubble). Pass None to stop."""
         self._answer_callback = cb
+
+    def set_tool_start_callback(self, cb: Callable[[str, dict], None] | None) -> None:
+        """工具开始执行时回调 (tool_name, params)，用于前端实时进度。"""
+        self._tool_start_callback = cb
 
     # ------------------------------------------------------------------
     # Best-effort memory persistence
@@ -910,6 +917,11 @@ class Agent:
                 break
             if gate.approved:
                 tool_params = gate.effective_params
+                # 工具真正开始执行前先通知前端（学 Operit ToolProgressBus），
+                # 让用户立刻看到"正在执行哪个工具"，而不是等执行完才知道。
+                if self._tool_start_callback:
+                    with contextlib.suppress(Exception):
+                        self._tool_start_callback(tool_name, tool_params)
                 obs = self.registry.execute(tool_name, tool_params, self.ctx)
             else:
                 why = "已超时，按未批准处理" if gate.reason == "timeout" else "用户未批准"

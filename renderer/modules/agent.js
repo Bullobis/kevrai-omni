@@ -887,7 +887,13 @@ function _sendViaStream(message, thinking, thinkingText) {
       ws.onmessage = (ev) => {
         let msg;
         try { msg = JSON.parse(ev.data); } catch { return; }
-        if (msg.event === "step") {
+        if (msg.event === "tool_start") {
+          // 工具刚被调用、正在执行：立刻显示，别等结果。
+          if (thinkingText) {
+            thinkingText.textContent = `${t("agent.callingTool")}: ${msg.tool}`;
+            thinking.classList.remove("hidden");
+          }
+        } else if (msg.event === "step") {
           steps.push(msg);
           if (msg.action_tool) {
             thinkingText.textContent = `${t("agent.callingTool")}: ${msg.action_tool}`;

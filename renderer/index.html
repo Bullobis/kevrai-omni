@@ -853,8 +853,9 @@
                 <select id="image-scheduler"></select>
               </div>
               <div class="form-row">
-                <label for="image-seed" data-i18n="image.seed">种子（0=随机）</label>
-                <input id="image-seed" type="number" min="0" value="0" />
+                <label for="image-seed" data-i18n="image.seed">种子（-1=随机）</label>
+                <input id="image-seed" type="number" min="-1" value="-1" />
+                <small class="field-hint" data-i18n="image.seedHint">留空或填 -1 每次随机；填固定数字可复现同一图</small>
               </div>
               <div class="form-row">
                 <label for="image-batch" data-i18n="image.batch">一次出几张</label>
