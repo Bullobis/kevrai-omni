@@ -1590,7 +1590,9 @@ function registerIpc() {
   ipcMain.handle("api:engines",       async () => sidecarFetch("/api/engines"));
   ipcMain.handle("api:engines:install", async (_e, engine_id) => {
     assert(isString(engine_id, 128), "engine_id: invalid");
-    return sidecarFetch("/api/engines/install", { method: "POST", body: { engine_id } });
+    // 引擎二进制可能几十~几百 MB，默认 30s 会在下载中途断连报 "sidecar timeout"。
+    // 后端有 /api/engines/status 进度遥测；这里把单次 HTTP 等待放宽到 10 分钟。
+    return sidecarFetch("/api/engines/install", { method: "POST", body: { engine_id }, timeoutMs: 600_000 });
   });
   // v2.4.1 — engine update detection / one-click update
   ipcMain.handle("api:engines:check-updates", async (_e, opts) => {
@@ -1599,7 +1601,7 @@ function registerIpc() {
   });
   ipcMain.handle("api:engines:update", async (_e, engine_id) => {
     assert(isString(engine_id, 128), "engine_id: invalid");
-    return sidecarFetch("/api/engines/update", { method: "POST", body: { engine_id } });
+    return sidecarFetch("/api/engines/update", { method: "POST", body: { engine_id }, timeoutMs: 600_000 });
   });
   ipcMain.handle("api:models:import", async (_e, p) => {
     assert(isString(p, 4096), "path: invalid");
@@ -1669,7 +1671,7 @@ function registerIpc() {
   ipcMain.handle("kevrai:env-install-engine", async (_e, opts) => {
     assert(opts && typeof opts === "object", "opts: invalid");
     assertString(opts.id, "opts.id", 128);
-    return sidecarFetch("/api/env/install-engine", { method: "POST", body: opts });
+    return sidecarFetch("/api/env/install-engine", { method: "POST", body: opts, timeoutMs: 600_000 });
   });
   ipcMain.handle("kevrai:measure-sources", async (_e, body) => {
     assert(body && typeof body === "object", "body: invalid");

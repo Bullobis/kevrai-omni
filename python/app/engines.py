@@ -755,8 +755,37 @@ def download_zip_engine(url: str, root: Path, engine_id: str) -> InstallResult:
     for cand in candidates:
         try:
             _stream_download(cand, tmp)
-            break
         except Exception as e:  # noqa: BLE001 — try the next mirror
+            last_err = e
+            tmp.unlink(missing_ok=True)
+            continue
+        # 镜像有时返回 200 但内容是 HTML 错误页/限速页，落盘后才会在解压时炸出
+        # "File is not a zip file"。下载成功 ≠ 内容正确：解压前先校验归档魔数，
+        # 不是 zip 就当作该镜像坏了，继续试下一个候选源。
+        if not zipfile.is_zipfile(tmp):
+            head = b""
+            try:
+                with open(tmp, "rb") as fh:
+                    head = fh.read(256)
+            except OSError:
+                pass
+            looks_html = head.lstrip().lower().startswith((b"<!doctype", b"<html", b"{"))
+            last_err = RuntimeError(
+                f"mirror returned a {'web page' if looks_html else 'non-archive'} instead of the binary ({cand})"
+            )
+            tmp.unlink(missing_ok=True)
+            continue
+        try:
+            with zipfile.ZipFile(tmp, "r") as zf:
+                # P0-2 (H2): same Zip-Slip guard as the EngineManager path above.
+                _hub_safe_extract(zf, target_dir)
+            tmp.unlink(missing_ok=True)
+            return InstallResult(engine_id=engine_id, path=str(target_dir), ok=True, message="installed")
+        except Exception as e:
+            # N5：解压失败（损坏 zip / Zip-Slip / IO）时，下载下来的 download.tmp 是
+            # 一个不再可恢复的临时归档（本 legacy 路径不支持 Range 断点续传，下次会重下），
+            # 必须删掉，否则每次失败都在 engine 目录里留一份完整 zip。
+            tmp.unlink(missing_ok=True)
             last_err = e
             continue
     else:
@@ -765,18 +794,6 @@ def download_zip_engine(url: str, root: Path, engine_id: str) -> InstallResult:
             engine_id=engine_id, path="", ok=False,
             message=f"download failed: {last_err}",
         )
-    try:
-        with zipfile.ZipFile(tmp, "r") as zf:
-            # P0-2 (H2): same Zip-Slip guard as the EngineManager path above.
-            _hub_safe_extract(zf, target_dir)
-        tmp.unlink(missing_ok=True)
-        return InstallResult(engine_id=engine_id, path=str(target_dir), ok=True, message="installed")
-    except Exception as e:
-        # N5：解压失败（损坏 zip / Zip-Slip / IO）时，下载下来的 download.tmp 是
-        # 一个不再可恢复的临时归档（本 legacy 路径不支持 Range 断点续传，下次会重下），
-        # 必须删掉，否则每次失败都在 engine 目录里留一份完整 zip。
-        tmp.unlink(missing_ok=True)
-        return InstallResult(engine_id=engine_id, path="", ok=False, message=f"download failed: {e}")
 
 
 def install_engine(engine: dict[str, Any], root: Path) -> InstallResult:
