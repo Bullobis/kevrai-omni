@@ -1,0 +1,89 @@
+:root{
+  --bg:#0e0f12; --bg2:#15171c; --fg:#e6e7ea; --mut:#9aa0ab;
+  --line:#23262d; --ac:#7ee2a8; --ac2:#5bbf8a; --card:#17191f;
+}
+@media(prefers-color-scheme:light){
+  :root{ --bg:#fafaf9; --bg2:#fff; --fg:#1c1d20; --mut:#5f6570;
+    --line:#e6e4e0; --ac:#1f7a4d; --ac2:#186a41; --card:#fff; }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--fg);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",
+    "PingFang SC","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+header{
+  position:sticky;top:0;z-index:10;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.nav{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{font-weight:600;letter-spacing:.2px}
+.logo span{color:var(--ac)}
+.nav nav{display:flex;gap:22px;font-size:14px;color:var(--mut)}
+.nav nav a:hover{color:var(--fg)}
+.nav nav a.on{color:var(--fg)}
+.btn{
+  display:inline-block;padding:9px 18px;border-radius:8px;font-size:14px;
+  border:1px solid var(--line);color:var(--fg);transition:.15s;
+}
+.btn:hover{border-color:var(--ac);color:var(--ac)}
+.btn.primary{background:var(--ac);color:#0b0d0a;border-color:transparent;font-weight:500}
+.btn.primary:hover{background:var(--ac2);color:#fff}
+
+.hero{padding:96px 0 72px;border-bottom:1px solid var(--line)}
+.hero h1{font-size:44px;line-height:1.2;font-weight:700;letter-spacing:-.5px;max-width:680px}
+.hero p{margin-top:20px;font-size:18px;color:var(--mut);max-width:620px}
+.cta{margin-top:32px;display:flex;gap:12px;flex-wrap:wrap}
+.meta{margin-top:40px;font-size:13px;color:var(--mut);display:flex;gap:20px;flex-wrap:wrap}
+.meta b{color:var(--fg);font-weight:500}
+
+section{padding:64px 0;border-bottom:1px solid var(--line)}
+h2{font-size:26px;font-weight:600;letter-spacing:-.3px;margin-bottom:8px}
+.sub{color:var(--mut);margin-bottom:36px;max-width:640px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cell{background:var(--card);padding:24px}
+.cell h3{font-size:15px;font-weight:600;margin-bottom:6px}
+.cell p{font-size:13.5px;color:var(--mut)}
+
+.stack{display:flex;flex-wrap:wrap;gap:8px}
+.tag{font-size:13px;padding:5px 12px;border:1px solid var(--line);border-radius:999px;color:var(--mut)}
+
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px}
+.step .n{font-size:13px;color:var(--ac);font-weight:600;margin-bottom:8px}
+.step h3{font-size:15px;margin-bottom:6px}
+.step p{font-size:13.5px;color:var(--mut)}
+
+/* download page */
+.os-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.os{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px}
+.os h3{font-size:17px;margin-bottom:4px}
+.os .ver{font-size:12px;color:var(--mut);margin-bottom:18px}
+.os ul{list-style:none}
+.os li{margin:8px 0}
+.os li a{font-size:14px;color:var(--ac)}
+.os li a:hover{text-decoration:underline}
+.os li small{color:var(--mut);margin-left:6px}
+.note{margin-top:28px;padding:16px 18px;background:var(--card);border:1px solid var(--line);border-radius:10px;font-size:13.5px;color:var(--mut)}
+.note b{color:var(--fg)}
+
+/* docs page */
+.prose{max-width:720px}
+.prose h3{font-size:18px;margin:32px 0 10px}
+.prose p{color:var(--mut);margin:10px 0}
+.prose code{background:var(--bg2);padding:2px 7px;border-radius:5px;font-size:13px;color:var(--fg)}
+.prose ol{margin:10px 0 10px 22px;color:var(--mut)}
+.prose li{margin:6px 0}
+
+footer{padding:36px 0;color:var(--mut);font-size:13px}
+.flex{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+@media(max-width:760px){
+  .grid,.os-grid,.steps{grid-template-columns:1fr}
+  .hero h1{font-size:32px}.nav nav{display:none}
+}

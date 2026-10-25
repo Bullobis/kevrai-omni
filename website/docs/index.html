@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>上手 · Kevrai Omni</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header><div class="wrap nav">
+  <a class="logo" href="/">Kevrai<span>·</span>Omni</a>
+  <nav>
+    <a href="/">首页</a>
+    <a href="/downloads/">下载</a>
+    <a href="/docs/" class="on">上手</a>
+    <a href="https://github.com/Bullobis/kevrai-omni">GitHub</a>
+  </nav>
+  <a class="btn primary" href="/downloads/">下载</a>
+</div></header>
+
+<section><div class="wrap prose">
+  <h1 style="font-size:32px;font-weight:700;letter-spacing:-.3px">第一次使用</h1>
+  <p class="sub">跟着三步走，不需要碰命令行。</p>
+
+  <h3>1. 安装</h3>
+  <p>从 <a style="color:var(--ac)" href="/downloads/">下载页</a> 选对应系统的安装包。Windows 双击 .exe，macOS 打开 .dmg 拖进应用程序，Linux 装 .deb 或直接跑 AppImage。</p>
+
+  <h3>2. 准备引擎</h3>
+  <p>首次启动会引导你装一个推理引擎。日常对话推荐 <code>llama.cpp</code>（跑 GGUF 模型，兼容性最好）；有国产 NPU 或想跑 MNN 量化模型再装 <code>MNN</code>。安装是一条进度条，后台自动拉取，失败会提示原因。</p>
+
+  <h3>3. 下载并运行模型</h3>
+  <p>打开「模型市场」，搜索你想聊的模型。页面会根据你的内存/显存推荐合适的量化档。点下载，进度走完后在对话页选择即可。</p>
+
+  <h3>常用操作</h3>
+  <ol>
+    <li><code>Ctrl/⌘ + K</code>：命令面板，模糊搜任何功能。</li>
+    <li><code>Ctrl/⌘ + /</code>：查看全部快捷键。</li>
+    <li>设置里可切换深色/浅色主题、中文/英文、模型与引擎存放目录。</li>
+    <li>模型市场支持收藏与最近使用，筛选你常用的。</li>
+  </ol>
+
+  <h3>常见问题</h3>
+  <p><b>装引擎一直转圈？</b> 多为网络拉取 GitHub 超时。应用已内置国内镜像，若仍慢可在设置里换下载源。</p>
+  <p><b>模型下载一半断了？</b> 重新点下载会从断点续传，不会从头再来。</p>
+  <p><b>Mac 提示无法打开？</b> 到「系统设置 → 隐私与安全性」点"仍要打开"。</p>
+
+  <div class="note" style="margin-top:32px">
+    遇到问题？去
+    <a style="color:var(--ac)" href="https://github.com/Bullobis/kevrai-omni/issues">GitHub Issues</a>
+    提反馈，会附上你的环境信息，我们会跟进修复。
+  </div>
+</div></section>
+
+<footer><div class="wrap flex">
+  <span>© Kevrai Omni</span>
+  <span><a href="/">返回首页</a> · <a href="/downloads/">下载</a></span>
+</div></footer>
+</body>
+</html>

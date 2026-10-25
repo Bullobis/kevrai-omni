@@ -4,93 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kevrai Omni — 一键本地 AI 工作站</title>
-<meta name="description" content="Kevrai Omni 是开源的本地 AI 桌面应用：LLM、TTS、图像、视频、3D、音频、超分，llama.cpp + MNN 双引擎，硬件感知推荐。">
-<style>
-:root{
-  --bg:#0e0f12; --bg2:#15171c; --fg:#e6e7ea; --mut:#9aa0ab;
-  --line:#23262d; --ac:#7ee2a8; --ac2:#5bbf8a;
-}
-@media(prefers-color-scheme:light){
-  :root{ --bg:#fafaf9; --bg2:#fff; --fg:#1c1d20; --mut:#5f6570;
-    --line:#e6e4e0; --ac:#1f7a4d; --ac2:#186a41; }
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{
-  background:var(--bg);color:var(--fg);
-  font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",
-    "PingFang SC","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
-  -webkit-font-smoothing:antialiased;
-}
-a{color:inherit;text-decoration:none}
-.wrap{max-width:960px;margin:0 auto;padding:0 24px}
-header{
-  position:sticky;top:0;z-index:10;
-  background:color-mix(in srgb,var(--bg) 88%,transparent);
-  backdrop-filter:blur(8px);
-  border-bottom:1px solid var(--line);
-}
-.nav{display:flex;align-items:center;justify-content:space-between;height:60px}
-.logo{font-weight:600;letter-spacing:.2px}
-.logo span{color:var(--ac)}
-.nav nav{display:flex;gap:22px;font-size:14px;color:var(--mut)}
-.nav nav a:hover{color:var(--fg)}
-.btn{
-  display:inline-block;padding:9px 18px;border-radius:8px;font-size:14px;
-  border:1px solid var(--line);color:var(--fg);transition:.15s;
-}
-.btn:hover{border-color:var(--ac);color:var(--ac)}
-.btn.primary{background:var(--ac);color:#0b0d0a;border-color:transparent;font-weight:500}
-.btn.primary:hover{background:var(--ac2);color:#fff}
-
-.hero{padding:96px 0 72px;border-bottom:1px solid var(--line)}
-.hero h1{font-size:44px;line-height:1.2;font-weight:700;letter-spacing:-.5px;max-width:680px}
-.hero p{margin-top:20px;font-size:18px;color:var(--mut);max-width:620px}
-.cta{margin-top:32px;display:flex;gap:12px;flex-wrap:wrap}
-.meta{margin-top:40px;font-size:13px;color:var(--mut);display:flex;gap:20px;flex-wrap:wrap}
-.meta b{color:var(--fg);font-weight:500}
-
-section{padding:72px 0;border-bottom:1px solid var(--line)}
-h2{font-size:26px;font-weight:600;letter-spacing:-.3px;margin-bottom:8px}
-.sub{color:var(--mut);margin-bottom:36px;max-width:640px}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.cell{background:var(--bg2);padding:24px}
-.cell h3{font-size:15px;font-weight:600;margin-bottom:6px}
-.cell p{font-size:13.5px;color:var(--mut)}
-@media(max-width:760px){.grid{grid-template-columns:1fr}.hero h1{font-size:32px}.nav nav{display:none}}
-
-.stack{display:flex;flex-wrap:wrap;gap:8px}
-.tag{font-size:13px;padding:5px 12px;border:1px solid var(--line);border-radius:999px;color:var(--mut)}
-
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:8px}
-.step{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:24px}
-.step .n{font-size:13px;color:var(--ac);font-weight:600;margin-bottom:8px}
-.step h3{font-size:15px;margin-bottom:6px}
-.step p{font-size:13.5px;color:var(--mut)}
-@media(max-width:760px){.steps{grid-template-columns:1fr}}
-
-footer{padding:36px 0;color:var(--mut);font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
-</style>
+<meta name="description" content="开源本地 AI 桌面应用：LLM、TTS、图像、视频、3D、音频、超分，llama.cpp + MNN 双引擎。">
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<header>
-  <div class="wrap nav">
-    <a class="logo" href="#">Kevrai<span>·</span>Omni</a>
-    <nav>
-      <a href="#features">功能</a>
-      <a href="#stack">技术栈</a>
-      <a href="#start">上手</a>
-      <a href="https://github.com/Bullobis/kevrai-omni">GitHub</a>
-    </nav>
-    <a class="btn primary" href="https://github.com/Bullobis/kevrai-omni/releases">下载</a>
-  </div>
-</header>
+<header><div class="wrap nav">
+  <a class="logo" href="/">Kevrai<span>·</span>Omni</a>
+  <nav>
+    <a href="/" class="on">首页</a>
+    <a href="/downloads/">下载</a>
+    <a href="/docs/">上手</a>
+    <a href="https://github.com/Bullobis/kevrai-omni">GitHub</a>
+  </nav>
+  <a class="btn primary" href="/downloads/">下载</a>
+</div></header>
 
 <div class="wrap hero">
   <h1>把整套 AI 工作站<br>装进你自己的电脑。</h1>
-  <p>Kevrai Omni 是开源的本地 AI 桌面应用。下载一次，LLM、语音合成、图像、视频、3D、音频、超分辨率都在本机跑——不依赖云端，数据不出设备。</p>
+  <p>开源的本地 AI 桌面应用。下载一次，LLM、语音合成、图像、视频、3D、音频、超分辨率都在本机跑——不依赖云端，数据不出设备。</p>
   <div class="cta">
-    <a class="btn primary" href="https://github.com/Bullobis/kevrai-omni/releases/latest">下载 v4.17.0</a>
+    <a class="btn primary" href="/downloads/">下载 v4.17.0</a>
     <a class="btn" href="https://github.com/Bullobis/kevrai-omni">在 GitHub 查看</a>
   </div>
   <div class="meta">
@@ -101,52 +34,47 @@ footer{padding:36px 0;color:var(--mut);font-size:13px;display:flex;justify-conte
   </div>
 </div>
 
-<section id="features"><div class="wrap">
+<section><div class="wrap">
   <h2>功能一览</h2>
   <p class="sub">从模型市场到推理，全部在一个窗口里完成。</p>
   <div class="grid">
     <div class="cell"><h3>模型市场</h3><p>搜索、筛选、收藏，虚拟滚动。GGUF 量化档按需下载，魔搭与 HuggingFace 双源。</p></div>
-    <div class="cell"><h3>双引擎推理</h3><p>llama.cpp 跑 GGUF，MNN 跑量化模型。装引擎一条命令，进度实时可见。</p></div>
+    <div class="cell"><h3>双引擎推理</h3><p>llama.cpp 跑 GGUF，MNN 跑量化模型。装引擎进度实时可见。</p></div>
     <div class="cell"><h3>硬件感知</h3><p>探测 CPU、内存、磁盘与显卡，据此推荐合适的模型与量化档。</p></div>
-    <div class="cell"><h3>视频生成</h3><p>内置 LTX-2.5 文生视频与图生视频，分辨率、帧数、种子可调，结果入画廊。</p></div>
-    <div class="cell"><h3>语音合成</h3><p>Piper、Kokoro、Chatterbox 与 Ming-3.0，支持语气指令与零样本音色克隆。</p></div>
-    <div class="cell"><h3>Agent 助手</h3><p>本地 ReAct 助手，技能可插拔，工具调用进度实时反馈，可中断。</p></div>
-    <div class="cell"><h3>环境自举</h3><p>首次启动自动准备便携运行时，缺什么装什么，多镜像源兜底。</p></div>
+    <div class="cell"><h3>视频生成</h3><p>内置 LTX-2.5 文生视频与图生视频，分辨率、帧数、种子可调。</p></div>
+    <div class="cell"><h3>语音合成</h3><p>Piper、Kokoro、Chatterbox 与 Ming-3.0，支持语气指令与音色克隆。</p></div>
+    <div class="cell"><h3>Agent 助手</h3><p>本地 ReAct 助手，技能可插拔，工具调用进度实时反馈。</p></div>
+    <div class="cell"><h3>环境自举</h3><p>首次启动自动准备便携运行时，缺什么装什么，多镜像兜底。</p></div>
     <div class="cell"><h3>命令面板</h3><p>Ctrl/⌘+K 模糊执行任意操作，最近使用置顶。</p></div>
     <div class="cell"><h3>主题与双语</h3><p>深色 / 浅色 / 跟随系统，中英文一键切换。</p></div>
   </div>
 </div></section>
 
-<section id="stack"><div class="wrap">
+<section><div class="wrap">
   <h2>技术栈</h2>
   <p class="sub">不打包重型框架，保持轻量与可审计。</p>
   <div class="stack">
-    <span class="tag">Electron 33</span>
-    <span class="tag">原生 HTML / CSS / JS</span>
-    <span class="tag">Python 3.10</span>
-    <span class="tag">FastAPI</span>
-    <span class="tag">llama.cpp</span>
-    <span class="tag">Alibaba MNN</span>
-    <span class="tag">PyTorch / transformers</span>
-    <span class="tag">ComfyUI 工作流</span>
-    <span class="tag">魔搭 ModelScope</span>
-    <span class="tag">HuggingFace</span>
+    <span class="tag">Electron 33</span><span class="tag">原生 HTML / CSS / JS</span>
+    <span class="tag">Python 3.10</span><span class="tag">FastAPI</span>
+    <span class="tag">llama.cpp</span><span class="tag">Alibaba MNN</span>
+    <span class="tag">transformers</span><span class="tag">ComfyUI 工作流</span>
+    <span class="tag">魔搭 ModelScope</span><span class="tag">HuggingFace</span>
   </div>
 </div></section>
 
-<section id="start"><div class="wrap">
+<section><div class="wrap">
   <h2>三步上手</h2>
   <p class="sub">不需要命令行。</p>
   <div class="steps">
-    <div class="step"><div class="n">01</div><h3>下载安装包</h3><p>从 Releases 下载对应系统的安装包，双击安装。</p></div>
-    <div class="step"><div class="n">02</div><h3>装一个引擎</h3><p>首次启动按引导选 llama.cpp 或 MNN，进度条走完即可。</p></div>
-    <div class="step"><div class="n">03</div><h3>下模型开聊</h3><p>在模型市场挑一个适合你显存/内存的模型，下载完就能用。</p></div>
+    <div class="step"><div class="n">01</div><h3>下载安装包</h3><p>从下载页选对应系统的安装包，双击安装。</p></div>
+    <div class="step"><div class="n">02</div><h3>装一个引擎</h3><p>首次启动按引导选 llama.cpp 或 MNN，进度条走完。</p></div>
+    <div class="step"><div class="n">03</div><h3>下模型开聊</h3><p>在模型市场挑一个适合你显存/内存的模型。</p></div>
   </div>
 </div></section>
 
-<footer><div class="wrap" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px">
+<footer><div class="wrap flex">
   <span>© Kevrai Omni · 开源项目，欢迎 issue 与 PR</span>
-  <span><a href="https://github.com/Bullobis/kevrai-omni">GitHub</a> · <a href="https://github.com/Bullobis/kevrai-omni/releases">Releases</a></span>
+  <span><a href="https://github.com/Bullobis/kevrai-omni">GitHub</a> · <a href="/downloads/">下载</a></span>
 </div></footer>
 </body>
 </html>
