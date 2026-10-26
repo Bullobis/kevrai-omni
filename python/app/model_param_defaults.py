@@ -144,9 +144,9 @@ def normalize_config(raw: dict[str, Any] | None) -> tuple[dict[str, Any], Defaul
             if got is not None:
                 clean[key] = got
         elif key in _ENUM_PARAMS:
-            got = _coerce_enum(key, value, res)
-            if got is not None:
-                clean[key] = got
+            enum_val = _coerce_enum(key, value, res)
+            if enum_val is not None:
+                clean[key] = enum_val
         else:
             # 不认识的参数：不进 clean，但记账，方便排查"我写的怎么没生效"。
             res.rejected[key] = value
@@ -199,13 +199,13 @@ def resolve_defaults(
 
     # 第 4 层：用户显式覆盖（同样要校验，不能因为是用户写的就免检）
     ov_clean, ov_res = normalize_config(overrides)
-    for k, v in ov_clean.items():
-        values[k] = v
+    for k, ck in ov_clean.items():
+        values[k] = ck
         sources[k] = "override"
-    for k, v in ov_res.clamped.items():
-        res.clamped[k] = v
-    for k, v in ov_res.rejected.items():
-        res.rejected[k] = v
+    for rk, rv in ov_res.clamped.items():
+        res.clamped[rk] = rv
+    for rk, rv in ov_res.rejected.items():
+        res.rejected[rk] = rv
 
     res.values = values
     res.sources = sources

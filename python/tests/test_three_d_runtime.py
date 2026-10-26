@@ -267,8 +267,14 @@ def test_write_ply_rejects_unknown_shape(tmp_path: Path):
         td._write_ply_guess(object(), tmp_path / "e.ply", max_faces=0)
 
 
-def test_export_glb_without_trimesh_raises_actionable(tmp_path: Path):
-    """GLB is a container format; we will not hand-roll it."""
+def test_export_glb_without_trimesh_raises_actionable(tmp_path: Path, monkeypatch):
+    """GLB is a container format; we will not hand-roll it.
+
+    Explicitly simulate trimesh being missing so the test does not depend on
+    whether the runner happened to have trimesh installed.
+    """
+    import sys
+    monkeypatch.setitem(sys.modules, "trimesh", None)
     with pytest.raises(td.ThreeDEngineMissing, match="trimesh"):
         td._export_mesh(_FakeMesh([], []), tmp_path / "f.glb", fmt="glb", max_faces=0)
 

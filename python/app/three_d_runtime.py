@@ -645,6 +645,15 @@ def _coerce_mesh(trimesh: Any, mesh: Any) -> Any:
             vertices=verts, faces=faces,
             vertex_colors=colors, process=False,
         )
+    # duck-typed mesh（带 .vertices / .faces，与无 trimesh 时的
+    # _write_ply_guess 形状支持对齐），避免装不装 trimesh 结果相反。
+    if hasattr(mesh, "vertices") and hasattr(mesh, "faces"):
+        colors = getattr(mesh, "visual", None) and getattr(
+            getattr(mesh, "visual", None), "vertex_colors", None)
+        return trimesh.Trimesh(
+            vertices=mesh.vertices, faces=mesh.faces,
+            vertex_colors=colors, process=False,
+        )
     raise ThreeDEngineMissing(
         f"无法把 {type(mesh).__name__} 识别为网格（期望 Trimesh 或 (顶点, 面) 元组）"
     )

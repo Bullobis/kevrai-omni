@@ -1135,7 +1135,8 @@
     "download": "Download",
     "promptFirst": "Please enter a prompt first",
     "ckptFirst": "Please select or type a Stable Diffusion model filename",
-    "failed": "Image generation failed: {err}"
+    "failed": "Image generation failed: {err}",
+    "seedHint": "Leave blank or -1 for a random seed each run; a fixed number reproduces the same image"
   },
   "threed": {
     "title": "3D Generation",

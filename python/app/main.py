@@ -72,10 +72,10 @@ from . import (
     embedding_runtime,
     knowledge_base,
     ltx_runtime,
+    ming_tts_runtime,
     mnn_runtime,
     multimodal_runtime,
     music_runtime,
-    ming_tts_runtime,
     ocr_runtime,
     piper_runtime,
 )
@@ -3406,7 +3406,7 @@ def _role_store(request: Request) -> OverrideStore:
 def _installed_ids() -> set[str]:
     """已安装模型的 id 集合（本地 registry）。"""
     try:
-        return {e.get("id") for e in load_local_registry(MODELS_DIR) if e.get("id")}
+        return {e["id"] for e in load_local_registry(MODELS_DIR) if e.get("id")}
     except Exception:  # noqa: BLE001 — 目录不存在/损坏时视作"未安装任何模型"
         return set()
 
