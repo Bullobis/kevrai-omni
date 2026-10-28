@@ -255,7 +255,8 @@ def render_pdf_pages(data: bytes, data_root: Path | None = None,
                 ) from e
         doc = pymupdf.open(stream=data, filetype="pdf")
         pngs: list[bytes] = []
-        for page in doc:
+        # PyMuPDF 的 Document 支持迭代，是其类型 stub 未标注 __iter__
+        for page in doc:  # type: ignore[attr-defined]
             pix = page.get_pixmap(dpi=dpi)
             pngs.append(pix.tobytes("png"))
         return pngs

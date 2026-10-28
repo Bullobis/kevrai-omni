@@ -173,15 +173,16 @@ function _wireEvents(root) {
   sendBtn.addEventListener("click", _sendMessage);
   newBtn.addEventListener("click", () => {
     _sessionId = "sess_" + Date.now().toString(36);
-    $("#agent-messages", root).innerHTML = "";
-    input.value = "";
-    sendBtn.disabled = true;
+    _resetSessionView(root);
     _loadSessionList();
     toast(t("agent.sessionCreated"), { kind: "info" });
   });
   sessionSelect.addEventListener("change", () => {
     if (sessionSelect.value) {
       _sessionId = sessionSelect.value;
+      // 切换会话同样要整体重置视图。以前这条路径只重载了消息，
+      // 漏掉草稿和发送按钮——切过去后输入框还留着上一个会话的半句话。
+      _resetSessionView(root);
       _loadSessionMessages();
       _loadApprovalPolicy();
     }
@@ -229,11 +230,6 @@ function _wireEvents(root) {
     brainSelect.addEventListener("change", async () => {
       brainSelect.disabled = true;
       try {
-        if (!brainSelect.value) {
-          toast(t("agent.ruleSelected"), { kind: "ok" });
-          await _refreshStatus();
-          return;
-        }
         const r = unwrap(await api.agentSetBrain(brainSelect.value));
         toast(brainSelect.value
           ? t("agent.brainSelected", { model: brainSelect.value })
@@ -607,6 +603,31 @@ async function _loadSessionList() {
   }
 }
 
+/**
+ * 把视图重置到"刚进会话"的样子。
+ *
+ * Cherry Studio 用 ``key={topic.id}`` 让 React 在切换话题时整棵重建子树，
+ * 一次性清掉滚动位置/输入草稿/编辑态/消息锚点，而不是在 effect 里逐项
+ * setState——后者既容易漏字段，又会渲染出中间帧。
+ *
+ * 这里是原生 JS，没有 key 机制可用，所以把"重建"显式收敛成一个函数：
+ * 所有切换会话的入口都必须调它，避免各处手写一半的重置逻辑。
+ */
+function _resetSessionView(root) {
+  const messages = $("#agent-messages", root);
+  if (messages) messages.innerHTML = "";
+  const input = $("#agent-input", root);
+  if (input) {
+    input.value = "";
+    input.style.height = "";   // 自适应高度也要复位，否则新会话开头一屏空白
+  }
+  const sendBtn = $("#agent-send-btn", root);
+  if (sendBtn) sendBtn.disabled = true;
+  // 上一会话若还在流式输出/等待审批，切换后那些回调仍会往旧容器写东西。
+  // 这里不断流（后端仍按 sessionId 归属），只让 UI 不再被旧会话污染。
+  _busy = false;
+}
+
 async function _loadSessionMessages() {
   const container = document.getElementById("agent-messages");
   if (!container) return;
@@ -892,13 +913,7 @@ function _sendViaStream(message, thinking, thinkingText) {
       ws.onmessage = (ev) => {
         let msg;
         try { msg = JSON.parse(ev.data); } catch { return; }
-        if (msg.event === "tool_start") {
-          // 工具刚被调用、正在执行：立刻显示，别等结果。
-          if (thinkingText) {
-            thinkingText.textContent = `${t("agent.callingTool")}: ${msg.tool}`;
-            thinking.classList.remove("hidden");
-          }
-        } else if (msg.event === "step") {
+        if (msg.event === "step") {
           steps.push(msg);
           if (msg.action_tool) {
             thinkingText.textContent = `${t("agent.callingTool")}: ${msg.action_tool}`;

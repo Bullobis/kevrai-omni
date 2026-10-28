@@ -46,17 +46,32 @@ DEFAULT_TIMEOUT_SECONDS = 60.0
 # cancel feel near-instant; long enough that the poll loop costs ~nothing.
 _POLL_INTERVAL_SECONDS = 0.2
 
-VALID_POLICIES = ("auto", "confirm")
+#: 三档，对齐 Operit 的 PermissionLevel：ALLOW / ASK / FORBID。
+#:  ``auto``    = ALLOW   直接执行，不再询问
+#:  ``confirm`` = ASK     每次调用前请用户确认
+#:  ``deny``    = FORBID  直接拒绝执行
+#: 第三档的意义：缺了它，用户对"这个工具我永远不想让它碰"只能靠每次点拒绝，
+#: 既烦又容易漏——尤其是 Agent 在无人值守时反复重试同一个工具的场景。
+VALID_POLICIES = ("auto", "confirm", "deny")
 
 #: 持久化里可能出现的等价写法。大小写与空白差异不算"不认识的值"，
 #: 它们必须被还原成同一个策略，否则一次格式变化就会让用户的选择失效。
 _POLICY_ALIASES = {
     "auto": "auto",
     "automatic": "auto",
+    "allow": "auto",
     "confirm": "confirm",
     "ask": "confirm",
     "manual": "confirm",
+    "deny": "deny",
+    "forbid": "deny",
+    "never": "deny",
+    "block": "deny",
 }
+
+#: 认不出来时回落到哪一档。选 confirm 而不是 auto：审批闸门失败必须朝
+#: 保守方向倒（fail-closed），详见 load_policies 的说明。
+_UNKNOWN_POLICY_FALLBACK = "confirm"
 
 
 def normalize_policy(value: object) -> str | None:
@@ -117,7 +132,8 @@ class GateResult:
     approved: bool
     # The parameters the tool should actually run with (original or edited).
     effective_params: dict[str, Any]
-    # Why: "auto" (no gate), "approve", "edit", "reject", "timeout", "cancel".
+    # Why: "auto" (no gate), "approve", "edit", "reject", "timeout", "cancel",
+    # or "deny" (the tool is forbidden for this session — never prompted).
     reason: str
 
 
@@ -137,8 +153,12 @@ class ApprovalManager:
         # (a ReAct loop blocks on its first pending call, so at most one can be
         # in flight per session).
         self._active_by_session: dict[str, str] = {}
-        # session_id -> "auto" | "confirm". Missing == "auto".
+        # session_id -> "auto" | "confirm" | "deny". Missing == "auto".
         self._policies: dict[str, str] = {}
+        # session_id -> {tool_name: policy}。工具级例外，优先于上面的会话级策略。
+        # 这才是 Operit 那套"全局默认 + 单工具例外"模型：用户可以对 95% 的工具
+        # 用一档默认值，只对少数敏感的（写文件、联网、发请求）单独开口子或单独封死。
+        self._tool_policies: dict[str, dict[str, str]] = {}
         self.default_timeout = float(default_timeout)
         # Optional streaming hook: callback(event_name, payload_dict). Wired up
         # by the websocket to push approval_request / approval_resolved frames.
@@ -162,6 +182,46 @@ class ApprovalManager:
     def get_policy(self, session_id: str) -> str:
         with self._lock:
             return self._policies.get(session_id, "auto")
+
+    # -- 工具级例外（Operit: 全局默认 + 单工具例外覆盖） ----------------
+    def set_tool_policy(self, session_id: str, tool_name: str, mode: str) -> str:
+        """给单个工具单独设档，覆盖该会话的全局策略。"""
+        normalized = normalize_policy(mode if isinstance(mode, str) else "")
+        if normalized is None:
+            raise ValueError(f"invalid approval policy: {mode!r}")
+        key = (tool_name or "").strip()
+        if not key:
+            raise ValueError("tool_name must be non-empty")
+        with self._lock:
+            self._tool_policies.setdefault(session_id, {})[key] = normalized
+        return normalized
+
+    def clear_tool_policy(self, session_id: str, tool_name: str) -> None:
+        """撤销单工具的例外，让它重新跟随会话全局策略。"""
+        with self._lock:
+            per = self._tool_policies.get(session_id)
+            if per:
+                per.pop((tool_name or "").strip(), None)
+                if not per:
+                    self._tool_policies.pop(session_id, None)
+
+    def get_tool_policies(self, session_id: str) -> dict[str, str]:
+        with self._lock:
+            return dict(self._tool_policies.get(session_id, {}))
+
+    def effective_policy(self, session_id: str, tool_name: str) -> str:
+        """该工具实际生效的档位：**工具例外 > 会话全局 > 默认 auto**。
+
+        工具例外值若已损坏/无法识别，按 :data:`_UNKNOWN_POLICY_FALLBACK`
+        （confirm）处理——宁可多问一次，也不静默放行。
+        """
+        key = (tool_name or "").strip()
+        with self._lock:
+            raw = self._tool_policies.get(session_id, {}).get(key)
+            base = self._policies.get(session_id, "auto")
+        if raw is None:
+            return base
+        return normalize_policy(raw) or _UNKNOWN_POLICY_FALLBACK
 
     def load_policies(self, mapping: dict[str, str]) -> dict[str, list[str]]:
         """Bulk-load persisted policies (best-effort).
@@ -305,9 +365,16 @@ class ApprovalManager:
         loop whether to run the tool (and with which params) or to treat the
         call as not-approved and feed the model a "用户未批准" observation.
         """
-        policy = self.get_policy(session_id)
+        # 注意用 effective_policy 而不是 get_policy：前者会先看该工具有没有
+        # 单独配置的档位（Operit 的"全局默认 + 单工具例外"）。
+        policy = self.effective_policy(session_id, tool_name)
         if policy == "auto":
             return GateResult(True, dict(tool_params), "auto")
+        if policy == "deny":
+            # 直接拒绝，不挂起、不等待、不消耗审批超时窗口。
+            # 理由：禁止语义上是"这工具不许用"，若还去弹确认框，等于把
+            # FORBID 降级成了 ASK，用户每次还得点一下。
+            return GateResult(False, dict(tool_params), "deny")
 
         req = ApprovalRequest(
             id=uuid.uuid4().hex[:12],

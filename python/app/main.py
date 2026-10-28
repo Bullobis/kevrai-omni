@@ -35,9 +35,6 @@ from typing import Any
 # huggingface_hub import 之前设置，因为它会在 import 时读取该变量。
 os.environ.setdefault("HF_ENDPOINT",
                       os.environ.get("KEVRAI_HF_ENDPOINT", "https://hf-mirror.com"))
-# 禁用 huggingface_hub 的 xet 后端，否则 MNN/部分模型会直连
-# cas-server.xethub.hf.co（未授权 401），绕过 HF_ENDPOINT 镜像。
-os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
 from fastapi import (
     FastAPI,
@@ -57,6 +54,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import (
     FileResponse,
     JSONResponse,
+    Response,
     StreamingResponse,
 )
 from pydantic import BaseModel, Field, ValidationError
@@ -72,7 +70,6 @@ from . import (
     embedding_runtime,
     knowledge_base,
     ltx_runtime,
-    ming_tts_runtime,
     mnn_runtime,
     multimodal_runtime,
     music_runtime,
@@ -1237,9 +1234,9 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
     # pip 类引擎（piper/kokoro/faster-whisper…）必须走 pip install 到隔离目录，
     # 不能把 pypi 网页当 zip 下（旧逻辑报 "File is not a zip file"）。
     if cat.get("install") == "pip" and cat.get("pypi"):
-        em_pip: EngineManager = request.app.state.engine_manager
+        em: EngineManager = request.app.state.engine_manager
         result = await asyncio.to_thread(
-            em_pip.install_pip, cat["pypi"], eid
+            em.install_pip, cat["pypi"], eid
         )
         return {
             "ok": True, "engine_id": eid, "mode": "pip",
@@ -1250,18 +1247,12 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
     plat_url = (cat.get("platforms") or {}).get(platform_key())
     if plat_url:
         sources.append(plat_url)
-    # llama.cpp 的预编译二进制名带动态 build 号，catalog 里只能写 releases
-    # 列表页（HTML，不能当 zip 下）。这里实时解析出真实资产 URL。
-    if eid == "llama.cpp":
-        real = await asyncio.to_thread(_resolve_llamacpp_asset_url, platform_key())
-        if real:
-            sources = [real]
     if not sources:
         raise HTTPException(status_code=404, detail="engine has no download sources")
     from .sources import measure_sources, pick_best
     ranking = await measure_sources(sources)
     best = pick_best(ranking) or {"url": sources[0]}
-    em: EngineManager = request.app.state.engine_manager
+    em = request.app.state.engine_manager
     # engines.json has no per-binary sha256; pass None to skip hash verification
     # (previously passed cat.get("version") which always mismatched and failed).
     result = await asyncio.to_thread(
@@ -1282,34 +1273,6 @@ def platform_key() -> str:
     if sys.platform == "darwin":
         return "darwin-arm64" if os.uname().machine == "arm64" else "darwin-x64"
     return "linux-x64"
-
-
-def _resolve_llamacpp_asset_url(platform: str) -> str | None:
-    """llama.cpp 的预编译二进制名带动态 build 号（llama-b<N>-bin-...），
-    无法写死在 catalog 里；安装时实时查最新 release，按平台挑 CPU 资产。"""
-    import httpx  # noqa: PLC0415
-
-    want = {
-        "linux-x64": lambda n: n.startswith("llama-") and n.endswith("bin-ubuntu-x64.tar.gz"),
-        "windows-x64": lambda n: n.startswith("llama-") and n.endswith("bin-win-cpu-x64.zip"),
-        "darwin-x64": lambda n: n.startswith("llama-") and n.endswith("bin-macos-x64.tar.gz"),
-        "darwin-arm64": lambda n: n.startswith("llama-") and n.endswith("bin-macos-arm64.tar.gz"),
-    }.get(platform)
-    if want is None:
-        return None
-    try:
-        r = httpx.get(
-            "https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=1",
-            timeout=15, follow_redirects=True,
-            headers={"User-Agent": "kevrai-omni", "Accept": "application/vnd.github+json"},
-        )
-        items = r.json()
-        for a in (items[0].get("assets") if items else []):
-            if want(a.get("name", "")):
-                return a.get("browser_download_url")
-    except Exception:  # noqa: BLE001 — 解析失败就回退 catalog 里的源
-        return None
-    return None
 
 
 @app.get("/api/settings")
@@ -1424,7 +1387,7 @@ def hub_sources(request: Request) -> dict[str, Any]:
 
 
 @app.get("/api/hub/health")
-async def hub_health(request: Request, timeout_s: float = 20.0) -> dict[str, Any]:
+async def hub_health(request: Request, timeout_s: float = 12.0) -> dict[str, Any]:
     """Probe each remote source's reachability (v2.9.0).
 
     The market UI calls this once at start-up and **hides** any source the
@@ -3406,7 +3369,7 @@ def _role_store(request: Request) -> OverrideStore:
 def _installed_ids() -> set[str]:
     """已安装模型的 id 集合（本地 registry）。"""
     try:
-        return {e["id"] for e in load_local_registry(MODELS_DIR) if e.get("id")}
+        return {str(e.get("id")) for e in load_local_registry(MODELS_DIR) if e.get("id")}
     except Exception:  # noqa: BLE001 — 目录不存在/损坏时视作"未安装任何模型"
         return set()
 
@@ -4559,6 +4522,8 @@ def comfyui_music_generate(req: ComfyUIMusicReq) -> Response:
             "base_url": client.base_url,
         }
         if req.wait:
+            # 注意参数名是 timeout_s（wait() 是 keyword-only）。
+            # 写成 timeout= 会直接 TypeError，音乐生成的"等待完成"必然崩。
             result["result"] = client.wait(
                 prompt_id,
                 timeout_s=comfyui_runtime.DEFAULT_TIMEOUTS["audio"] if req.timeout is None
@@ -4727,84 +4692,6 @@ def _history_images_to_data_urls(
     return out
 
 
-@app.websocket("/ws/comfyui/generate")
-async def ws_comfyui_generate(websocket: WebSocket) -> None:
-    """流式文生图：提交后逐帧把采样进度推给前端，完成时推最终图。
-
-    消息协议（双向 JSON）：
-      前端 → 后端：{...build_image_workflow 的参数...}
-      后端 → 前端：{type:"submitted", prompt_id}
-                   {type:"progress", step, max}   每步采样进度
-                   {type:"done", images:[...]}    完成
-                   {type:"error", message}
-    """
-    if not await _ws_authorize(websocket):
-        return
-    await websocket.accept()
-    try:
-        req = await websocket.receive_json()
-    except Exception as e:  # noqa: BLE001
-        await websocket.send_json({"type": "error", "message": f"参数解析失败：{e}"})
-        return
-
-    client: comfyui_runtime.ComfyUIClient | None = None
-    try:
-        built = await asyncio.to_thread(
-            comfyui_image.build_image_workflow,
-            req.get("template_id") or "sd15-txt2img",
-            ckpt_name=req.get("ckpt_name"),
-            prompt=req.get("prompt", ""),
-            negative_prompt=req.get("negative_prompt"),
-            steps=req.get("steps", 20),
-            cfg=req.get("cfg", 7.0),
-            sampler_name=req.get("sampler_name"),
-            scheduler=req.get("scheduler"),
-            width=req.get("width", 512),
-            height=req.get("height", 512),
-            batch_size=req.get("batch_size", 1),
-            seed=req.get("seed", -1),
-            filename_prefix=req.get("filename_prefix", "kevrai"),
-        )
-        client = _comfyui_client(req.get("base_url"), req.get("timeout") or 30.0)
-        prompt_id, _fixes = await asyncio.to_thread(
-            client.submit, built["workflow"], fix_seeds=False, job_class="image"
-        )
-        await websocket.send_json({"type": "submitted", "prompt_id": prompt_id})
-
-        # 连 ComfyUI 自身的 WS，转发采样进度；它在 node=null 时表示本次跑完。
-        import websockets  # noqa: PLC0415 — 延迟 import，避免启动开销
-
-        ws_url = client.base_url.replace("http://", "ws://").replace("https://", "wss://")
-        async with websockets.connect(f"{ws_url}/ws?clientId={client.client_id}",
-                                      open_timeout=20) as cws:
-            async for raw in cws:
-                try:
-                    msg = json.loads(raw)
-                except Exception:  # noqa: S112, BLE001 — 非 JSON 心跳包忽略
-                    continue
-                mtype = msg.get("type")
-                if mtype == "progress":
-                    d = msg.get("data") or {}
-                    await websocket.send_json({
-                        "type": "progress",
-                        "step": d.get("value", 0), "max": d.get("max", 1),
-                    })
-                elif mtype == "executing" and (msg.get("data") or {}).get("node") is None:
-                    break
-
-        entry = await asyncio.to_thread(client.wait, prompt_id)
-        images = await asyncio.to_thread(_history_images_to_data_urls, client, entry)
-        await websocket.send_json({"type": "done", "images": images, "params": built["params"]})
-    except comfyui_runtime.ComfyUIUnavailable as e:
-        await websocket.send_json({"type": "error", "message": f"连不上 ComfyUI：{e}"})
-    except Exception as e:  # noqa: BLE001 — 任何错误都推给前端，不让连接静默死掉
-        await websocket.send_json({"type": "error", "message": str(e)[:400]})
-    finally:
-        if client is not None:
-            with contextlib.suppress(Exception):
-                client.close()
-
-
 @app.post("/api/comfyui/image/generate")
 def comfyui_image_generate(req: ComfyUIImageReq) -> Response:
     """构建并提交文生图；wait=true 时同步等待并取回图片。"""
@@ -4921,27 +4808,6 @@ def piper_synthesize_route(
         code = 503 if isinstance(e, piper_runtime.PiperEngineMissing) else (
             400 if isinstance(e, piper_runtime.PiperParamError) else 422)
         raise HTTPException(status_code=code, detail=str(e)) from e
-
-
-# --- Ming-3.0 TTS（MNN，CPU 友好，语气控制）----------------------------------
-
-class MingTTSReq(BaseModel):
-    text: str
-    precision: str = "int8"
-    instruction: str | None = None
-    seed: int = 0
-
-
-@app.post("/api/tts-ming/synthesize")
-def ming_tts_synthesize_route(req: MingTTSReq) -> Response:
-    try:
-        data = ming_tts_runtime.synthesize(
-            req.text, data_root=APP_ROOT, precision=req.precision,
-            instruction=req.instruction, seed=req.seed,
-        )
-    except ming_tts_runtime.MingTTSError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    return Response(content=data, media_type="audio/wav")
 
 
 # --- 声音克隆档案（Chatterbox 参考音频）------------------------------------
@@ -6172,20 +6038,6 @@ async def ws_agent(websocket: WebSocket, session_id: str) -> None:
                     loop_.call_soon_threadsafe(_emit)
 
             agent.set_step_callback(_on_step)
-
-            # 工具开始执行即推送（学 Operit ToolProgressBus），前端实时显示
-            # "正在执行：xxx"，不必等工具跑完才知道在做什么。
-            def _on_tool_start(tool_name: str, tool_params: dict, _loop=_ws_loop_ref):
-                def _emit(name=tool_name, params=tool_params, loop=_loop):
-                    with contextlib.suppress(Exception):
-                        asyncio.ensure_future(websocket.send_json({
-                            "event": "tool_start",
-                            "tool": name,
-                            "params": params,
-                        }))
-                with contextlib.suppress(Exception):
-                    _loop.call_soon_threadsafe(_emit)
-            agent.set_tool_start_callback(_on_tool_start)
 
             # Approval gate streaming: push "approval_request" the moment the
             # loop parks a tool call, and "approval_resolved" when the human

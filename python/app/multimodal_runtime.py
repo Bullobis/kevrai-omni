@@ -417,8 +417,12 @@ class MultimodalManager:
             raise MultimodalParamError("model 不能为空")
         # Resolve a catalog id or repo slug to its catalog id when known, and
         # reject known models that do not expose the image-generation path.
-        catalog_id = mid if mid in KNOWN_MODELS else next(
-            (k for k, v in KNOWN_MODELS.items() if v == mid), None
+        # 用列表推导而不是 next(gen, None)：生成器元素被推断为 str，
+        # 再给 None 作默认值会让 mypy 报 arg-type，而这里"找不到返回 None"
+        # 是明确的业务语义（下面按 None 处理）。
+        _matches = [k for k, v in KNOWN_MODELS.items() if v == mid]
+        catalog_id: str | None = (
+            mid if mid in KNOWN_MODELS else (_matches[0] if _matches else None)
         )
         if catalog_id is not None and catalog_id not in IMAGE_GEN_CAPABLE:
             raise MultimodalParamError(

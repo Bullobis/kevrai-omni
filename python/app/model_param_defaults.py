@@ -144,9 +144,11 @@ def normalize_config(raw: dict[str, Any] | None) -> tuple[dict[str, Any], Defaul
             if got is not None:
                 clean[key] = got
         elif key in _ENUM_PARAMS:
-            enum_val = _coerce_enum(key, value, res)
-            if enum_val is not None:
-                clean[key] = enum_val
+            # 变量名不能沿用上面的 got：那个已被推断为 float|None，
+            # 这里接的是 str|None，复用会让 mypy 报类型冲突。
+            enum_got = _coerce_enum(key, value, res)
+            if enum_got is not None:
+                clean[key] = enum_got
         else:
             # 不认识的参数：不进 clean，但记账，方便排查"我写的怎么没生效"。
             res.rejected[key] = value
@@ -199,11 +201,13 @@ def resolve_defaults(
 
     # 第 4 层：用户显式覆盖（同样要校验，不能因为是用户写的就免检）
     ov_clean, ov_res = normalize_config(overrides)
-    for k, ck in ov_clean.items():
-        values[k] = ck
+    for k, v in ov_clean.items():
+        values[k] = v
         sources[k] = "override"
-    for rk, rv in ov_res.clamped.items():
-        res.clamped[rk] = rv
+    # clamped 的值是 {"asked": x, "used": y}，与上面数值型 v 不是同一种东西，
+    # 变量必须分开命名，否则 mypy 会按首次推断的类型锁定它。
+    for ck, cv in ov_res.clamped.items():
+        res.clamped[ck] = cv
     for rk, rv in ov_res.rejected.items():
         res.rejected[rk] = rv
 

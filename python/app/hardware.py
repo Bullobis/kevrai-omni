@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from . import USER_AGENT
-from .gpu import detect as detect_gpus
+from .gpu import GPUInfo, detect as detect_gpus
 
 log = logging.getLogger("kevrai.hardware")
 
@@ -262,7 +262,7 @@ async def detect_hardware(data_root: Path) -> dict[str, Any]:
 
     gpus = await detect_gpus()
     gpu_total_vram_gb = 0.0
-    best_gpu = None
+    best_gpu: GPUInfo | None = None
     for g in gpus:
         if g.vram_mb and g.vram_mb > (best_gpu.vram_mb if best_gpu else 0):
             best_gpu = g
