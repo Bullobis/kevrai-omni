@@ -22,7 +22,8 @@ from pathlib import Path
 from typing import Any
 
 from . import USER_AGENT
-from .gpu import GPUInfo, detect as detect_gpus
+from .gpu import GPUInfo
+from .gpu import detect as detect_gpus
 
 log = logging.getLogger("kevrai.hardware")
 
