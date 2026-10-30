@@ -71,6 +71,7 @@ from . import (
     ltx_runtime,
     mnn_runtime,
     multimodal_runtime,
+    ming_tts_runtime,
     music_runtime,
     ocr_runtime,
     piper_runtime,
@@ -4691,6 +4692,83 @@ def _history_images_to_data_urls(
     return out
 
 
+@app.websocket("/ws/comfyui/generate")
+async def ws_comfyui_generate(websocket: WebSocket) -> None:
+    """流式文生图：提交后逐帧把采样进度推给前端，完成时推最终图。
+
+    消息协议（双向 JSON）：
+      前端 → 后端：{...build_image_workflow 的参数...}
+      后端 → 前端：{type:"submitted", prompt_id}
+                   {type:"progress", step, max}   每步采样进度
+                   {type:"done", images:[...]}    完成
+                   {type:"error", message}
+    """
+    if not await _ws_authorize(websocket):
+        return
+    await websocket.accept()
+    try:
+        req = await websocket.receive_json()
+    except Exception as e:  # noqa: BLE001
+        await websocket.send_json({"type": "error", "message": f"参数解析失败：{e}"})
+        return
+
+    client: comfyui_runtime.ComfyUIClient | None = None
+    try:
+        built = await asyncio.to_thread(
+            comfyui_image.build_image_workflow,
+            req.get("template_id") or "sd15-txt2img",
+            ckpt_name=req.get("ckpt_name"),
+            prompt=req.get("prompt", ""),
+            negative_prompt=req.get("negative_prompt"),
+            steps=req.get("steps", 20),
+            cfg=req.get("cfg", 7.0),
+            sampler_name=req.get("sampler_name"),
+            scheduler=req.get("scheduler"),
+            width=req.get("width", 512),
+            height=req.get("height", 512),
+            batch_size=req.get("batch_size", 1),
+            seed=req.get("seed", -1),
+            filename_prefix=req.get("filename_prefix", "kevrai"),
+        )
+        client = _comfyui_client(req.get("base_url"), req.get("timeout") or 30.0)
+        prompt_id, _fixes = await asyncio.to_thread(
+            client.submit, built["workflow"], fix_seeds=False, job_class="image"
+        )
+        await websocket.send_json({"type": "submitted", "prompt_id": prompt_id})
+
+        # 连 ComfyUI 自身的 WS，转发采样进度；它在 node=null 时表示本次跑完。
+        import websockets  # noqa: PLC0415 — 延迟 import，避免启动开销
+
+        ws_url = client.base_url.replace("http://", "ws://").replace("https://", "wss://")
+        async with websockets.connect(f"{ws_url}/ws?clientId={client.client_id}",
+                                      open_timeout=20) as cws:
+            async for raw in cws:
+                try:
+                    msg = json.loads(raw)
+                except Exception:  # noqa: S112, BLE001 — 非 JSON 心跳包忽略
+                    continue
+                mtype = msg.get("type")
+                if mtype == "progress":
+                    d = msg.get("data") or {}
+                    await websocket.send_json({
+                        "type": "progress",
+                        "step": d.get("value", 0), "max": d.get("max", 1),
+                    })
+                elif mtype == "executing" and (msg.get("data") or {}).get("node") is None:
+                    break
+
+        entry = await asyncio.to_thread(client.wait, prompt_id)
+        images = await asyncio.to_thread(_history_images_to_data_urls, client, entry)
+        await websocket.send_json({"type": "done", "images": images, "params": built["params"]})
+    except comfyui_runtime.ComfyUIUnavailable as e:
+        await websocket.send_json({"type": "error", "message": f"连不上 ComfyUI：{e}"})
+    except Exception as e:  # noqa: BLE001 — 任何错误都推给前端，不让连接静默死掉
+        await websocket.send_json({"type": "error", "message": str(e)[:400]})
+    finally:
+        if client is not None:
+            with contextlib.suppress(Exception):
+                client.close()
+
 @app.post("/api/comfyui/image/generate")
 def comfyui_image_generate(req: ComfyUIImageReq) -> Response:
     """构建并提交文生图；wait=true 时同步等待并取回图片。"""
@@ -4773,6 +4851,26 @@ class PiperSynthReq(BaseModel):
     exaggeration: float = 0.5
     cfg_weight: float = 0.5
 
+
+# --- Ming-3.0 TTS（MNN，CPU 友好，语气控制）----------------------------------
+
+class MingTTSReq(BaseModel):
+    text: str
+    precision: str = "int8"
+    instruction: str | None = None
+    seed: int = 0
+
+
+@app.post("/api/tts-ming/synthesize")
+def ming_tts_synthesize_route(req: MingTTSReq) -> Response:
+    try:
+        data = ming_tts_runtime.synthesize(
+            req.text, data_root=APP_ROOT, precision=req.precision,
+            instruction=req.instruction, seed=req.seed,
+        )
+    except ming_tts_runtime.MingTTSError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    return Response(content=data, media_type="audio/wav")
 
 @app.get("/api/tts-piper/capabilities")
 def piper_capabilities_route() -> dict[str, Any]:
