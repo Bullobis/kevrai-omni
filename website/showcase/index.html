@@ -5,42 +5,44 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>界面预览 · Kevrai Omni</title>
 <link rel="stylesheet" href="/style.css">
+<style>
+.shot{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:24px 0;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.shot img{width:100%;display:block}
+.shot h3{padding:16px 20px 0;font-size:16px}
+.shot p{padding:0 20px 16px;color:var(--mut);font-size:13.5px}
+</style>
 </head>
 <body>
 <header><div class="wrap nav">
   <a class="logo" href="/">Kevrai<span>·</span>Omni</a>
   <nav>
-    <a href="/">首页</a>
-    <a href="/downloads/">下载</a>
-    <a href="/docs/">上手</a>
+    <a href="/">首页</a><a href="/downloads/">下载</a>
+    <a href="/showcase/" class="on">界面</a><a href="/docs/">上手</a>
     <a href="https://github.com/Bullobis/kevrai-omni">GitHub</a>
   </nav>
   <a class="btn primary" href="/downloads/">下载</a>
 </div></header>
 
 <section><div class="wrap">
-  <h1 style="font-size:32px;font-weight:700;letter-spacing:-.3px">界面预览</h1>
-  <p class="sub">一个窗口装下所有本地 AI 能力。深色主题，原生前端，无臃肿框架。</p>
+  <h1 style="font-size:30px;font-weight:700">界面预览</h1>
+  <p class="sub">深色界面、克制排版。真实界面截图。</p>
 
-  <div style="display:flex;flex-direction:column;gap:32px">
-    <figure style="margin:0">
-      <img src="/shots/market.png" alt="模型市场" style="width:100%;border:1px solid var(--line);border-radius:12px;display:block">
-      <figcaption style="margin-top:10px;font-size:14px;color:var(--mut)"><b style="color:var(--fg)">模型市场</b> — 搜索、筛选、收藏，GGUF 量化档按需下载。</figcaption>
-    </figure>
-    <figure style="margin:0">
-      <img src="/shots/chat.png" alt="本地对话" style="width:100%;border:1px solid var(--line);border-radius:12px;display:block">
-      <figcaption style="margin-top:10px;font-size:14px;color:var(--mut)"><b style="color:var(--fg)">本地对话</b> — llama.cpp 引擎，硬件信息与参数一目了然。</figcaption>
-    </figure>
-    <figure style="margin:0">
-      <img src="/shots/image.png" alt="图像生成" style="width:100%;border:1px solid var(--line);border-radius:12px;display:block">
-      <figcaption style="margin-top:10px;font-size:14px;color:var(--mut)"><b style="color:var(--fg)">图像生成</b> — 提示词、种子、步数、CFG，结果入画廊。</figcaption>
-    </figure>
+  <div class="shot">
+    <h3>模型市场</h3>
+    <img src="/assets/market.png" alt="模型市场界面">
+    <p>统一搜索 HuggingFace 与魔搭，按分类、排序、热门过滤。每个模型显示体积、推荐引擎与量化档，下载进度条实时可见。</p>
+  </div>
+
+  <div class="shot">
+    <h3>本地对话</h3>
+    <img src="/assets/chat.png" alt="本地对话界面">
+    <p>选一个已下载的模型即可开始对话。支持联网搜索、系统提示词、多轮上下文，全部在本机完成。</p>
   </div>
 </div></section>
 
 <footer><div class="wrap flex">
-  <span>© Kevrai Omni</span>
-  <span><a href="/downloads/">下载试用</a></span>
+  <span>© Kevrai Omni · Community License v2.5</span>
+  <span><a href="/">首页</a> · <a href="/downloads/">下载</a></span>
 </div></footer>
 </body>
 </html>
