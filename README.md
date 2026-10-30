@@ -1,6 +1,6 @@
 # Kevrai Omni
 
-> 一键本地 AI 工作站：LLM / TTS / 图像 / 视频 / 3D / 音频 / 超分辨率 / 音乐 / 音源分离 / ASR，多引擎（llama.cpp + MNN + vLLM + ComfyUI），硬件感知推荐，内置 LTX-2.5 视频、Agent 助手、知识库与超级搜索。
+> **当前版本：v4.17.2** · 一键本地 AI 工作站：LLM / TTS / 图像 / 视频 / 3D / 音频 / 超分辨率 / 音乐 / 音源分离 / ASR，多引擎（llama.cpp + MNN + vLLM + ComfyUI），硬件感知推荐，内置 LTX-2.5 视频、Agent 助手、知识库与超级搜索。
 
 Kevrai Omni 是一个 **Electron + 原生 HTML/CSS/JS** 的桌面应用，搭配一个本地 Python（FastAPI）sidecar 负责模型目录、下载、引擎与推理。所有数据默认落在本机，不依赖远程服务即可使用已下载的模型。
 
@@ -69,8 +69,8 @@ npm start
 | `npm run test:js` | 对 `electron/*.js`、`renderer/*.js`、`renderer/modules/*.js` 逐个做 `node --check` 语法检查 |
 | `npm run test:renderer` | 运行渲染层单元测试（`node --test renderer/__tests__/*.test.js`） |
 | `npm run test:python` | 运行 Python sidecar 测试（pytest） |
-| `npm run smoke` | 端到端冒烟脚本（拉起 sidecar、打关键接口） |
-| `npm run build:win` / `build:linux` / `build:mac` | 分别打包对应平台 |
+| `npm run test:smoke` | 端到端冒烟脚本（拉起 sidecar、打关键接口） |
+| `npm run build:win` / `build:linux` / `build:mac` | 分别打包对应平台（三平台完整发布由 GitHub Actions release workflow 自动完成） |
 
 ---
 
@@ -99,9 +99,7 @@ Kevrai Omni 的用户数据分为两部分：
 ---
 
 ## 快捷键
-
 下表与 `renderer/modules/command-palette.js` 中实际注册的快捷键一一对应。Windows / Linux 用 `Ctrl`，macOS 用 `⌘`（Command）。
-
 | 按键 | 功能 |
 |---|---|
 | `Ctrl/⌘ + K` | 打开 / 关闭命令面板 |
@@ -109,16 +107,15 @@ Kevrai Omni 的用户数据分为两部分：
 | `Ctrl/⌘ + ,` | 打开设置 |
 | `Ctrl/⌘ + D` | 打开下载面板 |
 | `Ctrl/⌘ + B` | 收起 / 展开侧边栏 |
-| `Ctrl/⌘ + 1 … 9` | 切换到第 1–9 个页面 |
-| `Ctrl/⌘ + 0` | 切换到最后一个页面（环境管理） |
+| `Ctrl/⌘ + 1 … 9` | 切换到第 1–9 个导航页（见下表） |
+| `Ctrl/⌘ + 0` | 切换到「环境管理」 |
 | `/` | 聚焦搜索框（焦点不在输入框内时） |
 | `Ctrl/⌘ + F` | 聚焦搜索框并全选已有内容 |
 | `↑` / `↓` | 在命令面板中选择命令 |
 | `Enter` | 执行选中命令面板项 |
 | `Esc` | 关闭命令面板 / 速查 / 设置 / 下载 / 更新 / 引导弹窗；在输入框中先退出输入焦点 |
 
-页面与 `Ctrl/⌘ + 数字` 的对应关系：
-
+### 数字键页面映射（`Ctrl/⌘ + 数字`）
 | 按键 | 页面 |
 |---|---|
 | `⌘1` | 模型市场 |
@@ -132,10 +129,14 @@ Kevrai Omni 的用户数据分为两部分：
 | `⌘9` | 待官方开源 |
 | `⌘0` | 环境管理 |
 
+### 全部页面（侧边栏导航，按分组）
+> `⌘1–9 / ⌘0` 仅覆盖上表 10 个核心页；其余页面经侧边栏或命令面板（`Ctrl/⌘+K` 输入名称）进入。
+- **开始**：模型市场、本地模型
+- **创作**：LTX-2.5 视频、图片生成、3D 生成、音乐生成、本地语音合成、多模态对话、音源分离
+- **感知**：语音转写、向量嵌入、知识库
+- **Agent**：AI Agent、多模型对比回答、翻译
+- **系统**：硬件推荐、AI 引擎、MNN 引擎、GGUF 仓库、待官方开源、环境管理
 应用内按 `Ctrl/⌘ + /` 可随时呼出同一份速查表。
-
----
-
 ## 配置说明
 
 设置中心（`Ctrl/⌘ + ,`）分为以下分类，选项与 `renderer/modules/settings.js` 一致：
