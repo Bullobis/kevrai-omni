@@ -10,6 +10,8 @@
 .shot img{width:100%;display:block}
 .shot h3{padding:16px 20px 0;font-size:16px}
 .shot p{padding:0 20px 16px;color:var(--mut);font-size:13.5px}
+.promo{max-width:380px;margin:24px auto;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#000}
+.promo video{width:100%;display:block}
 </style>
 </head>
 <body>
@@ -25,7 +27,13 @@
 
 <section><div class="wrap">
   <h1 style="font-size:30px;font-weight:700">界面预览</h1>
-  <p class="sub">深色界面、克制排版。真实界面截图。</p>
+  <p class="sub">深色界面、克制排版。真实界面截图与官方宣传短片。</p>
+
+  <div class="promo">
+    <video controls playsinline preload="metadata" poster="/assets/market.png">
+      <source src="/assets/promo.mp4" type="video/mp4">
+    </video>
+  </div>
 
   <div class="shot">
     <h3>模型市场</h3>
