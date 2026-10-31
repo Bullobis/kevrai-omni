@@ -315,6 +315,8 @@ class Agent:
         mapping: dict[str, str] = {}
         for key, value in prefs.items():
             if key.startswith(self._APPROVAL_PREF_PREFIX):
+                if "::" not in key:
+                    continue
                 mapping[key.split("::", 1)[1]] = str(value)
         if mapping:
             self.approval.load_policies(mapping)
