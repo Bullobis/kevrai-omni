@@ -2,28 +2,30 @@
 // (Q4_K_M / Q5_K_M / Q8_0 / FP8 …) before a model is downloaded.
 "use strict";
 
+import { t } from "./i18n.js";
+
 // Known quant schemes in display order. `rec` marks the balanced recommendation.
 const QUANT_META = [
-  { key: "Q8_0", note: "高质量，体积较大" },
-  { key: "Q6_K", note: "接近原版质量" },
-  { key: "Q5_K_M", note: "高质量" },
-  { key: "Q5_K_S", note: "高质量，体积稍小" },
-  { key: "Q4_K_M", note: "质量与体积均衡", rec: true },
-  { key: "Q4_K_S", note: "均衡，体积更小" },
-  { key: "IQ4_NL", note: "新量化，省内存" },
-  { key: "IQ4_XS", note: "省内存" },
-  { key: "Q3_K_L", note: "省内存" },
-  { key: "Q3_K_M", note: "省内存" },
-  { key: "Q3_K_S", note: "省内存，质量下降" },
-  { key: "IQ3_M", note: "省内存" },
-  { key: "Q2_K", note: "极限省内存，质量损失明显" },
-  { key: "IQ2_M", note: "极限省内存" },
-  { key: "IQ2_XS", note: "极限省内存" },
-  { key: "IQ2_S", note: "极限省内存" },
-  { key: "IQ2_XXS", note: "极限省内存" },
-  { key: "FP8", note: "8-bit 浮点，需较新硬件" },
-  { key: "FP16", note: "原始精度，需大显存" },
-  { key: "BF16", note: "原始精度，需大显存" },
+  { key: "Q8_0", note: "quantPicker.q8_0" },
+  { key: "Q6_K", note: "quantPicker.q6_k" },
+  { key: "Q5_K_M", note: "quantPicker.q5_k_m" },
+  { key: "Q5_K_S", note: "quantPicker.q5_k_s" },
+  { key: "Q4_K_M", note: "quantPicker.q4_k_m", rec: true },
+  { key: "Q4_K_S", note: "quantPicker.q4_k_s" },
+  { key: "IQ4_NL", note: "quantPicker.iq4_nl" },
+  { key: "IQ4_XS", note: "quantPicker.iq4_xs" },
+  { key: "Q3_K_L", note: "quantPicker.q3_k_l" },
+  { key: "Q3_K_M", note: "quantPicker.q3_k_m" },
+  { key: "Q3_K_S", note: "quantPicker.q3_k_s" },
+  { key: "IQ3_M", note: "quantPicker.iq3_m" },
+  { key: "Q2_K", note: "quantPicker.q2_k" },
+  { key: "IQ2_M", note: "quantPicker.iq2_m" },
+  { key: "IQ2_XS", note: "quantPicker.iq2_xs" },
+  { key: "IQ2_S", note: "quantPicker.iq2_s" },
+  { key: "IQ2_XXS", note: "quantPicker.iq2_xxs" },
+  { key: "FP8", note: "quantPicker.fp8" },
+  { key: "FP16", note: "quantPicker.fp16" },
+  { key: "BF16", note: "quantPicker.bf16" },
 ];
 
 const META_BY_KEY = new Map(QUANT_META.map((m) => [m.key, m]));
@@ -84,13 +86,13 @@ export function classifyFit(needGB, hw) {
   const need = Number(needGB) || 0;
   // Reserve headroom for the KV cache, context window and OS.
   if (vram > 0 && need <= Math.max(0, vram - 1.5))
-    return { level: "ok", label: "显存可容纳" };
+    return { level: "ok", label: t("quantPicker.fitOk") };
   if (vram > 0 && totalVram > vram && need <= Math.max(0, totalVram - 1.5))
-    return { level: "warn", label: "需多卡分布" };
+    return { level: "warn", label: t("quantPicker.fitMultiGpu") };
   if (need <= ram * 0.7)
-    return { level: "warn", label: vram > 0 ? "需部分卸载" : "CPU 运行较慢" };
-  if (need <= ram * 0.9) return { level: "warn", label: "内存吃紧" };
-  return { level: "no", label: "内存不足" };
+    return { level: "warn", label: vram > 0 ? t("quantPicker.fitPartialOffload") : t("quantPicker.fitCpuSlow") };
+  if (need <= ram * 0.9) return { level: "warn", label: t("quantPicker.fitRamTight") };
+  return { level: "no", label: t("quantPicker.fitRamNo") };
 }
 
 // Pick the option the user is most likely to want: a recommended quant that
@@ -146,8 +148,8 @@ export async function pickQuantization(item, api, revision) {
     overlay.innerHTML = `
       <div class="overlay-card quant-card">
         <header>
-          <h2>选择量化版本 · ${esc(item.name || item.id)}</h2>
-          <button class="ghost icon quant-x" type="button" aria-label="关闭">×</button>
+          <h2>${t("quantPicker.choose", { name: esc(item.name || item.id) })}</h2>
+          <button class="ghost icon quant-x" type="button" aria-label="${t("quantPicker.close")}">×</button>
         </header>
         <div class="quant-list">
           ${groups
@@ -160,14 +162,14 @@ export async function pickQuantization(item, api, revision) {
                 <span class="quant-main">
                   <span class="quant-label">${esc(g.key)}${
                     meta && meta.rec
-                      ? '<span class="quant-badge">推荐</span>'
+                      ? `<span class="quant-badge">${t("quantPicker.recommend")}</span>`
                       : ""
                   }${
                     fit.label
                       ? `<span class="quant-fit ${fit.level ? "lvl-" + fit.level : ""}">${esc(fit.label)}</span>`
                       : ""
                   }</span>
-                  <span class="quant-note">${esc((meta && meta.note) || "")}</span>
+                  <span class="quant-note">${esc((meta && meta.note) ? t(meta.note) : "")}</span>
                 </span>
                 <span class="quant-size">${(g.size / 1e9).toFixed(1)} GB</span>
               </button>`;
@@ -175,10 +177,10 @@ export async function pickQuantization(item, api, revision) {
             .join("")}
         </div>
         <footer class="quant-foot">
-          <span class="quant-count mut">共 ${groups.length} 个版本</span>
+          <span class="quant-count mut">${t("quantPicker.count", { n: groups.length })}</span>
           <span class="quant-spacer"></span>
-          <button class="secondary quant-cancel" type="button">取消</button>
-          <button class="primary quant-ok" type="button" disabled>下载选中版本</button>
+          <button class="secondary quant-cancel" type="button">${t("quantPicker.cancel")}</button>
+          <button class="primary quant-ok" type="button" disabled>${t("quantPicker.download")}</button>
         </footer>
       </div>`;
 
