@@ -501,6 +501,7 @@
     "uninstalledEngine": "Uninstalled {id}",
     "mnnRepoStart": "Starting MNN model download (direct from repo)",
     "downloadStartedAuto": "Picked weight files automatically, downloading: {file}",
+    "downloadStarted": "Downloading: {file}",
     "installNothingNoItem": "No model information to install",
     "installNothingNoRepo": "No published weight URL for this model yet (awaiting official release)",
     "installNothingGeneric": "Nothing to download"

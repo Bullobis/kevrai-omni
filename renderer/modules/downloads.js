@@ -209,7 +209,10 @@ function renderOverlay() {
     const pct = (task.total > 0) ? Math.min(100, (task.downloaded / task.total) * 100) : 0;
     const filt = (task.filename || task.taskId || translate("downloads.taskFallback"));
     const status = task.status || "active";
-    const isDone = status === "completed" || status === "failed" || status === "cancelled";
+    // sidecar DownloadStatus terminal set: done/failed/cancelled/expired
+    // (never "completed" — that value never appears and kept the row stuck on
+    // the Cancel button with no way to dismiss).
+    const isDone = ["done", "failed", "cancelled", "expired", "completed"].includes(status);
     return `
     <div class="dl-row" data-tid="${task.taskId}">
       <div class="dl-name" title="${escapeHtml(filt)}">${escapeHtml(filt)}</div>

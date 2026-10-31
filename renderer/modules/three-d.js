@@ -60,23 +60,23 @@ function updateFit() {
   const m = currentModel();
   let verdict, color, detail;
   if (localVram === null) {
-    verdict = t("3d.fitUnknown"); color = "var(--mut,#6b7280)"; detail = "";
+    verdict = t("threed.fitUnknown"); color = "var(--mut,#6b7280)"; detail = "";
   } else if (localVram <= 0) {
-    verdict = t("3d.fitNoGpu"); color = "var(--warn,#b45309)"; detail = "";
+    verdict = t("threed.fitNoGpu"); color = "var(--warn,#b45309)"; detail = "";
   } else if (localVram >= m.vramMin) {
-    verdict = t("3d.fitOk", { gb: localVram, need: m.vramMin });
+    verdict = t("threed.fitOk", { gb: localVram, need: m.vramMin });
     color = "var(--ok,#15803d)"; detail = "";
   } else if (localVram >= m.vramMin * 0.7) {
-    verdict = t("3d.fitTight", { gb: localVram, need: m.vramMin });
-    color = "var(--warn,#b45309)"; detail = t("3d.fitTightHint");
+    verdict = t("threed.fitTight", { gb: localVram, need: m.vramMin });
+    color = "var(--warn,#b45309)"; detail = t("threed.fitTightHint");
   } else {
-    verdict = t("3d.fitShort", { gb: localVram, need: m.vramMin });
-    color = "var(--danger,#b91c1c)"; detail = t("3d.fitShortHint");
+    verdict = t("threed.fitShort", { gb: localVram, need: m.vramMin });
+    color = "var(--danger,#b91c1c)"; detail = t("threed.fitShortHint");
   }
   const comm = m.commercial === true
-    ? `<span class="pill pill-ok">${escapeHtml(t("3d.licenseOk"))}</span>`
+    ? `<span class="pill pill-ok">${escapeHtml(t("threed.licenseOk"))}</span>`
     : m.commercial === "conditional"
-      ? `<span class="pill pill-warn">${escapeHtml(t("3d.licenseCond"))}</span>`
+      ? `<span class="pill pill-warn">${escapeHtml(t("threed.licenseCond"))}</span>`
       : "";
   bar.innerHTML =
     `<div class="fit-line" style="color:${color}">● ${escapeHtml(verdict)}</div>` +
@@ -104,8 +104,8 @@ async function refreshCaps() {
     const cap = body(await api.threeDCapabilities());
     const ok = !!(cap && cap.available);
     if (status) status.textContent = ok
-      ? t("3d.engineReady")
-      : t("3d.engineMissing", { miss: (cap && cap.missing || []).join(", ") });
+      ? t("threed.engineReady")
+      : t("threed.engineMissing", { miss: (cap && cap.missing || []).join(", ") });
     if (missingCard) {
       missingCard.style.display = ok ? "none" : "";
       const hint = $("#3d-install-hint");
@@ -139,17 +139,17 @@ async function generate() {
   const imagePath = ($("#3d-image-path").value || "").trim();
 
   if (mode === "t23d" && !prompt) {
-    toast(t("3d.promptFirst"), { kind: "warn" });
+    toast(t("threed.promptFirst"), { kind: "warn" });
     return;
   }
   if (mode === "i23d" && !imagePath) {
-    toast(t("3d.imageFirst"), { kind: "warn" });
+    toast(t("threed.imageFirst"), { kind: "warn" });
     return;
   }
 
   const btn = $("#3d-run");
   btn.disabled = true;
-  btn.textContent = t("3d.working");
+  btn.textContent = t("threed.working");
   try {
     const res = body(await api.threeDGenerate({
       mode,
@@ -164,14 +164,14 @@ async function generate() {
     if (task && task.id) {
       startPolling(task.id);
     } else {
-      toast(t("3d.submitFailed"), { kind: "err" });
+      toast(t("threed.submitFailed"), { kind: "err" });
       btn.disabled = false;
-      btn.textContent = t("3d.run");
+      btn.textContent = t("threed.run");
     }
   } catch (e) {
     toast(e.message, { kind: "err" });
     btn.disabled = false;
-    btn.textContent = t("3d.run");
+    btn.textContent = t("threed.run");
   }
 }
 
@@ -180,12 +180,12 @@ function renderTask(task) {
   if (!out || !task) return;
   const pct = Math.round((task.progress || 0) * 100);
   const state = task.state;
-  let html = `<h3 class="mm-answer-title">${escapeHtml(t("3d.task"))} · ${escapeHtml(state)} (${pct}%)</h3>`;
+  let html = `<h3 class="mm-answer-title">${escapeHtml(t("threed.task"))} · ${escapeHtml(state)} (${pct}%)</h3>`;
   if (task.step) html += `<p class="muted">${escapeHtml(task.step)}</p>`;
   html += `<div class="adv-row"><div class="mm-progress"><div class="mm-progress-bar" style="width:${pct}%"></div></div></div>`;
   if (state === "done" || task.output_path) {
-    html += `<p class="muted">${escapeHtml(t("3d.done", { path: task.output_path || "" }))}</p>`;
-    if (task.mesh_faces) html += `<p class="muted">${escapeHtml(t("3d.mesh", { faces: task.mesh_faces, verts: task.mesh_vertices || 0 }))}</p>`;
+    html += `<p class="muted">${escapeHtml(t("threed.done", { path: task.output_path || "" }))}</p>`;
+    if (task.mesh_faces) html += `<p class="muted">${escapeHtml(t("threed.mesh", { faces: task.mesh_faces, verts: task.mesh_vertices || 0 }))}</p>`;
   }
   if (state === "error") {
     html += `<p class="muted" style="color:var(--danger,#b91c1c)">${escapeHtml(task.error || "")}</p>`;
@@ -195,7 +195,7 @@ function renderTask(task) {
   if (state === "done" || state === "error" || state === "cancelled") {
     stopPolling();
     const btn = $("#3d-run");
-    if (btn) { btn.disabled = false; btn.textContent = t("3d.run"); }
+    if (btn) { btn.disabled = false; btn.textContent = t("threed.run"); }
   }
 }
 

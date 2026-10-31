@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kevrai-studio-sidecar"
-version = "4.16.6"
+version = "4.17.2"
 description = "Kevrai Omni — Python inference orchestration sidecar"
 requires-python = ">=3.10"
 dependencies = [
@@ -32,6 +32,13 @@ dev = [
   "mypy>=1.10",
   "black>=24.0",
   "jsonschema>=4.21",
+]
+# Media/format runtime deps (LTX MP4 export via imageio-ffmpeg, MNN/demucs
+# numpy). Lazily imported at runtime, so optional: `pip install .[media]`.
+media = [
+  "numpy>=1.26",
+  "imageio>=2.34",
+  "imageio-ffmpeg>=0.5",
 ]
 
 [tool.pytest.ini_options]

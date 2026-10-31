@@ -342,7 +342,7 @@ function switchView(name) {
     const root = document.getElementById("pane-3d");
     if (root && !root.dataset.rendered) {
       root.dataset.rendered = "1";
-      initThreeD().catch((e) => toast(t("3d.failed", { err: e.message }), { kind: "err" }));
+      initThreeD().catch((e) => toast(t("threed.failed", { err: e.message }), { kind: "err" }));
     }
   }
   // v2.7.0 — Kevrai Agent page (init once).

@@ -82,6 +82,21 @@ def test_catalog_version_matches_package_version():
         assert cat["version"] == pkg["version"], f"{name}.json version drift"
 
 
+def test_pyproject_version_matches_package_version():
+    """pyproject.toml (packaging metadata) must agree with package.json.
+
+    Regression: pyproject drifted to 4.16.6 while package.json / app.__version__
+    were 4.17.2, and nothing asserted the pyproject side, so the drift slipped
+    through CI. This closes that blind spot.
+    """
+    import tomllib
+
+    pkg = json.loads((REPO_ROOT / "package.json").read_text(encoding="utf-8"))
+    with (REPO_ROOT / "python" / "pyproject.toml").open("rb") as fh:
+        py = tomllib.load(fh)
+    assert py["project"]["version"] == pkg["version"], "pyproject.toml version drift"
+
+
 def test_health_reports_package_version():
     """The sidecar /api/health version must equal package.json's version."""
     from fastapi.testclient import TestClient

@@ -2288,9 +2288,16 @@ _MNN_DL: dict[str, Any] = {
     "cancel": False,
 }
 
+# Guard for _MNN_DL: the download worker runs in a thread pool while the
+# /api/mnn/* endpoints run on the event loop / thread pool, so every read or
+# write of _MNN_DL must hold this lock (H2 race: single-flight TOCTOU and
+# status overwrite).
+_MNN_DL_LOCK = threading.Lock()
+
 
 def _mnn_dl_state() -> dict[str, Any]:
-    return {k: v for k, v in _MNN_DL.items() if k != "cancel"}
+    with _MNN_DL_LOCK:
+        return {k: v for k, v in _MNN_DL.items() if k != "cancel"}
 
 
 class MnnDownloadReq(BaseModel):
@@ -2301,30 +2308,37 @@ class MnnDownloadReq(BaseModel):
 def _mnn_download_worker(entry: dict[str, Any], dest: Path) -> None:
     """Blocking worker: enumerate files then download each into dest/."""
 
-    _MNN_DL.update({
-        "active": True, "status": "running", "error": "",
-        "entry_id": entry["id"], "name": entry.get("name", ""),
-        "files_done": 0, "bytes_done": 0, "current_file": "",
-    })
+    with _MNN_DL_LOCK:
+        _MNN_DL.update({
+            "active": True, "status": "running", "error": "",
+            "entry_id": entry["id"], "name": entry.get("name", ""),
+            "files_done": 0, "bytes_done": 0, "current_file": "",
+        })
     try:
         files = mnn_market.list_mnn_files(entry["repo"])
         if not files:
             raise RuntimeError("仓库文件列表为空")
-        _MNN_DL["files_total"] = len(files)
-        _MNN_DL["bytes_total"] = sum(f.get("size", 0) for f in files)
+        with _MNN_DL_LOCK:
+            _MNN_DL["files_total"] = len(files)
+            _MNN_DL["bytes_total"] = sum(f.get("size", 0) for f in files)
         for f in files:
-            if _MNN_DL["cancel"]:
-                _MNN_DL["status"] = "cancelled"
-                return
+            with _MNN_DL_LOCK:
+                if _MNN_DL["cancel"]:
+                    _MNN_DL["status"] = "cancelled"
+                    return
             _mnn_download_one_file(f, dest)
-            _MNN_DL["files_done"] += 1
-        _MNN_DL["status"] = "done"
-        _MNN_DL["current_file"] = ""
+            with _MNN_DL_LOCK:
+                _MNN_DL["files_done"] += 1
+        with _MNN_DL_LOCK:
+            _MNN_DL["status"] = "done"
+            _MNN_DL["current_file"] = ""
     except Exception as e:  # noqa: BLE001
-        _MNN_DL["status"] = "failed"
-        _MNN_DL["error"] = str(e)
+        with _MNN_DL_LOCK:
+            _MNN_DL["status"] = "failed"
+            _MNN_DL["error"] = str(e)
     finally:
-        _MNN_DL["active"] = False
+        with _MNN_DL_LOCK:
+            _MNN_DL["active"] = False
 
 
 def _mnn_download_one_file(f: dict[str, Any], dest: Path) -> None:
@@ -2339,12 +2353,14 @@ def _mnn_download_one_file(f: dict[str, Any], dest: Path) -> None:
     import httpx
 
     path = f["path"]
-    _MNN_DL["current_file"] = path
+    with _MNN_DL_LOCK:
+        _MNN_DL["current_file"] = path
     target = dest / path
     target.parent.mkdir(parents=True, exist_ok=True)
     want_size = int(f.get("size", 0))
     if target.exists() and want_size and target.stat().st_size == want_size:
-        _MNN_DL["bytes_done"] += want_size
+        with _MNN_DL_LOCK:
+            _MNN_DL["bytes_done"] += want_size
         return
 
     tmp = target.with_suffix(target.suffix + ".part")
@@ -2357,9 +2373,10 @@ def _mnn_download_one_file(f: dict[str, Any], dest: Path) -> None:
     last_err: Exception | None = None
     for u in urls:
         for attempt in range(2):
-            if _MNN_DL["cancel"]:
-                _MNN_DL["status"] = "cancelled"
-                return
+            with _MNN_DL_LOCK:
+                if _MNN_DL["cancel"]:
+                    _MNN_DL["status"] = "cancelled"
+                    return
             try:
                 resume = tmp.stat().st_size if tmp.exists() else 0
                 headers = {"User-Agent": USER_AGENT}
@@ -2381,11 +2398,13 @@ def _mnn_download_one_file(f: dict[str, Any], dest: Path) -> None:
                     mode = "ab" if resume else "wb"
                     with open(tmp, mode) as fh:
                         for chunk in resp.iter_bytes(65536):
-                            if _MNN_DL["cancel"]:
-                                _MNN_DL["status"] = "cancelled"
-                                return
+                            with _MNN_DL_LOCK:
+                                if _MNN_DL["cancel"]:
+                                    _MNN_DL["status"] = "cancelled"
+                                    return
                             fh.write(chunk)
-                            _MNN_DL["bytes_done"] += len(chunk)
+                            with _MNN_DL_LOCK:
+                                _MNN_DL["bytes_done"] += len(chunk)
                 if not want_size or tmp.stat().st_size >= want_size:
                     tmp.replace(target)
                     return
@@ -2406,9 +2425,6 @@ async def mnn_download(req: MnnDownloadReq, request: Request) -> dict[str, Any]:
     - repo：直接从 catalog 里 engine 含 mnn 的模型仓库直下，
       按 repo 枚举文件，entry_id 取仓库短名（taobao-mnn/xxx -> xxx）
     """
-    if _MNN_DL["active"]:
-        raise HTTPException(status_code=409, detail="已有 MNN 模型下载任务进行中")
-
     if req.entry_id and req.repo:
         raise HTTPException(status_code=400, detail="entry_id 与 repo 只能提供一项")
 
@@ -2437,17 +2453,30 @@ async def mnn_download(req: MnnDownloadReq, request: Request) -> dict[str, Any]:
     if (dest / "config.json").exists():
         raise HTTPException(status_code=409, detail=f"该模型已下载：{dest}")
     dest.mkdir(parents=True, exist_ok=True)
-    _MNN_DL["cancel"] = False
-    _MNN_DL["dest"] = str(dest)
-    asyncio.get_running_loop().run_in_executor(None, _mnn_download_worker, entry, dest)
+    # Atomic single-flight reservation: check-and-reserve under the lock so two
+    # concurrent POSTs cannot both see active==False and start (TOCTOU H2).
+    with _MNN_DL_LOCK:
+        if _MNN_DL["active"]:
+            raise HTTPException(status_code=409, detail="已有 MNN 模型下载任务进行中")
+        _MNN_DL["active"] = True
+        _MNN_DL["cancel"] = False
+        _MNN_DL["dest"] = str(dest)
+    try:
+        asyncio.get_running_loop().run_in_executor(None, _mnn_download_worker, entry, dest)
+    except Exception:
+        # Reservation made but the worker never launched — release the slot.
+        with _MNN_DL_LOCK:
+            _MNN_DL["active"] = False
+        raise
     return {"ok": True, "entry_id": entry_id, "repo": req.repo, "dest": str(dest)}
 
 
 @app.post("/api/mnn/download/cancel")
 def mnn_download_cancel() -> dict[str, Any]:
-    if not _MNN_DL["active"]:
-        raise HTTPException(status_code=404, detail="no active mnn download")
-    _MNN_DL["cancel"] = True
+    with _MNN_DL_LOCK:
+        if not _MNN_DL["active"]:
+            raise HTTPException(status_code=404, detail="no active mnn download")
+        _MNN_DL["cancel"] = True
     return {"ok": True}
 
 

@@ -191,20 +191,34 @@ async function saveSettings(next) {
                    "hfToken", "msToken"];
   const out = {};
   for (const k of allowed) if (k in next) out[k] = next[k];
-  await fsp.writeFile(SETTINGS_PATH, JSON.stringify({ ...loadSettingsSync(), ...out }, null, 2),
-                      { encoding: "utf-8", mode: 0o600 });
+  // Atomic write: write a unique temp file in the same dir, then rename over
+  // the target. Prevents a crash mid-write from truncating settings.json and
+  // losing every setting (window-state.js uses the same pattern).
+  const data = JSON.stringify({ ...loadSettingsSync(), ...out }, null, 2);
+  const tmp = `${SETTINGS_PATH}.${crypto.randomBytes(6).toString("hex")}.tmp`;
+  await fsp.writeFile(tmp, data, { encoding: "utf-8", mode: 0o600 });
+  await fsp.rename(tmp, SETTINGS_PATH);
   const merged = loadSettingsSync();
-  // Tokens are consumed by the *sidecar* (it makes the remote requests), not by
-  // Electron. Persist locally AND push to Python so gated/private repos work.
-  // Best-effort: a sidecar that is still booting must not fail the save.
-  if ("hfToken" in out || "msToken" in out) {
+  // Keep the Python sidecar's settings in sync with Electron's. The sidecar is
+  // the process that actually writes models/engines, so a changed model/engine
+  // dir must reach it or the UI shows one dir while downloads land elsewhere
+  // (data-integrity drift). Tokens were already synced; extend to dirs + prefs.
+  const sidecarPatch = {};
+  if ("hfToken" in out) sidecarPatch.hf_token = merged.hfToken || "";
+  if ("msToken" in out) sidecarPatch.ms_token = merged.msToken || "";
+  if ("modelDir" in out) sidecarPatch.model_dir = merged.modelDir || "";
+  if ("engineDir" in out) sidecarPatch.engine_dir = merged.engineDir || "";
+  if ("theme" in out) sidecarPatch.theme = merged.theme || "system";
+  if ("hardwareAccel" in out) sidecarPatch.hardware_acceleration = merged.hardwareAccel || "auto";
+  if ("telemetry" in out) sidecarPatch.telemetry_enabled = Boolean(merged.telemetry);
+  if (Object.keys(sidecarPatch).length) {
     try {
       await sidecarFetch("/api/settings", {
         method: "PUT",
-        body: { hf_token: merged.hfToken || "", ms_token: merged.msToken || "" },
+        body: sidecarPatch,
       });
     } catch (e) {
-      logWarn("token sync to sidecar failed", String(e && e.message || e));
+      logWarn("settings sync to sidecar failed", String(e && e.message || e));
     }
   }
   return merged;
@@ -904,19 +918,6 @@ function isHostAllowed(host, settings) {
     ? settings.allowlist
     : ALLOW_DEFAULT;
   return list.some((suffix) => host === suffix || host.endsWith("." + suffix));
-}
-
-function safePathWithin(base, candidate) {
-  if (!isString(candidate, 4096)) throw err("path: invalid");
-  const norm = path.normalize(candidate);
-  // Block obvious traversal patterns even after normalization.
-  if (norm.includes("..")) throw err("path: traversal not allowed");
-  const baseAbs = path.resolve(base);
-  const abs = path.resolve(norm);
-  if (!abs.startsWith(baseAbs + path.sep) && abs !== baseAbs) {
-    throw err("path: outside allowed root");
-  }
-  return abs;
 }
 
 // ---------------------------------------------------------------------------
@@ -2387,10 +2388,17 @@ function registerIpc() {
 
   ipcMain.handle("kevrai:open-path", async (_e, opts) => {
     const o = (opts && typeof opts === "object") ? opts : {};
-    const root = path.join(userDataDir(), "models");
-    const abs = safePathWithin(root, isString(o.path, 4096) ? o.path : "");
-    await fsp.access(abs, fs.constants.F_OK).catch(() => { throw err("path: not found"); });
-    shell.showItemInFolder(abs);
+    // `showItemInFolder` only reveals a path in the OS file manager (no file
+    // contents are read). Callers use this for *output* directories (separation,
+    // TTS, music, LTX video, agent artifacts) which live outside `userData/models`,
+    // so we no longer pin the root to the models dir. We still require an absolute
+    // path and reject traversal (`..`) — only a reveal, not a read/write primitive.
+    const raw = isString(o.path, 4096) ? o.path : "";
+    if (!raw || !path.isAbsolute(raw)) throw err("path: invalid");
+    const norm = path.normalize(raw);
+    if (norm.includes("..")) throw err("path: traversal not allowed");
+    await fsp.access(norm, fs.constants.F_OK).catch(() => { throw err("path: not found"); });
+    shell.showItemInFolder(norm);
   });
 
   ipcMain.handle("kevrai:show-error-dialog", async (_e, opts) => {
@@ -2460,7 +2468,9 @@ function pollDownloadProgress(taskId) {
     notifyRenderer("download:progress", payload);
     notifyRenderer("api:progress:event", payload);
     const status = String(body.status || "").toLowerCase();
-    if (["done", "failed", "cancelled", "error"].includes(status)) return;
+    // DownloadStatus terminal set. "error" is not a sidecar status (it uses
+    // "failed"); including "expired" stops polling watchdog-expired tasks.
+    if (["done", "failed", "cancelled", "expired"].includes(status)) return;
     setTimeout(tick, interval);
   };
   setTimeout(tick, 500);

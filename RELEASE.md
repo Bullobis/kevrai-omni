@@ -67,8 +67,9 @@ TAG=<VERSION> bash scripts/release.sh    # 覆盖默认 tag
 Kevrai-Omni-<VERSION>-x64.exe        # Windows NSIS 安装包
 Kevrai-Omni-<VERSION>-x64.zip        # Windows 便携版
 Kevrai-Omni-<VERSION>-x86_64.AppImage
-kevrai-omni_<VERSION>_amd64.deb
-Kevrai-Omni-<VERSION>.dmg            # macOS（x64 / arm64）
+Kevrai-Omni-<VERSION>-amd64.deb
+Kevrai-Omni-<VERSION>-x64.dmg        # macOS x64
+Kevrai-Omni-<VERSION>-arm64.dmg      # macOS arm64
 latest.yml / latest-linux.yml        # electron-updater 自动更新元数据（必须随包发布）
 ```
 

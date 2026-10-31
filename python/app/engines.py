@@ -14,11 +14,13 @@ import hashlib
 import json
 import logging
 import os
+import queue as _queue
 import shutil
 import subprocess
 import sys
 import tempfile
 import threading
+import time as _time
 import zipfile
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -629,22 +631,56 @@ class EngineManager:
         try:
             # 流式读 pip 输出，把最新一行写进 active_url 作为进度文案，
             # 让前端轮询时能看到"正在下载/安装 xx 包"而不是干等。
+            # 用独立读线程 + 队列，使网络挂起（长时间无输出）时仍能命中
+            # 900s 超时，而不是永久占死 _INSTALL_LOCK 与线程池线程。
             proc = subprocess.Popen(  # noqa: S603 — argv list built from internal constants
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 text=True, bufsize=1,
             )
             last_line = ""
             assert proc.stdout is not None
-            for line in proc.stdout:
-                line = line.strip()
+            q = _queue.Queue()
+
+            def _reader() -> None:
+                try:
+                    for line in proc.stdout:
+                        q.put(line)
+                except BaseException as e:  # noqa: BLE001 — re-raised in main thread
+                    q.put(e)
+                finally:
+                    q.put(None)  # EOF sentinel
+
+            threading.Thread(target=_reader, daemon=True).start()
+            deadline = _time.monotonic() + 900
+            while True:
+                remaining = deadline - _time.monotonic()
+                if remaining <= 0:
+                    proc.kill()
+                    raise TimeoutError(f"pip install of {pypi_name} timed out after 900s")
+                try:
+                    item = q.get(timeout=min(1.0, remaining))
+                except _queue.Empty:
+                    continue
+                if item is None:
+                    break
+                if isinstance(item, BaseException):
+                    raise item
+                line = str(item).strip()
                 if line:
                     last_line = line[:200]
                     self._set_state(eid, EngineState.DOWNLOADING,
                                     install_path=str(target), install_mode="pip",
                                     active_url=last_line)
-            proc.wait(timeout=900)
+            proc.wait(timeout=30)
             rc = proc.returncode
         except Exception as e:
+            # 确保超时/异常时杀掉子进程，不留孤儿 pip。
+            try:
+                if "proc" in locals() and proc.poll() is None:
+                    proc.kill()
+                    proc.wait(timeout=10)
+            except Exception:
+                pass
             self._set_state(eid, EngineState.FAILED,
                             last_error=f"pip exception: {e}",
                             install_mode="pip")

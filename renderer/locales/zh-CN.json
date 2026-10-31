@@ -501,6 +501,7 @@
     "uninstalledEngine": "已卸载 {id}",
     "mnnRepoStart": "开始下载 MNN 模型（仓库直下）",
     "downloadStartedAuto": "已自动挑选权重并开始下载：{file}",
+    "downloadStarted": "开始下载：{file}",
     "installNothingNoItem": "没有可安装的模型信息",
     "installNothingNoRepo": "该模型尚未公布权重下载地址（等待官方开源）",
     "installNothingGeneric": "没有可下载的内容"
