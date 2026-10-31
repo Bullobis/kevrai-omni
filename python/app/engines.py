@@ -412,7 +412,6 @@ class EngineManager:
         url: str,
         sha256: str | None = None,
         *,
-        expected_size: int | None = None,
         unzip: bool = True,
     ) -> EngineRecord:
         """Install an engine binary from `url`. Idempotent on sha match.
