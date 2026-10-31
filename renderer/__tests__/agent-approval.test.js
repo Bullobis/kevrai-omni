@@ -2,8 +2,16 @@
 // tool-call approval gate: edited-params parsing + pending-card HTML.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { setupDom } from "./helpers/dom.js";
+import { registerDict } from "../modules/i18n.js";
 import { parseEditedParams, approvalCardHtml } from "../modules/agent-approval.js";
+
+// 加载真实 zh-CN 字典，使模块里的 t() 返回真实文案（而非 key）。
+const _here = dirname(fileURLToPath(import.meta.url));
+registerDict("zh-CN", JSON.parse(readFileSync(join(_here, "..", "locales", "zh-CN.json"), "utf8")));
 
 // ---------------------------------------------------------------------------
 // parseEditedParams

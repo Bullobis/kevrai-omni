@@ -3,7 +3,15 @@
 // and safeImport() retry/throw behaviour.
 import { test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { setupDom } from "./helpers/dom.js";
+import { registerDict } from "../modules/i18n.js";
+
+// 加载真实 zh-CN 字典，使 error-handler 里的 t() 返回真实文案。
+const _here = dirname(fileURLToPath(import.meta.url));
+registerDict("zh-CN", JSON.parse(readFileSync(join(_here, "..", "locales", "zh-CN.json"), "utf8")));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

@@ -11,6 +11,8 @@
 // The code-block "copy" button carries the source as base64 (no markup-
 // significant characters) in a data attribute; the host wires the click.
 
+import { t } from "./i18n.js";
+
 export function escapeHtml(s) {
   return String(s)
     .replace(/&/g, "&amp;")
@@ -121,7 +123,7 @@ export function renderMarkdown(input) {
       out.push(
         `<div class="md-codeblock">`
         + `<div class="md-codebar"><span class="md-codelang">${escapeHtml(lang || "text")}</span>`
-        + `<button type="button" class="md-copycode" data-msg-action="copy-code" data-code="${b64}">⧉ 复制代码</button>`
+        + `<button type="button" class="md-copycode" data-msg-action="copy-code" data-code="${b64}">${t("mdRender.copyCode")}</button>`
         + `</div><pre class="md-pre"><code>${escapeHtml(code)}</code></pre></div>`
       );
       continue;

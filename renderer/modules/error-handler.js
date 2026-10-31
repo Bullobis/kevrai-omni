@@ -25,6 +25,7 @@
 "use strict";
 
 import { toast as realToast } from "./toast.js";
+import { t } from "./i18n.js";
 
 // Indirection seam: production uses the real toast(); tests can spy on the sink
 // without pulling the whole toast DOM stack into the assertion.
@@ -131,7 +132,7 @@ function showErrorBanner(userMsg) {
   const reloadBtn = document.createElement("button");
   reloadBtn.type = "button";
   reloadBtn.className = "secondary gerr-reload";
-  reloadBtn.textContent = "重新加载";
+  reloadBtn.textContent = t("errorHandler.reload");
   reloadBtn.addEventListener("click", () => {
     try { window.location.reload(); } catch (_) {}
   });
@@ -139,7 +140,7 @@ function showErrorBanner(userMsg) {
   const closeBtn = document.createElement("button");
   closeBtn.type = "button";
   closeBtn.className = "secondary gerr-close";
-  closeBtn.setAttribute("aria-label", "关闭");
+  closeBtn.setAttribute("aria-label", t("errorHandler.close"));
   closeBtn.textContent = "✕";
   closeBtn.addEventListener("click", dismissBanner);
 
@@ -181,9 +182,9 @@ function onWindowError(event) {
   if (isDup(key)) return;
 
   if (isFatalLoad(event, "error")) {
-    showErrorBanner("页面加载不完整，部分功能可能无法使用。可尝试重新加载。");
+    showErrorBanner(t("errorHandler.pageIncomplete"));
   } else {
-    toastImpl("发生了一个错误，部分功能可能受影响", { kind: "err", ttl: RUNTIME_TOAST_TTL });
+    toastImpl(t("errorHandler.occurred"), { kind: "err", ttl: RUNTIME_TOAST_TTL });
   }
 }
 
@@ -194,9 +195,9 @@ function onUnhandledRejection(event) {
   if (isDup(key)) return;
 
   if (isFatalLoad(event, "rejection")) {
-    showErrorBanner("模块加载失败，部分功能可能无法使用。可尝试重新加载。");
+    showErrorBanner(t("errorHandler.moduleFailed"));
   } else {
-    toastImpl("发生了一个错误，部分功能可能受影响", { kind: "err", ttl: RUNTIME_TOAST_TTL });
+    toastImpl(t("errorHandler.occurred"), { kind: "err", ttl: RUNTIME_TOAST_TTL });
   }
 }
 
@@ -241,6 +242,6 @@ export async function safeImport(path, retries = 1) {
       }
     }
   }
-  showErrorBanner("模块加载失败，部分功能可能无法使用。可尝试重新加载。");
+  showErrorBanner(t("errorHandler.moduleFailed"));
   throw lastErr;
 }

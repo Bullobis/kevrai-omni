@@ -10,6 +10,7 @@
  */
 
 import { escapeHtml } from "./net.js";
+import { t } from "./i18n.js";
 
 const NS = "http://www.w3.org/2000/svg";
 let activeInstance = null;
@@ -24,8 +25,11 @@ function formatBytes(b) {
 
 function buildOverlay(options) {
   const opts = Object.assign({
-    title: "正在生成",
-    captions: ["构思中…", "调用引擎…", "采样像素…", "优化细节…", "即将完成…"],
+    title: t("generationWait.title"),
+    captions: [
+      t("generationWait.c1"), t("generationWait.c2"), t("generationWait.c3"),
+      t("generationWait.c4"), t("generationWait.c5"),
+    ],
     showProgress: true,
     showCancel: true,
     indeterminate: false,
@@ -61,7 +65,7 @@ function buildOverlay(options) {
           <span id="gw-meta"></span>
         </div>
       ` : ""}
-      ${opts.showCancel ? `<button class="gw-cancel" id="gw-cancel" type="button">取消</button>` : ""}
+      ${opts.showCancel ? `<button class="gw-cancel" id="gw-cancel" type="button">${t("generationWait.cancel")}</button>` : ""}
     </div>
   `;
 

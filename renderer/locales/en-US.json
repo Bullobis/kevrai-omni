@@ -1358,5 +1358,51 @@
     "msTitle": "ModelScope",
     "msAlt": "ModelScope",
     "detailTitle": "Details"
+  },
+  "agentApproval": {
+    "paramsInvalid": "Parameter is not valid JSON: {err}",
+    "paramsMustObject": "Parameters must be a JSON object",
+    "waiting": "⏸️ Waiting to confirm tool call",
+    "editableHint": "You may edit parameters before approving",
+    "approve": "✅ Approve",
+    "reject": "✋ Reject"
+  },
+  "dragdrop": {
+    "pathUnavailable": "Could not get the local path; use the import button",
+    "imported": "Imported {name}"
+  },
+  "mdRender": {
+    "copyCode": "⧉ Copy code"
+  },
+  "generationWait": {
+    "title": "Generating",
+    "c1": "Conceptualizing…",
+    "c2": "Calling engine…",
+    "c3": "Sampling pixels…",
+    "c4": "Refining details…",
+    "c5": "Almost done…",
+    "cancel": "Cancel"
+  },
+  "api": {
+    "failed": "{name} failed: {msg}"
+  },
+  "errorHandler": {
+    "reload": "Reload",
+    "close": "Close",
+    "pageIncomplete": "The page loaded incompletely; some features may not work. Try reloading.",
+    "occurred": "An error occurred; some features may be affected",
+    "moduleFailed": "A module failed to load; some features may not work. Try reloading."
+  },
+  "revisionPicker": {
+    "choose": "Choose revision · {name}",
+    "close": "Close",
+    "tag": "Tag",
+    "branch": "Branch",
+    "default": "Default",
+    "tagNote": "Release tag",
+    "branchNote": "Branch",
+    "count": "{n} revisions in total",
+    "cancel": "Cancel",
+    "continue": "Continue"
   }
 }

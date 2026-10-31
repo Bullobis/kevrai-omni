@@ -7,6 +7,8 @@
 // whole agent panel or a window.kevrai bridge.
 "use strict";
 
+import { t } from "./i18n.js";
+
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, (m) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -24,10 +26,10 @@ export function parseEditedParams(text) {
   try {
     obj = JSON.parse(raw);
   } catch (e) {
-    throw new Error(`参数不是合法 JSON：${e.message || e}`);
+    throw new Error(t("agentApproval.paramsInvalid", { err: e.message || e }));
   }
   if (obj === null || typeof obj !== "object" || Array.isArray(obj)) {
-    throw new Error("参数必须是 JSON 对象");
+    throw new Error(t("agentApproval.paramsMustObject"));
   }
   return obj;
 }
@@ -40,14 +42,14 @@ export function approvalCardHtml(req) {
   return `
       <div class="agent-approval-card" data-id="${esc(req.id)}">
         <div class="agent-approval-head">
-          ⏸️ 等待确认工具调用
+          ${t("agentApproval.waiting")}
           <code class="agent-approval-tool">${esc(req.tool_name)}</code>
         </div>
         <textarea class="agent-approval-params" spellcheck="false"
-          title="可编辑参数后再批准">${paramsText}</textarea>
+          title="${t("agentApproval.editableHint")}">${paramsText}</textarea>
         <div class="agent-approval-actions">
-          <button type="button" class="btn btn-primary btn-sm" data-approval-approve>✅ 批准运行</button>
-          <button type="button" class="btn btn-sm agent-msg-btn-danger" data-approval-reject>✋ 拒绝</button>
+          <button type="button" class="btn btn-primary btn-sm" data-approval-approve>${t("agentApproval.approve")}</button>
+          <button type="button" class="btn btn-sm agent-msg-btn-danger" data-approval-reject>${t("agentApproval.reject")}</button>
         </div>
       </div>`;
 }

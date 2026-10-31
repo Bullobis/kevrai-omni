@@ -1358,5 +1358,51 @@
     "msTitle": "魔搭 ModelScope",
     "msAlt": "魔搭",
     "detailTitle": "详细介绍"
+  },
+  "agentApproval": {
+    "paramsInvalid": "参数不是合法 JSON：{err}",
+    "paramsMustObject": "参数必须是 JSON 对象",
+    "waiting": "⏸️ 等待确认工具调用",
+    "editableHint": "可编辑参数后再批准",
+    "approve": "✅ 批准运行",
+    "reject": "✋ 拒绝"
+  },
+  "dragdrop": {
+    "pathUnavailable": "无法获取本地路径，请使用按钮导入",
+    "imported": "已导入 {name}"
+  },
+  "mdRender": {
+    "copyCode": "⧉ 复制代码"
+  },
+  "generationWait": {
+    "title": "正在生成",
+    "c1": "构思中…",
+    "c2": "调用引擎…",
+    "c3": "采样像素…",
+    "c4": "优化细节…",
+    "c5": "即将完成…",
+    "cancel": "取消"
+  },
+  "api": {
+    "failed": "{name} 失败：{msg}"
+  },
+  "errorHandler": {
+    "reload": "重新加载",
+    "close": "关闭",
+    "pageIncomplete": "页面加载不完整，部分功能可能无法使用。可尝试重新加载。",
+    "occurred": "发生了一个错误，部分功能可能受影响",
+    "moduleFailed": "模块加载失败，部分功能可能无法使用。可尝试重新加载。"
+  },
+  "revisionPicker": {
+    "choose": "选择版本 · {name}",
+    "close": "关闭",
+    "tag": "标签",
+    "branch": "分支",
+    "default": "默认",
+    "tagNote": "发布标签",
+    "branchNote": "分支",
+    "count": "共 {n} 个版本",
+    "cancel": "取消",
+    "continue": "继续"
   }
 }

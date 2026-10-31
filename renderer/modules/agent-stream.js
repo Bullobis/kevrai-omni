@@ -9,6 +9,8 @@
 // blocks / copy buttons light up exactly like a normal assistant message.
 "use strict";
 
+import { t } from "./i18n.js";
+
 // Pure accumulator: append a delta to the running raw answer. Split out so it
 // can be unit-tested without a DOM.
 export function appendDelta(current, delta) {
@@ -59,13 +61,13 @@ export class StreamBubble {
     this.raw = text;
     if (msgId != null) this.div.dataset.msgId = String(msgId);
     const toolsHtml = tools && tools.length
-      ? `<div class="agent-tools-used">工具: ${
+      ? `<div class="agent-tools-used">${t("agent.toolsUsedLabel")} ${
         tools.map((x) => `<span class="agent-tool-tag">${this.esc(x)}</span>`).join("")
       }</div>`
       : "";
-    const regenBtn = `<button type="button" class="agent-msg-btn" data-msg-action="regen" title="重新生成">↻ 重新生成</button>`;
+    const regenBtn = `<button type="button" class="agent-msg-btn" data-msg-action="regen" title="${t("agent.regenTitle")}">↻ ${t("agent.regen")}</button>`;
     const deleteBtn = msgId != null
-      ? `<button type="button" class="agent-msg-btn agent-msg-btn-danger" data-msg-action="delete-msg" title="删除此条及之后消息">🗑 删除</button>`
+      ? `<button type="button" class="agent-msg-btn agent-msg-btn-danger" data-msg-action="delete-msg" title="${t("agent.deleteMsgTitle")}">🗑 ${t("agent.deleteMsg")}</button>`
       : "";
     this.div.classList.remove("agent-msg-streaming");
     this.div.classList.add("agent-msg-md");
@@ -75,7 +77,7 @@ export class StreamBubble {
       ${traceHtml || ""}
       ${toolsHtml}
       <div class="agent-msg-actions">
-        <button type="button" class="agent-msg-btn" data-msg-action="copy" title="复制">⧉ 复制</button>
+        <button type="button" class="agent-msg-btn" data-msg-action="copy" title="${t("agent.copyTitle")}">⧉ ${t("agent.copy")}</button>
         ${regenBtn}
         ${deleteBtn}
       </div>

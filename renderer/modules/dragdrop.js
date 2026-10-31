@@ -2,6 +2,7 @@
 "use strict";
 import { api } from "./api.js";
 import { toast } from "./toast.js";
+import { t } from "./i18n.js";
 
 let counter = 0;
 
@@ -41,9 +42,9 @@ export function wireDragDrop() {
           p = window.kevrai.pathForFile(f) || "";
         } } catch (_) { /* use fallback */ }
         p = p || f.path || "";
-        if (!p) throw new Error("无法获取本地路径，请使用按钮导入");
+        if (!p) throw new Error(t("dragdrop.pathUnavailable"));
         await api.importModel({ path: p, mode: "copy" });
-        toast(`已导入 ${f.name}`, { kind: "ok" });
+        toast(t("dragdrop.imported", { name: f.name }), { kind: "ok" });
       } catch (err) {
         const msg = err && err.message ? err.message : String(err);
         toast(`${f.name}: ${msg}`, { kind: "err" });

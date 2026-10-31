@@ -4,6 +4,8 @@
 // install only when the user explicitly cancels this picker.
 "use strict";
 
+import { t } from "./i18n.js";
+
 // HF serves the default branch as revision "main".
 export const DEFAULT_REVISION = "main";
 
@@ -100,20 +102,20 @@ export async function pickRevision(item, api) {
     overlay.innerHTML = `
       <div class="overlay-card quant-card">
         <header>
-          <h2>选择版本 · ${esc(item.name || item.id)}</h2>
-          <button class="ghost icon quant-x" type="button" aria-label="关闭">×</button>
+          <h2>${t("revisionPicker.choose", { name: esc(item.name || item.id) })}</h2>
+          <button class="ghost icon quant-x" type="button" aria-label="${t("revisionPicker.close")}">×</button>
         </header>
         <div class="quant-list">
           ${options
             .map((o, i) => {
-              const kindLabel = o.kind === "tag" ? "标签" : "分支";
+              const kindLabel = o.kind === "tag" ? t("revisionPicker.tag") : t("revisionPicker.branch");
               return `<button type="button" class="quant-opt${o.isDefault ? " is-sel" : ""}" data-i="${i}">
                 <span class="quant-radio" aria-hidden="true"></span>
                 <span class="quant-main">
                   <span class="quant-label">${esc(o.value)}${
-                    o.isDefault ? '<span class="quant-badge">默认</span>' : ""
+                    o.isDefault ? `<span class="quant-badge">${t("revisionPicker.default")}</span>` : ""
                   }</span>
-                  <span class="quant-note">${o.kind === "tag" ? "发布标签" : "分支"}</span>
+                  <span class="quant-note">${o.kind === "tag" ? t("revisionPicker.tagNote") : t("revisionPicker.branchNote")}</span>
                 </span>
                 <span class="quant-size">${esc(kindLabel)}</span>
               </button>`;
@@ -121,10 +123,10 @@ export async function pickRevision(item, api) {
             .join("")}
         </div>
         <footer class="quant-foot">
-          <span class="quant-count mut">共 ${options.length} 个版本</span>
+          <span class="quant-count mut">${t("revisionPicker.count", { n: options.length })}</span>
           <span class="quant-spacer"></span>
-          <button class="secondary quant-cancel" type="button">取消</button>
-          <button class="primary quant-ok" type="button">继续</button>
+          <button class="secondary quant-cancel" type="button">${t("revisionPicker.cancel")}</button>
+          <button class="primary quant-ok" type="button">${t("revisionPicker.continue")}</button>
         </footer>
       </div>`;
 

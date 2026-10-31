@@ -3,6 +3,7 @@
 // Errors are caught and logged as toasts; the caller may also catch them.
 "use strict";
 import { toast } from "./toast.js";
+import { t } from "./i18n.js";
 
 function wrap(name, fn) {
   return async (...args) => {
@@ -12,7 +13,7 @@ function wrap(name, fn) {
     } catch (e) {
       // Always show an error toast; never silent.
       const msg = (e && e.message) ? String(e.message) : String(e);
-      toast(`${name} 失败：${msg}`, { kind: "err" });
+      toast(t("api.failed", { name, msg }), { kind: "err" });
       throw e;
     }
   };
