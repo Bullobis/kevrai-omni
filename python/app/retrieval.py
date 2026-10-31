@@ -208,7 +208,6 @@ def hybrid_rank(
     *,
     k1: float = DEFAULT_K1,
     b: float = DEFAULT_B,
-    rrf_k: int = DEFAULT_RRF_K,
     candidate_pool: int = 50,
 ) -> list[tuple[int, float]]:
     """BM25-only ranking over ``records`` (each exposing ``text``).
