@@ -78,12 +78,10 @@ from .taxonomy import (
 # Reused verbatim from the existing, proven ModelScope client.
 try:  # pragma: no cover - mnn_catalog is always importable in-tree
     from ..mnn_catalog import _MS_API as MS_API_BASE
-    from ..mnn_catalog import _MS_ORG as MS_ORG
     from ..mnn_catalog import _MS_RESOLVE as MS_RESOLVE_BASE
 except Exception:  # pragma: no cover
     MS_API_BASE = "https://modelscope.cn/api/v1/models"
     MS_RESOLVE_BASE = "https://modelscope.cn/models"
-    MS_ORG = "MNN"
 
 # Only "Default" is confirmed by live probe; every other value errors out.
 _MS_SORT_MAP: dict[str, str] = {}
