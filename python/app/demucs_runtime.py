@@ -382,7 +382,7 @@ class DemucsManager:
         except Exception as e:  # noqa: BLE001
             raise DemucsModelError(f"音源分离失败：{e}") from e
 
-        sr = int(sep.samplerate)
+        sr = max(1, int(sep.samplerate) or 1)
         stem_manifest: list[dict[str, Any]] = []
         for name, wav_tensor in stems.items():
             out_path = out_dir / f"{name}.wav"
