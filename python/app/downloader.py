@@ -490,6 +490,9 @@ class Downloader:
         # which does not exist until the atomic rename, so two concurrent starts
         # raced on the partial file and interleaved/corrupted it).
         self._inflight_dests: dict[str, str] = {}
+        # Strong references for fire-and-forget tasks; without these the event
+        # loop can garbage-collect an in-flight download task mid-run.
+        self._bg_tasks: set[asyncio.Task] = set()
         base = allowed_hosts or DEFAULT_MODEL_HOSTS
         if extra_allowed_hosts:
             self._allowed_hosts = set(base) | set(extra_allowed_hosts)
@@ -574,7 +577,9 @@ class Downloader:
 
         # Run in background without awaiting — caller polls via `progress()` /
         # subscribes to `task.queue`.
-        asyncio.create_task(self._run(task))
+        run = asyncio.create_task(self._run(task))
+        self._bg_tasks.add(run)
+        run.add_done_callback(self._bg_tasks.discard)
         self._ensure_watchdog()
         return task.id
 
