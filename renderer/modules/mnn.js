@@ -207,7 +207,7 @@ function renderChatCard(root, st) {
       _chatHistory.push({ role: "user", content: text });
       _chatHistory.push({ role: "assistant", content: b.text || "" });
     } catch (e) {
-      thinking.textContent = `出错了：${e?.message || e}`;
+      thinking.textContent = t("mnn.chatError", { err: e?.message || e });
     }
     input.disabled = false;
     input.focus();
@@ -302,17 +302,17 @@ function _cvtDstFor(kind, src) {
 function _cvtHint(kind) {
   switch (kind) {
     case "hf-to-mnn-llm":
-      return "将 HF 原始权重转换为 MNN-LLM 格式（内部优先使用官方 llm-export，失败时自动降级 MNNConvert）。";
+      return t("mnn.descMllm");
     case "hf-to-gguf":
-      return "使用 llama.cpp 官方 convert_hf_to_gguf.py 导出 GGUF，可直接用于 llama.cpp / ollama。";
+      return t("mnn.descGguf");
     case "hf-to-onnx":
-      return "使用 HuggingFace Optimum 官方 optimum-cli 导出 ONNX。";
+      return t("mnn.descOnnx");
     case "hf-to-mlx":
-      return "使用 mlx_lm.convert 导出 MLX 格式，适配 Apple Silicon。";
+      return t("mnn.descMlx");
     case "onnx-to-mnn":
-      return "使用 MNNConvert 将 ONNX 模型转换为 MNN 格式。";
+      return t("mnn.descConvert");
     case "torch-to-mnn":
-      return "使用 MNNConvert 将 TorchScript 模型转换为 MNN 格式。";
+      return t("mnn.descConvertTs");
     default:
       return "";
   }
@@ -340,7 +340,7 @@ async function renderConvert(root) {
   const kind = _lastCvtKind;
 
   const kinds = [
-    ["hf-to-mnn-llm", "HF → MNN-LLM（mnn 引擎）"],
+    ["hf-to-mnn-llm", t("mnn.cvtTypeMllm")],
     ["hf-to-gguf", "HF → GGUF（llama.cpp / ollama）"],
     ["hf-to-onnx", "HF → ONNX（onnxruntime）"],
     ["hf-to-mlx", "HF → MLX（Apple Silicon）"],
@@ -349,14 +349,14 @@ async function renderConvert(root) {
   ];
 
   const srcPh = kind.startsWith("hf-")
-    ? "源模型目录（HF safetensors 目录，含 config.json）"
-    : (kind === "onnx-to-mnn" ? "源 ONNX 文件路径（*.onnx）" : "源 TorchScript 文件路径（*.pt / *.torchscript）");
+    ? t("mnn.cvtSrcHfDir")
+    : (kind === "onnx-to-mnn" ? t("mnn.cvtSrcOnnx") : t("mnn.cvtSrcTs"));
   const hint = _cvtHint(kind);
 
   el.innerHTML = `
     <p class="hint">${hint}</p>
     <div class="mnn-convert-row">
-      <label class="mut tiny" style="margin-right:6px">转换类型</label>
+      <label class="mut tiny" style="margin-right:6px">${t("mnn.cvtTypeLabel")}</label>
       <select id="mnn-cvt-kind">
         ${kinds.map(([v, label]) => `<option value="${v}" ${v === kind ? "selected" : ""}>${label}</option>`).join("")}
       </select>
@@ -364,61 +364,61 @@ async function renderConvert(root) {
     <div class="mnn-convert-row">
       <input id="mnn-cvt-src" type="text" placeholder="${srcPh}"
              value="${esc(_lastCvtSrc || "")}" autocomplete="off" style="flex:1" />
-      <button class="ghost small" id="mnn-cvt-pick-src" title="选择文件夹/文件">选择</button>
+      <button class="ghost small" id="mnn-cvt-pick-src" title="${t("mnn.cvtPickSrcTitle")}">${t("mnn.cvtPickSrc")}</button>
     </div>
     <div id="mnn-cvt-opts">
       ${kind === "hf-to-mnn-llm" ? `
       <div class="mnn-convert-row">
-        <input id="mnn-cvt-arch" type="text" placeholder="架构（留空自动识别：qwen / qwen3 / llama3 / phi / gemma / chatglm…）"
+        <input id="mnn-cvt-arch" type="text" placeholder="${t("mnn.cvtArchPh")}"
                value="${esc(_lastCvtArch || "")}" autocomplete="off" style="flex:1" />
       </div>
       <div class="mnn-convert-row">
-        <label class="mut tiny" style="margin-right:6px">量化</label>
+        <label class="mut tiny" style="margin-right:6px">${t("mnn.cvtQuantLabel")}</label>
         <select id="mnn-cvt-quant">
-          <option value="4" selected>int4（默认，体积最小）</option>
-          <option value="8">int8（精度更高）</option>
-          <option value="0">不量化（fp16）</option>
+          <option value="4" selected>${t("mnn.cvtQ4")}</option>
+          <option value="8">${t("mnn.cvtQ8")}</option>
+          <option value="0">${t("mnn.cvtQ0")}</option>
         </select>
       </div>` : ""}
       ${kind === "hf-to-gguf" ? `
       <div class="mnn-convert-row">
-        <label class="mut tiny" style="margin-right:6px">输出精度</label>
+        <label class="mut tiny" style="margin-right:6px">${t("mnn.cvtOutPrecLabel")}</label>
         <select id="mnn-cvt-outtype">
-          <option value="f16" selected>f16（默认）</option>
+          <option value="f16" selected>${t("mnn.cvtF16")}</option>
           <option value="f32">f32</option>
           <option value="bf16">bf16</option>
         </select>
       </div>` : ""}
       ${kind === "hf-to-onnx" ? `
       <div class="mnn-convert-row">
-        <input id="mnn-cvt-task" type="text" placeholder="导出任务（留空自动推断，如 text-generation / feature-extraction）"
+        <input id="mnn-cvt-task" type="text" placeholder="${t("mnn.cvtTaskPh")}"
                value="${esc(_lastCvtTask || "")}" autocomplete="off" style="flex:1" />
       </div>` : ""}
       ${kind === "hf-to-mlx" ? `
       <div class="mnn-convert-row">
-        <label class="mut tiny" style="margin-right:6px"><input type="checkbox" id="mnn-cvt-quantize" checked /> 4bit 量化</label>
+        <label class="mut tiny" style="margin-right:6px"><input type="checkbox" id="mnn-cvt-quantize" checked /> ${t("mnn.cvt4bit")}</label>
       </div>` : ""}
       ${(kind === "onnx-to-mnn" || kind === "torch-to-mnn") ? `
       <div class="mnn-convert-row">
-        <label class="mut tiny" style="margin-right:6px">权重量化位</label>
+        <label class="mut tiny" style="margin-right:6px">${t("mnn.cvtBitsLabel")}</label>
         <select id="mnn-cvt-wqb">
-          <option value="">不量化</option>
+          <option value="">${t("mnn.cvtNoQuant")}</option>
           <option value="4">int4</option>
           <option value="8">int8</option>
         </select>
       </div>` : ""}
     </div>
     <div class="mnn-convert-row">
-      <button class="primary small" id="mnn-cvt-start" ${running ? "disabled" : ""}>${running ? "转换中…" : "开始转换"}</button>
-      <button class="danger small" id="mnn-cvt-cancel" ${running ? "" : "hidden"}>取消</button>
-      <span class="mut tiny" style="margin-left:8px">输出：${_cvtDstFor(kind, "示例")}</span>
+      <button class="primary small" id="mnn-cvt-start" ${running ? "disabled" : ""}>${running ? t("mnn.cvtConverting") : t("mnn.cvtStart")}</button>
+      <button class="danger small" id="mnn-cvt-cancel" ${running ? "" : "hidden"}>${t("mnn.cancel")}</button>
+      <span class="mut tiny" style="margin-left:8px">${t("mnn.cvtOutputPrefix")}${_cvtDstFor(kind, t("mnn.cvtOutputExample"))}</span>
     </div>
     <div id="mnn-cvt-progress" ${running ? "" : "hidden"}>
       <div class="hw-score-bar"><div id="mnn-cvt-fill" class="hw-score-fill" style="width:${Math.round((active?.progress || 0) * 100)}%"></div></div>
       <div class="mut tiny" id="mnn-cvt-status">${esc(running ? active.status : "")}</div>
     </div>
     <div id="mnn-cvt-log" class="mut tiny mnn-cvt-log"></div>
-    ${tasks.length ? `<div class="mut tiny" style="margin-top:6px">最近任务：${tasks.slice(-3).map((t) => `${esc(t.kind)} → <b>${esc(t.status)}</b>`).join(" · ")}</div>` : ""}
+    ${tasks.length ? `<div class="mut tiny" style="margin-top:6px">${t("mnn.cvtRecentPrefix")}${tasks.slice(-3).map((t) => `${esc(t.kind)} → <b>${esc(t.status)}</b>`).join(" · ")}</div>` : ""}
   `;
 
   const srcInput = $("#mnn-cvt-src", el);
@@ -442,7 +442,7 @@ async function renderConvert(root) {
 
   $("#mnn-cvt-start", el).addEventListener("click", async () => {
     const src = (srcInput.value || "").trim();
-    if (!src) { toast("请填写源模型路径", { kind: "err" }); return; }
+    if (!src) { toast(t("mnn.cvtNeedSrc"), { kind: "err" }); return; }
     _lastCvtSrc = src;
     const dst = _cvtDstFor(kind, src);
     const payload = { kind, src, dst };
@@ -466,21 +466,21 @@ async function renderConvert(root) {
       if (wqb) payload.weight_quant_bits = Number(wqb);
     }
     const b = $("#mnn-cvt-start", el);
-    b.disabled = true; b.textContent = "启动中…";
+    b.disabled = true; b.textContent = t("mnn.cvtStarting");
     try {
       await api.convertStart(payload);
-      toast("转换任务已启动", { kind: "ok" });
+      toast(t("mnn.cvtStarted"), { kind: "ok" });
       await renderConvert(root);
       startConvertPoll(root);
     } catch (e) {
-      b.disabled = false; b.textContent = "开始转换";
+      b.disabled = false; b.textContent = t("mnn.cvtStart");
     }
   });
 
   const cancelBtn = $("#mnn-cvt-cancel", el);
   if (cancelBtn) cancelBtn.addEventListener("click", async () => {
     if (active) {
-      try { await api.convertCancel(active.id); toast("已请求取消转换", { kind: "ok" }); }
+      try { await api.convertCancel(active.id); toast(t("mnn.cvtCancelRequested"), { kind: "ok" }); }
       catch (_) {}
     }
   });
@@ -518,13 +518,13 @@ function startConvertPoll(root) {
       const box = $("#mnn-cvt-progress", el);
       if (box) box.hidden = true;
       const startBtn = $("#mnn-cvt-start", el);
-      if (startBtn) { startBtn.disabled = false; startBtn.textContent = "开始转换"; }
+      if (startBtn) { startBtn.disabled = false; startBtn.textContent = t("mnn.cvtStart"); }
       const cancelBtn = $("#mnn-cvt-cancel", el);
       if (cancelBtn) cancelBtn.hidden = true;
       if (active && active.status === "done") {
-        toast("模型转换完成，可在上方列表加载", { kind: "ok" });
+        toast(t("mnn.cvtDone"), { kind: "ok" });
       } else if (active && active.status === "failed") {
-        toast(`转换失败：${active.error || "未知错误"}`, { kind: "err" });
+        toast(t("mnn.cvtFailed", { err: active.error || t("mnn.unknownError") }), { kind: "err" });
       }
       await refreshAll(root);
     } catch (_) {
@@ -544,7 +544,7 @@ async function renderMarket(root) {
     const r = await api.mnnModels();
     data = r?.body || r || {};
   } catch (e) {
-    el.innerHTML = `<p class="hint">市场加载失败：${esc(e?.message || e)}</p>`;
+    el.innerHTML = `<p class="hint">${t("mnn.marketLoadFailed", { err: esc(e?.message || e) })}</p>`;
     return;
   }
   const models = data.models || [];
@@ -556,11 +556,11 @@ async function renderMarket(root) {
           <span class="pill">${esc(m.quant || "int4")}</span>
         </div>
         <div class="sub">${esc(m.description || "")}</div>
-        <div class="sub mut">${esc(m.repo)} · 约 ${esc(m.size_gb)} GB · 建议 ${esc((m.hardware || {}).ram_gb || "?")}GB 内存</div>
+        <div class="sub mut">${esc(m.repo)} · ${t("mnn.approxGb", { gb: esc(m.size_gb) })} · ${t("mnn.suggestRam", { ram: esc((m.hardware || {}).ram_gb || "?") })}</div>
       </div>
       <div class="hw-rec-side">
         <span class="pill">${esc(m.category || "llm")}</span>
-        <button class="primary small" data-action="mnn-download" data-id="${esc(m.id)}">下载</button>
+        <button class="primary small" data-action="mnn-download" data-id="${esc(m.id)}">${t("mnn.download")}</button>
       </div>
     </div>
   `).join("");
@@ -570,7 +570,7 @@ async function renderMarket(root) {
       b.disabled = true;
       try {
         await api.mnnDownload(b.dataset.id);
-        toast("开始下载 MNN 模型", { kind: "ok" });
+        toast(t("mnn.startDownloadMnn"), { kind: "ok" });
         pollDownload(root);
       } catch (_) { /* toast shown (409 已存在/进行中) */ }
       b.disabled = false;
@@ -592,7 +592,7 @@ async function pollDownload(root) {
   } catch (_) { return; }
   if (!st || (!st.active && st.status === "idle")) { box.hidden = true; return; }
   box.hidden = false;
-  $("#mnn-dl-name", root).textContent = `下载中：${st.name || st.entry_id}（${st.files_done}/${st.files_total} 个文件）`;
+  $("#mnn-dl-name", root).textContent = t("mnn.downloadingN", { name: st.name || st.entry_id, done: st.files_done, total: st.files_total });
   const pct = st.bytes_total > 0
     ? Math.min(100, Math.round((st.bytes_done / st.bytes_total) * 100)) : 0;
   $("#mnn-dl-fill", root).style.width = `${pct}%`;
@@ -600,11 +600,11 @@ async function pollDownload(root) {
     `${(st.bytes_done / 1e9).toFixed(2)} / ${(st.bytes_total / 1e9).toFixed(2)} GB · ${pct}% · ${st.current_file || ""} ${st.error ? "· " + st.error : ""}`;
   if (!st.active && (st.status === "done" || st.status === "failed" || st.status === "cancelled")) {
     if (st.status === "done") {
-      toast("MNN 模型下载完成，可在上方列表加载", { kind: "ok" });
+      toast(t("mnn.downloadMnnDone"), { kind: "ok" });
       await refreshAll(root);
       box.hidden = true;
     } else if (st.status === "failed") {
-      toast(`下载失败：${st.error || "未知错误"}`, { kind: "err" });
+      toast(t("mnn.downloadFailed", { err: st.error || t("mnn.unknownError") }), { kind: "err" });
       box.hidden = true;
     }
   }
