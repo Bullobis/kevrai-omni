@@ -1969,10 +1969,14 @@ async def sources_lock(request: Request, body: dict[str, Any]) -> dict[str, Any]
         enabled_ids = {m.id for m in reg.enabled_sources("")}
         if source_id not in reg.sources or source_id not in enabled_ids:
             raise HTTPException(status_code=404, detail="unknown or disabled source")
-    s = _get_settings(request).model_copy()
-    s.locked_source = source_id
-    save_settings(s, request.app.state.settings_path)
-    request.app.state.settings = s
+    # Serialise with PUT /api/settings so a concurrent settings update cannot
+    # be clobbered by this read-modify-write (H3: sources_lock previously
+    # bypassed _settings_lock and lost concurrent field changes).
+    async with _settings_lock():
+        s = _get_settings(request).model_copy()
+        s.locked_source = source_id
+        save_settings(s, request.app.state.settings_path)
+        request.app.state.settings = s
     return {"locked": source_id}
 
 

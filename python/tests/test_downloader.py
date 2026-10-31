@@ -129,6 +129,14 @@ def local_server() -> Iterator[tuple[str, Callable[[bytes], None]]]:
         ("ftp://huggingface.co/x", True),
         ("file:///etc/passwd", True),
         ("javascript:alert(1)", True),
+        # H2: cloud metadata / private / link-local SSRF targets are refused
+        # even in the permissive (no allowlist) mode.
+        ("http://169.254.169.254/latest/meta-data/", True),
+        ("http://10.0.0.5/x", True),
+        ("http://192.168.1.1/x", True),
+        ("http://172.16.0.9/x", True),
+        ("http://metadata.google.internal/", True),
+        ("http://0.0.0.0/x", True),
     ],
 )
 def test_check_url(url: str, refused: bool):

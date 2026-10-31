@@ -30,6 +30,21 @@ VALID_TRANSPORTS = ("streamable-http", "sse", "stdio")
 # with a readable error instead of blocking the request forever.
 HANDSHAKE_TIMEOUT = 30.0
 
+# Shell interpreters that must never be configured as an MCP stdio command.
+# ``StdioServerParameters`` spawns the command as an argv list (no ``shell=True``),
+# so we cannot get shell *injection* via args — but a configured command of
+# ``sh -c '…'`` / ``bash -c '…'`` / ``cmd /c …`` is still an arbitrary code-exec
+# primitive. The sidecar control plane is Bearer-secret gated (defense in depth
+# is the goal here): a caller holding the secret is trusted, but we still refuse
+# the canonical "run a shell" shape so a typo'd/compromised config cannot
+# silently become a root shell. Checked against the basename, so both bare
+# ``bash`` and absolute ``/bin/bash`` are caught.
+_STDIO_SHELL_BASENAMES = frozenset({
+    "sh", "bash", "zsh", "dash", "ksh", "csh", "tcsh", "fish", "ash",
+    "mksh", "yash", "osh", "cmd", "cmd.exe", "powershell", "powershell.exe",
+    "pwsh", "pwsh.exe", "powershell_ise", "busybox",
+})
+
 
 class MCPError(Exception):
     """Base error for MCP configuration / connection problems."""
@@ -48,6 +63,16 @@ def _normalize_url(url: str, transport: str) -> str:
     if not (u.startswith("http://") or u.startswith("https://")):
         raise MCPConfigError("URL must start with http:// or https://")
     return u
+
+
+def _basename_of(command: str) -> str:
+    """Last path component, handling both POSIX and Windows separators.
+
+    Used to compare a configured ``command`` (bare ``bash`` or absolute
+    ``/bin/bash``, ``C:\\Windows\\System32\\cmd.exe``) against the shell
+    denylist by basename.
+    """
+    return command.replace("\\", "/").rstrip("/").rsplit("/", 1)[-1]
 
 
 class MCPManager:
@@ -117,13 +142,20 @@ class MCPManager:
                 raise MCPConfigError(
                     "command is required for a stdio server "
                     "(e.g. npx, uvx, or python)")
+            if _basename_of(cmd).lower() in _STDIO_SHELL_BASENAMES:
+                raise MCPConfigError(
+                    f"command {cmd!r} is a shell interpreter; MCP stdio must "
+                    f"be a server launcher (e.g. npx, uvx, python, node)")
             clean_args = [str(a) for a in (args or [])]
             clean_env = {str(k): str(v) for k, v in (env or {}).items()}
+            cwd_clean = (cwd or "").strip()
+            if ".." in cwd_clean.replace("\\", "/").split("/"):
+                raise MCPConfigError("cwd must not contain '..'")
             server.update({
                 "command": cmd,
                 "args": clean_args,
                 "env": clean_env,
-                "cwd": (cwd or "").strip(),
+                "cwd": cwd_clean,
             })
         else:
             server["url"] = _normalize_url(url, transport)

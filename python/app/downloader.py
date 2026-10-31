@@ -20,6 +20,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import hashlib
+import ipaddress
 import logging
 import os
 import re
@@ -58,6 +59,55 @@ def _host_is_blocked(url: str) -> bool:
     if host.startswith("www."):
         host = host[4:]
     return host in DEFAULT_BLOCKED_MIRRORS
+
+
+#: Link-local / private IP literals and well-known metadata endpoints that
+#: must never be reachable by a downloader fetch. This is the classic SSRF
+#: target set (cloud metadata 169.254.169.254, 10/8, 172.16/12, 192.168/16,
+#: 0.0.0.0, fe80::/10, fc00::/7, and the IPv4-mapped equivalents).
+#: Loopback (127.0.0.0/8, ::1) is deliberately NOT blocked — the downloader
+#: may legitimately talk to a local model/mirror server, and the downloader
+#: runs on the same host that a loopback target would reach anyway. The
+#: credential-exfil vector is separately closed by the allowlist enforced for
+#: auth-bearing requests (P0-2).
+_SSRF_IP_NETS: tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...] = (
+    ipaddress.ip_network("0.0.0.0/8"),
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("169.254.0.0/16"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+    ipaddress.ip_network("fe80::/10"),
+    ipaddress.ip_network("fc00::/7"),
+)
+
+_SSRF_LOCAL_HOSTNAMES = frozenset({
+    "metadata.google.internal",
+    "metadata",
+    "instance-data",
+})
+
+
+def _host_is_ssrf_target(url: str) -> bool:
+    """True when the URL targets an SSRF-prone host: a private / loopback /
+    link-local IP literal, a localhost-like name, or a bare IPv4/IPv6 literal
+    in a reserved range. Checked on every URL and every redirect hop so a
+    trusted host cannot 302 us onto cloud metadata or an internal service."""
+    try:
+        host = (urlparse(url).hostname or "").strip("[]").lower()
+    except Exception:
+        return False
+    if not host:
+        return False
+    if host in _SSRF_LOCAL_HOSTNAMES:
+        return True
+    # IPv4-mapped IPv6 (::ffff:127.0.0.1) → strip the prefix before parsing.
+    if host.startswith("::ffff:"):
+        host = host[7:]
+    try:
+        addr = ipaddress.ip_address(host)
+    except ValueError:
+        return False  # a hostname (not a literal) — resolved later if at all
+    return any(addr in net for net in _SSRF_IP_NETS)
 
 
 class DownloadStatus(str, Enum):
@@ -295,6 +345,10 @@ def _check_url(url: str, *, enforce_allowlist: bool = False,
     # allowlist is otherwise permissive.
     if _host_is_blocked(url):
         raise DownloadRefused(f"host is on the blocked mirror list: {parsed.hostname}")
+    # H2: never fetch a private / loopback / link-local / cloud-metadata
+    # target, regardless of allowlist — closes the classic SSRF.
+    if _host_is_ssrf_target(url):
+        raise DownloadRefused(f"host is not fetchable (SSRF target): {parsed.hostname}")
     if has_auth_header:
         enforce_allowlist = True
     if enforce_allowlist and not is_host_allowed(url, DEFAULT_MODEL_HOSTS):
@@ -807,6 +861,9 @@ class Downloader:
         # P0-3: hard-blocked mirrors are always refused.
         if _host_is_blocked(url):
             raise DownloadRefused(f"host is on the blocked mirror list: {parsed.hostname}")
+        # H2: never fetch a private / loopback / link-local / metadata target.
+        if _host_is_ssrf_target(url):
+            raise DownloadRefused(f"host is not fetchable (SSRF target): {parsed.hostname}")
         # Positive allowlist enforced when the caller opted in OR when the task
         # carries an Authorization credential (P0-2): never leak a Bearer token
         # to a host outside the trusted set.
@@ -842,8 +899,12 @@ class Downloader:
         if self._client is not None:
             return self._client
         if self._own_client is None:
+            # follow_redirects=False: redirects are walked manually in `_stream`
+            # so each hop is re-validated against the allowlist/blocklist (H2 —
+            # a trusted host must not 302 us onto cloud metadata / a blocked or
+            # phishing mirror).
             self._own_client = httpx.AsyncClient(
-                follow_redirects=True, timeout=DEFAULT_TIMEOUT
+                follow_redirects=False, timeout=DEFAULT_TIMEOUT
             )
         return self._own_client
 
@@ -1218,77 +1279,106 @@ class Downloader:
         for k, v in (task.extra_headers or {}).items():
             if k.lower() != "range" and v:
                 headers[k] = v
+        has_auth = any(
+            str(k).lower() == "authorization" for k in (task.extra_headers or {}))
         client = await self._get_client()
-        async with client.stream("GET", task.url, headers=headers) as r:
-            r.raise_for_status()
+        url = task.url
+        # H2 SSRF hardening: `follow_redirects` is off on the shared client, so
+        # we walk each hop and re-validate the target against the allowlist /
+        # blocklist before issuing the next request. A 302 from a trusted host
+        # must not bounce us onto cloud metadata (169.254.169.254), a blocked /
+        # phishing mirror, or any host outside the curated set.
+        for _hop in range(10):
+            async with client.stream("GET", url, headers=headers) as r:
+                if r.status_code in (301, 302, 303, 307, 308):
+                    loc = r.headers.get("Location") or ""
+                    if not loc:
+                        raise DownloadRefused(
+                            f"redirect without Location from {url!r}")
+                    next_url = str(httpx.URL(url).join(loc))
+                    self._check_url(next_url, has_auth_header=has_auth)
+                    url = next_url
+                    continue
+                await self._stream_body(task, partial, resume_from, r)
+                return
+        raise DownloadRefused(f"too many redirects: {task.url}")
 
-            # Server ignored our Range request (200 OK instead of 206): the
-            # body is the whole file from byte 0. Treat it as a fresh download
-            # — overwrite the partial instead of appending, and do NOT inflate
-            # total_bytes by the stale resume offset (BUG-01).
-            resumed = resume_from > 0 and r.status_code == 206
-            mode = "wb" if not resumed else "ab"
-            # A fresh (overwrite) stream starts the byte counter at 0, otherwise
-            # it keeps the stale resume offset and progress races past 100% while
-            # the file on disk has already been truncated by mode="wb".
-            if not resumed:
-                task.downloaded_bytes = 0
+    async def _stream_body(
+        self,
+        task: DownloadTask,
+        partial: Path,
+        resume_from: int,
+        r: httpx.Response,
+    ) -> None:
+        r.raise_for_status()
 
-            content_range = r.headers.get("Content-Range") or ""
-            # When resuming, total = end + 1 from "bytes {start}-{end}/{total}"
-            if content_range and "/" in content_range:
-                total_str = content_range.split("/")[-1]
-                try:
-                    task.total_bytes = int(total_str)
-                except ValueError:
-                    task.total_bytes = int(r.headers.get("Content-Length", "0")) + (resume_from if resumed else 0)
-            else:
-                try:
-                    task.total_bytes = int(r.headers.get("Content-Length", "0")) + (resume_from if resumed else 0)
-                except ValueError:
-                    task.total_bytes = 0
+        # Server ignored our Range request (200 OK instead of 206): the
+        # body is the whole file from byte 0. Treat it as a fresh download
+        # — overwrite the partial instead of appending, and do NOT inflate
+        # total_bytes by the stale resume offset (BUG-01).
+        resumed = resume_from > 0 and r.status_code == 206
+        mode = "wb" if not resumed else "ab"
+        # A fresh (overwrite) stream starts the byte counter at 0, otherwise
+        # it keeps the stale resume offset and progress races past 100% while
+        # the file on disk has already been truncated by mode="wb".
+        if not resumed:
+            task.downloaded_bytes = 0
 
-            # 拿到了真实长度，趁早校验一次能不能装下。
-            self._check_disk_space_midflight(partial, task.total_bytes, resume_from)
+        content_range = r.headers.get("Content-Range") or ""
+        # When resuming, total = end + 1 from "bytes {start}-{end}/{total}"
+        if content_range and "/" in content_range:
+            total_str = content_range.split("/")[-1]
+            try:
+                task.total_bytes = int(total_str)
+            except ValueError:
+                task.total_bytes = int(r.headers.get("Content-Length", "0")) + (resume_from if resumed else 0)
+        else:
+            try:
+                task.total_bytes = int(r.headers.get("Content-Length", "0")) + (resume_from if resumed else 0)
+            except ValueError:
+                task.total_bytes = 0
 
-            task.status = DownloadStatus.DOWNLOADING
-            partial.parent.mkdir(parents=True, exist_ok=True)
+        # 拿到了真实长度，趁早校验一次能不能装下。
+        self._check_disk_space_midflight(partial, task.total_bytes, resume_from)
 
-            loop = asyncio.get_running_loop()
-            last_tick = loop.time()
-            last_bytes = task.downloaded_bytes
+        task.status = DownloadStatus.DOWNLOADING
+        partial.parent.mkdir(parents=True, exist_ok=True)
 
-            with partial.open(mode) as fh:
-                async for chunk in r.aiter_bytes(self._chunk_size):
-                    if task.cancel_event.is_set():
-                        raise asyncio.CancelledError()
-                    if not chunk:
-                        continue
-                    fh.write(chunk)
-                    task.downloaded_bytes += len(chunk)
-                    # 刷新看门狗的"存活"时间戳（达到阈值才刷新，防假推进）。
-                    self.mark_progress(task, task.downloaded_bytes)
+        loop = asyncio.get_running_loop()
+        last_tick = loop.time()
+        last_bytes = task.downloaded_bytes
 
-                    now = loop.time()
-                    if now - last_tick >= 0.25:
-                        # fsync 只在这里做：此前是每 64KB 一次，10GB 模型会
-                        # 产生数十万次 fsync，吞吐严重下降。
-                        fh.flush()
-                        with contextlib.suppress(OSError):
-                            os.fsync(fh.fileno())
-                        elapsed = max(now - last_tick, 1e-6)
-                        task.speed_bps = (task.downloaded_bytes - last_bytes) / elapsed
-                        last_tick = now
-                        last_bytes = task.downloaded_bytes
-                        await self._emit(task, "progress")
+        with partial.open(mode) as fh:
+            async for chunk in r.aiter_bytes(self._chunk_size):
+                if task.cancel_event.is_set():
+                    raise asyncio.CancelledError()
+                if not chunk:
+                    continue
+                fh.write(chunk)
+                task.downloaded_bytes += len(chunk)
+                # 刷新看门狗的"存活"时间戳（达到阈值才刷新，防假推进）。
+                self.mark_progress(task, task.downloaded_bytes)
 
-                # Final flush + fsync 必须在 with 内完成。此前这段在 with 外：
-                # fh 已关闭，flush() 抛 ValueError 被吞掉 → 最终 fsync 从未
-                # 生效；且 partial.open("rb") 新开的 fd 无人关闭，每次下载
-                # 泄漏一个描述符。
-                fh.flush()
-                with contextlib.suppress(OSError):
-                    os.fsync(fh.fileno())
+                now = loop.time()
+                if now - last_tick >= 0.25:
+                    # fsync 只在这里做：此前是每 64KB 一次，10GB 模型会
+                    # 产生数十万次 fsync，吞吐严重下降。
+                    fh.flush()
+                    with contextlib.suppress(OSError):
+                        os.fsync(fh.fileno())
+                    elapsed = max(now - last_tick, 1e-6)
+                    task.speed_bps = (task.downloaded_bytes - last_bytes) / elapsed
+                    last_tick = now
+                    last_bytes = task.downloaded_bytes
+                    await self._emit(task, "progress")
+
+            # Final flush + fsync 必须在 with 内完成。此前这段在 with 外：
+            # fh 已关闭，flush() 抛 ValueError 被吞掉 → 最终 fsync 从未
+            # 生效；且 partial.open("rb") 新开的 fd 无人关闭，每次下载
+            # 泄漏一个描述符。
+            fh.flush()
+            with contextlib.suppress(OSError):
+                os.fsync(fh.fileno())
 
     async def _sha256_file(self, path: Path) -> str:
         h = hashlib.sha256()

@@ -116,6 +116,12 @@ step "5. Build installers"
 if [ "${SKIP_BUILD}" -eq 1 ]; then
   info "skip-build requested; assuming build/output already populated"
 else
+  # Build the frozen PyInstaller sidecar FIRST so electron-builder packs it
+  # (electron-builder.yml extraResources -> python/dist/sidecar). Optional:
+  # if the sidecar build deps cannot be installed (offline) we fall back to
+  # bundling the source sidecar, which still runs when a Python 3.10+ exists.
+  export KEVRAI_SIDECAR_OPTIONAL=1
+  bash scripts/build_sidecar.sh || fail "build_sidecar.sh failed"
   bash scripts/build_windows.sh || fail "build_windows.sh failed"
   # Align with scripts/build_linux.sh: never auto-publish (gh release create
   # below handles upload), disable code-sign auto-discovery, skip native

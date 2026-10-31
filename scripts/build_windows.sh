@@ -294,7 +294,14 @@ print(f"    CompanyName = {found.get('CompanyName')}")
 PY
   echo "  ✓ metadata embedded and verified"
 else
-  echo "  (native Windows build — electron-builder handles metadata itself)"
+  # NOTE: `signAndEditExecutable: false` in electron-builder.yml means
+  # electron-builder does NOT embed the icon/version resource on this target.
+  # Without go-winres the staged exe keeps the default Electron identity —
+  # this is NOT silent: warn loudly so a maintainer installs go-winres rather
+  # than shipping an exe that identifies itself as "Electron".
+  echo "  WARNING: go-winres not found — the exe will keep default Electron"
+  echo "           branding (no Kevrai Omni icon/version). Install go-winres:"
+  echo "           go install github.com/tc-hib/go-winres@latest"
 fi
 
 # ----------------------------------------------------------------------

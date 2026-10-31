@@ -46,6 +46,24 @@ def test_add_requires_name_and_valid_url(tmp_path):
         mgr.add_server("x", "streamable-http", "ftp://h")
 
 
+def test_stdio_rejects_shell_and_traversal(tmp_path):
+    """A stdio command must not be a shell interpreter, and cwd must not
+    contain '..' — the arbitrary-code-exec primitive (H1 hardening)."""
+    mgr = MCPManager(tmp_path)
+    for bad in ("bash", "/bin/sh", "C:\\Windows\\System32\\cmd.exe",
+                "powershell", "busybox"):
+        with pytest.raises(MCPConfigError):
+            mgr.add_server("s", "stdio", command=bad)
+    # Legit launchers are still accepted.
+    ok = mgr.add_server("legit", "stdio", command="npx",
+                        args=["-y", "@modelcontextprotocol/server-filesystem"],
+                        cwd="/tmp")
+    assert ok["command"] == "npx"
+    # cwd traversal rejected.
+    with pytest.raises(MCPConfigError):
+        mgr.add_server("t", "stdio", command="npx", cwd="../../etc")
+
+
 def test_duplicate_name_rejected(tmp_path):
     mgr = MCPManager(tmp_path)
     mgr.add_server("X", "streamable-http", "https://h/mcp")

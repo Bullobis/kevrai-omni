@@ -23,6 +23,7 @@ from urllib.parse import urlparse
 import httpx
 
 from . import USER_AGENT
+from .downloader import _host_is_ssrf_target
 
 PROBE_RANGE = 65535          # 64 KiB probe chunk
 PROBE_TIMEOUT = 8.0          # seconds per probe
@@ -92,6 +93,11 @@ async def _probe_one(client: httpx.AsyncClient, url: str) -> SourceProbe:
         return SourceProbe(url=url, host=host, ok=False, latency_ms=0,
                            speed_mbps=0, status=0, size_bytes=0,
                            error=f"unsupported scheme: {parsed.scheme}")
+    # H2: never probe a private / loopback / link-local / metadata target.
+    if _host_is_ssrf_target(url):
+        return SourceProbe(url=url, host=host, ok=False, latency_ms=0,
+                           speed_mbps=0, status=0, size_bytes=0,
+                           error="host is not fetchable (SSRF target)")
     t0 = time.perf_counter()
     resp: httpx.Response | None = None
     try:
