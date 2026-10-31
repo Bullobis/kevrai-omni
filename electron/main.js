@@ -2481,6 +2481,13 @@ function pollDownloadProgress(taskId) {
 // ---------------------------------------------------------------------------
 
 async function bootstrap() {
+  // Register activate early so macOS dock clicks can rebuild the window even
+  // when sidecar bootstrapping falls back to the setup page (every early-return
+  // path below used to skip the old end-of-function registration).
+
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
   setupLogger();
   SETTINGS_PATH = path.join(userDataDir(), "settings.json");
 
@@ -2546,9 +2553,6 @@ async function bootstrap() {
     return;
   }
 
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
 }
 
 // Defense-in-depth for every WebContents (main window or otherwise):
