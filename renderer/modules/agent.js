@@ -69,9 +69,9 @@ function _renderShell() {
         <label class="agent-brain-label" for="agent-persona-select">🎭 ${t("agent.persona")}</label>
         <select id="agent-persona-select" class="agent-brain-select" title="${t("agent.personaTitle")}"></select>
         <span class="hint" id="agent-brain-hint"></span>
-        <label class="agent-approval-toggle" title="开启后，Agent 每次调用工具前都会暂停等待你确认/编辑/拒绝">
+        <label class="agent-approval-toggle" title="${t("agent.approvalTooltip")}">
           <input type="checkbox" id="agent-approval-confirm">
-          🛡️ 每次确认工具
+          ${t("agent.approvalToggle")}
         </label>
       </div>
       <div id="agent-approvals" class="agent-approvals" hidden></div>
@@ -279,11 +279,11 @@ function _wireEvents(root) {
       try {
         unwrap(await api.agentSetApprovalPolicy(_sessionId, policy));
         toast(policy === "confirm"
-          ? "已开启：每次工具调用前需确认"
-          : "已关闭：工具自动执行", { kind: "ok" });
+          ? t("agent.approvalOn")
+          : t("agent.approvalOff"), { kind: "ok" });
       } catch (err) {
         approvalToggle.checked = !approvalToggle.checked; // rollback
-        toast(`策略设置失败：${err.message || err}`, { kind: "err" });
+        toast(t("agent.approvalFailed", { err: err.message || err }), { kind: "err" });
       } finally {
         approvalToggle.disabled = false;
       }
@@ -396,7 +396,7 @@ function _wireSkillHub(root) {
     dirBtn.addEventListener("click", () => {
       const raw = (pathInput && pathInput.value || "").trim();
       if (!raw) { toast(t("agent.needDirPath"), { kind: "err" }); return; }
-      runImport(dirBtn, (p) => api.skillHubImportDir(p), "导入目录");
+      runImport(dirBtn, (p) => api.skillHubImportDir(p), t("agent.importDir"));
     });
   }
   const zipBtn = $("#agent-skillhub-import-zip", root);
@@ -404,7 +404,7 @@ function _wireSkillHub(root) {
     zipBtn.addEventListener("click", () => {
       const raw = (pathInput && pathInput.value || "").trim();
       if (!raw) { toast(t("agent.needZipPath"), { kind: "err" }); return; }
-      runImport(zipBtn, (p) => api.skillHubImportZip(p), "导入 zip");
+      runImport(zipBtn, (p) => api.skillHubImportZip(p), t("agent.importZip"));
     });
   }
   const gitBtn = $("#agent-skillhub-import-git", root);
@@ -474,9 +474,9 @@ function _renderHubRow(it) {
         <span class="agent-skillhub-name">${esc(it.name || it.id)}</span>
         <span class="agent-skillhub-id">${esc(it.id)}</span>
         <button class="btn btn-sm agent-skillhub-remove" data-id="${esc(it.id)}"
-          type="button" title="删除该导入技能">删除</button>
+          type="button" title="${t("agent.deleteSkill")}">${t("agent.deleteSkill")}</button>
       </div>
-      <p class="agent-skill-desc">${esc(ok ? (it.description || "") : ("解析失败：" + (it.error || "")))}</p>
+      <p class="agent-skill-desc">${esc(ok ? (it.description || "") : t("agent.parseFailed", { err: it.error || "" }))}</p>
       ${tags.length ? `<div class="agent-skill-tools">${tags.join("")}</div>` : ""}
     </div>
   `;
@@ -574,9 +574,9 @@ function _renderSkillRow(s) {
           ${s.enabled ? "checked" : ""} ${locked ? "disabled" : ""}>
         <span class="agent-skill-icon">${esc(s.icon || "🧩")}</span>
         <span class="agent-skill-name">${esc(s.name)}
-          ${locked ? '<span class="agent-skill-lock" title="必备技能，不可关闭">必备</span>' : ""}
-          ${s.default_enabled && !locked ? '<span class="agent-skill-default">默认</span>' : ""}
-          ${s.source === "imported" ? '<span class="agent-skill-imported" title="通过技能库导入">外部</span>' : ""}
+          ${locked ? `<span class="agent-skill-lock" title="${t("agent.mandatoryTitle")}">${t("agent.mandatoryBadge")}</span>` : ""}
+          ${s.default_enabled && !locked ? `<span class="agent-skill-default">${t("agent.defaultBadge")}</span>` : ""}
+          ${s.source === "imported" ? `<span class="agent-skill-imported" title="${t("agent.externalTitle")}">${t("agent.externalBadge")}</span>` : ""}
         </span>
       </label>
       <p class="agent-skill-desc">${esc(s.description || "")}</p>
@@ -762,14 +762,14 @@ function _wireApprovals(container) {
       try {
         edited = parseEditedParams(ta ? ta.value : "");
       } catch (err) {
-        toast(`参数 JSON 无效：${err.message || err}`, { kind: "err" });
+        toast(t("agent.paramsInvalid", { err: err.message || err }), { kind: "err" });
         return;
       }
       approveBtn.disabled = rejectBtn.disabled = true;
       try {
         unwrap(await api.agentApproveTool(id, edited));
       } catch (err) {
-        toast(`批准失败：${err.message || err}`, { kind: "err" });
+        toast(t("agent.approveFailed", { err: err.message || err }), { kind: "err" });
         approveBtn.disabled = rejectBtn.disabled = false;
       }
     } else if (rejectBtn) {
@@ -777,7 +777,7 @@ function _wireApprovals(container) {
       try {
         unwrap(await api.agentRejectTool(id));
       } catch (err) {
-        toast(`拒绝失败：${err.message || err}`, { kind: "err" });
+        toast(t("agent.rejectFailed", { err: err.message || err }), { kind: "err" });
         approveBtn.disabled = rejectBtn.disabled = false;
       }
     }
@@ -835,7 +835,7 @@ async function _sendMessage() {
   const cancelBtn = document.getElementById("agent-cancel-btn");
   if (cancelBtn) cancelBtn.hidden = false;
   thinking.style.display = "flex";
-  thinkingText.textContent = "思考中…";
+  thinkingText.textContent = t("agent.thinking");
 
   _appendMessage("user", message, false);
   input.value = "";
@@ -862,8 +862,8 @@ async function _sendMessage() {
     }
     _loadSessionList();
   } catch (e) {
-    _appendMessage("assistant", `请求失败：${esc(e.message || e)}`, false);
-    toast("Agent 请求失败", { kind: "err" });
+    _appendMessage("assistant", t("agent.requestFailed", { err: esc(e.message || e) }), false);
+    toast(t("agent.requestFailedTitle"), { kind: "err" });
   } finally {
     _busy = false;
     thinking.style.display = "none";
@@ -930,7 +930,7 @@ function _sendViaStream(message, thinking, thinkingText) {
           const traceHtml = _renderTrace(steps);
           if (bubble) {
             if (msg.cancelled) {
-              bubble.abort("\n\n（已取消）");
+              bubble.abort("\n\n" + t("agent.cancelled"));
             } else {
               bubble.finalize(msg.answer, {
                 traceHtml, tools: msg.tools_used || [],
@@ -974,22 +974,22 @@ function _appendMessage(role, content, animate = false, tools = [], msgId = null
   const div = document.createElement("div");
   div.className = `agent-msg agent-msg-${role}`;
   if (msgId != null) div.dataset.msgId = String(msgId);
-  const label = role === "user" ? "你" : "Kevrai Agent";
+  const label = role === "user" ? t("agent.you") : "Kevrai Agent";
   const toolsHtml = tools && tools.length
-    ? `<div class="agent-tools-used">工具: ${tools.map((t) => `<span class="agent-tool-tag">${esc(t)}</span>`).join("")}</div>`
+    ? `<div class="agent-tools-used">${t("agent.toolsUsedLabel")} ${tools.map((t) => `<span class="agent-tool-tag">${esc(t)}</span>`).join("")}</div>`
     : "";
   const regenBtn = role === "assistant"
-    ? `<button type="button" class="agent-msg-btn" data-msg-action="regen" title="重新生成">↻ 重新生成</button>`
+    ? `<button type="button" class="agent-msg-btn" data-msg-action="regen" title="${t("agent.regenTitle")}">↻ ${t("agent.regen")}</button>`
     : "";
   // Delete is offered on every persisted message; edit only on user messages
   // (and only when we know its row id — optimistic sends have no id yet).
   const canDelete = msgId != null;
   const canEdit = role === "user" && msgId != null;
   const editBtn = canEdit
-    ? `<button type="button" class="agent-msg-btn" data-msg-action="edit-msg" title="编辑并重新发送">✎ 编辑</button>`
+    ? `<button type="button" class="agent-msg-btn" data-msg-action="edit-msg" title="${t("agent.editTitle")}">✎ ${t("agent.edit")}</button>`
     : "";
   const deleteBtn = canDelete
-    ? `<button type="button" class="agent-msg-btn agent-msg-btn-danger" data-msg-action="delete-msg" title="删除此条及之后消息">🗑 删除</button>`
+    ? `<button type="button" class="agent-msg-btn agent-msg-btn-danger" data-msg-action="delete-msg" title="${t("agent.deleteMsgTitle")}">🗑 ${t("agent.deleteMsg")}</button>`
     : "";
   const contentHtml = role === "assistant"
     ? renderMarkdown(content)
@@ -1003,7 +1003,7 @@ function _appendMessage(role, content, animate = false, tools = [], msgId = null
     ${traceHtml || ""}
     ${toolsHtml}
     <div class="agent-msg-actions">
-      <button type="button" class="agent-msg-btn" data-msg-action="copy" title="复制">⧉ 复制</button>
+      <button type="button" class="agent-msg-btn" data-msg-action="copy" title="${t("agent.copyTitle")}">⧉ ${t("agent.copy")}</button>
       ${editBtn}
       ${regenBtn}
       ${deleteBtn}
@@ -1033,10 +1033,10 @@ function _wireMessageActions(container) {
       try {
         const code = decodeURIComponent(escape(atob(copyCodeBtn.dataset.code || "")));
         await navigator.clipboard.writeText(code);
-        copyCodeBtn.textContent = "✓ 已复制";
-        setTimeout(() => { copyCodeBtn.textContent = "⧉ 复制代码"; }, 1400);
+        copyCodeBtn.textContent = t("agent.copied");
+        setTimeout(() => { copyCodeBtn.textContent = t("agent.copyCode"); }, 1400);
       } catch (err) {
-        toast(`复制失败：${err.message || err}`, { kind: "err" });
+        toast(t("agent.copyFailed", { err: err.message || err }), { kind: "err" });
       }
       return;
     }
@@ -1052,15 +1052,15 @@ async function _deleteMessage(btn) {
   const div = btn.closest(".agent-msg");
   const mid = Number(div && div.dataset.msgId);
   if (!mid) return;
-  if (!window.confirm("删除这条消息及其之后的所有消息？此操作不可撤销。")) return;
+  if (!window.confirm(t("agent.deleteConfirm"))) return;
   try {
     _busy = true;
     btn.disabled = true;
     await api.agentDeleteMessage(_sessionId, mid);
     await Promise.all([_loadSessionMessages(), _loadSessionList()]);
-    toast("已删除消息", { kind: "ok" });
+    toast(t("agent.deleteDone"), { kind: "ok" });
   } catch (err) {
-    toast(`删除失败：${err.message || err}`, { kind: "err" });
+    toast(t("agent.deleteFailed", { err: err.message || err }), { kind: "err" });
   } finally {
     _busy = false;
   }
@@ -1089,11 +1089,11 @@ function _startInlineEdit(editBtn) {
   const saveBtn = document.createElement("button");
   saveBtn.type = "button";
   saveBtn.className = "agent-msg-btn";
-  saveBtn.textContent = "保存并重发";
+  saveBtn.textContent = t("agent.saveResend");
   const cancelBtn = document.createElement("button");
   cancelBtn.type = "button";
   cancelBtn.className = "agent-msg-btn";
-  cancelBtn.textContent = "取消";
+  cancelBtn.textContent = t("agent.cancelEdit");
   actionsEl.appendChild(saveBtn);
   actionsEl.appendChild(cancelBtn);
   ta.focus();
@@ -1107,7 +1107,7 @@ function _startInlineEdit(editBtn) {
   cancelBtn.addEventListener("click", cancel);
   saveBtn.addEventListener("click", async () => {
     const newText = ta.value.trim();
-    if (!newText) { toast("内容不能为空", { kind: "err" }); return; }
+    if (!newText) { toast(t("agent.emptyContent"), { kind: "err" }); return; }
     saveBtn.disabled = true;
     cancelBtn.disabled = true;
     await _editAndResend(mid, newText);
@@ -1130,13 +1130,13 @@ async function _editAndResend(mid, newText) {
     //    `regenerate` trims the user turn before re-running it.
     await api.agentDeleteMessage(_sessionId, mid);
     // 3) Re-send via the normal chat path (fresh user turn + assistant answer).
-    if (thinking) { thinking.style.display = "flex"; thinkingText.textContent = "思考中…"; }
+    if (thinking) { thinking.style.display = "flex"; thinkingText.textContent = t("agent.thinking"); }
     const res = unwrap(await api.agentChat({ message: newText, session_id: _sessionId }));
     await _loadSessionMessages();
     await _loadSessionList();
-    if (!res.ok) toast(res.error || "重新发送失败", { kind: "err" });
+    if (!res.ok) toast(res.error || t("agent.resendFailed"), { kind: "err" });
   } catch (e) {
-    toast(`编辑重发失败：${e.message || e}`, { kind: "err" });
+    toast(t("agent.editResendFailed", { err: e.message || e }), { kind: "err" });
     await _loadSessionMessages();
   } finally {
     _busy = false;
@@ -1156,9 +1156,9 @@ async function _copyText(text) {
       document.execCommand("copy");
       ta.remove();
     }
-    toast("已复制", { kind: "ok" });
+    toast(t("agent.copiedMsg"), { kind: "ok" });
   } catch (_) {
-    toast("复制失败", { kind: "err" });
+    toast(t("agent.copyFailedMsg"), { kind: "err" });
   }
 }
 
