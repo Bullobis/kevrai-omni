@@ -851,7 +851,13 @@
     "installPkg": "安装",
     "pkgBusy": "{action} {pkg}…",
     "pkgDone": "{pkg} 完成",
-    "pkgFailed": "{pkg} 失败：{err}"
+    "pkgFailed": "{pkg} 失败：{err}",
+    "loadFailed": "加载失败：{err}",
+    "sourceCount": "{n} 个下载源",
+    "reinstall": "重新安装",
+    "installingEngine": "安装 {engine}（自动挑选最快源）…",
+    "installDone": "{engine} 安装完成（源: {source}）",
+    "installFailed": "{engine} 失败：{err}"
   },
   "hardware": {
     "title": "⚡ 硬件体检与模型推荐",
@@ -902,6 +908,8 @@
     "noMatch": "当前筛选下没有匹配的推荐。试试切回全部分类，或升级硬件后再来 😄",
     "newHot": "🔥 新热",
     "officialNeed": "官方建议：显存 {vram}GB · 内存 {ram}GB · 磁盘 {disk}GB",
+    "noEngine": "该模型暂未指定引擎",
+    "installingEngine": "正在安装引擎 {engine}",
     "catFilter": "分类筛选",
     "rescan": "重新检测",
     "gradeServer": "服务器级",

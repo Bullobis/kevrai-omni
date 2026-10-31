@@ -115,22 +115,22 @@ function renderSnapshot(el, hw) {
       </div>
       <div class="hw-card">
         <div class="hw-card-head"><span class="hw-ico">🌐</span> ${t("hardware.bandwidth")}</div>
-        <div class="hw-kv"><span class="hw-k">下行测速</span>
-          <span class="hw-v">${hw.bandwidth_mbps ? `${esc(hw.bandwidth_mbps)} Mbps` : "未测出"}
+        <div class="hw-kv"><span class="hw-k">${t("hardware.downlink")}</span>
+          <span class="hw-v">${hw.bandwidth_mbps ? `${esc(hw.bandwidth_mbps)} Mbps` : t("hardware.notMeasured")}
             <span class="pill ${hw.bandwidth_tier === "fast" ? "ok" : hw.bandwidth_tier === "medium" ? "warn" : ""}">${
-              { fast: "高速", medium: "中等", slow: "较慢", unknown: "未知" }[hw.bandwidth_tier] || ""
+              { fast: t("hardware.bwFast"), medium: t("hardware.bwMedium"), slow: t("hardware.bwSlow"), unknown: t("hardware.bwUnknown") }[hw.bandwidth_tier] || ""
             }</span></span></div>
-        <div class="hw-kv"><span class="hw-k">建议</span><span class="hw-v">${
-          hw.bandwidth_tier === "slow" ? "优先选择小体积模型" : "可下载大体积模型"
+        <div class="hw-kv"><span class="hw-k">${t("hardware.advice")}</span><span class="hw-v">${
+          hw.bandwidth_tier === "slow" ? t("hardware.adviceSmall") : t("hardware.adviceLarge")
         }</span></div>
       </div>
       <div class="hw-card hw-score-card">
-        <div class="hw-card-head"><span class="hw-ico">📊</span> 综合评分（LLM 推理导向）</div>
+        <div class="hw-card-head"><span class="hw-ico">📊</span> ${t("hardware.scoreTitle")}</div>
         <div class="hw-score-row">
           <span class="hw-score-num">${score}</span>
           <span class="hw-score-label">/ 100 · ${esc(scoreLabel)}</span>
         </div>
-        <div class="hw-score-bar" role="img" aria-label="综合评分 ${score} 分">
+        <div class="hw-score-bar" role="img" aria-label="${t("hardware.scoreAria", { n: score })}">
           <div class="hw-score-fill" style="width:${Math.max(2, Math.min(100, score))}%"></div>
         </div>
       </div>
@@ -143,7 +143,7 @@ function renderRecs(root) {
   const cat = ($("#hw-cat", root) || {}).value || "";
   const items = _lastRecs.filter((m) => !cat || m.category === cat);
   if (!items.length) {
-    el.innerHTML = `<p class="hint">当前筛选下没有匹配的推荐。试试切回全部分类，或升级硬件后再来 😄</p>`;
+    el.innerHTML = `<p class="hint">${t("hardware.noMatch")}</p>`;
     return;
   }
   el.innerHTML = items.map((m) => {
@@ -154,11 +154,11 @@ function renderRecs(root) {
     <div class="row hw-rec-row">
       <div class="grow">
         <div class="name">${esc(m.name || m.id)}
-          ${m.trending ? '<span class="pill warn">🔥 新热</span>' : ""}
+          ${m.trending ? `<span class="pill warn">${t("hardware.newHot")}</span>` : ""}
           <span class="pill">${esc(m.category || "")}</span>
         </div>
         <div class="sub">${esc(m.description || "")}</div>
-        <div class="sub mut">官方建议：显存 ${esc(need.vram_gb || "?")}GB · 内存 ${esc(need.ram_gb || "?")}GB · 磁盘 ${esc(need.disk_gb || "?")}GB</div>
+        <div class="sub mut">${t("hardware.officialNeed", { vram: esc(need.vram_gb || "?"), ram: esc(need.ram_gb || "?"), disk: esc(need.disk_gb || "?") })}</div>
         ${reasons}
         ${rec.disk_note ? `<div class="hw-reason">💾 ${esc(rec.disk_note)}</div>` : ""}
         ${(m.hardware || {}).notes ? `<div class="hw-reason">💡 ${esc(m.hardware.notes)}</div>` : ""}
@@ -177,10 +177,10 @@ function renderRecs(root) {
       const item = _lastRecs.find((m) => m.id === id);
       if (!item) return;
       const engines = Array.isArray(item.engine) ? item.engine : (item.engine ? [item.engine] : []);
-      if (!engines.length) { toast("该模型暂未指定引擎", { kind: "warn" }); return; }
+      if (!engines.length) { toast(t("hardware.noEngine"), { kind: "warn" }); return; }
       try {
         await api.installEngine(engines[0]);
-        toast(`正在安装引擎 ${engines[0]}`, { kind: "ok" });
+        toast(t("hardware.installingEngine", { engine: engines[0] }), { kind: "ok" });
       } catch (_) { /* toast shown */ }
     });
   });

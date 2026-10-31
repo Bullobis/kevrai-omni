@@ -851,7 +851,13 @@
     "installPkg": "Install",
     "pkgBusy": "{action} {pkg}…",
     "pkgDone": "{pkg} done",
-    "pkgFailed": "{pkg} failed: {err}"
+    "pkgFailed": "{pkg} failed: {err}",
+    "loadFailed": "Load failed: {err}",
+    "sourceCount": "{n} download source(s)",
+    "reinstall": "Reinstall",
+    "installingEngine": "Installing {engine} (auto-picking fastest source)…",
+    "installDone": "{engine} installed (source: {source})",
+    "installFailed": "{engine} failed: {err}"
   },
   "hardware": {
     "title": "⚡ Hardware check & model picks",
@@ -902,6 +908,8 @@
     "noMatch": "No recommendations for the current filter. Try switching back to all categories, or upgrade your hardware and come back 😄",
     "newHot": "🔥 Hot",
     "officialNeed": "Official req: VRAM {vram}GB · RAM {ram}GB · Disk {disk}GB",
+    "noEngine": "This model has no engine specified yet",
+    "installingEngine": "Installing engine {engine}",
     "catFilter": "Category filter",
     "rescan": "Re-scan",
     "gradeServer": "Server-grade",

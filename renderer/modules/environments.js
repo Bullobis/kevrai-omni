@@ -186,29 +186,29 @@ async function loadStatus(card) {
 
   // Python / Node / GPU rows
   const summary = el("div", { class: "status-grid" });
-  summary.appendChild(makeKV("Python", s.python?.available ? `${s.python.version}  (pip ${s.python.pip_version || "?"})` : "❌ 不可用"));
-  summary.appendChild(makeKV("Node.js", s.node?.available ? s.node.version : "未检测到（可选）"));
-  summary.appendChild(makeKV("GPU", (s.gpus || []).map(g => `${g.vendor}/${g.name} ${g.vram_mb ? g.vram_mb + "MB" : ""}`).join("、") || "仅 CPU"));
-  summary.appendChild(makeKV("磁盘剩余", fmtBytes(s.disk?.free_bytes || 0) + ` / ${fmtBytes(s.disk?.total_bytes || 0)}`));
-  summary.appendChild(makeKV("Models 目录占用", fmtBytes(s.disk?.models_dir_bytes || 0)));
-  summary.appendChild(makeKV("Engines 目录占用", fmtBytes(s.disk?.engines_dir_bytes || 0)));
+  summary.appendChild(makeKV("Python", s.python?.available ? `${s.python.version}  (pip ${s.python.pip_version || "?"})` : t("environments.unavailable")));
+  summary.appendChild(makeKV("Node.js", s.node?.available ? s.node.version : t("environments.notDetected")));
+  summary.appendChild(makeKV("GPU", (s.gpus || []).map(g => `${g.vendor}/${g.name} ${g.vram_mb ? g.vram_mb + "MB" : ""}`).join("、") || t("environments.cpuOnly")));
+  summary.appendChild(makeKV(t("environments.diskFree"), fmtBytes(s.disk?.free_bytes || 0) + ` / ${fmtBytes(s.disk?.total_bytes || 0)}`));
+  summary.appendChild(makeKV(t("environments.modelsDir"), fmtBytes(s.disk?.models_dir_bytes || 0)));
+  summary.appendChild(makeKV(t("environments.enginesDir"), fmtBytes(s.disk?.engines_dir_bytes || 0)));
   card.appendChild(summary);
 
   // pip packages
   const pkg = el("div", { class: "pkg-list" });
-  pkg.appendChild(el("h3", {}, "Python 依赖"));
+  pkg.appendChild(el("h3", {}, t("environments.depsTitle")));
   const tbl = el("table", { class: "pkg-table" });
   const thead = el("thead", {}, el("tr", {},
-    el("th", {}, "包"), el("th", {}, "已安装"), el("th", {}, "要求"), el("th", {}, "操作")));
+    el("th", {}, t("environments.colPackage")), el("th", {}, t("environments.colInstalled")), el("th", {}, t("environments.colRequired")), el("th", {}, t("environments.colAction"))));
   tbl.appendChild(thead);
   const tbody = el("tbody");
   for (const p of (s.pip_packages || []).slice(0, 50)) {
     const tr = el("tr", {});
     tr.appendChild(el("td", {}, p.name));
-    tr.appendChild(el("td", { class: p.version ? "" : "missing" }, p.version || "未安装"));
+    tr.appendChild(el("td", { class: p.version ? "" : "missing" }, p.version || t("environments.notInstalledShort")));
     tr.appendChild(el("td", { class: "muted" }, p.required || ""));
     const btn = el("button", { class: "btn small" },
-      p.version ? "升级" : "安装");
+      p.version ? t("environments.upgrade") : t("environments.installPkg"));
     btn.addEventListener("click", () => installOrUpgrade(p));
     tr.appendChild(el("td", {}, btn));
     tbody.appendChild(tr);
@@ -228,30 +228,30 @@ async function installOrUpgrade(pkg) {
   const mirrors = [...state.selectedPipMirrors]
     .map(id => KNOWN_PIP_MIRRORS.find(m => m.id === id)?.url)
     .filter(Boolean);
-  toast(`${pkg.version ? "升级" : "安装"} ${pkg.name}…`);
+  toast(t("environments.pkgBusy", { action: pkg.version ? t("environments.upgrade") : t("environments.installPkg"), pkg: pkg.name }));
   try {
     if (pkg.version) {
       await api.envUpgrade({ name: pkg.name, mirrors });
     } else {
       await api.envInstallPip({ name: pkg.name, kind: "pip", mirrors });
     }
-    toast(`${pkg.name} 完成`);
+    toast(t("environments.pkgDone", { pkg: pkg.name }));
     // refresh
     const card = document.querySelector(".page-env .card:nth-of-type(2)");
     if (card) loadStatus(card);
   } catch (e) {
-    toast(`${pkg.name} 失败：${e.message}`, { kind: "err" });
+    toast(t("environments.pkgFailed", { pkg: pkg.name, err: e.message }), { kind: "err" });
   }
 }
 
 async function loadEngines(card) {
   card.innerHTML = "";
-  card.appendChild(el("h2", {}, "推理引擎 / Engines"));
+  card.appendChild(el("h2", {}, t("environments.enginesTitle")));
   let engines;
   try {
     engines = unwrap(await api.engines());
   } catch (e) {
-    card.appendChild(el("p", { class: "err" }, "加载失败：" + e.message));
+    card.appendChild(el("p", { class: "err" }, t("environments.loadFailed", { err: e.message })));
     return;
   }
   const list = (engines.engines || []);
@@ -264,10 +264,10 @@ async function loadEngines(card) {
       `${e.category || ""} · ${e.license || "?"} · v${e.version || "?"}`));
     if (e.sources && e.sources.length) {
       item.appendChild(el("p", { class: "muted xsmall" },
-        `${e.sources.length} 个下载源`));
+        `${t("environments.sourceCount", { n: e.sources.length })}`));
     }
     const btn = el("button", { class: "btn small" },
-      isInstalled ? "重新安装" : "安装");
+      isInstalled ? t("environments.reinstall") : t("environments.installPkg"));
     btn.addEventListener("click", () => installEngine(e));
     item.appendChild(btn);
     grid.appendChild(item);
@@ -276,14 +276,14 @@ async function loadEngines(card) {
 }
 
 async function installEngine(engine) {
-  toast(`安装 ${engine.name || engine.id}（自动挑选最快源）…`);
+  toast(t("environments.installingEngine", { engine: engine.name || engine.id }));
   try {
     const res = unwrap(await api.envInstallEngine({ id: engine.id }));
-    toast(`${engine.name} 安装完成（源: ${res.source_used}）`);
+    toast(t("environments.installDone", { engine: engine.name, source: res.source_used }));
     const card = document.querySelector(".page-env .card:nth-of-type(3)");
     if (card) loadEngines(card);
   } catch (e) {
-    toast(`${engine.name} 失败：${e.message}`, { kind: "err" });
+    toast(t("environments.installFailed", { engine: engine.name, err: e.message }), { kind: "err" });
   }
 }
 
