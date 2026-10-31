@@ -1421,5 +1421,24 @@
     "importFailed": "Import failed: data not validated",
     "collapseSidebar": "Collapse sidebar",
     "expandSidebar": "Expand sidebar"
+  },
+  "agentSlash": {
+    "help": "List all slash commands",
+    "search": "Search models <keyword>",
+    "recommend": "Recommend models for my hardware",
+    "hardware": "Hardware compatibility check",
+    "install": "Install a model <name>",
+    "engines": "Install inference engines",
+    "mirror": "Switch domestic mirror",
+    "drama": "Short-drama creation workshop",
+    "prompt": "Image prompt <content>",
+    "image": "Image generation <description>",
+    "vision": "Image understanding <question>",
+    "music": "Generate music <description>",
+    "transcribe": "Speech recognition",
+    "separate": "Source separation",
+    "tts": "Text-to-speech <text>",
+    "translate": "Translate <content>",
+    "noMatch": "No matching command"
   }
 }

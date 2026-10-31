@@ -4,24 +4,27 @@
 // authority for executing commands; this list mirrors the command ids.
 "use strict";
 
-// [id, takesArg, description]
+import { t } from "./i18n.js";
+
+// [id, takesArg, descriptionKey] — description is an i18n key resolved via t()
+// at render/filter time (dicts may not be loaded when this module is imported).
 export const SLASH_COMMANDS = [
-  ["help", false, "列出所有斜杠命令"],
-  ["search", true, "搜索模型 <关键词>"],
-  ["recommend", false, "推荐适合我硬件的模型"],
-  ["hardware", false, "硬件适配检测"],
-  ["install", true, "安装模型 <名称>"],
-  ["engines", false, "安装推理引擎"],
-  ["mirror", false, "切换国内镜像"],
-  ["drama", false, "短剧创作工坊"],
-  ["prompt", true, "图像提示词 <内容>"],
-  ["image", true, "文生图 <描述>"],
-  ["vision", true, "图片理解 <问题>"],
-  ["music", true, "生成音乐 <描述>"],
-  ["transcribe", false, "语音识别"],
-  ["separate", false, "音源分离"],
-  ["tts", true, "语音合成 <文字>"],
-  ["translate", true, "翻译 <内容>"],
+  ["help", false, "agentSlash.help"],
+  ["search", true, "agentSlash.search"],
+  ["recommend", false, "agentSlash.recommend"],
+  ["hardware", false, "agentSlash.hardware"],
+  ["install", true, "agentSlash.install"],
+  ["engines", false, "agentSlash.engines"],
+  ["mirror", false, "agentSlash.mirror"],
+  ["drama", false, "agentSlash.drama"],
+  ["prompt", true, "agentSlash.prompt"],
+  ["image", true, "agentSlash.image"],
+  ["vision", true, "agentSlash.vision"],
+  ["music", true, "agentSlash.music"],
+  ["transcribe", false, "agentSlash.transcribe"],
+  ["separate", false, "agentSlash.separate"],
+  ["tts", true, "agentSlash.tts"],
+  ["translate", true, "agentSlash.translate"],
 ];
 
 // If the caret is inside a "/token" word at a word boundary, return
@@ -38,7 +41,7 @@ export function filterCommands(q) {
   const k = (q || "").toLowerCase();
   if (!k) return SLASH_COMMANDS.slice();
   return SLASH_COMMANDS.filter(
-    ([id, , desc]) => id.includes(k) || desc.toLowerCase().includes(k)
+    ([id, , desc]) => id.includes(k) || t(desc).toLowerCase().includes(k)
   );
 }
 
@@ -46,7 +49,7 @@ function rowHtml([id, takesArg, desc], active) {
   return (
     `<div class="slash-item${active ? " active" : ""}" data-cmd="${id}" role="option" aria-selected="${active}">` +
     `<span class="slash-name">/${id}</span>` +
-    `<span class="slash-desc">${desc}${takesArg ? "" : ""}</span></div>`
+    `<span class="slash-desc">${t(desc)}${takesArg ? "" : ""}</span></div>`
   );
 }
 
@@ -70,7 +73,7 @@ export function attachSlashMenu(input) {
 
   function render() {
     if (!current.length) {
-      menu.innerHTML = '<div class="slash-empty">无匹配命令</div>';
+      menu.innerHTML = `<div class="slash-empty">${t("agentSlash.noMatch")}</div>`;
       return;
     }
     menu.innerHTML = current
