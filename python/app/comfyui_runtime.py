@@ -142,7 +142,7 @@ class ComfyUIClient:
             r = self._http().get("/system_stats")
             r.raise_for_status()
             return dict(r.json())
-        except httpx.HTTPError as e:
+        except (httpx.HTTPError, ValueError) as e:
             raise ComfyUIUnavailable(
                 f"无法连接 ComfyUI（{self.base_url}）：{e}"
             ) from e
@@ -163,7 +163,7 @@ class ComfyUIClient:
             r = self._http().get(url)
             r.raise_for_status()
             return dict(r.json())
-        except httpx.HTTPError as e:
+        except (httpx.HTTPError, ValueError) as e:
             raise ComfyUIUnavailable(f"获取节点信息失败：{e}") from e
 
     # -- 显存管理 -----------------------------------------------------------
@@ -182,7 +182,7 @@ class ComfyUIClient:
             )
             r.raise_for_status()
             return True
-        except httpx.HTTPError as e:
+        except (httpx.HTTPError, ValueError) as e:
             log.warning("ComfyUI 显存释放失败: %s", e)
             return False
 
@@ -207,7 +207,7 @@ class ComfyUIClient:
         }
         try:
             r = self._http().post("/prompt", json=payload)
-        except httpx.HTTPError as e:
+        except (httpx.HTTPError, ValueError) as e:
             raise ComfyUIUnavailable(f"提交工作流失败：{e}") from e
         if r.status_code >= 400:
             # ComfyUI 校验失败会返回 400 + 详细错误，必须透传给用户，
@@ -215,7 +215,12 @@ class ComfyUIClient:
             raise ComfyUIError(
                 f"工作流被 ComfyUI 拒绝（{r.status_code}）：{r.text[:800]}"
             )
-        data = r.json()
+        try:
+            data = r.json()
+        except ValueError as e:
+            raise ComfyUIError(
+                f"ComfyUI 返回非 JSON 响应（{r.status_code}）：{r.text[:200]}"
+            ) from e
         prompt_id = data.get("prompt_id")
         if not prompt_id:
             raise ComfyUIError(f"ComfyUI 未返回 prompt_id：{data}")
@@ -229,7 +234,7 @@ class ComfyUIClient:
                 return None
             r.raise_for_status()
             data = r.json()
-        except httpx.HTTPError as e:
+        except (httpx.HTTPError, ValueError) as e:
             raise ComfyUIUnavailable(f"查询历史失败：{e}") from e
         return data.get(prompt_id)
 
@@ -265,7 +270,7 @@ class ComfyUIClient:
             r = self._http().post("/interrupt")
             r.raise_for_status()
             return True
-        except httpx.HTTPError as e:
+        except (httpx.HTTPError, ValueError) as e:
             log.warning("中断 ComfyUI 失败: %s", e)
             return False
 
@@ -275,7 +280,7 @@ class ComfyUIClient:
             r = self._http().get("/queue")
             r.raise_for_status()
             return dict(r.json())
-        except httpx.HTTPError as e:
+        except (httpx.HTTPError, ValueError) as e:
             raise ComfyUIUnavailable(f"查询队列失败：{e}") from e
 
     # -- 文件 ---------------------------------------------------------------
@@ -300,7 +305,7 @@ class ComfyUIClient:
                 r = self._http().post("/upload/image", files=files, data=data)
                 r.raise_for_status()
                 return dict(r.json())
-        except httpx.HTTPError as e:
+        except (httpx.HTTPError, ValueError) as e:
             raise ComfyUIUnavailable(f"上传图片失败：{e}") from e
 
     def view_url(self, filename: str, subfolder: str = "",
@@ -324,7 +329,7 @@ class ComfyUIClient:
             )
             r.raise_for_status()
             return r.content
-        except httpx.HTTPError as e:
+        except (httpx.HTTPError, ValueError) as e:
             raise ComfyUIUnavailable(f"下载产出失败：{e}") from e
 
     def warmup(self, workflow: dict[str, Any],
