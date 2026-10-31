@@ -150,7 +150,7 @@ async function runDownload() {
     offDownloaded();
     offError();
     setStatus(t("update.downloadFailed"));
-    toast(t("update.downloadErrToast", { err: e?.message || "未知错误" }), { kind: "err" });
+    toast(t("update.downloadErrToast", { err: e?.message || t("update.unknownError") }), { kind: "err" });
     setDownloadButton(true);
   });
 
@@ -159,7 +159,7 @@ async function runDownload() {
     if (r && r.ok === false) {
       offProgress(); offDownloaded(); offError();
       setStatus(t("update.downloadFailed"));
-      toast(t("update.downloadErrToast", { err: r.error || "未知错误" }), { kind: "err" });
+      toast(t("update.downloadErrToast", { err: r.error || t("update.unknownError") }), { kind: "err" });
       setDownloadButton(true);
     }
     // On success the "update-downloaded" event will flip the UI; if for some

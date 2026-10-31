@@ -452,6 +452,7 @@
   },
   "update": {
     "title": "Software update",
+    "unknownError": "Unknown error",
     "close": "Close",
     "closeAria": "Close",
     "checking": "Checking for updates…",
@@ -577,6 +578,9 @@
   },
   "downloads": {
     "title": "Downloads",
+    "sourceFallback": "source",
+    "urlInvalid": "Invalid URL",
+    "httpsOnly": "Only https links are supported",
     "closePanel": "Close downloads panel",
     "sourceTest": "Source speed test",
     "remeasure": "Re-measure all sources",
@@ -1109,6 +1113,8 @@
   },
   "image": {
     "title": "Image Generation",
+    "genFailed": "Generation failed",
+    "sampling": "Sampling {step}/{max} ({pct}%)",
     "engineReady": "ComfyUI connected ({url})",
     "engineMissing": "ComfyUI not detected",
     "missingHint": "A running ComfyUI is required (default localhost:8188). Start ComfyUI, place a Stable Diffusion model in its checkpoints folder, then return here.",

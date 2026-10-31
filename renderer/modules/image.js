@@ -234,7 +234,7 @@ function generateViaStream(params) {
       } else if (m.type === "error") {
         settled = true;
         try { ws.close(); } catch {}
-        reject(new Error(m.message || "生成失败"));
+        reject(new Error(m.message || t("image.genFailed")));
       }
     };
     ws.onerror = () => { if (!settled) reject(new Error("stream error")); };
@@ -247,7 +247,7 @@ function setProgress(step, max) {
   const box = ensureProgressEl();
   const pct = Math.min(100, Math.round((step / Math.max(1, max)) * 100));
   box.innerHTML = `<div class="progress"><div class="progress-bar" style="width:${pct}%"></div></div>` +
-    `<p class="muted" style="margin:.4rem 0 0">采样中 ${step}/${max}（${pct}%）</p>`;
+    `<p class="muted" style="margin:.4rem 0 0">${t("image.sampling", { step, max, pct })}</p>`;
 }
 function ensureProgressEl() {
   let el = $("#image-progress");

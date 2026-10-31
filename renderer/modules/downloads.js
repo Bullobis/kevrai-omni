@@ -125,7 +125,7 @@ function renderSources() {
     return `
     <div class="src-row" data-sid="${escapeHtml(r.source_id || r.host || "")}">
       <div class="src-name" title="${escapeHtml(r.url || "")}">
-        ${escapeHtml(r.source_type || r.host || "源")} · ${escapeHtml(tag)}
+        ${escapeHtml(r.source_type || r.host || translate("downloads.sourceFallback"))} · ${escapeHtml(tag)}
       </div>
       <div class="src-bars">
         <div class="src-bar-wrap"><span class="src-lab">${translate("downloads.latency")}</span>
@@ -251,8 +251,8 @@ function renderOverlay() {
 
 export async function startDownloadFromUrl(url, opts) {
   let parsed;
-  try { parsed = new URL(url); } catch (_) { throw new Error("URL 不合法"); }
-  if (parsed.protocol !== "https:") throw new Error("仅支持 https 链接");
+  try { parsed = new URL(url); } catch (_) { throw new Error(translate("downloads.urlInvalid")); }
+  if (parsed.protocol !== "https:") throw new Error(translate("downloads.httpsOnly"));
   const dest = parsed.pathname.split("/").pop() || "download.bin";
   try {
     // v2.4.1 — gated repos (e.g. LTX-2.5): sidecar attaches the user's HF

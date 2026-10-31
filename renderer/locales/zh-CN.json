@@ -452,6 +452,7 @@
   },
   "update": {
     "title": "软件更新",
+    "unknownError": "未知错误",
     "close": "关闭",
     "closeAria": "关闭",
     "checking": "正在检查更新…",
@@ -577,6 +578,9 @@
   },
   "downloads": {
     "title": "下载任务",
+    "sourceFallback": "源",
+    "urlInvalid": "URL 不合法",
+    "httpsOnly": "仅支持 https 链接",
     "closePanel": "关闭下载面板",
     "sourceTest": "源测速",
     "remeasure": "一键重新测速",
@@ -1109,6 +1113,8 @@
   },
   "image": {
     "title": "图片生成",
+    "genFailed": "生成失败",
+    "sampling": "采样中 {step}/{max}（{pct}%）",
     "engineReady": "ComfyUI 已连接（{url}）",
     "engineMissing": "未检测到 ComfyUI",
     "missingHint": "需要一个正在运行的 ComfyUI（默认本机 8188 端口）。启动 ComfyUI 后，把 Stable Diffusion 模型放到其 checkpoints 目录，再回到本页刷新。",
