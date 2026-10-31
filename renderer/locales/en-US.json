@@ -1317,7 +1317,10 @@
     "imported": "Imported {name} ({n} docs)",
     "importBadJson": "Selected file is not valid JSON",
     "searching": "Searching",
-    "noAnswer": "No answer generated. Check KB content or select a brain model."
+    "noAnswer": "No answer generated. Check KB content or select a brain model.",
+    "streamConnFailed": "Could not get knowledge-base stream connection info",
+    "streamFailed": "Knowledge-base stream connection failed",
+    "askFailed": "Knowledge-base query failed"
   },
   "sidebar": {
     "manageTitle": "Manage sidebar",
@@ -1343,5 +1346,17 @@
     "srcCatalog": "from catalog order",
     "srcNone": "no engine declared",
     "unknown": "unknown"
+  },
+  "notification": {
+    "justNow": "just now",
+    "secondsAgo": "{s}s ago",
+    "minutesAgo": "{m}m ago",
+    "hoursAgo": "{h}h ago",
+    "monthDay": "{month}/{day}"
+  },
+  "models": {
+    "msTitle": "ModelScope",
+    "msAlt": "ModelScope",
+    "detailTitle": "Details"
   }
 }

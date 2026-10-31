@@ -81,9 +81,9 @@ function hubLogo(hub, displayName) {
     // 降级不用内联 onerror：CSP 的 script-src 'self' 会拦截内联事件处理器，
     // 导致图片加载失败时静默空白。改由 img 的 error 事件委托处理（见下方
     // wireLogoFallbacks），data-fallback 携带降级文案。
-    return `<span class="hub-logo" title="${escapeHtml(displayName || "魔搭 ModelScope")}">`
-      + `<img src="${MS_LOGO_URL}" alt="魔搭" width="14" height="14" loading="lazy" `
-      + `referrerpolicy="no-referrer" data-fallback="魔搭" />`
+    return `<span class="hub-logo" title="${escapeHtml(displayName || t("models.msTitle"))}">`
+      + `<img src="${MS_LOGO_URL}" alt="${t("models.msAlt")}" width="14" height="14" loading="lazy" `
+      + `referrerpolicy="no-referrer" data-fallback="${t("models.msAlt")}" />`
       + `</span>`;
   }
   if (hub === "hf") {
@@ -790,7 +790,7 @@ function renderDetail(m, gguf) {
     <button class="secondary" id="btn-import-local-for-detail">${t("market.chooseFile")}</button>
 
     ${m.description && isRemote ? `
-      <h3 class="section">详细介绍</h3>
+      <h3 class="section">${t("models.detailTitle")}</h3>
       <p class="detail-prose">${escapeHtml(m.description)}</p>
     ` : ""}
 

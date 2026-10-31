@@ -73,15 +73,15 @@ export function countUnread(items) {
   return (items || []).filter((x) => !x.read).length;
 }
 
-// 相对时间（中文，简洁）。
+// 相对时间（本地化）。
 export function relTime(ts, now = Date.now()) {
   const s = Math.max(0, Math.floor((now - ts) / 1000));
-  if (s < 10) return "刚刚";
-  if (s < 60) return `${s} 秒前`;
+  if (s < 10) return t("notification.justNow");
+  if (s < 60) return t("notification.secondsAgo", { s });
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m} 分钟前`;
+  if (m < 60) return t("notification.minutesAgo", { m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h} 小时前`;
+  if (h < 24) return t("notification.hoursAgo", { h });
   const d = new Date(ts);
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }

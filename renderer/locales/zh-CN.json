@@ -1317,7 +1317,10 @@
     "imported": "已导入 {name}（{n} 篇文档）",
     "importBadJson": "所选文件不是有效的 JSON",
     "searching": "正在检索",
-    "noAnswer": "未生成回答，请检查知识库内容或选择回答模型"
+    "noAnswer": "未生成回答，请检查知识库内容或选择回答模型",
+    "streamConnFailed": "无法获取知识库流式连接信息",
+    "streamFailed": "知识库流式连接失败",
+    "askFailed": "知识库提问出错"
   },
   "sidebar": {
     "manageTitle": "管理侧边栏",
@@ -1343,5 +1346,17 @@
     "srcCatalog": "来自目录顺序",
     "srcNone": "未声明引擎",
     "unknown": "未知"
+  },
+  "notification": {
+    "justNow": "刚刚",
+    "secondsAgo": "{s} 秒前",
+    "minutesAgo": "{m} 分钟前",
+    "hoursAgo": "{h} 小时前",
+    "monthDay": "{month}月{day}日"
+  },
+  "models": {
+    "msTitle": "魔搭 ModelScope",
+    "msAlt": "魔搭",
+    "detailTitle": "详细介绍"
   }
 }

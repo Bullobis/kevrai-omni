@@ -386,7 +386,7 @@ export async function runAskStream({ kbId, question, topK, brainModel, out }) {
   const infoRes = await api.agentWsInfo();
   const info = (infoRes && infoRes.body) ? infoRes.body : infoRes;
   if (!info || !info.baseUrl || !info.token) {
-    throw new Error("无法获取知识库流式连接信息");
+    throw new Error(t("knowledge.streamConnFailed"));
   }
 
   const url = `${info.baseUrl}/ws/knowledge/ask/${encodeURIComponent(kbId)}?token=${encodeURIComponent(info.token)}`;
@@ -419,7 +419,7 @@ export async function runAskStream({ kbId, question, topK, brainModel, out }) {
       }));
     };
 
-    ws.onerror = () => fail(new Error("知识库流式连接失败"));
+    ws.onerror = () => fail(new Error(t("knowledge.streamFailed")));
 
     ws.onclose = () => {
       if (!settled) {
@@ -482,7 +482,7 @@ export async function runAskStream({ kbId, question, topK, brainModel, out }) {
         resolve();
 
       } else if (msg.event === "error") {
-        fail(new Error(msg.message || "知识库提问出错"));
+        fail(new Error(msg.message || t("knowledge.askFailed")));
       }
     };
   });
