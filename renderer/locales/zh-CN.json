@@ -1002,6 +1002,9 @@
   },
   "separation": {
     "title": "音源分离",
+    "htdemucs": "HTDemucs · 4 轨（推荐）",
+    "htdemucsFt": "HTDemucs FT · 4 轨（最高质量，较慢）",
+    "htdemucs6s": "HTDemucs 6S · 6 轨（含钢琴/吉他）",
     "engineReady": "引擎就绪 {ver}",
     "engineMissing": "引擎未安装",
     "missingHint": "需要安装 Demucs 音源分离引擎，可将歌曲分离为人声、鼓、贝斯等音轨。",

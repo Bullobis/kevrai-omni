@@ -11,10 +11,12 @@ let pickedFile = null;
 let lastManifest = null;
 const objectUrls = [];
 
+// Engine id → i18n key; resolved via t() at render time (dicts may not be
+// loaded when this module's top-level object is first evaluated).
 const MODEL_LABELS = {
-  htdemucs: "HTDemucs · 4 轨（推荐）",
-  htdemucs_ft: "HTDemucs FT · 4 轨（最高质量，较慢）",
-  htdemucs_6s: "HTDemucs 6S · 6 轨（含钢琴/吉他）",
+  htdemucs: "separation.htdemucs",
+  htdemucs_ft: "separation.htdemucsFt",
+  htdemucs_6s: "separation.htdemucs6s",
 };
 
 function escapeHtml(s) {
@@ -41,7 +43,7 @@ async function refresh() {
   const sel = $("#sep-model");
   if (sel && (cap.models || []).length) {
     sel.innerHTML = cap.models.map(
-      (m) => `<option value="${escapeHtml(m)}">${escapeHtml(MODEL_LABELS[m] || m)}</option>`
+      (m) => `<option value="${escapeHtml(m)}">${escapeHtml(t(MODEL_LABELS[m] || m))}</option>`
     ).join("");
   }
 }
