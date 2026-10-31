@@ -15,6 +15,9 @@ Hardening changes:
 from __future__ import annotations
 
 import asyncio
+# Fire-and-forget background tasks (e.g. retiring old HTTP pools) must keep a
+# strong reference until they finish, or the event loop may GC them mid-flight.
+BG_TASKS: set[asyncio.Task] = set()
 import base64
 import contextlib
 import hmac
@@ -1318,7 +1321,9 @@ async def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]
     reset_registry()
     request.app.state.hub = get_registry(s)
     if old_hub is not None and old_hub is not request.app.state.hub:
-        asyncio.create_task(_aclose_hub_quietly(old_hub))
+        _t = asyncio.create_task(_aclose_hub_quietly(old_hub))
+        BG_TASKS.add(_t)
+        _t.add_done_callback(BG_TASKS.discard)
     # v2.8.1 — rebuild the source registry so new mirrors / GitCode settings apply.
     prev_reg = getattr(request.app.state, "source_registry", None)
     if prev_reg is not None:
@@ -1335,7 +1340,9 @@ async def put_settings(request: Request, body: SettingsUpdate) -> dict[str, Any]
     if old_dl is None or old_dl.max_concurrent != new_concurrency:
         request.app.state.downloader = Downloader(max_concurrent=new_concurrency)
         if old_dl is not None and old_dl is not request.app.state.downloader:
-            asyncio.create_task(_retire_downloader(old_dl))
+            _t = asyncio.create_task(_retire_downloader(old_dl))
+            BG_TASKS.add(_t)
+            _t.add_done_callback(BG_TASKS.discard)
     # P0-1: redact secrets in the PUT echo too.
     return _redact_settings(s)
 
@@ -3662,13 +3669,14 @@ def create_embeddings(request: Request, req: EmbeddingsReq) -> dict[str, Any]:
         result = mgr.embed(
             req.model, texts, normalize_embeddings=req.normalize_embeddings
         )
-        if req.dimensions is not None and req.dimensions != result["dimensions"]:
+        actual_dims = result.get("dimensions")
+        if req.dimensions is not None and req.dimensions != actual_dims:
             # Do not silently truncate a non-Matryoshka model (would produce
             # meaningless vectors); report that the model has a fixed size.
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    f"model {req.model!r} exposes {result['dimensions']} dimensions;"
+                    f"model {req.model!r} exposes {actual_dims} dimensions;"
                     f" requested {req.dimensions}"
                 ),
             )
