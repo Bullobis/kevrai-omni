@@ -1404,5 +1404,22 @@
     "count": "{n} revisions in total",
     "cancel": "Cancel",
     "continue": "Continue"
+  },
+  "dataPortability": {
+    "badJson": "File corrupted: not valid JSON",
+    "badRoot": "File corrupted: root must be an object",
+    "missingVersion": "File corrupted: missing export version (kevraiExportVersion)",
+    "unsupportedVersion": "Unsupported export version v{version}; please update the app",
+    "versionMismatch": "Version mismatch: v1 required, got v{version}",
+    "missingData": "File corrupted: missing data object",
+    "badFavorites": "Data format error: favorites is not an array",
+    "badRecent": "Data format error: recent is not an array",
+    "badCmdRecent": "Data format error: cmdRecent is not an object",
+    "badSettings": "Data format error: settings is not an object",
+    "badDisk": "Data format error: disk is not an object",
+    "badPrefs": "Data format error: preferences is not an object",
+    "importFailed": "Import failed: data not validated",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar"
   }
 }

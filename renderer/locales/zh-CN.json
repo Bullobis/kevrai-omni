@@ -1404,5 +1404,22 @@
     "count": "共 {n} 个版本",
     "cancel": "取消",
     "continue": "继续"
+  },
+  "dataPortability": {
+    "badJson": "文件损坏：不是有效的 JSON",
+    "badRoot": "文件损坏：根节点必须是对象",
+    "missingVersion": "文件损坏：缺少导出版本号（kevraiExportVersion）",
+    "unsupportedVersion": "不支持的导出版本 v{version}，需要更新应用",
+    "versionMismatch": "版本不兼容：需要 v1，得到 v{version}",
+    "missingData": "文件损坏：缺少 data 对象",
+    "badFavorites": "数据格式错误：favorites 不是数组",
+    "badRecent": "数据格式错误：recent 不是数组",
+    "badCmdRecent": "数据格式错误：cmdRecent 不是对象",
+    "badSettings": "数据格式错误：settings 不是对象",
+    "badDisk": "数据格式错误：disk 不是对象",
+    "badPrefs": "数据格式错误：preferences 不是对象",
+    "importFailed": "导入失败：数据未校验",
+    "collapseSidebar": "收起侧边栏",
+    "expandSidebar": "展开侧边栏"
   }
 }

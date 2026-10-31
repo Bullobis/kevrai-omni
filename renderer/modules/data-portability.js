@@ -13,6 +13,7 @@
 import { api } from "./api.js";
 import { state } from "./state.js";
 import { applyTheme } from "./theme.js";
+import { t } from "./i18n.js";
 
 export const EXPORT_VERSION = 2;
 export const RECENT_MAX = 20;
@@ -168,43 +169,43 @@ export function parseImport(fileText) {
   try {
     obj = JSON.parse(String(fileText));
   } catch (_) {
-    throw new Error("文件损坏：不是有效的 JSON");
+    throw new Error(t("dataPortability.badJson"));
   }
   if (!obj || typeof obj !== "object") {
-    throw new Error("文件损坏：根节点必须是对象");
+    throw new Error(t("dataPortability.badRoot"));
   }
   if (typeof obj.kevraiExportVersion !== "number" || !Number.isFinite(obj.kevraiExportVersion)) {
-    throw new Error("文件损坏：缺少导出版本号（kevraiExportVersion）");
+    throw new Error(t("dataPortability.missingVersion"));
   }
   const version = obj.kevraiExportVersion;
   if (version > EXPORT_VERSION) {
-    throw new Error(`不支持的导出版本 v${version}，需要更新应用`);
+    throw new Error(t("dataPortability.unsupportedVersion", { version }));
   }
   if (version < 1) {
-    throw new Error(`版本不兼容：需要 v1，得到 v${version}`);
+    throw new Error(t("dataPortability.versionMismatch", { version }));
   }
   if (!obj.data || typeof obj.data !== "object" || Array.isArray(obj.data)) {
-    throw new Error("文件损坏：缺少 data 对象");
+    throw new Error(t("dataPortability.missingData"));
   }
   const d = obj.data;
 
   // favorites：缺失 → []；存在但不是数组 → 抛错；数组则过滤非字符串。
   let favorites = [];
   if (d.favorites !== undefined) {
-    if (!Array.isArray(d.favorites)) throw new Error("数据格式错误：favorites 不是数组");
+    if (!Array.isArray(d.favorites)) throw new Error(t("dataPortability.badFavorites"));
     favorites = d.favorites.filter((x) => typeof x === "string" && x);
   }
   // recent：同上。
   let recent = [];
   if (d.recent !== undefined) {
-    if (!Array.isArray(d.recent)) throw new Error("数据格式错误：recent 不是数组");
+    if (!Array.isArray(d.recent)) throw new Error(t("dataPortability.badRecent"));
     recent = d.recent.filter((x) => typeof x === "string" && x);
   }
   // cmdRecent：缺失 → {}；存在但不是对象 → 抛错。
   let cmdRecent = {};
   if (d.cmdRecent !== undefined) {
     if (!d.cmdRecent || typeof d.cmdRecent !== "object" || Array.isArray(d.cmdRecent)) {
-      throw new Error("数据格式错误：cmdRecent 不是对象");
+      throw new Error(t("dataPortability.badCmdRecent"));
     }
     cmdRecent = d.cmdRecent;
   }
@@ -212,7 +213,7 @@ export function parseImport(fileText) {
   let settings;
   if (d.settings !== undefined) {
     if (!d.settings || typeof d.settings !== "object" || Array.isArray(d.settings)) {
-      throw new Error("数据格式错误：settings 不是对象");
+      throw new Error(t("dataPortability.badSettings"));
     }
     settings = d.settings;
   }
@@ -220,7 +221,7 @@ export function parseImport(fileText) {
   let disk;
   if (d.disk !== undefined && d.disk !== null) {
     if (typeof d.disk !== "object" || Array.isArray(d.disk)) {
-      throw new Error("数据格式错误：disk 不是对象");
+      throw new Error(t("dataPortability.badDisk"));
     }
     disk = d.disk;
   }
@@ -228,7 +229,7 @@ export function parseImport(fileText) {
   let preferences;
   if (d.preferences !== undefined) {
     if (!d.preferences || typeof d.preferences !== "object" || Array.isArray(d.preferences)) {
-      throw new Error("数据格式错误：preferences 不是对象");
+      throw new Error(t("dataPortability.badPrefs"));
     }
     preferences = d.preferences;
   }
@@ -256,7 +257,7 @@ function mergePrepend(imported, existing, cap) {
  * 返回 { favorites, recent, settings } 统计。
  */
 export async function importData(parsed, mode) {
-  if (!parsed || !parsed.data) throw new Error("导入失败：数据未校验");
+  if (!parsed || !parsed.data) throw new Error(t("dataPortability.importFailed"));
   const d = parsed.data;
 
   const curFavorites = readStringArray(FAV_KEY);
@@ -347,7 +348,7 @@ export function applyImportedPreferences(parsed) {
         if (toggle) {
           toggle.textContent = prefs.sidebarExpanded ? "⟨" : "☰";
           toggle.setAttribute("aria-label",
-            prefs.sidebarExpanded ? "收起侧边栏" : "展开侧边栏");
+            prefs.sidebarExpanded ? t("dataPortability.collapseSidebar") : t("dataPortability.expandSidebar"));
         }
       } catch (_) {}
     }

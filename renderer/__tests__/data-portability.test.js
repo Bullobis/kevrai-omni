@@ -3,9 +3,17 @@
 // 所以这里安装一个内存 shim 作为 globalThis.localStorage；preload bridge 走 window.kevrai。
 import { test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { setupDom } from "./helpers/dom.js";
+import { registerDict } from "../modules/i18n.js";
 
 setupDom();
+
+// 加载真实 zh-CN 字典，使 data-portability 的 t() 返回真实文案。
+const _here = dirname(fileURLToPath(import.meta.url));
+registerDict("zh-CN", JSON.parse(readFileSync(join(_here, "..", "locales", "zh-CN.json"), "utf8")));
 
 // 内存 localStorage shim
 function makeStorage() {
