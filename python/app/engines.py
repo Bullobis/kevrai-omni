@@ -757,6 +757,169 @@ def save_status(root: Path, status: dict[str, Any]) -> None:
 
 
 @_serialized_install
+def install_git_engine(
+    repo_url: str,
+    root: Path,
+    eid: str,
+    branch: str = "",
+) -> InstallResult:
+    """Clone a GitHub/GitLab repo into engine_dir as the engine install.
+
+    Used for ``"install": "source"`` engines (ComfyUI nodes, 3D repos, etc.)
+    that expose no binary — the engine *is* the repo checkout.
+    """
+    target = engine_install_dir(root) / eid
+    # If already cloned and not empty, just return ok.
+    if target.is_dir() and any(target.iterdir()):
+        return InstallResult(
+            engine_id=eid, path=str(target), ok=True, message="already installed"
+        )
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists():
+        import shutil as _sh
+        _sh.rmtree(target, ignore_errors=True)
+
+    cmd = ["git", "clone", "--depth", "1"]
+    if branch:
+        cmd += ["--branch", branch]
+    cmd += [repo_url, str(target)]
+
+    try:
+        proc = subprocess.run(  # noqa: S603
+            cmd, capture_output=True, text=True, timeout=300
+        )
+        if proc.returncode == 0 and target.is_dir() and any(target.iterdir()):
+            return InstallResult(
+                engine_id=eid, path=str(target), ok=True,
+                message=f"cloned {repo_url}",
+            )
+        msg = (proc.stderr or proc.stdout or "").strip()[-500:]
+        return InstallResult(
+            engine_id=eid, path=str(target), ok=False,
+            message=f"git clone failed: {msg}" or "git clone failed",
+        )
+    except FileNotFoundError:
+        return InstallResult(
+            engine_id=eid, path="", ok=False,
+            message="git not installed — please install git and retry",
+        )
+    except subprocess.TimeoutExpired:
+        return InstallResult(
+            engine_id=eid, path=str(target) if target.exists() else "", ok=False,
+            message="git clone timed out (300s)",
+        )
+    except Exception as exc:  # noqa: BLE001
+        return InstallResult(
+            engine_id=eid, path=str(target) if target.exists() else "", ok=False,
+            message=f"git clone error: {exc}",
+        )
+
+
+@_serialized_install
+def try_download_engine(url: str, root: Path, eid: str) -> InstallResult:
+    """Best-effort download of a URL as an engine install.
+
+    Tries the legacy zip path first; if the URL points to a tarball (.tar.gz,
+    .tgz, .tar.zst) extracts it manually; if it is a GitHub repo page (not an
+    asset) returns a clear "not a download link" failure instead of a cryptic
+    "File is not a zip file".
+    """
+    url_s = str(url or "").strip()
+    if not url_s:
+        return InstallResult(engine_id=eid, path="", ok=False, message="empty url")
+
+    # Detect plain repo pages (e.g. "https://github.com/user/repo") — these
+    # serve HTML, not an archive, so extract the tarball URL instead.
+    import re as _re
+    m = _re.match(r"https?://github\.com/([^/]+)/([^/]+?)(?:\.git)?/?$", url_s)
+    if m:
+        owner, repo = m.group(1), m.group(2)
+        # Use archive tarball — GitHub always serves these
+        url_s = f"https://github.com/{owner}/{repo}/archive/refs/heads/main.tar.gz"
+
+    # tar.zst → zstd-then-untar
+    if url_s.lower().endswith(".tar.zst") or url_s.lower().endswith(".tgz"):
+        # Reuse the legacy downloader for the raw bytes; extraction is done by
+        # download_zip_engine which handles .zip only, so we implement a simple
+        # tar.gz path here.
+        return _download_and_extract_tarball(url_s, root, eid)
+
+    # Default path: legacy zip engine downloader (it also handles mirror fallback)
+    return download_zip_engine(url_s, root, eid)
+
+
+def _download_and_extract_tarball(url: str, root: Path, eid: str) -> InstallResult:
+    """Download a .tar.gz / .tgz / .tar.zst archive and extract into engine_dir."""
+    import tarfile
+    import shutil as _shutil
+
+    target_dir = engine_install_dir(root) / eid
+    target_dir.mkdir(parents=True, exist_ok=True)
+    tmp = target_dir / "download.tmp"
+
+    try:
+        _stream_download(url, tmp)
+    except Exception as exc:  # noqa: BLE001
+        tmp.unlink(missing_ok=True)
+        return InstallResult(
+            engine_id=eid, path="", ok=False,
+            message=f"download failed: {exc}",
+        )
+
+    # Detect and decompress zstd if needed
+    to_extract = tmp
+    try:
+        if url.lower().endswith(".tar.zst"):
+            # Use subprocess: zstd is faster and handles edge cases better
+            try:
+                subprocess.run(
+                    ["zstd", "-d", "-f", str(tmp), "-o", str(tmp) + ".tar"],
+                    check=True, capture_output=True, timeout=120,
+                )
+                to_extract = tmp.with_suffix("").with_suffix(".tar")
+            except (FileNotFoundError, subprocess.CalledProcessError):
+                # Fall back to pure-Python zstd if subprocess fails
+                try:
+                    import zstandard as zstd
+                    with tmp.open("rb") as fin, (tmp.parent / "raw.tar").open("wb") as fout:
+                        dctx = zstd.ZstdDecompressor()
+                        dctx.copy_stream(fin, fout)
+                    to_extract = tmp.parent / "raw.tar"
+                except ImportError:
+                    tmp.unlink(missing_ok=True)
+                    return InstallResult(
+                        engine_id=eid, path="", ok=False,
+                        message="zstd not available (install zstd CLI or zstandard Python package)",
+                    )
+
+        with tarfile.open(to_extract, "r:*") as tf:
+            # Safe extraction — reject members that escape target_dir
+            abs_target = target_dir.resolve()
+            for member in tf.getmembers():
+                member_path = (target_dir / member.name).resolve()
+                try:
+                    member_path.relative_to(abs_target)
+                except ValueError:
+                    tmp.unlink(missing_ok=True)
+                    return InstallResult(
+                        engine_id=eid, path="", ok=False,
+                        message=f"tar member escapes target: {member.name}",
+                    )
+            tf.extractall(target_dir)
+        tmp.unlink(missing_ok=True)
+        return InstallResult(
+            engine_id=eid, path=str(target_dir), ok=True,
+            message=f"extracted {url}",
+        )
+    except Exception as exc:  # noqa: BLE001
+        tmp.unlink(missing_ok=True)
+        return InstallResult(
+            engine_id=eid, path="", ok=False,
+            message=f"extract failed: {exc}",
+        )
+
+
+@_serialized_install
 def install_pip_engine(
     name: str,
     root: Path,
@@ -849,21 +1012,96 @@ def download_zip_engine(url: str, root: Path, engine_id: str) -> InstallResult:
 
 
 def install_engine(engine: dict[str, Any], root: Path) -> InstallResult:
+    """Install an engine by its catalog entry.
+
+    Handles every install strategy:
+      - "pip" → install_pip_engine(target_dir)
+      - "source" → git clone into engine_dir
+      - "zip" / "binary" / default → download from platforms[plat] URL
+        or fall back to sources[] list or GitHub releases/latest asset.
+    """
     eid = engine.get("id", "")
-    if engine.get("install") == "pip" and engine.get("pypi"):
+    inst_type = engine.get("install", "binary")
+
+    # --- 1) pip install ---
+    if inst_type == "pip" and engine.get("pypi"):
         return install_pip_engine(
             engine["pypi"], root, eid=eid, extra=engine.get("pip_extra")
         )
 
+    # --- 2) git clone source install ---
+    if inst_type == "source":
+        github = engine.get("github", "")
+        sources = engine.get("sources") or []
+        # Try github repo first, fall back to sources list
+        if github:
+            repo_url = f"https://github.com/{github}.git"
+            git_result = install_git_engine(repo_url, root, eid)
+            if git_result.ok:
+                return git_result
+        for src in sources:
+            if "github.com" in str(src):
+                git_url = str(src).rstrip("/")
+                if not git_url.endswith(".git"):
+                    git_url += ".git"
+                git_result = install_git_engine(git_url, root, eid)
+                if git_result.ok:
+                    return git_result
+        # git failed — try download from sources as fallback
+        if sources:
+            for src in sources:
+                result = try_download_engine(str(src), root, eid)
+                if result.ok:
+                    return result
+        return InstallResult(
+            engine_id=eid, path="", ok=False,
+            message=f"source install failed: could not git-clone or download",
+        )
+
+    # --- 3) binary / zip install ---
     plat = _platform_key()
     platforms = engine.get("platforms", {})
     url = platforms.get(plat)
+
+    # No explicit platform URL — try GitHub releases/latest by convention
     if not url:
+        github = engine.get("github", "")
+        if github:
+            url = f"https://github.com/{github}/releases/latest/download/{eid}.zip"
+
+    # Try sources[] list as additional fallbacks
+    sources: list[str] = list(engine.get("sources") or [])
+    if url:
+        sources = [url] + [s for s in sources if s != url]
+
+    # Filter to actual .zip/.tar/.tar.gz download links, not repo pages
+    def _looks_like_archive(s: str) -> bool:
+        sl = s.lower()
+        return any(sl.endswith(ext) or f"{ext}" in sl for ext in (
+            ".zip", ".tar.gz", ".tgz", ".tar.zst",
+        )) or "releases/latest/download" in sl or "/releases/download/" in sl
+
+    archive_candidates = [s for s in sources if _looks_like_archive(s)]
+
+    if not url and not archive_candidates:
         return InstallResult(
             engine_id=eid, path="", ok=False,
-            message=f"no binary for current platform {plat}",
+            message=f"no binary for current platform {plat} — no platforms[], no archive in sources[], no github",
         )
-    return download_zip_engine(url, root, eid)
+
+    last_result: InstallResult | None = None
+    for candidate in ([url] if url else []) + archive_candidates:
+        if not candidate:
+            continue
+        result = try_download_engine(str(candidate), root, eid)
+        if result.ok:
+            return result
+        last_result = result
+
+    return last_result or InstallResult(
+        engine_id=eid, path="", ok=False,
+        message=f"all download candidates failed for {eid}",
+    )
 
 
 def ensure_engine(

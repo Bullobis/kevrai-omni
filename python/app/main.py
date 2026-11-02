@@ -1225,8 +1225,10 @@ async def env_upgrade(request: Request, body: dict[str, Any]) -> dict[str, Any]:
 async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str, Any]:
     """Install an engine from the catalog, using its declared `sources[]` mirrors.
 
-    The sidecar measures each mirror with `/api/sources/measure` and downloads
-    from the fastest one — same auto-pick logic as `/api/download/start`.
+    Handles every install strategy:
+      - "pip"              → pip install into isolated engine dir
+      - "source"           → git clone into engine dir
+      - "zip" / "binary"   → download from sources[], auto-pick fastest mirror
     """
     eid = str(body.get("id") or "").strip()
     if not eid or not re.match(r"^[A-Za-z0-9._-]{1,128}$", eid):
@@ -1234,9 +1236,10 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
     if eid not in ENGINES:
         raise HTTPException(status_code=404, detail=f"unknown engine: {eid}")
     cat = ENGINES[eid]
-    # pip 类引擎（piper/kokoro/faster-whisper…）必须走 pip install 到隔离目录，
-    # 不能把 pypi 网页当 zip 下（旧逻辑报 "File is not a zip file"）。
-    if cat.get("install") == "pip" and cat.get("pypi"):
+    inst_type = cat.get("install", "binary")
+
+    # --- 1) pip install ---
+    if inst_type == "pip" and cat.get("pypi"):
         em: EngineManager = request.app.state.engine_manager
         result = await asyncio.to_thread(
             em.install_pip, cat["pypi"], eid
@@ -1246,15 +1249,70 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
             "pypi": cat["pypi"], "path": result.install_path,
             "message": "installed",
         }
+
+    # --- 2) git clone source install ---
+    if inst_type == "source":
+        from .engines import install_git_engine, try_download_engine
+        github = cat.get("github", "")
+        sources = cat.get("sources") or []
+        # Try git clone first
+        if github:
+            repo_url = f"https://github.com/{github}.git"
+            result = await asyncio.to_thread(
+                install_git_engine, repo_url, APP_ROOT, eid
+            )
+            if result.ok:
+                return {
+                    "ok": True, "engine_id": eid, "mode": "source",
+                    "path": result.path, "message": result.message,
+                }
+        # Try source URL list
+        for src in sources:
+            src_s = str(src)
+            if "github.com" in src_s:
+                git_url = src_s.rstrip("/")
+                if not git_url.endswith(".git"):
+                    git_url += ".git"
+                result = await asyncio.to_thread(
+                    install_git_engine, git_url, APP_ROOT, eid
+                )
+                if result.ok:
+                    return {
+                        "ok": True, "engine_id": eid, "mode": "source",
+                        "path": result.path, "message": result.message,
+                    }
+        # Fall back to download
+        for src in sources:
+            result = await asyncio.to_thread(
+                try_download_engine, str(src), APP_ROOT, eid
+            )
+            if result.ok:
+                return {
+                    "ok": True, "engine_id": eid, "mode": "download",
+                    "path": result.path, "message": result.message,
+                }
+        raise HTTPException(
+            status_code=400,
+            detail=f"source install failed for {eid}: could not git-clone or download",
+        )
+
+    # --- 3) binary / zip install ---
     sources: list[str] = list(cat.get("sources") or [])
     plat_url = (cat.get("platforms") or {}).get(platform_key())
     if plat_url:
         sources.append(plat_url)
+    # GitHub repo page → use archive tarball URL
+    if not sources and cat.get("github"):
+        sources = [f"https://github.com/{cat['github']}/archive/refs/heads/main.tar.gz"]
     if not sources:
         raise HTTPException(status_code=404, detail="engine has no download sources")
     from .sources import measure_sources, pick_best
-    ranking = await measure_sources(sources)
-    best = pick_best(ranking) or {"url": sources[0]}
+    try:
+        ranking = await measure_sources(sources)
+        best = pick_best(ranking) or {"url": sources[0]}
+    except Exception:
+        ranking = []
+        best = {"url": sources[0]}
     em = request.app.state.engine_manager
     # engines.json has no per-binary sha256; pass None to skip hash verification
     # (previously passed cat.get("version") which always mismatched and failed).
@@ -1265,7 +1323,7 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
         "ok": True,
         "engine_id": eid,
         "source_used": best.get("url"),
-        "ranking_top5": ranking[:5],
+        "ranking_top5": ranking[:5] if isinstance(ranking, list) else [],
         "result": result,
     }
 
