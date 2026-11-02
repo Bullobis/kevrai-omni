@@ -1297,11 +1297,19 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
         )
 
     # --- 3) binary / zip install ---
-    sources: list[str] = list(cat.get("sources") or [])
+    raw_sources: list[str] = list(cat.get("sources") or [])
     plat_url = (cat.get("platforms") or {}).get(platform_key())
     if plat_url:
-        sources.append(plat_url)
-    # GitHub repo page → use archive tarball URL
+        raw_sources.append(plat_url)
+    # Filter to actual archive download links (zip/tar/tar.gz/tar.zst/releases download),
+    # not repo pages like https://github.com/... or /releases/latest.
+    def _looks_like_archive(s: str) -> bool:
+        sl = s.lower()
+        return any(sl.endswith(ext) for ext in (
+            ".zip", ".tar", ".tar.gz", ".tgz", ".tar.zst",
+        )) or "/releases/download/" in sl
+    sources = [s for s in raw_sources if _looks_like_archive(s)]
+    # If no valid archive links but we have a GitHub repo, generate archive tarball URL
     if not sources and cat.get("github"):
         sources = [f"https://github.com/{cat['github']}/archive/refs/heads/main.tar.gz"]
     if not sources:
