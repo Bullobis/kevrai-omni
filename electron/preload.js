@@ -570,6 +570,13 @@ const api = {
     return invoke("kevrai:skill-hub-remove", skillId);
   },
 
+  // ----- v4.17.5: DSH-compatible plugin manager -----
+  pluginsList:      () => invoke("api:plugins"),
+  pluginInstall:    (url, id) => invoke("api:plugins:install", { url, id }),
+  pluginActivate:   (id) => { assertString(id, "id", 128); return invoke("api:plugins:activate", id); },
+  pluginDeactivate: (id) => { assertString(id, "id", 128); return invoke("api:plugins:deactivate", id); },
+  pluginRemove:     (id) => { assertString(id, "id", 128); return invoke("api:plugins:remove", id); },
+
   // ----- v2.4.0: super search -----
   search: (params) => {
     const p = (params == null || typeof params !== "object") ? {} : params;

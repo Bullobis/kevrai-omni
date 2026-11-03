@@ -1942,3 +1942,22 @@ html[data-theme="light"] .skeleton-card::after {
 /* 生图采样进度条 */
 .progress { height: 8px; background: rgba(128,128,128,.2); border-radius: 4px; overflow: hidden; }
 .progress-bar { height: 100%; background: linear-gradient(90deg,#4f8cff,#7c5cff); transition: width .3s ease; }
+
+/* v4.17.5 — DSH-compatible plugin manager page */
+.plugins-head { padding: 16px 20px 12px; }
+.plugins-head h2 { margin: 0 0 6px; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.plugins-install-row { display: flex; gap: 8px; margin-top: 12px; }
+.plugins-install-row .input { flex: 1; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--stack-2); border: 1px solid var(--bord); color: var(--fg); outline: none; }
+.plugins-install-row .input:focus { border-color: var(--acc); }
+.plugins-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; padding: 0 20px 20px; }
+.plugins-grid .card.plugin { padding: 12px 14px; border: 1px solid var(--bord); border-radius: var(--radius-sm); background: var(--stack-2); transition: border-color .15s; }
+.plugins-grid .card.plugin:hover { border-color: var(--acc); }
+.plugins-grid .card.plugin.active { border-color: var(--ok); }
+.plugin-title { display: flex; align-items: baseline; gap: 6px; font-size: 15px; }
+.plugin-title strong { font-weight: 600; }
+.plugin-ver { color: var(--mut); font-size: 12px; }
+.plugin-meta { font-size: 12px; color: var(--mut); margin-top: 2px; }
+.plugin-desc { margin: 8px 0 6px; font-size: 13px; color: var(--fg); opacity: .8; }
+.plugin-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.pill { display: inline-block; padding: 2px 8px; font-size: 11px; border-radius: 999px; background: var(--stack-3); color: var(--mut); border: 1px solid var(--bord); }
+.pill.ok { background: rgba(34,197,94,.12); color: #4ade80; border-color: rgba(34,197,94,.25); }
