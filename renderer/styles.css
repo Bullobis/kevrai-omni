@@ -90,6 +90,43 @@
   --bg: var(--stack-0);
   --sel: rgba(255, 255, 255, 0.08);
   --radius-md: var(--radius-sm);
+
+  /* ── Cherry Studio / Shadcn 兼容别名 ──
+     Cherry Studio 通过 --cs-* 语义层 → Shadcn 标准名；Kevrai
+     没有中间层，直接把 Shadcn 约定名指向 Kevrai token，方便
+     将来引入 Shadcn CDN 组件或对照 Cherry Studio DESIGN.md。 */
+  --background:      var(--stack-0);
+  --foreground:      var(--fg);
+  --card:            var(--stack-2);
+  --card-foreground: var(--fg);
+  --popover:         var(--stack-3);
+  --popover-foreground: var(--fg);
+  --primary:         var(--acc);
+  --primary-foreground: #ffffff;
+  --secondary:       var(--stack-1);
+  --secondary-foreground: var(--fg);
+  --muted:           var(--mut);
+  --muted-foreground: var(--mut);
+  --accent:          var(--acc);
+  --accent-foreground: #ffffff;
+  --destructive:     var(--err);
+  --destructive-foreground: #ffffff;
+  --border:          var(--bord);
+  --input:           var(--bord);
+  --ring:            var(--acc);
+  --chart-1:         var(--acc);
+  --chart-2:         var(--acc2);
+  --chart-3:         var(--warn);
+  --chart-4:         var(--hot);
+  --chart-5:         var(--ok);
+  --sidebar:             var(--stack-1);
+  --sidebar-foreground:  var(--fg);
+  --sidebar-primary:     var(--acc);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent:      var(--stack-2);
+  --sidebar-accent-foreground: var(--fg);
+  --sidebar-border:      var(--bord);
+  --sidebar-ring:        var(--acc);
 }
 
 /* Light theme override (theme="light") */

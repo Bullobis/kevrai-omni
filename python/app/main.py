@@ -347,6 +347,11 @@ async def _lifespan(app: FastAPI):
     # build_registry(): otherwise two registries exist, the one actually
     # serving requests is never the one shutdown closes, and its HTTP pools
     # leak at exit.
+    # DSH-compatible plugin manager (MVP v4.17.5).
+    from .plugins import PluginManager
+    app.state.plugins = PluginManager(APP_ROOT)
+    app.state.plugins.mount_routes(app)
+
     app.state.hub = get_registry(settings)
     # v2.8.1 — source metadata registry + health (design §2.4).
     app.state.source_registry = _build_source_registry(settings)
@@ -1334,6 +1339,74 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
         "ranking_top5": ranking[:5] if isinstance(ranking, list) else [],
         "result": result,
     }
+
+
+# ---------------------------------------------------------------------------
+# DSH-compatible Plugin Manager MVP (v4.17.5)
+# ---------------------------------------------------------------------------
+
+def _pm(request: Request):
+    return request.app.state.plugins
+
+
+@app.get("/api/plugins")
+def list_plugins(request: Request) -> dict[str, Any]:
+    """List all installed plugins (with activation state)."""
+    return {
+        "plugins": [p.to_dict() for p in _pm(request).list()],
+        "tools": [{"id": k, "plugin": k.split(":", 1)[0]}
+                  for k in _pm(request).tools()],
+    }
+
+
+@app.get("/api/plugins/{plugin_id}")
+def get_plugin(request: Request, plugin_id: str) -> dict[str, Any]:
+    p = _pm(request).get(plugin_id)
+    if not p:
+        raise HTTPException(status_code=404, detail=f"plugin {plugin_id} not found")
+    return p.to_dict()
+
+
+@app.post("/api/plugins/install")
+async def install_plugin(request: Request, body: dict[str, Any]) -> dict[str, Any]:
+    """Install a plugin from a git URL (GitHub shorthand or full URL)."""
+    git_url = body.get("url") or body.get("git_url") or body.get("repo")
+    if not git_url:
+        raise HTTPException(status_code=400, detail="url required")
+    try:
+        meta = await asyncio.to_thread(_pm(request).install, git_url, body.get("id"))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    return {"ok": True, "plugin": meta.to_dict()}
+
+
+@app.post("/api/plugins/{plugin_id}/activate")
+async def activate_plugin(request: Request, plugin_id: str) -> dict[str, Any]:
+    try:
+        meta = await asyncio.to_thread(_pm(request).activate, plugin_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"plugin {plugin_id} not found")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    return {"ok": True, "plugin": meta.to_dict()}
+
+
+@app.post("/api/plugins/{plugin_id}/deactivate")
+async def deactivate_plugin(request: Request, plugin_id: str) -> dict[str, Any]:
+    try:
+        meta = await asyncio.to_thread(_pm(request).deactivate, plugin_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"plugin {plugin_id} not found")
+    return {"ok": True, "plugin": meta.to_dict()}
+
+
+@app.delete("/api/plugins/{plugin_id}")
+async def uninstall_plugin(request: Request, plugin_id: str) -> dict[str, Any]:
+    try:
+        await asyncio.to_thread(_pm(request).uninstall, plugin_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"plugin {plugin_id} not found")
+    return {"ok": True, "plugin_id": plugin_id}
 
 
 def platform_key() -> str:
