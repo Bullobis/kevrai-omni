@@ -14,7 +14,7 @@ on:
       tag:
         description: "要发布的 tag（手动运行时使用）"
         required: true
-        default: "v3.0.0"
+        default: "v4.17.5"
 
 permissions:
   contents: write
@@ -41,6 +41,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ----------------------------------------------------------------
+      # Python sidecar 构建 —— 必须在 electron-builder 之前跑完，
+      # 因为 electron-builder.yml 的 extraResources 硬依赖
+      # python/dist/sidecar/ 目录存在，sidecar 会被 bundle 进每个
+      # 平台的安装包/AppImage/便携版。
+      # ----------------------------------------------------------------
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip deps
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('python/requirements.txt') }}
+
+      - name: Install Python deps + PyInstaller
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r python/requirements.txt
+          python -m pip install pyinstaller httpx  # httpx for health probe
+
+      - name: Build PyInstaller sidecar (platform binary)
+        shell: bash
+        run: |
+          cd python
+          rm -rf build dist *.spec
+          pyinstaller run_sidecar.py --name sidecar --onedir \
+            --distpath dist --workpath build --specpath dist \
+            --collect-all uvicorn \
+            --collect-all fastapi \
+            --collect-all app \
+            --collect-all python_multipart
+          echo "--- sidecar binary ---"
+          ls -lh dist/sidecar/
+          # Quick smoke — start for 3s then kill.
+          # Log shows "kevrai-sidecar started" confirms uvicorn boots.
+          timeout 6 dist/sidecar/sidecar 2>&1 | head -5 || true
+
+      - name: Verify sidecar binary
+        shell: bash
+        run: |
+          test -f python/dist/sidecar/sidecar \
+            || { echo "::error::sidecar binary missing at python/dist/sidecar/sidecar"; exit 1; }
+          echo "::notice::sidecar OK: $(ls -lh python/dist/sidecar/sidecar | awk '{print $5}')"
+
+      # ----------------------------------------------------------------
+      # Node + Electron —— 同原 workflow
+      # ----------------------------------------------------------------
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -68,6 +118,25 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
+      - name: Verify sidecar bundled in app
+        shell: bash
+        run: |
+          # sidecar 应出现在 unpacked 目录的 resources/sidecar/ 下
+          # —— 证明 electron-builder.yml 的 extraResources 正确命中
+          if [ -d "build/output/linux-unpacked/resources/sidecar" ]; then
+            RES="build/output/linux-unpacked/resources"
+          elif [ -d "build/output/win-unpacked/resources/sidecar" ]; then
+            RES="build/output/win-unpacked/resources"
+          elif [ -d "build/output/mac/Kevrai Omni.app/Contents/Resources/sidecar" ]; then
+            RES="build/output/mac/Kevrai Omni.app/Contents/Resources"
+          else
+            echo "::warning::could not locate bundled sidecar — skipping verify"
+            exit 0
+          fi
+          test -f "$RES/sidecar/sidecar" \
+            && echo "::notice::sidecar correctly bundled in $RES" \
+            || { echo "::error::sidecar NOT bundled in $RES"; exit 1; }
+
       - name: List build output
         shell: bash
         run: ls -la build/output || true
@@ -76,7 +145,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.name }}
-          path: build/output/
+          path: |
+            build/output/
+            python/dist/sidecar/
           if-no-files-found: error
 
   release:
@@ -94,16 +165,35 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-files
-          # 只收集品牌最终产物（Kevrai-Omni-*）与更新元数据（latest*.yml），
-          # 排除 win-unpacked/ 内的 raw exe（Kevrai.Omni.exe）、elevate.exe、
-          # builder-debug.yml、app-update.yml 等 electron-builder 中间文件。
+          echo "=== downloaded artifacts ==="
+          find dist -maxdepth 2 -type d
+          echo ""
+          echo "=== collecting Kevrai-Omni-* products ==="
+          # 品牌产物（安装包/AppImage/便携版/更新元数据）
           find dist -type f \
             \( -name "Kevrai-Omni-*" -o -name "latest*.yml" \) \
             -exec cp {} release-files/ \;
+          echo ""
+          echo "=== collecting sidecar binary (from linux build) ==="
+          # linux job 产出的 PyInstaller sidecar ELF，单独上传方便不想装
+          # Electron 的开发者直接用 sidecar 跑本地 API。
+          SIDECAR_LINUX=$(find dist/dist-linux -path "*/python/dist/sidecar/sidecar" -type f 2>/dev/null | head -1)
+          if [ -n "$SIDECAR_LINUX" ]; then
+            cp "$SIDECAR_LINUX" release-files/sidecar
+            echo "  copied linux sidecar: $SIDECAR_LINUX ($(du -h $SIDECAR_LINUX | cut -f1))"
+          else
+            echo "::warning::linux sidecar binary not found in dist/dist-linux"
+          fi
           # 对安装包/归档生成 SHA256SUMS（不含 latest*.yml 与 blockmap）
           ( cd release-files \
             && sha256sum $(ls | grep -vE '^(latest|.*\.blockmap$)') > SHA256SUMS.txt ) || true
-          ls -la release-files
+          echo ""
+          echo "=== final release-files/ ==="
+          ls -lh release-files/
+          echo ""
+          echo "=== sidecar smoke test ==="
+          chmod +x release-files/sidecar 2>/dev/null || true
+          timeout 6 release-files/sidecar 2>&1 | head -3 || true
 
       - name: Resolve tag
         id: rtag
@@ -120,5 +210,29 @@ jobs:
         with:
           tag_name: ${{ steps.rtag.outputs.tag }}
           name: Kevrai Omni ${{ steps.rtag.outputs.tag }}
-          generate_release_notes: true
+          generate_release_notes: false
+          body: |
+            ## Kevrai Omni ${{ steps.rtag.outputs.tag }}
+
+            ### 🎯 更新亮点
+
+            - **跨平台构建**: Linux AppImage/deb、Windows NSIS 安装器+zip、macOS dmg（均由 GitHub Actions CI 原生构建）
+            - **PyInstaller sidecar**: 已内置到所有平台安装包，首次启动无需单独安装 Python
+            - **版本统一**: `package.json` + `python/app/__init__.py` 一致
+
+            ### 📦 下载安装
+
+            | 平台 | 文件 | 安装方式 |
+            |------|------|----------|
+            | Linux | `Kevrai-Omni-${{ steps.rtag.outputs.tag }}-x86_64.AppImage` | `chmod +x` 后直接运行 |
+            | Linux | `Kevrai-Omni-${{ steps.rtag.outputs.tag }}-amd64.deb` | `sudo dpkg -i` |
+            | Windows | `Kevrai-Omni-${{ steps.rtag.outputs.tag }}-x64.exe` | 双击 NSIS 安装器 |
+            | Windows | `Kevrai-Omni-${{ steps.rtag.outputs.tag }}-x64.zip` | 解压便携版运行 `Kevrai Omni.exe` |
+            | macOS | `Kevrai-Omni-${{ steps.rtag.outputs.tag }}-x64.dmg` / `arm64.dmg` | 拖入 Applications |
+
+            ### 🏗️ 技术栈
+
+            - Electron 33 / electron-builder 25 / Node 22
+            - Python sidecar: FastAPI + uvicorn（PyInstaller frozen）
+            - GitHub Actions: ubuntu-latest + windows-latest + macos-latest
           files: release-files/*
