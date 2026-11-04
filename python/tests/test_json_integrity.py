@@ -27,6 +27,12 @@ _IGNORED_DIRS = frozenset({
     ".pytest_cache",
     ".ruff_cache",
     ".git",
+    # Build output dirs — they are (re)generated at build time, so any JSON
+    # inside them is ephemeral.  Scanning `python/dist` made this suite flaky:
+    # files collected at session start "disappeared" when a rebuild pruned
+    # them mid-run (e.g. the slim PyInstaller build dropping black/).
+    "dist",
+    "build",
 })
 
 

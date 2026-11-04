@@ -69,12 +69,23 @@ jobs:
         run: |
           cd python
           rm -rf build dist *.spec
+          # --exclude-module: jedi/parso/IPython/matplotlib/pandas/scipy 均为
+          # 传递依赖或未使用的重库（合计 ~140MB）。sidecar 运行时只直接
+          # import numpy；torch/transformers 等引擎依赖由 _ensure_python_deps
+          # 在运行时按需安装到用户目录，不进冻结包。剔除后 _internal
+          # 335MB→157MB，三个平台安装包同步瘦身。
           pyinstaller run_sidecar.py --name sidecar --onedir \
             --distpath dist --workpath build --specpath dist \
             --collect-all uvicorn \
             --collect-all fastapi \
             --collect-all app \
-            --collect-all python_multipart
+            --collect-all python_multipart \
+            --exclude-module jedi \
+            --exclude-module parso \
+            --exclude-module IPython \
+            --exclude-module matplotlib \
+            --exclude-module pandas \
+            --exclude-module scipy
           echo "--- sidecar binary ---"
           ls -lh dist/sidecar/
           # Quick smoke — start for 3s then kill.

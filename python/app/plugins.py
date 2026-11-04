@@ -73,6 +73,12 @@ class PluginAPI:
         self._registered_commands: dict[str, Callable] = {}
         self._registered_routes: list[tuple[str, str, Callable]] = []
 
+    @property
+    def plugin(self) -> "PluginAPI":
+        """Namespace alias so the documented ``@kevrai.plugin.tool(...)``
+        style works alongside the shorter ``@kevrai.tool(...)``."""
+        return self
+
     # --- Hook registration (fluent decorator factories) ---
     def tool(self, name: str | None = None, description: str = ""):
         """``@kevrai.plugin.tool(name="my_tool", description="...")``"""
@@ -228,8 +234,12 @@ class PluginManager:
 
     def install(self, git_url: str, plugin_id: str | None = None) -> PluginMeta:
         """Clone a plugin from GitHub (or any git repo)."""
-        # DSH convention: github shorthand like "owner/repo"
-        if not git_url.startswith(("http", "git@")) and "/" in git_url:
+        # DSH convention: github shorthand like "owner/repo".
+        # Only expand when the input carries NO scheme at all — otherwise
+        # legitimate non-https URLs (file:///..., ssh://...) get mangled into
+        # "https://github.com/file:///..." and clone fails with exit 128.
+        if ("://" not in git_url and not git_url.startswith("git@")
+                and "/" in git_url):
             git_url = f"https://github.com/{git_url}"
 
         pid = plugin_id or git_url.rstrip("/").rsplit("/", 1)[-1]
@@ -330,6 +340,8 @@ class PluginManager:
             self._commands[f"{plugin_id}:{cname}"] = cfn
         for path, method, fn in handle._registered_routes:
             self._routes.append((path, method, fn))
+        # Mount on the live app immediately (no-op before mount_routes(app))
+        self._mount_pending()
 
         meta.active = True
         return meta
@@ -351,19 +363,52 @@ class PluginManager:
                     del self._commands[key]
             self._routes = [r for r in self._routes
                             if not any(r[2] is fn for _, _, fn in handle._registered_routes)]
+        # Best-effort unmount from the live app
+        self._unmount_routes(handle)
         meta.active = False
         return meta
 
     # --- Apply routes to FastAPI app ---
 
     def mount_routes(self, app: Any) -> None:
-        """Call once on FastAPI startup to mount any plugin-declared routes."""
-        from fastapi import APIRouter
-        router = APIRouter()
+        """Call once on FastAPI startup to mount any plugin-declared routes.
+
+        Also remembers the app instance so ``activate()`` can mount routes
+        registered by plugins that are enabled *after* startup — otherwise
+        those routes would sit in ``self._routes`` forever and 404.
+        """
+        self._app = app
+        self._mount_pending()
+
+    def _mount_pending(self) -> None:
+        """Mount any not-yet-mounted routes onto the live app (best effort)."""
+        app = getattr(self, "_app", None)
+        if app is None:
+            return
+        mounted: set = getattr(self, "_mounted", set())
         for path, method, fn in self._routes:
+            if (path, method, fn) in mounted:
+                continue
             try:
-                router.add_api_route(path, fn, methods=[method])
+                app.add_api_route(path, fn, methods=[method])
+                mounted.add((path, method, fn))
             except Exception:
                 pass
-        if router.routes:
-            app.include_router(router)
+        self._mounted = mounted
+
+    def _unmount_routes(self, handle: "PluginAPI") -> None:
+        """Best-effort removal of a deactivated plugin's routes from the app."""
+        app = getattr(self, "_app", None)
+        router = getattr(app, "router", None) if app is not None else None
+        if router is None:
+            return
+        fns = {fn for _, _, fn in handle._registered_routes}
+        try:
+            router.routes = [
+                r for r in router.routes
+                if getattr(r, "endpoint", None) not in fns
+            ]
+        except Exception:
+            pass
+        mounted: set = getattr(self, "_mounted", set())
+        self._mounted = {(p, m, f) for p, m, f in mounted if f not in fns}
