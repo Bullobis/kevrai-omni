@@ -187,6 +187,7 @@
         "https://github.com/hexgrad/Kokoro"
       ],
       "pip_extra": [
+        "torch==2.6.0",
         "misaki[zh]>=0.8.2",
         "soundfile"
       ]
@@ -555,7 +556,7 @@
         "https://github.com/huggingface/transformers"
       ],
       "pip_extra": [
-        "torch",
+        "torch==2.6.0",
         "accelerate>=0.34",
         "pillow",
         "scikit-learn"

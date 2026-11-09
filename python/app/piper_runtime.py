@@ -452,6 +452,37 @@ def _download_voice_file(rel: str, dest: Path) -> Path:
     )
 
 
+def _preload_torch_shared_libs() -> None:
+    """Linux 上 chatterbox 的 torchaudio 扩展需要 torch 的 .so 先进入全局符号表。
+
+    现象：``import torchaudio`` 报
+    ``OSError: Could not load .../torchaudio/lib/libtorchaudio.so``；
+    直接 ``ldd`` 显示 libtorch.so / libtorch_cpu.so / libc10.so "not found"，
+    因为 torch 的轮子把库放在 ``torch/lib``，没进动态链接器搜索路径。
+    ``LD_LIBRARY_PATH`` 在进程启动后再改无效，改用 RTLD_GLOBAL 预加载。
+    """
+    if not sys.platform.startswith("linux"):
+        return
+    try:
+        import ctypes
+
+        import torch  # type: ignore
+
+        lib_dir = Path(torch.__file__).resolve().parent / "lib"
+        for name in (
+            "libtorch_global_deps.so", "libtorch.so",
+            "libtorch_cpu.so", "libc10.so",
+        ):
+            lib = lib_dir / name
+            if lib.is_file():
+                try:
+                    ctypes.CDLL(str(lib), mode=ctypes.RTLD_GLOBAL)
+                except OSError:
+                    LOG.debug("preload %s failed", lib, exc_info=True)
+    except Exception:  # noqa: BLE001 — 预加载失败不阻断，交给真实 import 报错
+        LOG.debug("torch preload skipped", exc_info=True)
+
+
 def _write_chatterbox_wav(out_path: Path, wav: Any, sample_rate: int) -> None:
     """把 Chatterbox 返回的张量写成 WAV。
 
@@ -604,6 +635,7 @@ class PiperManager:
     def _load_chatterbox(self, device: str = "auto") -> Any:
         """加载 Chatterbox 模型。依赖缺失时给出**准确的** pip 包名。"""
         _bootstrap_optional_tts_dirs(self.data_root)
+        _preload_torch_shared_libs()
         try:
             from chatterbox.tts import ChatterboxTTS  # type: ignore
         except ImportError as e:
