@@ -451,6 +451,24 @@ class ThreeDManager:
             random.randint(0, 2**31 - 1) if p.seed < 0 else int(p.seed)  # noqa: S311
         )
 
+        # Offline preview: deterministic GLB/OBJ/PLY without downloading a model.
+        if p.model_id == "kevrai/preview-3d":
+            from . import preview_engine
+            task.state = TaskState.RUNNING
+            task.progress = 0.3
+            task._check_cancel()
+            out = self.output_root / (
+                f"3d_{task.id}_{int(task.started_at)}.{p.output_format}")
+            written = preview_engine.write_mesh(
+                p.prompt or "kevrai preview object", out,
+                fmt=p.output_format, seed=task.seed_used)
+            task.output_path = str(written)
+            task.progress = 1.0
+            task.state = TaskState.DONE
+            task.finished_at = time.time()
+            task.elapsed_s = max(0.0, task.finished_at - task.started_at)
+            return
+
         pipe = _load_pipeline(p.model_id, p.mode)
         task._check_cancel()
 

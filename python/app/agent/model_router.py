@@ -150,10 +150,16 @@ class ModelRouter:
         if kind == "transformers":
             try:
                 manager = self._brain()
-                text = (manager.generate(repo or "", prompt, system=system,
-                                         max_new_tokens=max_new_tokens,
-                                         should_stop=should_stop)
-                        or "").strip()
+                # 用 chat template 包住 ReAct 指令；instruct 模型直接续写裸
+                # 文本会退化成符号串（SmolLM2 实测输出「；；；」）。
+                if hasattr(manager, "answer"):
+                    text = (manager.answer(repo or "", prompt, system=system,
+                                           max_new_tokens=max_new_tokens)
+                            or "").strip()
+                else:  # 兼容旧 manager / 测试替身
+                    text = (manager.generate(repo or "", prompt,
+                                             max_new_tokens=max_new_tokens)
+                            or "").strip()
                 if not text:
                     return {"ok": False, "error": "LLM returned empty text",
                             "error_type": "EmptyOutput"}
@@ -210,8 +216,13 @@ class ModelRouter:
         kind, repo = self._backend
         if kind == "transformers":
             manager = self._brain()
-            return manager.answer_stream(
-                repo or "", question, system=system,
+            if hasattr(manager, "answer_stream"):
+                return manager.answer_stream(
+                    repo or "", question, system=system,
+                    max_new_tokens=max_new_tokens, should_stop=should_stop,
+                )
+            return manager.generate_stream(
+                repo or "", question,
                 max_new_tokens=max_new_tokens, should_stop=should_stop,
             )
         # Non-streaming fallback: run the blocking chat() and emit it as one

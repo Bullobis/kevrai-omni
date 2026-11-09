@@ -24,6 +24,7 @@ const MODELS = [
   { id: "stabilityai/TripoSR", label: "TripoSR（MIT，最快，仅图生）", t23d: false, vramMin: 6, license: "MIT", commercial: true, note: "纯 MIT，无地区限制；仅顶点色无 PBR。" },
   { id: "JeffreyXiang/TRELLIS-image-large", label: "TRELLIS（MIT，PBR 网格，仅图生）", t23d: false, vramMin: 16, license: "MIT", commercial: true, note: "MIT；只支持单图输入，不支持文生 3D。" },
   { id: "tencent/Hunyuan3D-2", label: "Hunyuan3D 2（腾讯社区许可，质量高）", t23d: true, vramMin: 10, license: "腾讯社区许可", commercial: "conditional", note: "非 MIT：有月活上限，且商用排除欧盟/英国/韩国；文生 3D 实为串联文生图。" },
+  { id: "kevrai/preview-3d", label: "轻量预览（离线，非 AI，秒出 GLB）", t23d: true, vramMin: 0, license: "built-in", commercial: true, note: "无需显卡/权重，确定性生成可打开的网格预览。" },
 ];
 
 // 本机最佳显存（GB），init 时探测一次。

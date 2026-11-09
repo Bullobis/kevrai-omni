@@ -39,11 +39,15 @@ KNOWN_MODELS: dict[str, str] = {
     "janus-pro-1b": "deepseek-ai/Janus-Pro-1B",
     "janus-pro-7b": "deepseek-ai/Janus-Pro-7B",
     "minicpm-v-4.6": "openbmb/MiniCPM-V-4.6",
+    "preview-image": "kevrai/preview-image",
+    "tiny-sd": "diffusers/tiny-stable-diffusion-torch",
 }
 
 # Catalog ids whose autoregressive image-generation path (VQVAE decode) this
 # runtime can drive. Kept in sync with the catalog ``modality.generate`` field.
-IMAGE_GEN_CAPABLE: frozenset[str] = frozenset({"janus-pro-1b", "janus-pro-7b"})
+IMAGE_GEN_CAPABLE: frozenset[str] = frozenset({
+    "janus-pro-1b", "janus-pro-7b", "preview-image", "tiny-sd",
+})
 
 # Auto classes tried in order when loading a model; the first that recognises
 # the checkpoint wins, keeping the loader open to future architectures.
@@ -428,6 +432,46 @@ class MultimodalManager:
             raise MultimodalParamError(
                 f"模型 {mid} 不支持文生图（当前仅 Janus 系列支持）"
             )
+
+        # 离线预览：无需任何权重，必然可出图。
+        if catalog_id == "preview-image" or mid == "kevrai/preview-image":
+            from . import preview_engine
+            started = time.monotonic()
+            imgs = [
+                preview_engine.make_image(prompt, 512, 512, seed=seed)
+                for _ in range(max(1, min(int(num_images), 4)))
+            ]
+            return {"images": imgs, "repo": "kevrai/preview-image",
+                    "count": len(imgs), "engine": "preview",
+                    "elapsed_s": round(time.monotonic() - started, 3)}
+
+        # Diffusers 文生图（含官方 tiny SD，用于低配机/CI 验证）。
+        repo_l = str(self.resolve_repo(mid)).lower()
+        if repo_l.startswith("diffusers/") or "/tiny-stable-diffusion" in repo_l:
+            started = time.monotonic()
+            import torch
+            from diffusers import DiffusionPipeline
+            pipe = DiffusionPipeline.from_pretrained(
+                self.resolve_repo(mid), torch_dtype=torch.float32,
+                safety_checker=None)
+            pipe = pipe.to("cpu")
+            gen = torch.Generator(device="cpu")
+            if seed is not None:
+                gen = gen.manual_seed(int(seed))
+            kwargs: dict[str, Any] = {
+                "prompt": prompt,
+                "num_inference_steps": 4,
+                "guidance_scale": max(1.0, float(guidance_scale)),
+                "width": 256, "height": 256,
+                "generator": gen,
+            }
+            if int(num_images) > 1:
+                kwargs["num_images_per_prompt"] = max(1, min(int(num_images), 4))
+            out = pipe(**kwargs)
+            imgs = list(getattr(out, "images", []) or [])
+            return {"images": imgs, "repo": self.resolve_repo(mid),
+                    "count": len(imgs), "engine": "diffusers",
+                    "elapsed_s": round(time.monotonic() - started, 3)}
 
         started = time.monotonic()
         model, processor, _ = self.load(mid)

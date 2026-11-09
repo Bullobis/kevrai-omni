@@ -78,6 +78,7 @@ from . import (
     music_runtime,
     ocr_runtime,
     piper_runtime,
+    vllm_runtime,
 )
 from . import clawdchat as clawdchat_mod
 from . import converter as converter_service
@@ -2469,7 +2470,7 @@ def _mnn_download_one_file(f: dict[str, Any], dest: Path) -> None:
                     headers["Range"] = f"bytes={resume}-"
                 with (
                     httpx.Client(
-                        timeout=httpx.Timeout(connect=15.0, read=120.0),
+                        timeout=httpx.Timeout(120.0, connect=15.0, read=120.0, write=60.0, pool=15.0),
                         follow_redirects=True,
                     ) as client,
                     client.stream("GET", u, headers=headers) as resp,
@@ -4543,6 +4544,53 @@ class ComfyUIMusicReq(BaseModel):
     timeout: float | None = None
 
 
+class VllmConfigReq(BaseModel):
+    base_url: str | None = None
+    model: str | None = None
+    api_key: str | None = None
+
+
+class VllmChatReq(BaseModel):
+    messages: list[dict[str, Any]]
+    model: str | None = None
+    temperature: float = 0.7
+    max_tokens: int = 512
+    base_url: str | None = None
+    api_key: str | None = None
+    timeout: float = 120.0
+
+
+@app.get("/api/vllm/status")
+def vllm_status() -> dict[str, Any]:
+    """vLLM / OpenAI 兼容服务状态（探活 /v1/models）。"""
+    return vllm_runtime.status()
+
+
+@app.post("/api/vllm/config")
+def vllm_config(req: VllmConfigReq) -> dict[str, Any]:
+    cfg = vllm_runtime.save_config(req.base_url, req.model, req.api_key)
+    probe = vllm_runtime.list_models(timeout=8.0)
+    return {"ok": True, "config": cfg, "reachable": probe["ok"],
+            "models": probe["models"], "error": probe.get("error", "")}
+
+
+@app.get("/api/vllm/models")
+def vllm_models(base_url: str | None = None) -> dict[str, Any]:
+    return vllm_runtime.list_models(base_url=base_url)
+
+
+@app.post("/api/vllm/chat")
+def vllm_chat(req: VllmChatReq) -> dict[str, Any]:
+    try:
+        return vllm_runtime.chat(
+            req.messages, model=req.model, temperature=req.temperature,
+            max_tokens=req.max_tokens, base_url=req.base_url,
+            api_key=req.api_key, timeout=req.timeout,
+        )
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"vLLM 调用失败：{e}") from e
+
+
 @app.get("/api/comfyui/status")
 def comfyui_status(base_url: str | None = None) -> dict[str, Any]:
     """探测 ComfyUI 是否可用，并返回系统信息。
@@ -5152,6 +5200,65 @@ def _cleanup_temp(paths: list[str]) -> None:
     for p in paths:
         with contextlib.suppress(OSError):
             os.unlink(p)
+
+
+class OcrRecognizeReq(BaseModel):
+    image_path: str = ""
+    image_b64: str = ""
+    language: str = "ch"
+
+
+@app.get("/api/ocr/capabilities")
+def ocr_capabilities_route() -> dict[str, Any]:
+    """RapidOCR (PP-OCRv6 ONNX) capability probe."""
+    installed = False
+    version: str | None = None
+    error = ""
+    try:
+        import rapidocr  # noqa: F401
+        from importlib import metadata
+        version = metadata.version("rapidocr")
+        installed = True
+    except Exception as e:  # noqa: BLE001
+        error = f"{type(e).__name__}: {e}"
+    return {
+        "engine": "rapidocr", "installed": installed, "version": version,
+        "error": error, "languages": ["ch", "en"],
+        "models": ["PP-OCRv6_det_small", "ch_ppocr_mobile_v2.0_cls_mobile",
+                   "PP-OCRv6_rec_small"],
+        "note": "RapidOCR 对中英混排、扫描件与截图均可识别；复杂版面只返回文本行。",
+    }
+
+
+@app.post("/api/ocr/recognize")
+def ocr_recognize_route(request: Request, req: OcrRecognizeReq) -> dict[str, Any]:
+    import base64
+    import io
+    from pathlib import Path as _Path
+
+    if req.image_b64:
+        try:
+            raw = base64.b64decode(req.image_b64.split(",", 1)[-1])
+        except Exception as e:  # noqa: BLE001
+            raise HTTPException(status_code=400, detail=f"image_b64 解码失败：{e}") from e
+    elif req.image_path:
+        p = _Path(req.image_path).expanduser()
+        if not p.is_file():
+            raise HTTPException(status_code=400, detail=f"图片不存在：{p}")
+        raw = p.read_bytes()
+    else:
+        raise HTTPException(status_code=400, detail="image_path 与 image_b64 至少提供一项")
+    mgr = getattr(request.app.state, "ocr", None) or ocr_runtime.OCRManager(APP_ROOT)
+    try:
+        text = mgr.extract(raw)
+    except ocr_runtime.OCREngineMissing as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except ocr_runtime.OCRParamError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=422, detail=f"OCR 失败：{e}") from e
+    return {"ok": True, "text": text, "chars": len(text), "engine": "rapidocr",
+            "language": req.language}
 
 
 @app.get("/api/multimodal/capabilities")

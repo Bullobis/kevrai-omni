@@ -59,6 +59,14 @@ function renderCapabilities() {
     engineBadge.textContent = t("ltx.engineNotInstalled");
     engineBadge.className = "ltx-badge warn";
   }
+  // Populate video models (LTX / Wan / HunyuanVideo / CogVideoX / Mochi / SVD / preview)
+  const modelSel = document.getElementById("ltx-model");
+  if (modelSel) {
+    const models = cap.models || [{ id: "Lightricks/LTX-2.5", label: "LTX-2.5" }];
+    modelSel.innerHTML = models.map((m) =>
+      `<option value="${m.id}">${m.label || m.id}</option>`).join("");
+    modelSel.value = "Lightricks/LTX-2.5";
+  }
   // Populate presets
   const sel = document.getElementById("ltx-preset");
   sel.innerHTML = cap.presets.map((p) =>
@@ -134,11 +142,13 @@ function collectParams() {
 }
 
 async function generate() {
-  if (cap && !cap.engine_ready) {
+  const chosenModel = document.getElementById("ltx-model")?.value || "";
+  if (cap && !cap.engine_ready && chosenModel !== "kevrai/preview-video") {
     toast(t("ltx.needEngine"), { kind: "error" });
     return;
   }
   const params = collectParams();
+  params.model_id = document.getElementById("ltx-model")?.value || "Lightricks/LTX-2.5";
   if (!params.prompt) {
     toast(t("ltx.needPrompt"), { kind: "error" });
     document.getElementById("ltx-prompt").focus();

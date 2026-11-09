@@ -357,6 +357,25 @@ class LtxManager:
         else:
             task.seed_used = int(p.seed)
 
+        # Offline preview engine: produces a real MP4/GIF without any model.
+        if p.model_id == "kevrai/preview-video":
+            from . import preview_engine
+            task.state = TaskState.RUNNING
+            task.progress = 0.2
+            stem = f"ltx25_{task.id}_{int(task.started_at)}"
+            out = self.output_root / f"{stem}.{'mp4' if p.output_format == 'mp4' else 'gif'}"
+            written = preview_engine.write_video(
+                p.prompt, out, width=p.width, height=p.height,
+                num_frames=p.num_frames, fps=p.fps, seed=task.seed_used,
+                image_path=p.image_path if p.mode == "i2v" else "",
+            )
+            task.output_path = str(written)
+            task.progress = 1.0
+            task.state = TaskState.DONE
+            task.finished_at = time.time()
+            task.elapsed_s = max(0.0, task.finished_at - task.started_at)
+            return
+
         pipe = _load_pipeline(p.model_id, p.mode, task)
         if task._cancel.is_set():
             task.state = TaskState.CANCELLED
@@ -403,8 +422,17 @@ def _load_pipeline(model_id: str, mode: str, task: LtxTask) -> Any:
         ) from e
 
     # LTX-2.5 ships under different class names across diffusers versions.
-    t2v_classes = ["LTX2VideoPipeline", "LTXVideoPipeline", "LTXPipeline"]
-    i2v_classes = ["LTX2ImageToVideoPipeline", "LTXImageToVideoPipeline"]
+    t2v_classes = [
+        "LTX2VideoPipeline", "LTXVideoPipeline", "LTXPipeline",
+        # 其他 diffusers 视频模型：Wan / HunyuanVideo / CogVideoX / Mochi / Open-Sora
+        "WanPipeline", "HunyuanVideoPipeline", "CogVideoXPipeline",
+        "MochiPipeline", "OpenSoraPipeline",
+    ]
+    i2v_classes = [
+        "LTX2ImageToVideoPipeline", "LTXImageToVideoPipeline",
+        "StableVideoDiffusionPipeline", "WanImageToVideoPipeline",
+        "CogVideoXImageToVideoPipeline", "HunyuanVideoImageToVideoPipeline",
+    ]
     names = i2v_classes if mode == "i2v" else t2v_classes
 
     last_err: Exception | None = None
@@ -483,6 +511,20 @@ def _generate(pipe: Any, p: LtxParams, task: LtxTask) -> Any:
         image = load_image(p.image_path).resize((p.width, p.height))
         call_kwargs["image"] = image
         call_kwargs["strength"] = p.strength
+
+    # 不同视频管线参数名不一致（SVD 没有 prompt/guidance，AnimateDiff 用
+    # video_length，部分管线不支持 callback）。按 __call__ 签名过滤，避免
+    # 一个模型能加载、一调用就 TypeError。
+    import inspect
+    try:
+        accepted = set(inspect.signature(pipe.__call__).parameters)
+    except (TypeError, ValueError):
+        accepted = set()
+    if accepted:
+        if "num_frames" not in accepted and "video_length" in accepted:
+            call_kwargs["video_length"] = call_kwargs.pop("num_frames")
+        call_kwargs = {k: v for k, v in call_kwargs.items()
+                       if k in accepted or k in ("generator",)}
 
     result = pipe(**call_kwargs)
     frames = getattr(result, "frames", None)
@@ -570,6 +612,18 @@ def capabilities() -> dict[str, Any]:
         engine_error = str(e)
     return {
         "model": "Lightricks/LTX-2.5",
+        "models": [
+            {"id": "Lightricks/LTX-2.5", "label": "LTX-2.5（官方，质量最高）", "modes": ["t2v", "i2v"]},
+            {"id": "Lightricks/LTX-Video", "label": "LTX-Video 0.9（更省显存）", "modes": ["t2v", "i2v"]},
+            {"id": "Wan-AI/Wan2.2-T2V-A14B-Diffusers", "label": "Wan 2.2 T2V（阿里）", "modes": ["t2v"]},
+            {"id": "Wan-AI/Wan2.2-I2V-A14B-Diffusers", "label": "Wan 2.2 I2V（阿里）", "modes": ["i2v"]},
+            {"id": "tencent/HunyuanVideo", "label": "HunyuanVideo（腾讯）", "modes": ["t2v"]},
+            {"id": "zai-org/CogVideoX-5b", "label": "CogVideoX 5B（智谱）", "modes": ["t2v"]},
+            {"id": "genmo/mochi-1-preview", "label": "Mochi 1（Genmo）", "modes": ["t2v"]},
+            {"id": "stabilityai/stable-video-diffusion-img2vid-xt", "label": "SVD XT（Stability）", "modes": ["i2v"]},
+            {"id": "Jingya/tiny-stable-video-diffusion-img2vid", "label": "Tiny SVD（CPU 验证用小模型）", "modes": ["i2v"]},
+            {"id": "kevrai/preview-video", "label": "轻量预览（离线，非 AI）", "modes": ["t2v", "i2v"]},
+        ],
         "engine_ready": engine_ready,
         "engine_error": engine_error,
         "cuda_available": cuda,

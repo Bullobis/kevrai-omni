@@ -40,6 +40,8 @@ MAX_DURATION_ACE_STEP_S = 600
 
 #: Catalog id -> HF repo (verified against the HuggingFace Hub; see ADR).
 KNOWN_MODELS: dict[str, str] = {
+    # 离线预览（非 AI，确定性合成，秒出 WAV）
+    "preview-music": "kevrai/preview-music",
     "musicgen-small": "facebook/musicgen-small",
     "musicgen-medium": "facebook/musicgen-medium",
     "musicgen-large": "facebook/musicgen-large",
@@ -482,6 +484,18 @@ class MusicManager:
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Synthesise and write a WAV; returns metadata with ``audio_path``."""
+        if model_id_or_repo == "kevrai/preview-music":
+            from . import preview_engine
+            duration_s = float(kwargs.get("duration_s", 15.0))
+            seed = kwargs.get("seed")
+            audio_path = preview_engine.write_music(
+                prompt, Path(out_path), duration_s=duration_s, seed=seed)
+            return {
+                "audio_path": str(audio_path), "sampling_rate": 44100,
+                "repo": "kevrai/preview-music", "requested_s": duration_s,
+                "elapsed_s": 0.0, "engine": "preview",
+            }
+
         res = self.synthesize(model_id_or_repo, prompt, **kwargs)
         audio_path = write_wav(
             out_path, res["audio"], res["sampling_rate"]

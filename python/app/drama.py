@@ -425,12 +425,28 @@ def brainstorm(topic: str, mode: str = DEFAULT_STORY_MODE) -> dict[str, Any]:
         topic = "（用户尚未给出具体创意，请给出一个足够有吸引力的通用短剧方向，并引导用户细化）"
     md = STORY_MODES[mode]
     mode_hint = "；".join(a["name"] for a in md["acts"])
-    text = _call_llm(
-        _BRAINSTORM_PROMPT.format(topic=topic, mode_label=md["label"], mode_hint=mode_hint),
-        _BRAINSTORM_SYSTEM,
-        max_new_tokens=1024,
-    )
-    obj = _extract_json(text)
+    try:
+        text = _call_llm(
+            _BRAINSTORM_PROMPT.format(topic=topic, mode_label=md["label"], mode_hint=mode_hint),
+            _BRAINSTORM_SYSTEM,
+            max_new_tokens=1024,
+        )
+        obj = _extract_json(text)
+    except LlmNotReady:
+        # 没有对话模型时仍然要能开工：给一套按剧作模式生成的引导问题，
+        # 明确标记 offline，不假装是 LLM 的输出。
+        acts = [a["name"] for a in md["acts"]]
+        obj = {
+            "angle": f"以「{topic}」为核心，按{md['label']}的结构推进：{' → '.join(acts)}。",
+            "questions": [
+                f"这个创意的世界观/时代背景是什么？为什么它非发生在那里不可？",
+                "主角最想要什么？最怕失去什么？这两者如何互相冲突？",
+                f"核心钩子放在第几秒？{('第一镜 3 秒内' if mode == 'hook_drama' else '开场 15 秒内')}要让观众看到什么反常识画面？",
+                "目标观众是谁、在哪个平台播出？单集时长和集数怎么定？",
+                "视觉上锚定哪位导演/哪部动画的风格？主色、光影、镜头运动各是什么？",
+            ],
+            "offline": True,
+        }
     angle = _clean_str(obj.get("angle"), 500)
     questions = obj.get("questions") or []
     if not isinstance(questions, list):
@@ -508,6 +524,50 @@ def _format_answers(answers: Any) -> str:
     return str(answers)
 
 
+def _offline_script(topic: str, angle: str, answers: Any,
+                    mode: str) -> dict[str, Any]:
+    """无 LLM 时的确定性剧本骨架（3 场景 6 镜），可直接进分镜/渲染计划。"""
+    md = STORY_MODES[mode]
+    acts = [a["name"] for a in md["acts"]]
+    locations = ["城市天台·夜", "旧公寓·内", "空旷街道·清晨"]
+    scenes = []
+    for i, loc in enumerate(locations):
+        beat = acts[min(i, len(acts) - 1)]
+        shots = []
+        for j in range(2):
+            shots.append({
+                "shot_id": j + 1, "scene_id": i + 1,
+                "shot_type": "特写" if j == 0 else "中景",
+                "camera": "缓推" if j == 0 else "手持跟随",
+                "characters": ["主角"], "beat": beat,
+                "action": (f"主角在{loc}发现关键线索，情绪从压抑转为决断。"
+                           if j == 0 else "主角做出不可逆的选择，环境声骤然抽离。"),
+                "dialogue": ("「如果这不是意外，那我还剩多少时间？」"
+                             if j == 0 else "「这次，我不再等别人给答案。」"),
+                "visual_prompt": (f"{loc}，冷蓝主色，霓虹反光，浅景深，电影感，35mm 颗粒" ),
+                "duration_s": 4,
+            })
+        scenes.append({"scene_id": i + 1, "location": loc, "time": "夜" if i < 2 else "清晨",
+                       "beat": beat, "summary": f"{beat}：{topic}", "shots": shots})
+    script = _normalize_script({
+        "title": topic[:40] or "未命名短剧",
+        "logline": angle or f"围绕「{topic}」的选择与代价。",
+        "synopsis": f"离线剧本骨架：{topic}。{angle or ''}",
+        "genre": "剧情短片", "mode": mode, "style": "电影感写实",
+        "style_anchor": "冷蓝霓虹、浅景深、手持摄影",
+        "music_mood": "低频压迫 → 克制弦乐",
+        "characters": [{
+            "name": "主角", "role": "主角", "age": "28",
+            "appearance": "疲惫但目光锐利", "voice": "低沉克制",
+            "personality": "倔强、善于观察", "motivation": "查明真相并保住自己在乎的人",
+            "arc": "从逃避到主动承担", "key_prop": "旧手机",
+        }],
+        "scenes": scenes, "offline": True,
+    }, default_mode=mode)
+    script["offline"] = True
+    return script
+
+
 def generate_script(
     topic: str,
     angle: str,
@@ -542,9 +602,12 @@ def generate_script(
         max_shot=_MAX_SHOT_SECONDS,
         first_shot_rule=first_shot_rule,
     )
-    text = _call_llm(prompt, _SCRIPT_SYSTEM, max_new_tokens=4096)
-    obj = _extract_json(text)
-    script = _normalize_script(obj, default_mode=mode)
+    try:
+        text = _call_llm(prompt, _SCRIPT_SYSTEM, max_new_tokens=4096)
+        obj = _extract_json(text)
+        script = _normalize_script(obj, default_mode=mode)
+    except LlmNotReady:
+        script = _offline_script(topic, angle, answers, mode)
     script["topic"] = topic
     return script
 

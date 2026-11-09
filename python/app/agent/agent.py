@@ -526,6 +526,36 @@ class Agent:
         def _has(name: str) -> bool:
             return self.registry.get(name) is not None
 
+        # --- 工具清单：必须先于“搜索/推荐”关键词，否则“搜索模型”会把
+        # “列出你能用的工具”误判成模型搜索。这里不调用工具，直接回答能力。
+        if any(w in msg_lower for w in [
+            "列出你能用的工具", "列出工具", "工具列表", "有哪些工具",
+            "你会哪些工具", "你会什么", "你能做什么", "有什么能力",
+            "能干什么", "帮助", "help",
+        ]):
+            entries = []
+            for name in self.registry.list_names():
+                tool = self.registry.get(name)
+                desc = (getattr(tool, "description", "") or "").strip()
+                cat = (getattr(tool, "category", "") or "").strip()
+                line = f"- `{name}`"
+                if cat:
+                    line += f"（{cat}）"
+                if desc:
+                    line += f"：{desc.splitlines()[0][:100]}"
+                entries.append(line)
+            result.answer = (
+                f"当前 Agent 已启用 {len(entries)} 个工具：\n"
+                + "\n".join(entries)
+                + "\n\n直接说需求即可，例如：\n"
+                "- 「查一下我的硬件能跑什么」\n"
+                "- 「搜索 3D 生成模型」\n"
+                "- 「推荐一个 6GB 显存能跑的图像模型」\n"
+                "- 「帮我写一个短剧大纲」"
+            )
+            result.steps = steps
+            return result
+
         # --- Short-drama studio (deterministic methodology, works offline) ---
         if _has("drama_storycraft") and any(
             w in msg_lower for w in ["短剧", "微电影", "剧本", "分镜", "剧情片", "故事板", "剧作"]
@@ -697,6 +727,20 @@ class Agent:
         short-circuits into a cancelled AgentResult.
         """
         message = (message or "").strip()[:5000]
+        t0 = time.time()
+        # 能力/工具清单是确定性问题：不应该让 300M 级小模型去猜，否则会
+        # 误调 search_models（实测 360M 把“列出你能用的工具”理解成搜索）。
+        if any(w in message.lower() for w in (
+            "列出你能用的工具", "列出工具", "工具列表", "有哪些工具",
+            "你会哪些工具", "你会什么", "你能做什么", "有什么能力",
+            "能干什么", "帮助", "help",
+        )):
+            self._remember_user(session_id, message)
+            result = self._rule_based_response(message, session_id)
+            result.duration_ms = int((time.time() - t0) * 1000)
+            self._remember_result(session_id, message, result.answer,
+                                  result.tools_used, success=True)
+            return result
         if not message:
             return AgentResult(
                 session_id=session_id,
