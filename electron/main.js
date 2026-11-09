@@ -1623,6 +1623,26 @@ function registerIpc() {
   });
   ipcMain.handle("api:progress",      async () => sidecarFetch("/api/progress"));
 
+  // v4.17.5 — DSH-compatible plugin manager
+  ipcMain.handle("api:plugins",             async () => sidecarFetch("/api/plugins"));
+  ipcMain.handle("api:plugins:install",      async (_e, body) => {
+    const u = body && body.url;
+    assert(typeof u === "string" && u.length > 0 && u.length < 2048, "url");
+    return sidecarFetch("/api/plugins/install", { method: "POST", body });
+  });
+  ipcMain.handle("api:plugins:activate",     async (_e, id) => {
+    assert(isString(id, 128), "plugin id");
+    return sidecarFetch(`/api/plugins/${encodeURIComponent(id)}/activate`, { method: "POST" });
+  });
+  ipcMain.handle("api:plugins:deactivate",   async (_e, id) => {
+    assert(isString(id, 128), "plugin id");
+    return sidecarFetch(`/api/plugins/${encodeURIComponent(id)}/deactivate`, { method: "POST" });
+  });
+  ipcMain.handle("api:plugins:remove",       async (_e, id) => {
+    assert(isString(id, 128), "plugin id");
+    return sidecarFetch(`/api/plugins/${encodeURIComponent(id)}`, { method: "DELETE" });
+  });
+
   // Dialogs
   ipcMain.handle("dialog:pickFolder", async () => {
     assert(!!mainWindow, "no window");

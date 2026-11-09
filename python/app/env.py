@@ -29,6 +29,7 @@ from typing import Any
 
 from .engines import EngineManager
 from .gpu import detect as detect_gpu
+from .pip_exec import pip_command, pip_runner_path
 
 # Known pip packages we want to keep present (vague version floors).
 REQUIRED_PIP_PACKAGES: dict[str, str] = {
@@ -38,7 +39,6 @@ REQUIRED_PIP_PACKAGES: dict[str, str] = {
     "httpx": ">=0.27",
     "websockets": ">=12",
     "jsonschema": ">=4.21",
-    "xxhash": ">=3.4",
     "pyyaml": ">=6.0",
 }
 
@@ -122,10 +122,25 @@ def _run(cmd: list[str], timeout: float = 10.0) -> tuple[int, str, str]:
 
 
 def detect_python() -> PythonStatus:
+    # 冻结版没有可用的 Python 解释器，但内置了 Python 运行时与 pip-runner，
+    # 引擎安装/运行都正常。这里如实报告"内置运行时"，避免环境页误报
+    # "Python interpreter is unavailable / Missing required packages"。
+    if getattr(sys, "frozen", False):
+        runner = pip_runner_path()
+        pip_ver = ""
+        if runner is not None:
+            rc, out, _err = _run([str(runner), "--version"], timeout=20.0)
+            pip_ver = out.strip() if rc == 0 else ""
+        return PythonStatus(
+            available=True,
+            version=f"{sys.version.split()[0]} (bundled)",
+            executable=str(runner or sys.executable),
+            pip_version=pip_ver,
+        )
     rc, out, _err = _run([sys.executable, "--version"])
     if rc != 0:
         return PythonStatus(available=False, executable=sys.executable)
-    rc2, out2, _ = _run([sys.executable, "-m", "pip", "--version"])
+    rc2, out2, _ = _run([*pip_command(), "--version"])
     pip_ver = out2.strip() if rc2 == 0 else ""
     return PythonStatus(
         available=True,
@@ -171,8 +186,31 @@ def _is_newer(latest: str, current: str) -> bool:
     return _parse_version_tuple(latest) > _parse_version_tuple(current)
 
 
+_MODULE_ALIASES = {"pyyaml": "yaml"}
+
+
+def _bundled_package(name: str, required: str | None) -> InstalledPackage:
+    """冻结包里没有 pip freeze 的全局环境，直接按 import 结果报告版本。"""
+    import importlib
+
+    module = _MODULE_ALIASES.get(name.lower(), name)
+    version = ""
+    try:
+        mod = importlib.import_module(module)
+        version = str(getattr(mod, "__version__", "") or "bundled")
+    except Exception:  # noqa: BLE001 — 缺失就是缺失，交给上层提示
+        version = ""
+    return InstalledPackage(
+        name=name, version=version, required=required, needs_update=False
+    )
+
+
 def list_pip_packages() -> list[InstalledPackage]:
-    rc, out, _ = _run([sys.executable, "-m", "pip", "freeze"], timeout=30.0)
+    if getattr(sys, "frozen", False):
+        return [
+            _bundled_package(n, req) for n, req in REQUIRED_PIP_PACKAGES.items()
+        ]
+    rc, out, _ = _run([*pip_command(), "freeze"], timeout=30.0)
     if rc != 0:
         return []
     installed = _parse_pip_freeze(out)
@@ -292,7 +330,7 @@ def install_pip_package(name: str, version: str | None = None,
     huaweicloud) — by default the sidecar appends the well-known CN mirrors to
     speed things up inside the firewall.
     """
-    cmd = [sys.executable, "-m", "pip", "install", "--no-input", "--disable-pip-version-check"]
+    cmd = [*pip_command(), "install", "--no-input", "--disable-pip-version-check"]
     if upgrade:
         cmd.append("--upgrade")
     # Append user-selected mirrors as additional index URLs.

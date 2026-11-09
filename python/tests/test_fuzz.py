@@ -509,11 +509,16 @@ def test_settings_fuzz(api_client, tmp_xdg):
 
 def test_engines_install_uninstall_fuzz(api_client, tmp_xdg):
     rng = random.Random(SEED + 9)
+    # NOTE: only malformed/invalid ids here.  A real catalog id (e.g.
+    # "llama.cpp") would make the *synchronous* /api/engines/install endpoint
+    # perform a genuine network download inside the unit-test suite — the
+    # observed multi-minute hang.  Real-engine installs belong to the
+    # `live`-marked tests.
     n = 0
     for _ in range(150):
         body = {"engine_id": rng.choice([
             "", "not_an_engine", 123, None, "../../etc/passwd",
-            "k" * 5000, "' OR 1=1--", "llama.cpp",
+            "k" * 5000, "' OR 1=1--",
         ])}
         for path in ("/api/engines/install", "/api/engines/update"):
             r = api_client.post(path, json=body)

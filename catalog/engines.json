@@ -1,5 +1,5 @@
 {
-  "version": "4.17.4",
+  "version": "4.17.5",
   "updated": "2026-10-12",
   "engines": [
     {
@@ -185,6 +185,10 @@
         "https://pypi.tuna.tsinghua.edu.cn/simple/kokoro/",
         "https://github.com/hexgrad/Kokoro/releases/latest",
         "https://github.com/hexgrad/Kokoro"
+      ],
+      "pip_extra": [
+        "misaki[zh]>=0.8.2",
+        "soundfile"
       ]
     },
     {
@@ -255,7 +259,9 @@
       "sources": [
         "https://github.com/resemble-ai/chatterbox/releases/latest",
         "https://github.com/resemble-ai/chatterbox"
-      ]
+      ],
+      "install": "pip",
+      "pypi": "chatterbox-tts==0.1.7"
     },
     {
       "id": "indextts",

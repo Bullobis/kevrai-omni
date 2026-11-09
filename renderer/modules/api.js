@@ -236,6 +236,12 @@ export const api = {
   skillHubImportZip: wrap("skillHubImportZip", (p) => k().skillHubImportZip(p)),
   skillHubImportGit: wrap("skillHubImportGit", (u) => k().skillHubImportGit(u)),
   skillHubRemove:    wrap("skillHubRemove",    (id) => k().skillHubRemove(id)),
+  // v4.17.5 — DSH-compatible plugin manager (Python sidecar PluginManager)
+  pluginsList:       wrap("pluginsList",       () => k().pluginsList()),
+  pluginInstall:     wrap("pluginInstall",     (url, id) => k().pluginInstall(url, id)),
+  pluginActivate:    wrap("pluginActivate",    (id) => k().pluginActivate(id)),
+  pluginDeactivate:  wrap("pluginDeactivate",  (id) => k().pluginDeactivate(id)),
+  pluginRemove:      wrap("pluginRemove",      (id) => k().pluginRemove(id)),
   // v2.4.0 — super search
   search:            wrap("search",            (params) => k().search(params)),
   searchRecent:      wrap("searchRecent",      () => k().searchRecent()),

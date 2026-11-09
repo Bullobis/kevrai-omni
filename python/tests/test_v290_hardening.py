@@ -216,10 +216,12 @@ class TestDownloaderFsync:
 
         target = None
         for node in ast.walk(tree):
-            # 该函数即 chunk 写入 + fsync 的所在处
+            # 该函数即 chunk 写入 + fsync 的所在处。
+            # 用前缀匹配：函数自 v4.17.x 重写后由 `_stream` 改名为
+            # `_stream_body`，前缀匹配可避免再次因重命名而失配。
             if (
                 isinstance(node, ast.AsyncFunctionDef)
-                and node.name == "_stream"
+                and node.name.startswith("_stream")
                 and any(
                     isinstance(c, ast.Call)
                     and isinstance(c.func, ast.Attribute)

@@ -32,6 +32,7 @@ import { initMusic } from "./modules/music.js";
 import { initImage } from "./modules/image.js";
 import { initThreeD } from "./modules/three-d.js";
 import { initTranslate } from "./modules/translate.js";
+import { initPlugins } from "./modules/plugins.js";
 import { renderEngines, wireEngineUpdates } from "./modules/engines.js";
 import { wireSettings, openSettings, closeSettings } from "./modules/settings.js";
 import { wireCompare, openCompare } from "./modules/compare.js";
@@ -240,6 +241,18 @@ function switchView(name) {
     if (root && !root.dataset.rendered) {
       root.dataset.rendered = "1";
       renderEnvironmentsPage(root).catch((e) => toast(t("toast.envPageFailed", { err: e.message }), { kind: "err" }));
+    }
+  }
+  // v4.17.5 — DSH-compatible plugin manager page (init once, refresh every visit).
+  if (name === "plugins") {
+    const root = document.getElementById("pane-plugins");
+    if (root && !root.dataset.rendered) {
+      root.dataset.rendered = "1";
+      initPlugins();
+    } else if (root) {
+      // Already rendered; refresh the grid to reflect activate/deactivate/remove.
+      const g = root.querySelector("#plugins-grid");
+      if (g && window.__pluginsModule?.refreshPlugins) window.__pluginsModule.refreshPlugins();
     }
   }
   // v2.3.0 — hardware recommendation page (re-render on every visit; data is cheap & cached).

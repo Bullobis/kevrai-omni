@@ -163,6 +163,9 @@
         <button class="pane-tab" data-tab="environments" title="环境管理" data-i18n-title="nav.environments">
           <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19h8"/><path d="m4 17 6-6-6-6"/></svg></span> <span class="tab-label" data-i18n="nav.environments">环境管理</span>
         </button>
+        <button class="pane-tab" data-tab="plugins" title="DSH 插件市场" data-i18n-title="nav.plugins">
+          <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.34 17.66a8 8 0 0 0-11.31 0l-6.35 6.35a1 1 0 0 0 1.41 1.41l6.35-6.35a8 8 0 0 0 0-11.31l1.42-1.41"/><path d="m8.5 8.5 7 7"/><path d="M16 2 2 16"/><path d="m17.5 10.5 2-2a1 1 0 1 0 0-1.41l-1.59-1.59a1 1 0 0 0-1.41 0l-2 2"/></svg></span> <span class="tab-label" data-i18n="nav.plugins">插件市场</span>
+        </button>
           </div>
         </div>
         <div class="nav-group" data-group="repo">
@@ -645,6 +648,14 @@
           </div>
           <div class="form-grid">
             <div class="form-row">
+              <label for="piper-engine" data-i18n="piper.engine">引擎</label>
+              <select id="piper-engine">
+                <option value="piper">Piper</option>
+                <option value="kokoro">Kokoro</option>
+                <option value="chatterbox">Chatterbox</option>
+              </select>
+            </div>
+            <div class="form-row">
               <label for="piper-voice" data-i18n="piper.voice">发音人</label>
               <select id="piper-voice"></select>
             </div>
@@ -655,6 +666,30 @@
           </div>
           <div class="form-actions">
             <button class="primary" id="piper-run" data-i18n="piper.run">开始合成</button>
+            <button type="button" id="piper-engine-install" data-i18n="piper.installMissing" hidden>安装当前引擎</button>
+          </div>
+          <p class="muted" id="piper-engine-hint"></p>
+        </div>
+
+        <div class="card" id="chatterbox-clone-card" hidden>
+          <div class="pane-head">
+            <h3 data-i18n="piper.cloneTitle">声音克隆档案（Chatterbox）</h3>
+          </div>
+          <p class="muted" data-i18n="piper.cloneHint">上传 5–10 秒干净的单人录音作为参考音色；首次加载模型较慢，且输出带不可听水印。</p>
+          <div class="form-grid">
+            <div class="form-row">
+              <label for="chatterbox-clone" data-i18n="piper.cloneSelect">已有档案</label>
+              <select id="chatterbox-clone"></select>
+            </div>
+            <div class="form-row">
+              <label for="chatterbox-name" data-i18n="piper.cloneName">档案名</label>
+              <input id="chatterbox-name" maxlength="32" placeholder="my_voice" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <input id="chatterbox-ref" type="file" accept="audio/*" />
+            <button type="button" id="chatterbox-upload" data-i18n="piper.cloneUpload">上传参考音频</button>
+            <button type="button" id="chatterbox-delete" class="danger" data-i18n="piper.cloneDelete">删除档案</button>
           </div>
         </div>
 
@@ -967,6 +1002,19 @@
       <!-- Environments pane -->
       <section id="pane-environments" class="pane" aria-label="环境管理">
         <div id="env-root"></div>
+      </section>
+
+      <!-- v4.17.5 — DSH-compatible plugin manager pane -->
+      <section id="pane-plugins" class="pane" aria-label="插件市场">
+        <div class="plugins-head">
+          <h2>插件市场 <span class="pill">DSH cordis.yml</span></h2>
+          <p class="muted">安装、激活、停用来自 GitHub 的 DSH 兼容插件。插件通过 <code>cordis.yml</code> manifest 声明能力（tool / engine / command）。</p>
+          <div class="plugins-install-row">
+            <input id="plugins-url" type="text" class="input" placeholder="owner/repo 或 https://github.com/owner/repo.git">
+            <button id="plugins-install-btn" class="btn primary">从 Git 安装</button>
+          </div>
+        </div>
+        <div id="plugins-grid" class="plugins-grid"></div>
       </section>
     </main>
 
