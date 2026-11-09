@@ -209,8 +209,12 @@ CATALOG_DIR = Path(
 
 try:
     CATALOG, ENGINES = load_catalog(CATALOG_DIR)
-except Exception:
-    # If catalog files are missing in dev, fall back to empty.
+except Exception as exc:  # noqa: BLE001
+    # 目录缺失在开发环境可以接受，但静默 fallback 会让安装版变成"空应用"：
+    # 引擎页一片空白、装任何引擎都 404，却没有任何线索。至少留下日志。
+    logging.getLogger("kevrai").warning(
+        "catalog load failed from %s: %s", CATALOG_DIR, exc
+    )
     CATALOG, ENGINES = Catalog(version="0", models=[]), {}
 
 # P0-1 hardening: CORS is restricted to the Electron app origin plus the known
@@ -1247,7 +1251,7 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
     if inst_type == "pip" and cat.get("pypi"):
         em: EngineManager = request.app.state.engine_manager
         result = await asyncio.to_thread(
-            em.install_pip, cat["pypi"], eid
+            em.install_pip, cat["pypi"], eid, cat.get("pip_extra")
         )
         return {
             "ok": True, "engine_id": eid, "mode": "pip",
@@ -1255,89 +1259,20 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
             "message": "installed",
         }
 
-    # --- 2) git clone source install ---
-    if inst_type == "source":
-        from .engines import install_git_engine, try_download_engine
-        github = cat.get("github", "")
-        sources = cat.get("sources") or []
-        # Try git clone first
-        if github:
-            repo_url = f"https://github.com/{github}.git"
-            result = await asyncio.to_thread(
-                install_git_engine, repo_url, APP_ROOT, eid
-            )
-            if result.ok:
-                return {
-                    "ok": True, "engine_id": eid, "mode": "source",
-                    "path": result.path, "message": result.message,
-                }
-        # Try source URL list
-        for src in sources:
-            src_s = str(src)
-            if "github.com" in src_s:
-                git_url = src_s.rstrip("/")
-                if not git_url.endswith(".git"):
-                    git_url += ".git"
-                result = await asyncio.to_thread(
-                    install_git_engine, git_url, APP_ROOT, eid
-                )
-                if result.ok:
-                    return {
-                        "ok": True, "engine_id": eid, "mode": "source",
-                        "path": result.path, "message": result.message,
-                    }
-        # Fall back to download
-        for src in sources:
-            result = await asyncio.to_thread(
-                try_download_engine, str(src), APP_ROOT, eid
-            )
-            if result.ok:
-                return {
-                    "ok": True, "engine_id": eid, "mode": "download",
-                    "path": result.path, "message": result.message,
-                }
-        raise HTTPException(
-            status_code=400,
-            detail=f"source install failed for {eid}: could not git-clone or download",
-        )
-
-    # --- 3) binary / zip install ---
-    raw_sources: list[str] = list(cat.get("sources") or [])
-    plat_url = (cat.get("platforms") or {}).get(platform_key())
-    if plat_url:
-        raw_sources.append(plat_url)
-    # Filter to actual archive download links (zip/tar/tar.gz/tar.zst/releases download),
-    # not repo pages like https://github.com/... or /releases/latest.
-    def _looks_like_archive(s: str) -> bool:
-        sl = s.lower()
-        return any(sl.endswith(ext) for ext in (
-            ".zip", ".tar", ".tar.gz", ".tgz", ".tar.zst",
-        )) or "/releases/download/" in sl
-    sources = [s for s in raw_sources if _looks_like_archive(s)]
-    # If no valid archive links but we have a GitHub repo, generate archive tarball URL
-    if not sources and cat.get("github"):
-        sources = [f"https://github.com/{cat['github']}/archive/refs/heads/main.tar.gz"]
-    if not sources:
-        raise HTTPException(status_code=404, detail="engine has no download sources")
-    from .sources import measure_sources, pick_best
-    try:
-        ranking = await measure_sources(sources)
-        best = pick_best(ranking) or {"url": sources[0]}
-    except Exception:
-        ranking = []
-        best = {"url": sources[0]}
-    em = request.app.state.engine_manager
-    # engines.json has no per-binary sha256; pass None to skip hash verification
-    # (previously passed cat.get("version") which always mismatched and failed).
-    result = await asyncio.to_thread(
-        em.install, eid, str(best["url"]), None
-    )
+    # --- 2) source / binary：统一交给 install_engine ---
+    # 旧实现自己拼 URL：GitHub 仓库页一律拼成 .../heads/main.tar.gz，
+    # ComfyUI 默认分支是 master 就 404；而且 .tar.gz 走到 zip 解压分支必失败。
+    # install_engine 现在会按平台挑 release 资产、查默认分支、解 tar 并展平顶层目录。
+    from .engines import ensure_engine
+    result = await asyncio.to_thread(ensure_engine, eid, CATALOG, ENGINES, APP_ROOT)
+    if not result.ok:
+        raise HTTPException(status_code=400, detail=result.message)
     return {
         "ok": True,
         "engine_id": eid,
-        "source_used": best.get("url"),
-        "ranking_top5": ranking[:5] if isinstance(ranking, list) else [],
-        "result": result,
+        "mode": inst_type or "auto",
+        "path": result.path,
+        "message": result.message,
     }
 
 
@@ -5063,6 +4998,10 @@ def piper_synthesize_route(
 ) -> Response:
     mgr = _piper_manager(request)
     try:
+        if piper_runtime.is_kokoro_voice(req.voice_id):
+            return JSONResponse(
+                mgr.synthesize_kokoro(req.voice_id, req.text)
+            )
         if piper_runtime.is_chatterbox_voice(req.voice_id):
             return JSONResponse(
                 mgr.synthesize_chatterbox(
@@ -5129,7 +5068,7 @@ def piper_stream_route(job_id: str) -> FileResponse:
     # 只查 piper 会让克隆出来的音频永远 404，而错误信息还指不到原因。
     if not re.fullmatch(r"[A-Za-z0-9._-]+", job_id):
         raise HTTPException(status_code=400, detail="bad job id")
-    for sub in ("piper", "chatterbox"):
+    for sub in ("piper", "chatterbox", "kokoro"):
         tts_root = (APP_ROOT / "tts" / sub).resolve()
         target = (tts_root / f"{job_id}.wav").resolve()
         if str(target).startswith(str(tts_root)) and target.is_file():

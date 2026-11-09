@@ -80,6 +80,8 @@ jobs:
             --collect-all fastapi \
             --collect-all app \
             --collect-all python_multipart \
+            --collect-all jsonschema \
+            --collect-all rfc3987_syntax \
             --exclude-module jedi \
             --exclude-module parso \
             --exclude-module IPython \
@@ -88,6 +90,30 @@ jobs:
             --exclude-module scipy
           echo "--- sidecar binary ---"
           ls -lh dist/sidecar/
+          # 安装包里 sidecar 是冻结二进制，sys.executable 指向 sidecar 自己，
+          # `-m pip` 会以 rc=1 失败 → 用户永远装不上 Piper/Kokoro/ASR。
+          # 这里额外编一个 pip 运行器，放进 sidecar 目录随包分发；
+          # 运行时由 app/pip_exec.py 自动选用。
+          pyinstaller pip_runner.py --name pip-runner --onefile \
+            --distpath dist/sidecar --workpath build/pip-runner --specpath dist \
+            --collect-submodules pip \
+            --collect-data pip \
+            --exclude-module jedi \
+            --exclude-module parso \
+            --exclude-module IPython \
+            --exclude-module matplotlib \
+            --exclude-module pandas \
+            --exclude-module scipy \
+            --exclude-module torch \
+            --exclude-module torchvision \
+            --exclude-module uvloop
+          echo "--- pip runner ---"
+          ls -lh dist/sidecar/pip-runner* || true
+          if [ -f dist/sidecar/pip-runner.exe ]; then
+            dist/sidecar/pip-runner.exe --version
+          else
+            dist/sidecar/pip-runner --version
+          fi
           # Quick smoke — start for 3s then kill.
           # Log shows "kevrai-sidecar started" confirms uvicorn boots.
           timeout 6 dist/sidecar/sidecar 2>&1 | head -5 || true
@@ -98,6 +124,13 @@ jobs:
           test -f python/dist/sidecar/sidecar \
             || { echo "::error::sidecar binary missing at python/dist/sidecar/sidecar"; exit 1; }
           echo "::notice::sidecar OK: $(ls -lh python/dist/sidecar/sidecar | awk '{print $5}')"
+          # pip-runner 缺失时安装版无法安装任何引擎，必须在打包前拦住。
+          if [ -f python/dist/sidecar/pip-runner.exe ]; then
+            test -x python/dist/sidecar/pip-runner.exe
+          else
+            test -x python/dist/sidecar/pip-runner
+          fi || { echo "::error::pip-runner missing — packaged engine install would be broken"; exit 1; }
+          echo "::notice::pip-runner OK"
 
       # ----------------------------------------------------------------
       # Node + Electron —— 同原 workflow

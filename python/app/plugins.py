@@ -44,13 +44,27 @@ from __future__ import annotations
 
 import importlib.util
 import json
-import os
+import re
 import subprocess
 import sys
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Any, Callable
-from functools import wraps
+
+from .pip_exec import pip_command
+
+#: 插件 id 会被直接拼进文件系统路径（plugins/<id>），因此必须是受限字符集。
+#: 只允许字母数字点划线，且不能是 "." / ".."：否则 "../../x" 会把
+#: git clone / rmtree 落到插件目录之外。
+_SAFE_PLUGIN_ID = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+
+
+def _safe_plugin_id(value: Any) -> str | None:
+    """校验插件 id；非法时返回 None（调用方决定是拒绝还是跳过）。"""
+    pid = str(value or "").strip()
+    if pid in (".", "..") or not _SAFE_PLUGIN_ID.fullmatch(pid):
+        return None
+    return pid
 
 try:
     import yaml  # type: ignore[import-not-found]
@@ -184,14 +198,17 @@ class PluginManager:
                 data = yaml.safe_load(cordis.read_text()) or {}
             except Exception:
                 return None
-            pid = str(data.get("name", plugin_dir.name))
-            # Kevrai extension: allow ``id`` override; default == dir name
             pid = data.get("id", plugin_dir.name)
+            safe_id = _safe_plugin_id(pid)
+            if safe_id is None:
+                # 清单里的 id 非法：宁可跳过这个插件，也不要把一个可以
+                # 逃出 plugins/ 的名字带进注册表。
+                return None
             hooks_raw = data.get("hooks") or []
             hooks = [h.get("type", h) if isinstance(h, dict) else str(h)
                      for h in hooks_raw]
             return PluginMeta(
-                id=str(pid),
+                id=safe_id,
                 name=str(data.get("displayName") or data.get("name", pid)),
                 version=str(data.get("version", "0.0.0")),
                 description=str(data.get("description", "")),
@@ -206,9 +223,12 @@ class PluginManager:
                 data = json.loads(pjson.read_text())
             except Exception:
                 return None
-            pid = str(data.get("id", plugin_dir.name))
+            pid = data.get("id", plugin_dir.name)
+            safe_id = _safe_plugin_id(pid)
+            if safe_id is None:
+                return None
             return PluginMeta(
-                id=pid,
+                id=safe_id,
                 name=str(data.get("name", pid)),
                 version=str(data.get("version", "0.0.0")),
                 description=str(data.get("description", "")),
@@ -245,7 +265,16 @@ class PluginManager:
         pid = plugin_id or git_url.rstrip("/").rsplit("/", 1)[-1]
         if pid.endswith(".git"):
             pid = pid[:-4]
-        target = self.root / pid
+        safe_id = _safe_plugin_id(pid)
+        if safe_id is None:
+            raise RuntimeError(
+                f"插件 id 不合法：{pid!r}（只允许字母、数字、点、下划线、连字符，1-64 字符）"
+            )
+        pid = safe_id
+        target = (self.root / pid).resolve()
+        # 双保险：即使上面的字符校验被绕过，也不允许写到自己目录之外。
+        if target.parent != self.root.resolve():
+            raise RuntimeError(f"插件 id 越界：{pid!r}")
 
         if target.exists():
             # Update existing
@@ -271,7 +300,10 @@ class PluginManager:
         if meta.active:
             self.deactivate(plugin_id)
         import shutil
-        shutil.rmtree(self.root / plugin_id, ignore_errors=True)
+        target = (self.root / plugin_id).resolve()
+        if target.parent != self.root.resolve():
+            raise RuntimeError(f"插件 id 越界：{plugin_id!r}")
+        shutil.rmtree(target, ignore_errors=True)
         del self._plugins[plugin_id]
 
     # --- Activate / deactivate ---
@@ -289,13 +321,19 @@ class PluginManager:
         reqs = plugin_dir / "requirements.txt"
         if reqs.exists():
             subprocess.run(
-                [sys.executable, "-m", "pip", "install",
+                [*pip_command(), "install",
                  "--target", str(plugin_dir / "_deps"), "-r", str(reqs)],
                 check=False, timeout=120,
             )
 
         # 2. Import entry point
         main_file = plugin_dir / meta.main
+        try:
+            main_file.resolve().relative_to(plugin_dir.resolve())
+        except ValueError as e:
+            raise RuntimeError(
+                f"plugin {plugin_id}: 入口 {meta.main!r} 越出了插件目录"
+            ) from e
         if not main_file.exists():
             raise RuntimeError(f"plugin {plugin_id}: entry {meta.main} not found")
 
@@ -363,8 +401,11 @@ class PluginManager:
                     del self._commands[key]
             self._routes = [r for r in self._routes
                             if not any(r[2] is fn for _, _, fn in handle._registered_routes)]
-        # Best-effort unmount from the live app
-        self._unmount_routes(handle)
+        # Best-effort unmount from the live app. ``handle`` is None when the
+        # plugin was already inactive — calling _unmount_routes(None) would
+        # raise AttributeError and turn a harmless double-click into a 500.
+        if handle is not None:
+            self._unmount_routes(handle)
         meta.active = False
         return meta
 
@@ -396,8 +437,10 @@ class PluginManager:
                 pass
         self._mounted = mounted
 
-    def _unmount_routes(self, handle: "PluginAPI") -> None:
+    def _unmount_routes(self, handle: "PluginAPI | None") -> None:
         """Best-effort removal of a deactivated plugin's routes from the app."""
+        if handle is None:
+            return
         app = getattr(self, "_app", None)
         router = getattr(app, "router", None) if app is not None else None
         if router is None:

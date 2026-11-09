@@ -76,6 +76,29 @@ KOKORO_LANG_CODES = {
     "p": "巴西葡萄牙语",
 }
 
+#: 常用音色（官方仓库的 quality/ 目录）。仅用于下拉框展示，
+#: 实际可用性由 kokoro 包决定；用户也可手写其他合法音色 id。
+KOKORO_KNOWN_VOICES = [
+    {"id": "af_heart", "label": "Heart · 美式女声", "lang": "en-US"},
+    {"id": "af_bella", "label": "Bella · 美式女声", "lang": "en-US"},
+    {"id": "af_nicole", "label": "Nicole · 美式女声", "lang": "en-US"},
+    {"id": "af_sarah", "label": "Sarah · 美式女声", "lang": "en-US"},
+    {"id": "am_adam", "label": "Adam · 美式男声", "lang": "en-US"},
+    {"id": "am_michael", "label": "Michael · 美式男声", "lang": "en-US"},
+    {"id": "bf_emma", "label": "Emma · 英式女声", "lang": "en-GB"},
+    {"id": "bm_george", "label": "George · 英式男声", "lang": "en-GB"},
+    {"id": "zf_xiaobei", "label": "晓北 · 中文女声", "lang": "zh-CN"},
+    {"id": "zf_xiaoni", "label": "晓妮 · 中文女声", "lang": "zh-CN"},
+    {"id": "zf_xiaoxiao", "label": "晓晓 · 中文女声", "lang": "zh-CN"},
+    {"id": "zf_xiaoyi", "label": "晓伊 · 中文女声", "lang": "zh-CN"},
+    {"id": "zm_yunjian", "label": "云健 · 中文男声", "lang": "zh-CN"},
+    {"id": "zm_yunxi", "label": "云希 · 中文男声", "lang": "zh-CN"},
+    {"id": "zm_yunxia", "label": "云夏 · 中文男声", "lang": "zh-CN"},
+    {"id": "zm_yunyang", "label": "云扬 · 中文男声", "lang": "zh-CN"},
+    {"id": "jf_alpha", "label": "Alpha · 日语女声", "lang": "ja-JP"},
+    {"id": "jm_kumo", "label": "Kumo · 日语男声", "lang": "ja-JP"},
+]
+
 #: Kokoro 默认采样率（kokoro 包输出 24kHz）。
 KOKORO_SAMPLE_RATE = 24000
 
@@ -357,6 +380,30 @@ def _bootstrap_sys_path(data_root: Path) -> Path:
     return target
 
 
+#: Kokoro / Chatterbox 也是 ``pip install --target`` 装进 engines/ 的。
+#: 引擎 id 见 catalog/engines.json（kokoro-engine / chatterbox）。
+_KOKORO_ENGINE_DIR = "pip-kokoro-engine"
+_CHATTERBOX_ENGINE_DIR = "pip-chatterbox"
+
+
+def _bootstrap_optional_tts_dirs(data_root: Path) -> None:
+    """把 Kokoro/Chatterbox 的引擎目录加入 ``sys.path``。
+
+    这两个包以前只做 ``import kokoro`` / ``import chatterbox``，从不 bootstrap
+    引擎目录 —— 用户在「引擎」页装完以后，capabilities 仍然报未安装，
+    合成报 503，属于典型的「装了却 import 不到」。
+
+    刻意 **append** 而不是 insert(0)：piper 目录里自带 numpy/onnxruntime，
+    再往最前面塞一个带 torch/numpy 的目录会改变已加载依赖的解析顺序。
+    追加在后面既能把缺的包找出来，又不会抢在 piper 依赖前面。
+    """
+    engines = Path(data_root) / "engines"
+    for dirname in (_KOKORO_ENGINE_DIR, _CHATTERBOX_ENGINE_DIR):
+        target = engines / dirname
+        if target.is_dir() and str(target) not in sys.path:
+            sys.path.append(str(target))
+
+
 def import_piper(data_root: Path | None = None):
     """Import piper from the isolated engine dir, raising if absent."""
     if data_root is not None:
@@ -484,6 +531,7 @@ class PiperManager:
     # -- kokoro ------------------------------------------------------------
     def _load_kokoro(self, lang_code: str) -> Any:
         """加载 Kokoro pipeline。依赖缺失时明确说要装什么。"""
+        _bootstrap_optional_tts_dirs(self.data_root)
         try:
             from kokoro import KPipeline  # type: ignore
         except ImportError as e:
@@ -525,16 +573,37 @@ class PiperManager:
             raise PiperVoiceError("Kokoro 未产出任何音频")
 
         audio = chunks[0] if len(chunks) == 1 else np.concatenate(chunks)
+        audio = np.clip(np.asarray(audio, dtype="float32"), -1.0, 1.0)
+
+        # 与 Piper/Chatterbox 保持一致：落盘 + 返回 job 元信息。
+        # 早前这里直接返回 numpy 数组，路由用 JSONResponse 序列化会 500，
+        # 前端拿到的不是音频而是"服务器内部错误"。
+        job_id = time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8]
+        out_dir = Path(self.data_root) / "tts" / "kokoro"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_path = out_dir / f"{job_id}.wav"
+        pcm = (audio * 32767.0).astype("<i2")
+        with wave.open(str(out_path), "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(KOKORO_SAMPLE_RATE)
+            wf.writeframes(pcm.tobytes())
+
+        duration = _wav_duration_s(out_path) or (len(audio) / KOKORO_SAMPLE_RATE)
         return {
-            "audio": audio,
-            "sample_rate": KOKORO_SAMPLE_RATE,
-            "voice": voice_id,
             "engine": "kokoro",
+            "job_id": job_id,
+            "voice": voice_id,
+            "path": str(out_path),
+            "sample_rate": KOKORO_SAMPLE_RATE,
+            "duration_s": round(duration, 3),
+            "size_bytes": out_path.stat().st_size,
         }
 
     # -- chatterbox（声音克隆） -------------------------------------------
     def _load_chatterbox(self, device: str = "auto") -> Any:
         """加载 Chatterbox 模型。依赖缺失时给出**准确的** pip 包名。"""
+        _bootstrap_optional_tts_dirs(self.data_root)
         try:
             from chatterbox.tts import ChatterboxTTS  # type: ignore
         except ImportError as e:
@@ -771,13 +840,15 @@ def capabilities(data_root: Path | str) -> dict[str, Any]:
         "voices": [{"id": v["id"], "label": v["label"], "lang": v["lang"]} for v in KNOWN_VOICES],
         "kokoro": {
             "engine": "kokoro",
-            "installed": _module_available("kokoro"),
+            "installed": _module_available("kokoro", root),
             "pip": "kokoro",
+            "voices": KOKORO_KNOWN_VOICES,
             "voices_hint": "af_heart 等预设音色（无克隆）",
+            "needs_system_package": "espeak-ng（Linux 下 Kokoro 处理英文 OOD 词需要）",
         },
         "chatterbox": {
             "engine": "chatterbox",
-            "installed": _module_available("chatterbox"),
+            "installed": _module_available("chatterbox", root),
             "pip": CHATTERBOX_PIP_NAME,
             "sample_rate": CHATTERBOX_SAMPLE_RATE,
             "ref_recommended_s": [CHATTERBOX_REF_MIN_S, CHATTERBOX_REF_MAX_S],
@@ -787,16 +858,24 @@ def capabilities(data_root: Path | str) -> dict[str, Any]:
     }
 
 
-def _module_available(name: str) -> bool:
+def _module_available(name: str, data_root: Path | str | None = None) -> bool:
     """探测一个可选推理包是否可导入。
 
     只做 import 探测，不实例化模型 —— capabilities 是给 UI 快速调用的，
     加载 0.5B 模型会让这个接口卡住几十秒。
-    """
-    try:
-        import importlib
 
-        importlib.import_module(name)
-        return True
+    传入 ``data_root`` 时会先 bootstrap Kokoro/Chatterbox 的引擎目录，
+    否则通过应用安装的引擎会被误判为「未安装」。
+    """
+    if data_root is not None:
+        _bootstrap_optional_tts_dirs(Path(data_root))
+    try:
+        import importlib.util
+
+        # 用 find_spec 而不是 import：capabilities 是 UI 首屏调用的，
+        # import torch/kokoro 实测会让接口卡 25–37 秒，页面看起来像死了。
+        # find_spec 只查文件系统，不执行包代码；真正的可用性校验留给
+        # 合成时的 import（失败会有明确错误提示）。
+        return importlib.util.find_spec(name) is not None
     except Exception:  # noqa: BLE001 — 未安装 / 依赖破损都算不可用
         return False

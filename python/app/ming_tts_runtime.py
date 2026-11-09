@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import os
+import sys
 import wave
 from pathlib import Path
 from typing import Any
@@ -34,9 +35,25 @@ def models_cache_dir(data_root: Path | str) -> Path:
     return d
 
 
+#: pip 引擎目录名，与 engines.py 的 ``pip-<engine id>`` 约定一致。
+_PIP_DIR = "pip-ming-tts"
+
+
+def _bootstrap_sys_path(data_root: Path | str) -> None:
+    """把通过应用安装的 ming-tts 引擎目录加入 sys.path。
+
+    没有这一步时，用户在「引擎」页装完 ming-tts，``import ming_tts_mnn``
+    仍然失败，报「引擎未安装」——装的和用的不是同一个环境。
+    """
+    target = Path(data_root) / "engines" / _PIP_DIR
+    if target.is_dir() and str(target) not in sys.path:
+        sys.path.insert(0, str(target))
+
+
 def _ensure_model(precision: str, data_root: Path | str):
     if _MingSingleton.model is not None and _MingSingleton.precision == precision:
         return _MingSingleton.model
+    _bootstrap_sys_path(data_root)
     try:
         from ming_tts_mnn import MingTTSMNN  # type: ignore
     except ImportError as e:  # noqa: BLE001

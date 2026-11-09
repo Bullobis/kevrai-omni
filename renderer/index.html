@@ -648,6 +648,14 @@
           </div>
           <div class="form-grid">
             <div class="form-row">
+              <label for="piper-engine" data-i18n="piper.engine">引擎</label>
+              <select id="piper-engine">
+                <option value="piper">Piper</option>
+                <option value="kokoro">Kokoro</option>
+                <option value="chatterbox">Chatterbox</option>
+              </select>
+            </div>
+            <div class="form-row">
               <label for="piper-voice" data-i18n="piper.voice">发音人</label>
               <select id="piper-voice"></select>
             </div>
@@ -658,6 +666,30 @@
           </div>
           <div class="form-actions">
             <button class="primary" id="piper-run" data-i18n="piper.run">开始合成</button>
+            <button type="button" id="piper-engine-install" data-i18n="piper.installMissing" hidden>安装当前引擎</button>
+          </div>
+          <p class="muted" id="piper-engine-hint"></p>
+        </div>
+
+        <div class="card" id="chatterbox-clone-card" hidden>
+          <div class="pane-head">
+            <h3 data-i18n="piper.cloneTitle">声音克隆档案（Chatterbox）</h3>
+          </div>
+          <p class="muted" data-i18n="piper.cloneHint">上传 5–10 秒干净的单人录音作为参考音色；首次加载模型较慢，且输出带不可听水印。</p>
+          <div class="form-grid">
+            <div class="form-row">
+              <label for="chatterbox-clone" data-i18n="piper.cloneSelect">已有档案</label>
+              <select id="chatterbox-clone"></select>
+            </div>
+            <div class="form-row">
+              <label for="chatterbox-name" data-i18n="piper.cloneName">档案名</label>
+              <input id="chatterbox-name" maxlength="32" placeholder="my_voice" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <input id="chatterbox-ref" type="file" accept="audio/*" />
+            <button type="button" id="chatterbox-upload" data-i18n="piper.cloneUpload">上传参考音频</button>
+            <button type="button" id="chatterbox-delete" class="danger" data-i18n="piper.cloneDelete">删除档案</button>
           </div>
         </div>
 

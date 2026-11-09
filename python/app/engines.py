@@ -36,6 +36,7 @@ from .catalog import (
     is_host_allowed,
 )
 from .hub.paths import safe_extract as _hub_safe_extract
+from .pip_exec import pip_command
 
 log = logging.getLogger("kevrai.engines")
 
@@ -117,6 +118,123 @@ def expand_engine_candidates(url: str) -> list[str]:
         if cand not in out:
             out.append(cand)
     return out
+
+
+# ---------------------------------------------------------------------------
+# GitHub 仓库 → 可下载归档（release 资产优先，其次源码归档）
+# ---------------------------------------------------------------------------
+
+_ARCHIVE_SUFFIXES = (".zip", ".tar", ".tar.gz", ".tgz", ".tar.zst", ".tar.xz")
+_GITHUB_CACHE: dict[str, dict[str, Any]] = {}
+
+
+def looks_like_archive_url(url: str) -> bool:
+    """判断 URL 是否指向一个真正的归档文件，而不是仓库/Release 网页。"""
+    path = str(url or "").split("?", 1)[0].lower()
+    return path.endswith(_ARCHIVE_SUFFIXES) or "/releases/download/" in path
+
+
+def _github_get(path: str) -> dict[str, Any] | None:
+    """读取 GitHub API（带 token 时用 token，避免 60 次/小时限流）。"""
+    if path in _GITHUB_CACHE:
+        return _GITHUB_CACHE[path]
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or ""
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "Kevrai-Omni",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    try:
+        with httpx.Client(timeout=10.0, follow_redirects=True) as client:
+            resp = client.get(f"https://api.github.com{path}", headers=headers)
+        if resp.status_code != 200:
+            log.debug("github api %s -> %s", path, resp.status_code)
+            return None
+        data = resp.json()
+    except Exception as exc:  # noqa: BLE001 — 离线/限流时静默走归档兜底
+        log.debug("github api %s failed: %s", path, exc)
+        return None
+    if isinstance(data, dict):
+        _GITHUB_CACHE[path] = data
+        return data
+    return None
+
+
+def _asset_platform_score(name: str, plat: str) -> int:
+    """给 release 资产打分，挑当前平台最合适的一个。返回 -1 表示不匹配。"""
+    n = name.lower()
+    if not n.endswith(_ARCHIVE_SUFFIXES):
+        return -1
+    # CUDA/cudart 运行时包不是完整引擎，除非没有别的选择才降级使用。
+    penalty = -4 if ("cudart" in n or "cuda" in n) else 0
+    if plat.startswith("linux"):
+        if not any(t in n for t in ("linux", "ubuntu")):
+            return -1
+        if any(t in n for t in ("arm64", "aarch64", "macos", "darwin", "win")):
+            return -1
+        score = 6 if "x64" in n or "x86_64" in n else 4
+    elif plat.startswith("windows"):
+        if not any(t in n for t in ("win", "windows")):
+            return -1
+        if any(t in n for t in ("arm64", "aarch64", "macos", "darwin", "linux")):
+            return -1
+        score = 6 if ("x64" in n or "amd64" in n) else 4
+        score += 2 if "cpu" in n else 0
+    elif plat == "darwin-arm64":
+        if not any(t in n for t in ("macos", "darwin", "osx")):
+            return -1
+        if "arm64" not in n and "aarch64" not in n:
+            return -1
+        score = 6
+    elif plat == "darwin-x64":
+        if not any(t in n for t in ("macos", "darwin", "osx")):
+            return -1
+        if any(t in n for t in ("arm64", "aarch64")):
+            return -1
+        score = 6
+    else:
+        return -1
+    if "bin" in n:
+        score += 2
+    return score + penalty
+
+
+def resolve_github_engine_sources(github: str, plat: str) -> list[str]:
+    """把 ``owner/repo`` 解析成可直接下载的归档 URL 列表。
+
+    顺序：当前平台匹配的 release 资产 → 默认分支源码归档 → main/master 兜底。
+    这样 llama.cpp 这类只发 release 二进制的仓库能拿到正确资产名，
+    而 ComfyUI 这类只提供源码的仓库也不会被硬拼成 ``comfyui.zip``（404）。
+    """
+    repo = str(github or "").strip().strip("/")
+    if "/" not in repo:
+        return []
+    out: list[str] = []
+
+    release = _github_get(f"/repos/{repo}/releases/latest")
+    assets = release.get("assets") if isinstance(release, dict) else None
+    if isinstance(assets, list):
+        scored: list[tuple[int, str]] = []
+        for asset in assets:
+            name = str(asset.get("name") or "")
+            url = str(asset.get("browser_download_url") or "")
+            if not url or not looks_like_archive_url(url):
+                continue
+            score = _asset_platform_score(name, plat)
+            if score >= 0:
+                scored.append((score, url))
+        scored.sort(key=lambda item: item[0], reverse=True)
+        out.extend(url for _, url in scored)
+
+    info = _github_get(f"/repos/{repo}")
+    branch = str(info.get("default_branch") or "") if isinstance(info, dict) else ""
+    for b in ([branch] if branch else []) + ["main", "master"]:
+        url = f"https://github.com/{repo}/archive/refs/heads/{b}.tar.gz"
+        if url not in out:
+            out.append(url)
+    # 去重保序
+    return list(dict.fromkeys(out))
 
 
 def _stream_download(
@@ -615,16 +733,35 @@ class EngineManager:
     # --- pip-based engines ---
 
     @_serialized_install
-    def install_pip(self, pypi_name: str, engine_id: str | None = None) -> EngineRecord:
+    def install_pip(
+        self,
+        pypi_name: str,
+        engine_id: str | None = None,
+        extra: list[str] | None = None,
+    ) -> EngineRecord:
         eid = engine_id or pypi_name
         # 目录名用引擎 id（如 piper → pip-piper），与各 runtime 的
         # engine_target_dir 约定一致；旧逻辑按 pypi 名拼成 pip-piper-tts，
         # 运行时 sys.path bootstrap 找不到，导致"装了却 import 不到"。
         target = self.engine_dir() / f"pip-{eid}"
         target.mkdir(parents=True, exist_ok=True)
-        cmd = [sys.executable, "-m", "pip", "install", "--target", str(target), pypi_name]
+        requirements = [pypi_name, *list(extra or [])]
+        cmd = [*pip_command(), "install", "--target", str(target), *requirements]
         idx = os.environ.get("KEVRAI_PIP_INDEX", "https://mirrors.tencent.com/pypi/simple/")
         cmd += ["-i", idx, "--extra-index-url", "https://pypi.org/simple"]
+        # 这些引擎依赖 torch。PyPI 的默认 torch 轮子捆绑整套 CUDA 运行时
+        # （实测 cu13 解包后 >3GB），CPU 用户机器上既装不下也跑不起来。
+        # 默认改从 PyTorch 官方 CPU 索引取 +cpu 轮子（约 1/10 体积）；
+        # 有 NVIDIA 显卡想用 CUDA 可设 KEVRAI_TORCH_VARIANT=cuda。
+        if (eid in _TORCH_ENGINES
+                and os.environ.get("KEVRAI_TORCH_VARIANT", "cpu").lower() != "cuda"):
+            cmd += ["--extra-index-url", "https://download.pytorch.org/whl/cpu"]
+        # pip 默认把解包/构建临时目录放在 /tmp（常见只有几 GB，torch 这类
+        # 大包会把分区写满，报 [Errno 28] No space left）。改到数据目录内。
+        pip_tmp = self.engine_dir().parent / "tmp" / "pip"
+        pip_tmp.mkdir(parents=True, exist_ok=True)
+        pip_env = os.environ.copy()
+        pip_env.update({"TMPDIR": str(pip_tmp), "TEMP": str(pip_tmp), "TMP": str(pip_tmp)})
         self._set_state(eid, EngineState.DOWNLOADING, install_path=str(target),
                         install_mode="pip")
         try:
@@ -634,15 +771,17 @@ class EngineManager:
             # 900s 超时，而不是永久占死 _INSTALL_LOCK 与线程池线程。
             proc = subprocess.Popen(  # noqa: S603 — argv list built from internal constants
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                text=True, bufsize=1,
+                text=True, bufsize=1, env=pip_env,
             )
             last_line = ""
+            tail: list[str] = []
             assert proc.stdout is not None
-            q = _queue.Queue()
+            stdout = proc.stdout
+            q: _queue.Queue[str | BaseException | None] = _queue.Queue()
 
             def _reader() -> None:
                 try:
-                    for line in proc.stdout:
+                    for line in stdout:
                         q.put(line)
                 except BaseException as e:  # noqa: BLE001 — re-raised in main thread
                     q.put(e)
@@ -667,6 +806,7 @@ class EngineManager:
                 line = str(item).strip()
                 if line:
                     last_line = line[:200]
+                    tail = [*tail[-19:], line[:300]]
                     self._set_state(eid, EngineState.DOWNLOADING,
                                     install_path=str(target), install_mode="pip",
                                     active_url=last_line)
@@ -685,10 +825,35 @@ class EngineManager:
                             install_mode="pip")
             raise
         if rc != 0:
+            detail = "\n".join(tail)[-600:] or (last_line or "pip 安装失败")
+            hint = ""
+            if "No space left" in detail or "Errno 28" in detail:
+                hint = "（磁盘空间不足：请清理数据目录后重试，或设置 KEVRAI_DATA_ROOT 到空间更大的分区）"
             self._set_state(eid, EngineState.FAILED,
-                            last_error=(last_line or "pip 安装失败")[-300:],
+                            last_error=f"pip rc={rc}{hint}: {detail}"[-1200:],
                             install_mode="pip")
-            raise RuntimeError(f"pip install of {pypi_name} failed: rc={rc}")
+            raise RuntimeError(f"pip install of {pypi_name} failed: rc={rc}{hint}: {detail[-300:]}")
+        ok_import, import_err = validate_engine_import(eid, target)
+        if not ok_import:
+            # 镜像站偶发"退出码 0 但轮子缺文件"（实测 av/numpy）。pip 说成功
+            # 不代表能 import，这里用官方 PyPI 强制重装一次再验。
+            retry_cmd = [
+                *pip_command(), "install", "--target", str(target),
+                "--upgrade", "--force-reinstall", "--no-cache-dir",
+                "-i", "https://pypi.org/simple", *requirements,
+            ]
+            retry = subprocess.run(  # noqa: S603 — 内部常量拼接的 argv
+                retry_cmd, capture_output=True, text=True, timeout=900, env=pip_env
+            )
+            ok_import, import_err = validate_engine_import(eid, target)
+            if retry.returncode != 0 or not ok_import:
+                detail = (retry.stderr or retry.stdout or import_err)[-400:]
+                self._set_state(eid, EngineState.FAILED,
+                                last_error=f"import check failed: {detail}",
+                                install_mode="pip")
+                raise RuntimeError(
+                    f"pip install of {pypi_name} finished but import failed: {import_err}"
+                )
         self._set_state(eid, EngineState.INSTALLED,
                         install_path=str(target),
                         installed_at=_now_iso(),
@@ -728,6 +893,47 @@ def _platform_key() -> str:
     if s.startswith("darwin"):
         return "darwin-arm64"
     return f"{s}-x64"
+
+
+# pip 退出码 0 ≠ 包可用：镜像站出现过"dist-info 在、包体缺失"的轮子
+# （实测 av / numpy）。这里对"导入名与包名不同"或关键引擎做一次 import 校验；
+# vllm/sglang/mlx 这类需要 GPU/特定平台的包不校验，避免误判。
+_TORCH_ENGINES = {"kokoro-engine", "chatterbox", "transformers", "sentence-transformers", "demucs"}
+
+_ENGINE_IMPORT_NAMES: dict[str, str] = {
+    "piper": "piper",
+    "kokoro-engine": "kokoro",
+    "chatterbox": "chatterbox",
+    "ming-tts": "ming_tts_mnn",
+    "faster-whisper": "faster_whisper",
+    "sentence-transformers": "sentence_transformers",
+    "demucs": "demucs",
+    "rapidocr": "rapidocr",
+    "pymupdf": "fitz",
+    "onnxruntime": "onnxruntime",
+    "mnn": "MNN",
+    "transformers": "transformers",
+    "diffusers": "diffusers",
+}
+
+
+def validate_engine_import(eid: str, target: Path) -> tuple[bool, str]:
+    """在 sidecar 进程内 import 一次，确认装好的包真的能用。"""
+    module = _ENGINE_IMPORT_NAMES.get(str(eid).lower())
+    if not module:
+        return True, ""
+    import importlib
+
+    sys.path.insert(0, str(target))
+    importlib.invalidate_caches()
+    try:
+        importlib.import_module(module)
+        return True, ""
+    except Exception as exc:  # noqa: BLE001 — 任何导入失败都算装坏
+        return False, f"{type(exc).__name__}: {exc}"
+    finally:
+        with contextlib.suppress(ValueError):
+            sys.path.remove(str(target))
 
 
 def _pip_index() -> str | None:
@@ -819,30 +1025,42 @@ def install_git_engine(
 def try_download_engine(url: str, root: Path, eid: str) -> InstallResult:
     """Best-effort download of a URL as an engine install.
 
-    Tries the legacy zip path first; if the URL points to a tarball (.tar.gz,
-    .tgz, .tar.zst) extracts it manually; if it is a GitHub repo page (not an
-    asset) returns a clear "not a download link" failure instead of a cryptic
-    "File is not a zip file".
+    - zip → ``download_zip_engine``（带镜像/加速与魔数校验）
+    - .tar / .tar.gz / .tgz / .tar.zst / .tar.xz → 本地解压
+    - GitHub 仓库页 → 先解析最新 release 的平台资产，再退回默认分支源码归档
     """
     url_s = str(url or "").strip()
     if not url_s:
         return InstallResult(engine_id=eid, path="", ok=False, message="empty url")
 
-    # Detect plain repo pages (e.g. "https://github.com/user/repo") — these
-    # serve HTML, not an archive, so extract the tarball URL instead.
+    if looks_like_archive_url(url_s):
+        path = url_s.lower().split("?", 1)[0]
+        if path.endswith((".tar", ".tar.gz", ".tgz", ".tar.zst", ".tar.xz")):
+            return _download_and_extract_tarball(url_s, root, eid)
+        return download_zip_engine(url_s, root, eid)
+
+    # 仓库页 / releases 页：解析出真正的归档地址，而不是把 HTML 当 zip。
     import re as _re
-    m = _re.match(r"https?://github\.com/([^/]+)/([^/]+?)(?:\.git)?/?$", url_s)
+    m = _re.match(
+        r"https?://github\.com/([^/]+)/([^/]+?)(?:\.git)?"
+        r"(?:/(?:releases|archive|tree|blob)[^?#]*)?/?$",
+        url_s,
+    )
     if m:
         owner, repo = m.group(1), m.group(2)
-        # Use archive tarball — GitHub always serves these
-        url_s = f"https://github.com/{owner}/{repo}/archive/refs/heads/main.tar.gz"
-
-    # tar.zst → zstd-then-untar
-    if url_s.lower().endswith(".tar.zst") or url_s.lower().endswith(".tgz"):
-        # Reuse the legacy downloader for the raw bytes; extraction is done by
-        # download_zip_engine which handles .zip only, so we implement a simple
-        # tar.gz path here.
-        return _download_and_extract_tarball(url_s, root, eid)
+        candidates = resolve_github_engine_sources(
+            f"{owner}/{repo}", _platform_key()
+        )
+        last: InstallResult | None = None
+        for cand in candidates:
+            result = try_download_engine(cand, root, eid)
+            if result.ok:
+                return result
+            last = result
+        return last or InstallResult(
+            engine_id=eid, path="", ok=False,
+            message=f"github repo {owner}/{repo} has no downloadable archive",
+        )
 
     # Default path: legacy zip engine downloader (it also handles mirror fallback)
     return download_zip_engine(url_s, root, eid)
@@ -850,12 +1068,14 @@ def try_download_engine(url: str, root: Path, eid: str) -> InstallResult:
 
 def _download_and_extract_tarball(url: str, root: Path, eid: str) -> InstallResult:
     """Download a .tar.gz / .tgz / .tar.zst archive and extract into engine_dir."""
-    import tarfile
     import shutil as _shutil
+    import tarfile
 
     target_dir = engine_install_dir(root) / eid
     target_dir.mkdir(parents=True, exist_ok=True)
     tmp = target_dir / "download.tmp"
+    extracted_tar: Path | None = None
+    staging = target_dir / "_extract_tmp"
 
     try:
         _stream_download(url, tmp)
@@ -869,22 +1089,25 @@ def _download_and_extract_tarball(url: str, root: Path, eid: str) -> InstallResu
     # Detect and decompress zstd if needed
     to_extract = tmp
     try:
-        if url.lower().endswith(".tar.zst"):
-            # Use subprocess: zstd is faster and handles edge cases better
+        if url.lower().split("?", 1)[0].endswith(".tar.zst"):
+            # zstd CLI 输出文件名必须用 str(tmp)+".tar" 拼出来；
+            # 旧代码 Path.with_suffix 得到的是 "download.tar"，
+            # 和实际写出的 "download.tmp.tar" 对不上 → 解压必失败。
+            extracted_tar = Path(str(tmp) + ".tar")
             try:
                 subprocess.run(
-                    ["zstd", "-d", "-f", str(tmp), "-o", str(tmp) + ".tar"],
+                    ["zstd", "-d", "-f", str(tmp), "-o", str(extracted_tar)],
                     check=True, capture_output=True, timeout=120,
                 )
-                to_extract = tmp.with_suffix("").with_suffix(".tar")
+                to_extract = extracted_tar
             except (FileNotFoundError, subprocess.CalledProcessError):
                 # Fall back to pure-Python zstd if subprocess fails
                 try:
                     import zstandard as zstd
-                    with tmp.open("rb") as fin, (tmp.parent / "raw.tar").open("wb") as fout:
+                    with tmp.open("rb") as fin, extracted_tar.open("wb") as fout:
                         dctx = zstd.ZstdDecompressor()
                         dctx.copy_stream(fin, fout)
-                    to_extract = tmp.parent / "raw.tar"
+                    to_extract = extracted_tar
                 except ImportError:
                     tmp.unlink(missing_ok=True)
                     return InstallResult(
@@ -892,27 +1115,57 @@ def _download_and_extract_tarball(url: str, root: Path, eid: str) -> InstallResu
                         message="zstd not available (install zstd CLI or zstandard Python package)",
                     )
 
+        if staging.exists():
+            _shutil.rmtree(staging, ignore_errors=True)
+        staging.mkdir(parents=True, exist_ok=True)
         with tarfile.open(to_extract, "r:*") as tf:
-            # Safe extraction — reject members that escape target_dir
-            abs_target = target_dir.resolve()
+            # Safe extraction — reject members that escape staging.
+            abs_target = staging.resolve()
             for member in tf.getmembers():
-                member_path = (target_dir / member.name).resolve()
+                member_path = (staging / member.name).resolve()
                 try:
                     member_path.relative_to(abs_target)
                 except ValueError:
+                    _shutil.rmtree(staging, ignore_errors=True)
                     tmp.unlink(missing_ok=True)
                     return InstallResult(
                         engine_id=eid, path="", ok=False,
                         message=f"tar member escapes target: {member.name}",
                     )
-            tf.extractall(target_dir)
+            # Python 3.12+ 的 data filter 还会额外拦截符号链接/设备文件；
+            # 老版本退回上面的手工检查。
+            try:
+                tf.extractall(staging, filter="data")  # noqa: S202 — members 已手工校验，filter 再兜底
+            except TypeError:  # pragma: no cover — Python < 3.12
+                tf.extractall(staging)  # noqa: S202 — 仅 Python<3.12 回退，members 已校验
+
+        # GitHub 源码归档带一层 <repo>-<branch>/ 顶层目录。引擎目录必须
+        # 直接就是仓库根（否则运行时找不到可执行文件/入口），所以单层
+        # 目录要展平；多条目则整体搬到 target_dir。
+        entries = list(staging.iterdir())
+        if len(entries) == 1 and entries[0].is_dir():
+            entries = list(entries[0].iterdir())
+        for item in entries:
+            dest = target_dir / item.name
+            if dest.exists():
+                if dest.is_dir():
+                    _shutil.rmtree(dest, ignore_errors=True)
+                else:
+                    dest.unlink(missing_ok=True)
+            _shutil.move(str(item), str(dest))
+        _shutil.rmtree(staging, ignore_errors=True)
         tmp.unlink(missing_ok=True)
+        if extracted_tar is not None:
+            extracted_tar.unlink(missing_ok=True)
         return InstallResult(
             engine_id=eid, path=str(target_dir), ok=True,
             message=f"extracted {url}",
         )
     except Exception as exc:  # noqa: BLE001
+        _shutil.rmtree(staging, ignore_errors=True)
         tmp.unlink(missing_ok=True)
+        if extracted_tar is not None:
+            extracted_tar.unlink(missing_ok=True)
         return InstallResult(
             engine_id=eid, path="", ok=False,
             message=f"extract failed: {exc}",
@@ -930,7 +1183,7 @@ def install_pip_engine(
     target = engine_install_dir(root) / f"pip-{dirname}"
     target.mkdir(parents=True, exist_ok=True)
     requirements = [name, *list(extra or [])]
-    cmd = [sys.executable, "-m", "pip", "install", "--target", str(target), *requirements]
+    cmd = [*pip_command(), "install", "--target", str(target), *requirements]
     idx = _pip_index()
     if idx:
         cmd += ["-i", idx, "--extra-index-url", "https://pypi.org/simple"]
@@ -940,6 +1193,24 @@ def install_pip_engine(
         )
         ok = proc.returncode == 0
         msg = (proc.stdout[-500:] if ok else proc.stderr[-500:]) or ""
+        if ok:
+            ok_import, import_err = validate_engine_import(str(dirname), target)
+            if not ok_import:
+                retry_cmd = [
+                    *pip_command(), "install", "--target", str(target),
+                    "--upgrade", "--force-reinstall", "--no-cache-dir",
+                    "-i", "https://pypi.org/simple", *requirements,
+                ]
+                retry = subprocess.run(  # noqa: S603
+                    retry_cmd, capture_output=True, text=True, timeout=900
+                )
+                ok_import, import_err = validate_engine_import(str(dirname), target)
+                if retry.returncode != 0 or not ok_import:
+                    detail = (retry.stderr or retry.stdout or import_err)[-400:]
+                    return InstallResult(
+                        engine_id=dirname, path=str(target), ok=False,
+                        message=f"import check failed: {detail}",
+                    )
         return InstallResult(
             engine_id=dirname, path=str(target), ok=ok,
             message=msg.strip() or ("installed" if ok else "install failed"),
@@ -1055,45 +1326,41 @@ def install_engine(engine: dict[str, Any], root: Path) -> InstallResult:
                     return result
         return InstallResult(
             engine_id=eid, path="", ok=False,
-            message=f"source install failed: could not git-clone or download",
+            message="source install failed: could not git-clone or download",
         )
 
     # --- 3) binary / zip install ---
     plat = _platform_key()
     platforms = engine.get("platforms", {})
     url = platforms.get(plat)
+    github = engine.get("github", "")
 
-    # No explicit platform URL — try GitHub releases/latest by convention
-    if not url:
-        github = engine.get("github", "")
-        if github:
-            url = f"https://github.com/{github}/releases/latest/download/{eid}.zip"
+    candidates: list[str] = []
+    # 1) 平台明确给的归档直链优先
+    if url and looks_like_archive_url(str(url)):
+        candidates.append(str(url))
+    # 2) GitHub release 资产（按平台挑），失败再打默认分支源码归档
+    if github:
+        candidates.extend(resolve_github_engine_sources(str(github), plat))
+    # 3) sources[] 里真正的归档链接
+    for src in (engine.get("sources") or []):
+        if looks_like_archive_url(str(src)):
+            candidates.append(str(src))
+    # 4) 平台给的是 release 网页（没有直链）时，交给 try_download_engine 解析
+    if url and not looks_like_archive_url(str(url)):
+        candidates.append(str(url))
 
-    # Try sources[] list as additional fallbacks
-    sources: list[str] = list(engine.get("sources") or [])
-    if url:
-        sources = [url] + [s for s in sources if s != url]
+    candidates = list(dict.fromkeys(candidates))
 
-    # Filter to actual .zip/.tar/.tar.gz download links, not repo pages
-    def _looks_like_archive(s: str) -> bool:
-        sl = s.lower()
-        return any(sl.endswith(ext) or f"{ext}" in sl for ext in (
-            ".zip", ".tar.gz", ".tgz", ".tar.zst",
-        )) or "releases/latest/download" in sl or "/releases/download/" in sl
-
-    archive_candidates = [s for s in sources if _looks_like_archive(s)]
-
-    if not url and not archive_candidates:
+    if not candidates:
         return InstallResult(
             engine_id=eid, path="", ok=False,
             message=f"no binary for current platform {plat} — no platforms[], no archive in sources[], no github",
         )
 
     last_result: InstallResult | None = None
-    for candidate in ([url] if url else []) + archive_candidates:
-        if not candidate:
-            continue
-        result = try_download_engine(str(candidate), root, eid)
+    for candidate in candidates:
+        result = try_download_engine(candidate, root, eid)
         if result.ok:
             return result
         last_result = result
@@ -1147,7 +1414,8 @@ def list_engines_status(
             or (rec is not None and rec.state == EngineState.INSTALLED),
             "version": rec.version if rec else "",
             "install_path": st.get("path", "") or (rec.install_path if rec else ""),
-            "message": st.get("message", ""),
+            "message": st.get("message", "")
+            or (rec.last_error if rec is not None and rec.state == EngineState.FAILED else ""),
             # 实时安装/下载遥测（pip 安装时 active_url 是 pip 输出行）
             "state": rec.state.value if rec else "",
             "active_url": rec.active_url if rec else "",

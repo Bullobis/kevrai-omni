@@ -3,28 +3,35 @@
 // Supports install → activate → deactivate → uninstall full lifecycle.
 "use strict";
 import { api } from "./api.js";
+import { escapeHtml } from "./net.js";
 import { toast } from "./toast.js";
 
 const PLUGIN_TEMPLATE = (p) => {
+  const id = escapeHtml(p.id || "");
+  const name = escapeHtml(p.name || p.id || "");
+  const version = escapeHtml(p.version || "0.0.0");
+  const author = escapeHtml(p.author || "");
+  const description = escapeHtml(p.description || "");
+  const hooks = (p.hooks || []).map((h) => `<span class="pill">${escapeHtml(h)}</span>`).join("");
   const activeCls = p.active ? " installed active" : " installed";
   const state = p.active
     ? `<span class="pill ok">● 已激活</span>`
     : `<span class="pill">○ 已安装</span>`;
   return `
-    <div class="card plugin${activeCls}" data-plugin-id="${p.id}">
+    <div class="card plugin${activeCls}" data-plugin-id="${id}">
       <div class="card-head">
         <div class="plugin-title">
-          <strong>${p.name || p.id}</strong>
-          <span class="plugin-ver">v${p.version || "0.0.0"}</span>
+          <strong>${name}</strong>
+          <span class="plugin-ver">v${version}</span>
           ${state}
         </div>
-        <div class="plugin-meta">${p.author ? `@${p.author}` : ""}</div>
+        <div class="plugin-meta">${author ? `@${author}` : ""}</div>
       </div>
       <div class="card-body">
-        <p class="plugin-desc">${p.description || "—"}</p>
+        <p class="plugin-desc">${description || "—"}</p>
         <div class="plugin-tags">
-          <span class="pill">${p.id}</span>
-          ${(p.hooks || []).map((h) => `<span class="pill">${h}</span>`).join("")}
+          <span class="pill">${id}</span>
+          ${hooks}
         </div>
       </div>
       <div class="card-foot row">
