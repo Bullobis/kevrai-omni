@@ -356,8 +356,11 @@ class AsrManager:
                    vad_filter: bool = True, word_timestamps: bool = False,
                    device: str = "auto", compute_type: str = "auto") -> dict[str, Any]:
         """Transcribe ``audio`` (path or raw bytes) with model ``repo``."""
-        if not isinstance(repo, str) or "/" not in repo:
-            raise AsrParamError("model must be an 'owner/name' repo id")
+        # faster-whisper 官方既接受 owner/name，也接受 tiny/base/small/
+        # medium/large-v3/turbo 等尺寸别名（它内部会映射到 Systran 仓库）。
+        # 这里只做空值校验，具体合法性别名交给上游判断，避免把官方用法拒掉。
+        if not isinstance(repo, str) or not repo.strip():
+            raise AsrParamError("model must not be empty")
         if language is not None and language.lower() not in _WHISPER_LANGS:
             raise AsrParamError(f"unsupported language code: {language!r}")
         if task not in {"transcribe", "translate"}:

@@ -167,11 +167,18 @@ def _asset_platform_score(name: str, plat: str) -> int:
     if not n.endswith(_ARCHIVE_SUFFIXES):
         return -1
     # CUDA/cudart 运行时包不是完整引擎，除非没有别的选择才降级使用。
-    penalty = -4 if ("cudart" in n or "cuda" in n) else 0
+    # 默认装通用 CPU 包：CUDA/ROCm/OpenVINO/SYCL/Vulkan 变体需要对应驱动，
+    # 除非用户明确要，否则不能让变体排在纯 CPU 包前面。
+    penalty = -4 if any(t in n for t in (
+        "cudart", "cuda", "rocm", "openvino", "sycl", "vulkan",
+    )) else 0
     if plat.startswith("linux"):
         if not any(t in n for t in ("linux", "ubuntu")):
             return -1
-        if any(t in n for t in ("arm64", "aarch64", "macos", "darwin", "win")):
+        if any(t in n for t in (
+            "arm64", "aarch64", "s390x", "ppc64", "riscv",
+            "macos", "darwin", "win",
+        )):
             return -1
         score = 6 if "x64" in n or "x86_64" in n else 4
     elif plat.startswith("windows"):
@@ -200,7 +207,67 @@ def _asset_platform_score(name: str, plat: str) -> int:
     return score + penalty
 
 
-def resolve_github_engine_sources(github: str, plat: str) -> list[str]:
+def _parse_release_asset_links(html: str, repo: str) -> list[tuple[str, str]]:
+    import re as _re
+    found: list[tuple[str, str]] = []
+    for m in _re.finditer(
+        r'href="(/[^"/]+/[^"/]+/releases/download/[^"]+)"', html
+    ):
+        href = m.group(1)
+        if repo not in href:
+            continue
+        name = href.rsplit("/", 1)[-1]
+        found.append((name, "https://github.com" + href))
+    return list(dict.fromkeys(found))
+
+
+def _github_release_assets_html(repo: str) -> list[tuple[str, str]]:
+    """API 被限流时，从 release 页面 HTML 里解析资产 (name, url)。
+
+    GitHub 未登录 API 限额只有 60 次/小时，CI/共享出口 IP 很容易 403。
+    release 页面本身不受这个限额影响：
+      * /releases/latest 会 302 到具体 tag（但 llama.cpp 这种项目会跳到
+        只有 nightly-tag.txt 的“发布”，实际二进制在 b<build> tag 上）；
+      * 所以页面里找不到资产时，再从 /releases 列表取最近几个 tag，
+        逐个请求 /releases/expanded_assets/<tag>（GitHub 的资产懒加载片段）。
+    """
+    import re as _re
+    headers = {"User-Agent": _UA()}
+    try:
+        with httpx.Client(follow_redirects=True, timeout=_HTTP_TIMEOUT,
+                          headers=headers) as client:
+            latest = client.get(f"https://github.com/{repo}/releases/latest")
+            if latest.status_code == 200:
+                links = _parse_release_asset_links(latest.text, repo)
+                if links:
+                    return links
+            listing = client.get(f"https://github.com/{repo}/releases")
+            if listing.status_code != 200:
+                return []
+            tags: list[str] = []
+            for m in _re.finditer(
+                r'/' + _re.escape(repo) + r'/releases/tag/([^"?#]+)', listing.text
+            ):
+                tag = m.group(1)
+                if tag not in tags:
+                    tags.append(tag)
+            for tag in tags[:5]:
+                frag = client.get(
+                    f"https://github.com/{repo}/releases/expanded_assets/{tag}"
+                )
+                if frag.status_code != 200:
+                    continue
+                links = _parse_release_asset_links(frag.text, repo)
+                if links:
+                    return links
+    except Exception:  # noqa: BLE001 — 兜底路径，失败就走源码归档
+        return []
+    return []
+
+
+def resolve_github_engine_sources(
+    github: str, plat: str, *, include_source: bool = True
+) -> list[str]:
     """把 ``owner/repo`` 解析成可直接下载的归档 URL 列表。
 
     顺序：当前平台匹配的 release 资产 → 默认分支源码归档 → main/master 兜底。
@@ -226,6 +293,19 @@ def resolve_github_engine_sources(github: str, plat: str) -> list[str]:
                 scored.append((score, url))
         scored.sort(key=lambda item: item[0], reverse=True)
         out.extend(url for _, url in scored)
+    if not out:
+        scored = []
+        for name, url in _github_release_assets_html(repo):
+            if not looks_like_archive_url(url):
+                continue
+            score = _asset_platform_score(name, plat)
+            if score >= 0:
+                scored.append((score, url))
+        scored.sort(key=lambda item: item[0], reverse=True)
+        out.extend(url for _, url in scored)
+
+    if not include_source:
+        return list(dict.fromkeys(out))
 
     info = _github_get(f"/repos/{repo}")
     branch = str(info.get("default_branch") or "") if isinstance(info, dict) else ""
@@ -1053,8 +1133,9 @@ def try_download_engine(url: str, root: Path, eid: str) -> InstallResult:
     )
     if m:
         owner, repo = m.group(1), m.group(2)
+        is_release_page = "/releases" in url_s
         candidates = resolve_github_engine_sources(
-            f"{owner}/{repo}", _platform_key()
+            f"{owner}/{repo}", _platform_key(), include_source=not is_release_page
         )
         last: InstallResult | None = None
         for cand in candidates:
@@ -1349,7 +1430,9 @@ def install_engine(engine: dict[str, Any], root: Path) -> InstallResult:
         candidates.append(str(url))
     # 2) GitHub release 资产（按平台挑），失败再打默认分支源码归档
     if github:
-        candidates.extend(resolve_github_engine_sources(str(github), plat))
+        candidates.extend(
+            resolve_github_engine_sources(str(github), plat, include_source=False)
+        )
     # 3) sources[] 里真正的归档链接
     for src in (engine.get("sources") or []):
         if looks_like_archive_url(str(src)):
@@ -1366,10 +1449,33 @@ def install_engine(engine: dict[str, Any], root: Path) -> InstallResult:
             message=f"no binary for current platform {plat} — no platforms[], no archive in sources[], no github",
         )
 
+    # 二进制引擎必须真的含可执行文件。GitHub API 限流时曾经把源码归档
+    # 当成二进制包返回，安装"成功"但 llama-server 根本不存在，用户点对话
+    # 才报错。这里按引擎关键可执行文件做硬校验。
+    markers = {
+        "llama.cpp": ("llama-server",),
+        "ollama": ("ollama",),
+    }.get(eid, ())
+
     last_result: InstallResult | None = None
     for candidate in candidates:
         result = try_download_engine(candidate, root, eid)
         if result.ok:
+            if markers:
+                base = Path(result.path)
+                found = any(
+                    base.rglob(m) or base.rglob(m + ".exe")
+                    for m in markers
+                ) if base.is_dir() else False
+                if not found:
+                    last_result = InstallResult(
+                        engine_id=eid, path=result.path, ok=False,
+                        message=(
+                            f"{eid} 安装包缺少可执行文件（{', '.join(markers)}）；"
+                            "通常是 GitHub API 被限流后错误回退到源码归档，请重试"
+                        ),
+                    )
+                    continue
             return result
         last_result = result
 
