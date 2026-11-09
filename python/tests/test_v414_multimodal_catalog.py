@@ -18,7 +18,8 @@ def test_transformers_engine_pinned():
     assert e["pypi"] == "transformers==5.18.0"
     # torch / accelerate / pillow needed for image+text inference.
     extra = e.get("pip_extra") or []
-    assert "torch" in extra
+    # torch 被显式锁到 2.6.0+cpu（与 Kokoro/Chatterbox 共用，避免 torchaudio ABI 冲突）
+    assert any(x.split("==")[0].split(">")[0].strip() == "torch" for x in extra)
     assert any(x.startswith("accelerate") for x in extra)
     assert "pillow" in extra
 

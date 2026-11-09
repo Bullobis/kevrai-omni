@@ -404,6 +404,34 @@ def _bootstrap_optional_tts_dirs(data_root: Path) -> None:
             sys.path.append(str(target))
 
 
+def _activate_tts_engine_dir(data_root: Path, dirname: str) -> None:
+    """把某个 TTS 引擎目录**独占**放到 sys.path 最前面。
+
+    Kokoro 与 Chatterbox 的依赖树里都有 torch/transformers/torchaudio，
+    两个目录同时挂在 ``sys.path`` 上时，Python 会按顺序跨目录取包：
+    Kokoro 的 transformers 可能 import 到 Chatterbox 的 torchaudio，
+    而后者的 libtorchaudio.so 只在 Chatterbox 目录里能找到依赖，
+    于是报 ``Could not load this library``；反过来也一样。
+
+    因此在真正 import 前先移除所有 TTS 引擎目录，只把目标目录放到最前，
+    并清掉会跨引擎复用的模块缓存。torch 本身不清（两个引擎已统一到
+    2.6.0+cpu；清掉会让已加载的模型持有旧模块引用）。
+    """
+    engines = Path(data_root) / "engines"
+    for other in (_KOKORO_ENGINE_DIR, _CHATTERBOX_ENGINE_DIR):
+        other_path = str(engines / other)
+        while other_path in sys.path:
+            sys.path.remove(other_path)
+    target = engines / dirname
+    if target.is_dir():
+        sys.path.insert(0, str(target))
+    for mod in (
+        "torchaudio", "transformers", "kokoro", "misaki",
+        "chatterbox", "chatterbox.tts", "chatterbox.models",
+    ):
+        sys.modules.pop(mod, None)
+
+
 def import_piper(data_root: Path | None = None):
     """Import piper from the isolated engine dir, raising if absent."""
     if data_root is not None:
@@ -562,7 +590,7 @@ class PiperManager:
     # -- kokoro ------------------------------------------------------------
     def _load_kokoro(self, lang_code: str) -> Any:
         """加载 Kokoro pipeline。依赖缺失时明确说要装什么。"""
-        _bootstrap_optional_tts_dirs(self.data_root)
+        _activate_tts_engine_dir(self.data_root, _KOKORO_ENGINE_DIR)
         try:
             from kokoro import KPipeline  # type: ignore
         except ImportError as e:
@@ -634,7 +662,7 @@ class PiperManager:
     # -- chatterbox（声音克隆） -------------------------------------------
     def _load_chatterbox(self, device: str = "auto") -> Any:
         """加载 Chatterbox 模型。依赖缺失时给出**准确的** pip 包名。"""
-        _bootstrap_optional_tts_dirs(self.data_root)
+        _activate_tts_engine_dir(self.data_root, _CHATTERBOX_ENGINE_DIR)
         _preload_torch_shared_libs()
         try:
             from chatterbox.tts import ChatterboxTTS  # type: ignore
