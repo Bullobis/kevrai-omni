@@ -56,12 +56,6 @@ const MARKET_EMPTY = `
     <p class="muted">在上方输入 Git 仓库地址，或从 DSH 插件市场粘贴链接。</p>
   </div>`;
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[c]));
-}
-
 export async function refreshPlugins() {
   const grid = document.getElementById("plugins-grid");
   if (!grid) return;

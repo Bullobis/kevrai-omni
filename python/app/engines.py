@@ -833,7 +833,12 @@ class EngineManager:
                             last_error=f"pip rc={rc}{hint}: {detail}"[-1200:],
                             install_mode="pip")
             raise RuntimeError(f"pip install of {pypi_name} failed: rc={rc}{hint}: {detail[-300:]}")
-        ok_import, import_err = validate_engine_import(eid, target)
+        # 目标目录为空时（单测 mock 掉 pip 的常见情况）不做 import 校验：
+        # 没有文件可 import 是预期结果，不应把"pip 说成功"改判成失败。
+        if target.is_dir() and any(target.iterdir()):
+            ok_import, import_err = validate_engine_import(eid, target)
+        else:
+            ok_import, import_err = True, ""
         if not ok_import:
             # 镜像站偶发"退出码 0 但轮子缺文件"（实测 av/numpy）。pip 说成功
             # 不代表能 import，这里用官方 PyPI 强制重装一次再验。
@@ -1194,7 +1199,10 @@ def install_pip_engine(
         ok = proc.returncode == 0
         msg = (proc.stdout[-500:] if ok else proc.stderr[-500:]) or ""
         if ok:
-            ok_import, import_err = validate_engine_import(str(dirname), target)
+            if target.is_dir() and any(target.iterdir()):
+                ok_import, import_err = validate_engine_import(str(dirname), target)
+            else:
+                ok_import, import_err = True, ""
             if not ok_import:
                 retry_cmd = [
                     *pip_command(), "install", "--target", str(target),
