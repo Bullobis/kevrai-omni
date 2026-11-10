@@ -454,7 +454,10 @@ def brainstorm(topic: str, mode: str = DEFAULT_STORY_MODE) -> dict[str, Any]:
     questions = [_clean_str(q, 300) for q in questions if _clean_str(q, 300)]
     if not questions:
         raise LlmOutputError("对话 AI 未返回引导问题")
-    return {"angle": angle, "questions": questions[:6], "topic": topic, "mode": mode}
+    out = {"angle": angle, "questions": questions[:6], "topic": topic, "mode": mode}
+    if obj.get("offline"):
+        out["offline"] = True
+    return out
 
 
 # ---------------------------------------------------------------------------

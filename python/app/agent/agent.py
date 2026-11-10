@@ -556,6 +556,20 @@ class Agent:
             result.steps = steps
             return result
 
+        # --- 身份问题：小模型容易被“你是谁”带偏去搜索模型，直接答。 ---
+        if any(w in msg_lower for w in [
+            "你是谁", "你叫什么", "介绍一下你自己", "你的身份",
+            "who are you", "what are you",
+        ]):
+            result.answer = (
+                "我是 Kevrai Omni 的本地 Agent，跑在你的电脑上，负责把模型、"
+                "下载、推理和创作工具串起来。我可以查硬件、搜索/下载模型、"
+                "调用 TTS/ASR/OCR/分轨/3D/视频/音乐与短剧流水线；"
+                "你直接说需求就行。"
+            )
+            result.steps = steps
+            return result
+
         # --- Short-drama studio (deterministic methodology, works offline) ---
         if _has("drama_storycraft") and any(
             w in msg_lower for w in ["短剧", "微电影", "剧本", "分镜", "剧情片", "故事板", "剧作"]
@@ -733,7 +747,8 @@ class Agent:
         if any(w in message.lower() for w in (
             "列出你能用的工具", "列出工具", "工具列表", "有哪些工具",
             "你会哪些工具", "你会什么", "你能做什么", "有什么能力",
-            "能干什么", "帮助", "help",
+            "能干什么", "帮助", "help", "你是谁", "你叫什么",
+            "介绍一下你自己", "你的身份", "who are you", "what are you",
         )):
             self._remember_user(session_id, message)
             result = self._rule_based_response(message, session_id)

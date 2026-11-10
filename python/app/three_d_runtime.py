@@ -31,6 +31,8 @@ when nothing matches. It never silently guesses; it reports what it tried.
 from __future__ import annotations
 
 import contextlib
+import os
+import sys
 import logging
 import threading
 import time
@@ -463,10 +465,38 @@ class ThreeDManager:
                 p.prompt or "kevrai preview object", out,
                 fmt=p.output_format, seed=task.seed_used)
             task.output_path = str(written)
+            # 预览网格也要回填面数/顶点数，否则前端会显示 0 面。
+            try:
+                import trimesh  # noqa: PLC0415
+                mesh = trimesh.load(written)
+                if hasattr(mesh, "geometry"):
+                    task.mesh_faces = sum(len(g.faces) for g in mesh.geometry.values())
+                    task.mesh_vertices = sum(len(g.vertices) for g in mesh.geometry.values())
+                else:
+                    task.mesh_faces = len(mesh.faces)
+                    task.mesh_vertices = len(mesh.vertices)
+            except Exception:  # noqa: BLE001 - 统计失败不影响产物
+                pass
             task.progress = 1.0
             task.state = TaskState.DONE
             task.finished_at = time.time()
             task.elapsed_s = max(0.0, task.finished_at - task.started_at)
+            return
+
+        if _is_triposr(p.model_id):
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            mesh = _triposr_generate(
+                p, task,
+                Path(os.environ.get("KEVRAI_DATA_ROOT", "")
+                     or self.output_root.parent.parent))
+            task._check_cancel()
+            task.state = TaskState.SAVING
+            out = self._write_output(task, mesh)
+            task.output_path = str(out)
+            _fill_mesh_metrics(task, out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
             return
 
         pipe = _load_pipeline(p.model_id, p.mode)
@@ -479,6 +509,7 @@ class ThreeDManager:
         task.state = TaskState.SAVING
         out = self._write_output(task, mesh)
         task.output_path = str(out)
+        _fill_mesh_metrics(task, out)
         task.progress = 1.0
         self._finish(task, TaskState.DONE)
 
@@ -512,6 +543,129 @@ def requires_trimesh(output_format: str) -> bool:
 # ---------------------------------------------------------------------------
 # Heavy-lifting helpers (lazy imports)
 # ---------------------------------------------------------------------------
+
+
+def _fill_mesh_metrics(task: "ThreeDTask", path: Path) -> None:
+    """Populate face/vertex counts after export (preview and real models alike)."""
+    try:
+        import trimesh  # noqa: PLC0415
+        mesh = trimesh.load(path)
+        if hasattr(mesh, "geometry"):
+            task.mesh_faces = sum(len(g.faces) for g in mesh.geometry.values())
+            task.mesh_vertices = sum(len(g.vertices) for g in mesh.geometry.values())
+        else:
+            task.mesh_faces = len(mesh.faces)
+            task.mesh_vertices = len(mesh.vertices)
+    except Exception:  # noqa: BLE001 - metrics are informational, never fail a task
+        pass
+
+
+def _is_triposr(model_id: str) -> bool:
+    """TripoSR is not a diffusers pipeline; it ships its own ``tsr`` code."""
+    return "triposr" in (model_id or "").lower()
+
+
+def _triposr_generate(p: "ThreeDParams", task: "ThreeDTask",
+                      data_root: Path) -> Any:
+    """Run the official TripoSR network on CPU.
+
+    TripoSR loads a 1.6 GB checkpoint. On a 4 GB no-swap box the difference
+    between "works" and "OOM" is whether the state dict is copied: we use
+    ``mmap=True`` + ``assign=True`` so model parameters share the checkpoint
+    pages, and drop the checkpoint handle before the forward pass.
+    """
+    try:
+        import torch  # noqa: PLC0415
+    except ImportError as e:
+        raise ThreeDEngineMissing("TripoSR 需要 PyTorch：pip install torch") from e
+    try:
+        import mcubes  # noqa: PLC0415
+    except ImportError as e:
+        raise ThreeDEngineMissing(
+            "TripoSR 需要 PyMCubes 做 marching cubes：pip install PyMCubes"
+        ) from e
+
+    # TripoSR's code imports ``torchmcubes`` at module import time. The
+    # official CUDA extension refuses to build against a CUDA-enabled torch
+    # without a CUDA toolkit, so shim it with the pure-C PyMCubes backend.
+    if "torchmcubes" not in sys.modules:
+        import types
+
+        def _mc(vol: Any, thresh: float):
+            verts, faces = mcubes.marching_cubes(
+                vol.detach().cpu().float().numpy(), float(thresh))
+            return (torch.from_numpy(verts.copy()).float(),
+                    torch.from_numpy(faces.copy()).long())
+
+        shim = types.ModuleType("torchmcubes")
+        shim.marching_cubes = _mc  # type: ignore[attr-defined]
+        sys.modules["torchmcubes"] = shim
+
+    src = Path(data_root).parent / "third_party" / "TripoSR"
+    model_dir = Path(data_root) / "models" / "triposr"
+    if not (src / "tsr" / "system.py").is_file():
+        raise ThreeDEngineMissing(
+            f"TripoSR 源码缺失：{src}（需要官方 VAST-AI-Research/TripoSR 仓库）")
+    if not (model_dir / "model.ckpt").is_file():
+        raise ThreeDEngineMissing(
+            f"TripoSR 权重缺失：{model_dir / 'model.ckpt'}"
+            "（可从 stabilityai/TripoSR 下载 model.ckpt 与 config.yaml）")
+    if str(src) not in sys.path:
+        sys.path.insert(0, str(src))
+
+    from PIL import Image  # noqa: PLC0415
+    from omegaconf import OmegaConf  # noqa: PLC0415
+    from tsr.system import TSR  # noqa: PLC0415
+    from tsr.utils import resize_foreground  # noqa: PLC0415
+
+    img = Image.open(p.image_path).convert("RGBA")
+    if p.remove_background:
+        try:
+            from tsr.utils import remove_background  # noqa: PLC0415
+            img = remove_background(img)
+        except Exception as e:  # noqa: BLE001
+            raise ThreeDEngineMissing(
+                "TripoSR 抠图失败（需要 rembg 与 u2net 权重）："
+                f"{type(e).__name__}: {e}") from e
+    try:
+        img = resize_foreground(img, 0.85)
+    except Exception as e:  # noqa: BLE001
+        raise ThreeDEngineMissing(f"TripoSR 输入图没有有效前景：{e}") from e
+
+    import numpy as np  # noqa: PLC0415
+    arr = np.asarray(img).astype(np.float32) / 255.0
+    rgb = arr[..., :3] * arr[..., 3:4] + (1.0 - arr[..., 3:4]) * 0.5
+    img = Image.fromarray((rgb * 255.0).astype(np.uint8))
+
+    task.progress = 0.2
+    task._check_cancel()
+    cfg = OmegaConf.load(model_dir / "config.yaml")
+    OmegaConf.resolve(cfg)
+    model = TSR(cfg).float()
+    ckpt = torch.load(
+        model_dir / "model.ckpt", map_location="cpu", mmap=True,
+        weights_only=True)
+    model.load_state_dict(ckpt, assign=True, strict=False)
+    del ckpt
+    model.eval()
+    model.renderer.set_chunk_size(1024)
+    task.progress = 0.35
+    task._check_cancel()
+
+    try:
+        with torch.no_grad():
+            scene = model([img], device="cpu")
+            task.progress = 0.8
+            task._check_cancel()
+            # 96 keeps the 96^3 marching-cubes grid + decoder under 4 GB;
+            # higher values OOM on this class of machine.
+            mesh = model.extract_mesh(
+                scene.float(), True, resolution=96)[0]
+    finally:
+        del model
+        import gc  # noqa: PLC0415
+        gc.collect()
+    return mesh
 
 
 def _load_pipeline(model_id: str, mode: str) -> Any:
