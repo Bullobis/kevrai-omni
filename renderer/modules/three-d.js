@@ -30,11 +30,7 @@ const MODELS = [
 let localVram = null;
 
 function body(res) { return (res && res.body) ? res.body : res; }
-function escapeHtml(s) {
-  return String(s == null ? "" : s)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
+import { escapeHtml } from "./net.js";
 
 function currentModel() {
   const sel = $("#3d-model");

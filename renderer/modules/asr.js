@@ -17,11 +17,10 @@ const LANGUAGES = [
   ["hi", "हिन्दी"], ["th", "ไทย"], ["vi", "Tiếng Việt"], ["id", "Indonesia"],
 ];
 
-function escapeHtml(s) {
-  return String(s == null ? "" : s)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
+// escapeHtml is imported (not redefined): a per-module copy is how the
+// renderer ended up with 12 slightly different escapers, 4 of which did not
+// escape single quotes. See renderer/modules/net.js.
+import { escapeHtml } from "./net.js";
 
 function fmtTime(v) {
   const ms = Math.round((v - Math.floor(v)) * 1000);

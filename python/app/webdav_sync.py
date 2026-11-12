@@ -266,12 +266,28 @@ def load_webdav_config(app_root: Path) -> dict[str, Any]:
     }
 
 
+#: Owner read/write only. The file holds a WebDAV password in cleartext, so a
+#: world-readable umask (the common 0022 default) must not decide its mode.
+_CONFIG_MODE = 0o600
+
+
 def save_webdav_config(app_root: Path, cfg: dict[str, Any]) -> Path:
+    """Atomically persist the WebDAV config with owner-only permissions.
+
+    v4.17.7: the password is stored in cleartext (the client needs it to build
+    Basic auth). ``tempfile.mkstemp`` already creates the temp file 0600, but
+    ``os.replace`` keeps that mode only while the *destination* does not
+    already exist with looser bits — and a config written by an older build
+    (or copied in by the user) may be 0644. The mode is therefore forced on
+    the temp file before the rename, and re-asserted on the destination.
+    """
     fp = _config_path(app_root)
     fp.parent.mkdir(parents=True, exist_ok=True)
     blob = json.dumps(cfg, indent=2, ensure_ascii=False)
     fd, tmp = tempfile.mkstemp(prefix=".webdav-", suffix=".tmp", dir=str(fp.parent))
     try:
+        with contextlib.suppress(OSError):
+            os.chmod(tmp, _CONFIG_MODE)
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             fh.write(blob)
             fh.flush()
@@ -282,6 +298,9 @@ def save_webdav_config(app_root: Path, cfg: dict[str, Any]) -> Path:
         with contextlib.suppress(OSError):
             os.unlink(tmp)
         raise
+    # Windows ignores POSIX modes; suppress so the save still succeeds there.
+    with contextlib.suppress(OSError):
+        os.chmod(fp, _CONFIG_MODE)
     return fp
 
 

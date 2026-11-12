@@ -118,10 +118,11 @@ def local_server() -> Iterator[tuple[str, Callable[[bytes], None]]]:
 @pytest.mark.parametrize(
     "url,refused",
     [
-        # v2.2.0: ANY http(s) URL is accepted; only bad schemes are refused.
+        # v4.17.7: default-deny — only curated hosts pass without an explicit
+        # opt-out. ``example.com`` is no longer accepted by default.
         ("https://huggingface.co/foo/bar", False),
         ("https://hf-mirror.com/foo", False),
-        ("https://example.com/foo", False),
+        ("https://example.com/foo", True),
         # P0-3: hf-cdn.sufy.com is a phishing typosquat on the hard-block list —
         # refused unconditionally (even though no allowlist is enforced here).
         ("https://hf-cdn.sufy.com/foo", True),
@@ -178,9 +179,23 @@ def test_credential_bearing_download_allows_trusted_hosts():
                    has_auth_header=True)  # must not raise
 
 
-def test_plain_download_without_credential_still_permissive():
-    """Without a credential, the permissive default is preserved (backward compat)."""
-    _check_url("https://attacker.example/collect")  # must not raise
+def test_plain_download_without_credential_is_default_deny():
+    """v4.17.7: default-deny. Without an explicit opt-out, a host outside the
+    curated allowlist is refused even when no credential is attached.
+
+    This replaces the old ``test_plain_download_without_credential_still_
+    permissive``, which asserted the opposite and contradicted SECURITY.md.
+    """
+    with pytest.raises(DownloadRefused):
+        _check_url("https://attacker.example/collect")
+
+
+def test_explicit_opt_out_restores_permissive_mode():
+    """A caller that has already validated the URL can opt out explicitly."""
+    dl = Downloader(max_concurrent=1, enforce_allowlist=False)
+    assert dl._enforce_allowlist is False
+    # The module-level helper still enforces unless told otherwise.
+    _check_url("https://attacker.example/collect", enforce_allowlist=False)
 
 
 @pytest.mark.asyncio
@@ -305,9 +320,7 @@ async def test_downloader_sha_mismatch_marks_failed(tmp_path: Path, local_server
 
 @pytest.mark.asyncio
 async def test_downloader_rejects_disallowed_host(tmp_path: Path):
-    """v2.2.0: permissive default — any http(s) URL is accepted; only bad
-    schemes are refused. We test that an ftp URL is rejected (it is the
-    only URL policy that still fires)."""
+    """A non-http(s) scheme is refused before any host policy is consulted."""
     client = httpx.AsyncClient(follow_redirects=True, timeout=30.0)
     dl = Downloader(max_concurrent=1, client=client)
     with pytest.raises(DownloadRefused):
@@ -316,21 +329,32 @@ async def test_downloader_rejects_disallowed_host(tmp_path: Path):
 
 
 @pytest.mark.asyncio
-async def test_downloader_accepts_any_https_host(tmp_path: Path):
-    """Permissive default: any well-formed https URL (outside the hard-block
-    list) is accepted up-front; the user opts in via the in-app sources panel."""
+async def test_downloader_refuses_host_outside_allowlist(tmp_path: Path):
+    """v4.17.7 default-deny: a plain (credential-free) download to a host
+    outside the curated allowlist is refused up-front.
+
+    Replaces ``test_downloader_accepts_any_https_host``, which asserted the
+    old permissive default that SECURITY.md never documented.
+    """
     client = httpx.AsyncClient(follow_redirects=True, timeout=30.0)
     dl = Downloader(max_concurrent=1, client=client)
-    # Should NOT raise — any https URL is allowed (blocked mirrors are the
-    # exception, covered by their own test). We don't actually fetch (network
-    # blocked in tests), so we just check the URL is not rejected up-front.
-    try:
+    with pytest.raises(DownloadRefused):
         await dl.start("https://example.com/file", tmp_path / "out")
-    except (FileExistsError, DownloadRefused) as e:
-        if isinstance(e, DownloadRefused):
-            pytest.fail(f"https URL was refused: {e}")
+    await client.aclose()
+
+
+@pytest.mark.asyncio
+async def test_downloader_accepts_allowlisted_host(tmp_path: Path):
+    """A host on the curated allowlist passes validation (no fetch needed)."""
+    client = httpx.AsyncClient(follow_redirects=True, timeout=30.0)
+    dl = Downloader(max_concurrent=1, client=client)
+    try:
+        await dl.start("https://huggingface.co/owner/repo/resolve/main/m.bin",
+                       tmp_path / "out")
+    except DownloadRefused as e:  # pragma: no cover — would be a regression
+        pytest.fail(f"allowlisted host was refused: {e}")
     except Exception:
-        # Network errors are fine; the URL passed validation.
+        # Network/disk errors are fine; the URL passed validation.
         pass
     await client.aclose()
 

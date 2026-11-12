@@ -153,9 +153,10 @@ def import_transformers(data_root: Path | None = None) -> Any:
     """
     _bootstrap_sys_path(data_root)
     try:
-        import numpy as _np  # noqa: F401 — fully init numpy before accelerate
+        import numpy as _np  # fully init numpy before accelerate
         import transformers  # type: ignore
 
+        assert _np is not None  # noqa: S101 — proves the import executed
         return transformers
     except Exception as e:  # noqa: BLE001 — surface any native load failure
         raise MusicEngineMissing(
@@ -271,7 +272,7 @@ class MusicManager:
             tried.append(f"ace_step.AceStepPipeline（{type(e).__name__}: {e}）")
 
         try:
-            import torch  # noqa: F401
+            import torch  # noqa: F401  — native libs must load before diffusers
             from diffusers import DiffusionPipeline  # type: ignore
 
             pipe = DiffusionPipeline.from_pretrained(str(source))

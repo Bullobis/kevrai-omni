@@ -395,8 +395,8 @@ class LtxManager:
 def _load_pipeline(model_id: str, mode: str, task: LtxTask) -> Any:
     """Load the LTX-2.5 diffusers pipeline. Tries known class names."""
     try:
-        import torch  # noqa: F401
-        from diffusers import DiffusionPipeline
+        import diffusers  # noqa: F401  — presence check only
+        import torch  # noqa: F401  — imported for its side effect (native libs)
     except ImportError as e:
         raise LtxEngineMissing(
             "LTX-2.5 需要先安装推理引擎：pip install torch diffusers transformers accelerate imageio imageio-ffmpeg"
@@ -411,7 +411,6 @@ def _load_pipeline(model_id: str, mode: str, task: LtxTask) -> Any:
     pipe = None
     for cls_name in names:
         try:
-            import diffusers
             cls = getattr(diffusers, cls_name, None)
             if cls is None:
                 continue
@@ -562,8 +561,8 @@ def capabilities() -> dict[str, Any]:
     engine_error = ""
     cuda = False
     try:
-        import diffusers  # noqa: F401
-        import torch  # noqa: F401
+        import diffusers  # noqa: F401  — presence check only
+        import torch
         engine_ready = True
         cuda = bool(torch.cuda.is_available())
     except ImportError as e:

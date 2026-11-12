@@ -19,11 +19,7 @@ const MODEL_LABELS = {
   htdemucs_6s: "separation.htdemucs6s",
 };
 
-function escapeHtml(s) {
-  return String(s == null ? "" : s)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
+import { escapeHtml } from "./net.js";
 
 async function refresh() {
   const root = $("#pane-separation");

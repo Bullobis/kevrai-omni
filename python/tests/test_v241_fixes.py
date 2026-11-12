@@ -136,7 +136,7 @@ async def test_downloader_no_headers_by_default(tmp_path):
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     dl = Downloader(client=client)
-    tid = await dl.start("https://example.com/a.bin", tmp_path / "a.bin")
+    tid = await dl.start("https://huggingface.co/a.bin", tmp_path / "a.bin")
     for _ in range(400):
         snap = await dl.progress(tid)
         if snap["status"] in ("done", "failed"):

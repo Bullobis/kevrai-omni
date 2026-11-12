@@ -76,6 +76,15 @@ ignore = [
 # argv is a fixed list with no shell, and no user input is ever split into
 # arguments, so S607 ("partial executable path") does not apply here.
 "app/agent/skill_hub.py" = ["S607"]
+# ``main.py`` must set HF_HOME / HF_HUB_* environment variables *before*
+# importing ``huggingface_hub`` (it reads them at import time), so a block of
+# imports deliberately sits below that setup. E402 is the point, not a slip.
+"app/main.py" = ["E402"]
+# ``engines.py`` / ``plugins.py`` invoke external tools (zstd, git, pip) with a
+# fixed argv list, no shell, and a path resolved by ``_tool_path``. S603 flags
+# any subprocess call; the argv-list form is the safe one.
+"app/engines.py" = ["S603"]
+"app/plugins.py" = ["S603"]
 
 [tool.mypy]
 python_version = "3.10"

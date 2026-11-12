@@ -20,11 +20,7 @@ let templates = [];
 const SAMPLERS = ["euler", "euler_ancestral", "dpmpp_2m", "dpmpp_2m_sde", "dpmpp_3m_sde", "lcm", "ddim"];
 const SCHEDULERS = ["normal", "karras", "exponential", "simple", "beta"];
 
-function escapeHtml(s) {
-  return String(s == null ? "" : s)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
+import { escapeHtml } from "./net.js";
 
 function body(res) {
   return (res && res.body) ? res.body : res;

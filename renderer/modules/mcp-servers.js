@@ -11,19 +11,13 @@
 import { api } from "./api.js";
 import { toast } from "./toast.js";
 import { t } from "./i18n.js";
-import { unwrap } from "./net.js";
+import { unwrap, escapeHtml } from "./net.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 
 /** HTML-escape a string for safe insertion into server/tool rendering. */
-export function escapeHtml(s) {
-  return String(s == null ? "" : s)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
+// Single shared implementation (net.js); re-exported for existing importers.
+export { escapeHtml };
 
 /**
  * Parse a newline-separated arguments textarea into an argv list. Blank lines

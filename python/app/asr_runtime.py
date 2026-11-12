@@ -17,6 +17,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import os
+import re
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -28,6 +29,49 @@ log = logging.getLogger("kevrai.asr")
 
 ENGINE_ID = "faster-whisper"
 _PIP_DIR = "pip-faster-whisper"
+
+#: Whisper's accepted size aliases (faster-whisper maps these onto the
+#: Systran repos internally), so a bare alias is a legitimate model argument.
+_WHISPER_SIZE_ALIASES = frozenset({
+    "tiny", "tiny.en", "base", "base.en", "small", "small.en",
+    "medium", "medium.en", "large", "large-v1", "large-v2", "large-v3",
+    "large-v3-turbo", "turbo",
+})
+
+#: One ``owner`` or ``name`` component of a HuggingFace repo id. Deliberately
+#: strict: no ``..``, no leading dot, no scheme, no query, no backslash or NUL
+#: — the id is joined onto a filesystem path by :func:`_hub_model_dir`.
+_HF_COMPONENT_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$")
+
+def _validate_model_arg(repo: Any) -> str:
+    """Validate and normalise the ``model`` argument.
+
+    Accepts a documented whisper size alias (``tiny`` … ``large-v3-turbo``) or
+    a strict ``owner/name`` HuggingFace repo id, and returns the normalised
+    string. Anything else raises :class:`AsrParamError`.
+
+    v4.17.7: the v4.17.6 relaxation to "non-empty" let arbitrary strings
+    through — including ``../../etc`` and ``https://host/x`` — which are then
+    joined onto a local path by ``_hub_model_dir`` and handed to
+    faster-whisper as a model argument. That both broke
+    ``tests/test_v405_asr_runtime.py::test_bad_repo`` and left a path /
+    argument injection surface open.
+    """
+    repo_id = repo.strip().rstrip("/") if isinstance(repo, str) else ""
+    if not repo_id:
+        raise AsrParamError("model must not be empty")
+    if repo_id.lower() in _WHISPER_SIZE_ALIASES:
+        return repo_id
+    parts = repo_id.split("/")
+    # A repo id must be exactly ``owner/name``. A bare single component that is
+    # not a size alias is not a model reference faster-whisper can resolve.
+    if len(parts) != 2 or not all(_HF_COMPONENT_RE.match(p) for p in parts):
+        raise AsrParamError(
+            "model must be a HuggingFace repo id (owner/name) or a "
+            f"whisper size alias such as 'large-v3': {repo!r}"
+        )
+    return repo_id
+
 
 # Whisper's 99 supported languages (ISO-639-1), used only to validate input.
 _WHISPER_LANGS = {
@@ -356,11 +400,7 @@ class AsrManager:
                    vad_filter: bool = True, word_timestamps: bool = False,
                    device: str = "auto", compute_type: str = "auto") -> dict[str, Any]:
         """Transcribe ``audio`` (path or raw bytes) with model ``repo``."""
-        # faster-whisper 官方既接受 owner/name，也接受 tiny/base/small/
-        # medium/large-v3/turbo 等尺寸别名（它内部会映射到 Systran 仓库）。
-        # 这里只做空值校验，具体合法性别名交给上游判断，避免把官方用法拒掉。
-        if not isinstance(repo, str) or not repo.strip():
-            raise AsrParamError("model must not be empty")
+        repo_id = _validate_model_arg(repo)
         if language is not None and language.lower() not in _WHISPER_LANGS:
             raise AsrParamError(f"unsupported language code: {language!r}")
         if task not in {"transcribe", "translate"}:
@@ -383,8 +423,10 @@ class AsrManager:
             if not Path(audio_arg).exists():
                 raise AsrParamError(f"audio file not found: {audio_arg}")
 
+        # v4.17.7: load the *validated/normalised* id, not the raw argument —
+        # otherwise the validation above would be advisory only.
         model, _fw, source, ctype = self.load(
-            repo, device=device, compute_type=compute_type
+            repo_id, device=device, compute_type=compute_type
         )
         try:
             segments_iter, info = model.transcribe(

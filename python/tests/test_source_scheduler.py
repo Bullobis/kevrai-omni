@@ -267,12 +267,16 @@ async def test_all_sources_fail_returns_empty_best(registry, monkeypatch):
 
 def test_preset_sources_have_expected_states():
     reg = SourceRegistry(persist_path=None)
-    # hf-mirror.com + modelscope enabled; the 4 dead mirrors disabled.
+    # hf-mirror.com + modelscope enabled; the 3 dead mirrors disabled.
     assert reg.get("hf-mirror-com").enabled is True
     assert reg.get("modelscope").enabled is True
     for dead in ("hf-mirror-us", "hf-cn-mirror-com",
-                 "huggingface-dl-in-tel", "hf-cdn-sufy-com"):
+                 "huggingface-dl-in-tel"):
         assert reg.get(dead).enabled is False
+    # v4.17.7: the phishing typosquat is no longer shipped as a preset at all
+    # (it used to be a disabled preset, which still surfaced it in the UI's
+    # mirror picker). It stays hard-blocked at download time.
+    assert reg.get("hf-cdn-sufy-com") is None
     # gitcode present but disabled by default
     assert reg.get("gitcode").enabled is False
     # github is the engine source

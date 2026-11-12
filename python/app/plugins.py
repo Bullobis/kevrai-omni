@@ -44,14 +44,31 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import logging
 import re
+import shutil
 import subprocess
 import sys
-from dataclasses import dataclass, field, asdict
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from .pip_exec import pip_command
+
+log = logging.getLogger(__name__)
+
+
+def _tool_path(name: str) -> str:
+    """Resolve an external tool to an absolute path (v4.17.7, S607).
+
+    A bare ``"git"`` is resolved through ``PATH``, so a writable directory
+    earlier in ``PATH`` can shadow the real binary. :func:`shutil.which` pins
+    the absolute path; when the tool is absent the bare name is returned so the
+    caller's existing ``FileNotFoundError`` handling still applies.
+    """
+    found = shutil.which(name)
+    return found or name
 
 #: 插件 id 会被直接拼进文件系统路径（plugins/<id>），因此必须是受限字符集。
 #: 只允许字母数字点划线，且不能是 "." / ".."：否则 "../../x" 会把
@@ -88,7 +105,7 @@ class PluginAPI:
         self._registered_routes: list[tuple[str, str, Callable]] = []
 
     @property
-    def plugin(self) -> "PluginAPI":
+    def plugin(self) -> PluginAPI:
         """Namespace alias so the documented ``@kevrai.plugin.tool(...)``
         style works alongside the shorter ``@kevrai.tool(...)``."""
         return self
@@ -278,11 +295,11 @@ class PluginManager:
 
         if target.exists():
             # Update existing
-            subprocess.run(["git", "-C", str(target), "pull", "--ff-only"],
+            subprocess.run([_tool_path("git"), "-C", str(target), "pull", "--ff-only"],
                            check=False, timeout=30)
         else:
             subprocess.run(
-                ["git", "clone", "--depth", "1", git_url, str(target)],
+                [_tool_path("git"), "clone", "--depth", "1", git_url, str(target)],
                 check=True, timeout=60,
             )
 
@@ -320,7 +337,7 @@ class PluginManager:
         # 1. Install Python deps if requirements.txt present
         reqs = plugin_dir / "requirements.txt"
         if reqs.exists():
-            subprocess.run(
+            subprocess.run(  # noqa: S603 — argv list, no shell, resolved path
                 [*pip_command(), "install",
                  "--target", str(plugin_dir / "_deps"), "-r", str(reqs)],
                 check=False, timeout=120,
@@ -433,11 +450,13 @@ class PluginManager:
             try:
                 app.add_api_route(path, fn, methods=[method])
                 mounted.add((path, method, fn))
-            except Exception:
-                pass
+            except Exception as e:  # noqa: BLE001 — one bad route must not
+                # abort mounting the plugin's remaining routes, but it must be
+                # visible (v4.17.7: was a silent ``pass``, ruff S110).
+                log.warning("plugins: failed to mount route %s %s: %s", method, path, e)
         self._mounted = mounted
 
-    def _unmount_routes(self, handle: "PluginAPI | None") -> None:
+    def _unmount_routes(self, handle: PluginAPI | None) -> None:
         """Best-effort removal of a deactivated plugin's routes from the app."""
         if handle is None:
             return
@@ -451,7 +470,7 @@ class PluginManager:
                 r for r in router.routes
                 if getattr(r, "endpoint", None) not in fns
             ]
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001 — best-effort unmount
+            log.warning("plugins: failed to unmount routes: %s", e)
         mounted: set = getattr(self, "_mounted", set())
         self._mounted = {(p, m, f) for p, m, f in mounted if f not in fns}

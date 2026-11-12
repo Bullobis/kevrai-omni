@@ -23,11 +23,7 @@ const ENGINES = [
   { id: "chatterbox", label: "Chatterbox" },
 ];
 
-function escapeHtml(s) {
-  return String(s == null ? "" : s)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
+import { escapeHtml } from "./net.js";
 
 function isInstalled(engine) {
   if (engine === "piper") return Boolean(cap.installed);
