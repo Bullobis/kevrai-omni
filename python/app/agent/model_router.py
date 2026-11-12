@@ -154,11 +154,13 @@ class ModelRouter:
                 # 文本会退化成符号串（SmolLM2 实测输出「；；；」）。
                 if hasattr(manager, "answer"):
                     text = (manager.answer(repo or "", prompt, system=system,
-                                           max_new_tokens=max_new_tokens)
+                                           max_new_tokens=max_new_tokens,
+                                           should_stop=should_stop)
                             or "").strip()
                 else:  # 兼容旧 manager / 测试替身
                     text = (manager.generate(repo or "", prompt,
-                                             max_new_tokens=max_new_tokens)
+                                             max_new_tokens=max_new_tokens,
+                                             should_stop=should_stop)
                             or "").strip()
                 if not text:
                     return {"ok": False, "error": "LLM returned empty text",
