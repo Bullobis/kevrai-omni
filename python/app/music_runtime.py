@@ -57,6 +57,17 @@ KNOWN_MODELS: dict[str, str] = {
 #: 每个模型的许可与门槛。UI 展示模型时必须连带展示这些事实 ——
 #: "下载了就能商用"是这个领域最常见的误解，而且后果是法律风险。
 LICENSE_WARNINGS: dict[str, dict[str, str]] = {
+    # 内置合成音源：不下载任何权重，用本地振荡器/sample 生成占位音频。
+    # 必须登记，否则 test_every_known_model_has_license_entry 会失败，
+    # 且 UI 会因查不到条目而把"无许可信息"渲染成"可商用"。
+    "preview-music": {
+        "license": "NOASSERTION",
+        "commercial": "false",
+        "note": (
+            "内置占位音源，不含真实模型权重，仅用于未安装引擎时的流程演示；"
+            "输出为合成正弦/噪声片段，不可当作成品音乐使用。"
+        ),
+    },
     "minimax-music3": {
         "license": "CC BY-NC 4.0",
         "commercial": "false",
