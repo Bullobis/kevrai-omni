@@ -155,10 +155,28 @@ step "1. npm install (verified)"
 # Use npmmirror.com in CN (npmjs.org is often blocked in sandboxed CI).
 npm config set registry https://registry.npmmirror.com 2>/dev/null || true
 export ELECTRON_MIRROR="${ELECTRON_MIRROR:-https://cdn.npmmirror.com/binaries/electron/}"
-if [ -f package-lock.json ]; then
-  npm ci --no-audit --no-fund 2>&1 | tail -5 || fail "npm ci failed"
-else
-  npm install --no-audit --no-fund 2>&1 | tail -5 || fail "npm install failed"
+
+# Reuse an already-populated node_modules instead of re-resolving the tree.
+# `npm ci` deletes node_modules first, which needs ~600 MB of free disk and a
+# full network round trip; on a machine that already has a verified install
+# that is pure waste and, on a small sandbox, a hard failure.  Set
+# KEVRAI_FORCE_NPM_INSTALL=1 to force a clean reinstall.
+_nm_ok=0
+if [ "${KEVRAI_FORCE_NPM_INSTALL:-0}" != "1" ] \
+   && [ -f node_modules/.package-lock.json ] \
+   && [ -d node_modules/electron ] \
+   && [ -d node_modules/electron-builder ] \
+   && [ -d node_modules/app-builder-bin ]; then
+  _nm_ok=1
+  echo "  reusing existing node_modules (set KEVRAI_FORCE_NPM_INSTALL=1 to reinstall)"
+fi
+
+if [ "${_nm_ok}" -eq 0 ]; then
+  if [ -f package-lock.json ]; then
+    npm ci --no-audit --no-fund 2>&1 | tail -5 || fail "npm ci failed"
+  else
+    npm install --no-audit --no-fund 2>&1 | tail -5 || fail "npm install failed"
+  fi
 fi
 
 # Belt-and-suspenders: package-lock-written + node_modules populated.
@@ -171,14 +189,31 @@ fi
 echo "  ✓ node_modules populated"
 
 # ----------------------------------------------------------------------
-step "2. python deps install (verified exit 0)"
+step "2. python deps install in an isolated venv (verified exit 0)"
 # ----------------------------------------------------------------------
-${PY} -m pip install -i "${INDEX}" --disable-pip-version-check \
+# Never install into the system interpreter: a build must not mutate the host
+# environment, and on Debian/Ubuntu a system pip install is refused outright
+# (PEP 668 "externally-managed-environment").  A dedicated venv is created
+# once and reused; KEVRAI_BUILD_VENV overrides its location.
+BUILD_VENV="${KEVRAI_BUILD_VENV:-${PWD}/.venv-build}"
+if [ ! -x "${BUILD_VENV}/bin/python" ] && [ ! -x "${BUILD_VENV}/Scripts/python.exe" ]; then
+  echo "  creating build venv at ${BUILD_VENV}"
+  "${PY}" -m venv "${BUILD_VENV}" || fail "could not create venv at ${BUILD_VENV}"
+fi
+if [ -x "${BUILD_VENV}/bin/python" ]; then
+  PY="${BUILD_VENV}/bin/python"
+else
+  PY="${BUILD_VENV}/Scripts/python.exe"
+fi
+echo "  venv python: ${PY}"
+
+"${PY}" -m pip install -q --upgrade pip >/dev/null 2>&1 || true
+"${PY}" -m pip install -i "${INDEX}" --disable-pip-version-check \
   -r python/requirements.txt || fail "pip install failed"
 
 # quick import probe — catches the case where deps installed but the venv
 # can't actually use them (broken .pth files, ABI mismatch, etc.).
-${PY} -c "import fastapi, httpx, pydantic; print('  python deps importable')" \
+"${PY}" -c "import fastapi, httpx, pydantic; print('  python deps importable')" \
   || fail "python deps installed but not importable"
 
 # ----------------------------------------------------------------------
