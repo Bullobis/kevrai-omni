@@ -8,11 +8,7 @@ const $ = (s, r = document) => r.querySelector(s);
 
 let embInited = false;
 
-function escapeHtml(s) {
-  return String(s == null ? "" : s)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
+import { escapeHtml } from "./net.js";
 
 async function refresh() {
   const root = $("#pane-embeddings");

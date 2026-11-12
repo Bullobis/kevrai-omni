@@ -15,6 +15,7 @@ Hardening changes:
 from __future__ import annotations
 
 import asyncio
+
 # Fire-and-forget background tasks (e.g. retiring old HTTP pools) must keep a
 # strong reference until they finish, or the event loop may GC them mid-flight.
 BG_TASKS: set[asyncio.Task] = set()
@@ -72,9 +73,9 @@ from . import (
     embedding_runtime,
     knowledge_base,
     ltx_runtime,
+    ming_tts_runtime,
     mnn_runtime,
     multimodal_runtime,
-    ming_tts_runtime,
     music_runtime,
     ocr_runtime,
     piper_runtime,
@@ -1312,7 +1313,9 @@ async def install_plugin(request: Request, body: dict[str, Any]) -> dict[str, An
     try:
         meta = await asyncio.to_thread(_pm(request).install, git_url, body.get("id"))
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        # v4.17.7 (B904): chain the cause so the sidecar log keeps the original
+        # traceback instead of only the stringified message.
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     return {"ok": True, "plugin": meta.to_dict()}
 
 
@@ -1320,10 +1323,10 @@ async def install_plugin(request: Request, body: dict[str, Any]) -> dict[str, An
 async def activate_plugin(request: Request, plugin_id: str) -> dict[str, Any]:
     try:
         meta = await asyncio.to_thread(_pm(request).activate, plugin_id)
-    except KeyError:
-        raise HTTPException(status_code=404, detail=f"plugin {plugin_id} not found")
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"plugin {plugin_id} not found") from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     return {"ok": True, "plugin": meta.to_dict()}
 
 
@@ -1331,8 +1334,8 @@ async def activate_plugin(request: Request, plugin_id: str) -> dict[str, Any]:
 async def deactivate_plugin(request: Request, plugin_id: str) -> dict[str, Any]:
     try:
         meta = await asyncio.to_thread(_pm(request).deactivate, plugin_id)
-    except KeyError:
-        raise HTTPException(status_code=404, detail=f"plugin {plugin_id} not found")
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"plugin {plugin_id} not found") from exc
     return {"ok": True, "plugin": meta.to_dict()}
 
 
@@ -1340,8 +1343,8 @@ async def deactivate_plugin(request: Request, plugin_id: str) -> dict[str, Any]:
 async def uninstall_plugin(request: Request, plugin_id: str) -> dict[str, Any]:
     try:
         await asyncio.to_thread(_pm(request).uninstall, plugin_id)
-    except KeyError:
-        raise HTTPException(status_code=404, detail=f"plugin {plugin_id} not found")
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"plugin {plugin_id} not found") from exc
     return {"ok": True, "plugin_id": plugin_id}
 
 
@@ -4021,15 +4024,19 @@ def knowledge_ask(request: Request, kb_id: str, req: KbAskReq) -> dict[str, Any]
     mgr = _knowledge_manager(request)
     _require_kb(mgr, kb_id)
 
-    brain = None
+    # NOTE (v4.17.7): the callable is bound first and the annotation stays
+    # ``Callable | None``. Previously the helper was *redefined* by ``def
+    # brain(...)`` inside the ``if`` block, so pyflakes reported
+    # "redefinition of unused 'brain'" and the outer ``brain = None`` was dead.
+    brain: Any = None
     if req.brain_model and "/" in req.brain_model:
         from .llm_runtime import TextBrainManager
 
-        manager = TextBrainManager(APP_ROOT)
-        repo = req.brain_model
+        _manager = TextBrainManager(APP_ROOT)
+        _repo = req.brain_model
 
-        def brain(system: str, prompt: str) -> str:
-            return manager.generate(repo, prompt, system=system)
+        def brain(system: str, prompt: str) -> str:  # noqa: F811 — intentional rebind
+            return _manager.generate(_repo, prompt, system=system)
 
     try:
         return mgr.ask(kb_id, req.question, req.top_k, brain=brain,
@@ -4092,16 +4099,18 @@ async def ws_knowledge_ask(websocket: WebSocket, kb_id: str) -> None:
     brain_model = str(data.get("brain_model") or "")
 
     # Build the brain_stream callable (system, prompt) -> iterator[str].
-    brain_stream = None
+    # v4.17.7: bound once with a typed placeholder; the previous
+    # ``brain_stream = None`` followed by ``def brain_stream(...)`` was a
+    # redefinition (pyflakes) that made the default-value trick redundant.
+    brain_stream: Any = None
     if brain_model and "/" in brain_model:
         from .llm_runtime import TextBrainManager
 
-        manager = TextBrainManager(APP_ROOT)
-        repo = brain_model
+        _manager = TextBrainManager(APP_ROOT)
+        _repo = brain_model
 
-        def brain_stream(sys_prompt: str, prompt: str, _repo: str = repo,
-                         _mgr: TextBrainManager = manager):
-            return _mgr.answer_stream(_repo, prompt, system=sys_prompt)
+        def brain_stream(sys_prompt: str, prompt: str) -> Any:  # noqa: F811
+            return _manager.answer_stream(_repo, prompt, system=sys_prompt)
 
     # Run the synchronous generator on a worker thread, forwarding events to
     # the websocket as they arrive.

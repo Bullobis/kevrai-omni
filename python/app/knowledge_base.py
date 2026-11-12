@@ -297,12 +297,23 @@ _IMAGE_MARK = "【图片内容】"
 
 
 def _xml_fromstring_strict(xml_bytes: bytes):
-    """Parse XML via defusedxml when available, else stdlib ElementTree."""
+    """Parse XML via defusedxml. ``defusedxml`` is a hard dependency.
+
+    v4.17.7: the previous version silently fell back to stdlib
+    ``xml.etree.ElementTree`` when defusedxml was missing, which re-opened
+    billion-laughs / external-entity expansion on a user-supplied .docx. A
+    missing dependency must fail loudly instead: ``defusedxml==0.7.1`` is
+    pinned in ``requirements.txt`` and ``pyproject.toml``, so absence means a
+    broken install, not a supported mode.
+    """
     try:
         from defusedxml.ElementTree import fromstring as _fs
-    except Exception:  # noqa: BLE001 — defusedxml not installed
-        from xml.etree.ElementTree import fromstring as _fs  # noqa: S314
-    return _fs(xml_bytes)  # noqa: S314
+    except ImportError as exc:  # pragma: no cover — dependency is pinned
+        raise KnowledgeError(
+            "defusedxml is required for .docx/.pptx ingestion but is not "
+            "installed; run `pip install defusedxml==0.7.1`"
+        ) from exc
+    return _fs(xml_bytes)
 
 
 def _load_rels(zf, rels_path: str) -> dict[str, str]:
@@ -464,8 +475,8 @@ def extract_pptx_bytes(data: bytes,
 
     Slides live at ``ppt/slides/slideN.xml``; visible text is in DrawingML
     ``<a:t>`` runs. Slides are read in numeric order and joined with newlines.
-    Uses defusedxml when available for entity-expansion hardening. A corrupt /
-    non-pptx file raises :class:`KnowledgeParamError` (route → 400).
+    Uses defusedxml (a hard dependency) for entity-expansion hardening. A
+    corrupt / non-pptx file raises :class:`KnowledgeParamError` (route → 400).
 
     When ``ocr_callable`` is provided, raster images referenced by each slide
     (``ppt/media/*`` via ``ppt/slides/_rels/slideN.xml.rels``) are OCR'd and

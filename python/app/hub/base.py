@@ -83,7 +83,12 @@ def synth_id(hub: str, repo: str) -> str:
     and for the renderer's selected-state keying.
     """
     prefix = _HUB_PREFIX.get(hub, re.sub(r"[^A-Za-z0-9]", "", hub)[:4] or "x")
-    digest = hashlib.sha1(f"{hub}/{repo}".encode()).hexdigest()[:16]  # noqa: S324 — non-crypto id
+    # v4.17.7: ``usedforsecurity=False`` states the intent to bandit and to
+    # any FIPS-mode Python build (where plain sha1 raises). This is a stable
+    # synthetic id, not a security primitive.
+    digest = hashlib.sha1(
+        f"{hub}/{repo}".encode(), usedforsecurity=False
+    ).hexdigest()[:16]
     return f"{prefix}-{digest}"
 
 
@@ -596,7 +601,11 @@ class SearchSpec:
             str(self.page_size),
             ",".join(self.sources),
         ])
-        return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]  # noqa: S324 — non-crypto cache key
+        # v4.17.7: non-crypto cache key — ``usedforsecurity=False`` keeps this
+        # working on FIPS-mode builds and tells bandit the intent.
+        return hashlib.sha1(
+            raw.encode("utf-8"), usedforsecurity=False
+        ).hexdigest()[:12]
 
 
 @dataclass

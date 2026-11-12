@@ -13,14 +13,12 @@
 
 import { t } from "./i18n.js";
 
-export function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
+// Single shared implementation (net.js); re-exported for existing importers.
+// The previous local copy used bare ``String(s)``, which turned null/undefined
+// into the literal text "null"/"undefined" inside rendered markdown.
+import { escapeHtml } from "./net.js";
+
+export { escapeHtml };
 
 const ALLOWED_LINK_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
 

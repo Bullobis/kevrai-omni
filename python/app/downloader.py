@@ -7,10 +7,15 @@ Design goals:
     * Concurrency cap via `asyncio.Semaphore` (configurable per-Downloader).
     * Cooperative cancellation — `cancel(task_id)` flips a flag; the
       streaming loop checks the flag after every chunk.
-    * **No host blocklist**: any http(s) URL is acceptable. An optional
-      `enforce_host_allowlist` setting (default OFF) re-enables the
-      positive allowlist from `app.catalog` for users who want stricter
-      behaviour.
+    * **Default-deny host policy** (v4.17.7): a URL is only fetchable when
+      its host is in the positive allowlist from `app.catalog`. Pass
+      `allowed_hosts=` for a caller-specific set, `extra_allowed_hosts=` for
+      user mirrors, or `enforce_allowlist=False` to explicitly re-open the
+      old permissive behaviour inside an internal caller that has already
+      validated the URL itself. This matches `SECURITY.md`, which has always
+      documented default-deny at every download entry point — the code
+      previously did the opposite (`bool(allowed_hosts)` made enforcement
+      opt-in, so the default was to accept any host).
     * **Multi-source auto-pick**: callers may pass `candidates=[url1, ...]`
       and the Downloader speed-tests them, then streams from the fastest.
     * Per-task progress emitted through an `asyncio.Queue` the consumer can `await`.
@@ -24,6 +29,7 @@ import ipaddress
 import logging
 import os
 import re
+import shutil
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -87,6 +93,31 @@ _SSRF_LOCAL_HOSTNAMES = frozenset({
 })
 
 
+def _host_is_loopback(url: str) -> bool:
+    """True for a loopback target (127.0.0.0/8, ::1, ``localhost``).
+
+    Loopback is deliberately NOT an SSRF target (see ``_SSRF_IP_NETS``): the
+    downloader may legitimately talk to a local model/mirror server, and the
+    process runs on the same host a loopback target would reach anyway. It is
+    therefore also exempt from the positive allowlist — otherwise every local
+    mirror would need to be added to the curated host set by hand.
+    """
+    try:
+        host = (urlparse(url).hostname or "").strip("[]").lower()
+    except Exception:
+        return False
+    if not host:
+        return False
+    if host == "localhost" or host.endswith(".localhost"):
+        return True
+    if host.startswith("::ffff:"):
+        host = host[7:]
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
 def _host_is_ssrf_target(url: str) -> bool:
     """True when the URL targets an SSRF-prone host: a private / loopback /
     link-local IP literal, a localhost-like name, or a bare IPv4/IPv6 literal
@@ -148,11 +179,20 @@ TERMINAL_STATUSES: frozenset[DownloadStatus] = frozenset(
 DEFAULT_STALL_TIMEOUT_S = 600.0
 #: 看门狗巡检间隔。
 DEFAULT_WATCHDOG_INTERVAL_S = 30.0
-#: 磁盘预留空间：剩余低于此值时拒绝新下载。
+#: 磁盘预留空间上限：剩余低于此值时拒绝新下载。
 #:
 #: 不预检的后果是"下到一半才发现盘满了"。那时任务已经跑了几小时，失败
 #: 的代价远高于启动时拒绝。
+#:
+#: v4.17.7: 这是一个**上限**，不是固定值。旧代码把它当固定值用，于是在
+#: 总容量 4GB 的机器（或容器）上，2GB 预留意味着任何下载都被拒绝——
+#: 包括 200MB 的小模型。实际预留取 ``min(上限, max(256MB, 总容量/50))``，
+#: 即最多占磁盘 2%，小盘上自动缩小。
 DEFAULT_MIN_FREE_BYTES = 2 * 1024**3
+#: 自适应预留的下限（再小的盘也至少留这么多）。
+MIN_FREE_FLOOR_BYTES = 256 * 1024**2
+#: 自适应预留占磁盘总容量的比例（分母）。
+MIN_FREE_TOTAL_DIVISOR = 50
 class InsufficientDiskSpace(RuntimeError):
     """磁盘剩余空间不足以容纳这次下载。"""
 
@@ -321,17 +361,17 @@ class DownloadAllCandidatesFailed(Exception):
         super().__init__(" | ".join(self.errors) if self.errors else "all sources failed")
 
 
-def _check_url(url: str, *, enforce_allowlist: bool = False,
+def _check_url(url: str, *, enforce_allowlist: bool | None = None,
                has_auth_header: bool = False) -> None:
     """Validate a URL.
 
-    Permissive by default — only the scheme is checked. Pass
-    ``enforce_allowlist=True`` to additionally require the host to be in
-    ``DEFAULT_MODEL_HOSTS``.
+    v4.17.7: **default-deny**. The host must be in ``DEFAULT_MODEL_HOSTS``
+    unless the caller explicitly passes ``enforce_allowlist=False``. Loopback
+    targets are exempt (see :func:`_host_is_loopback`).
 
     P0-2: when ``has_auth_header`` is True (the request will carry an
     ``Authorization`` credential such as a gated HF Bearer token), the host
-    allowlist is FORCE-ENABLED regardless of the caller's opt-in. A credential
+    allowlist is FORCE-ENABLED regardless of the caller's opt-out. A credential
     must never be sent to a host outside the curated trusted set — otherwise a
     caller could trick the sidecar into exfiltrating the user's token to an
     arbitrary URL.
@@ -349,12 +389,13 @@ def _check_url(url: str, *, enforce_allowlist: bool = False,
     # target, regardless of allowlist — closes the classic SSRF.
     if _host_is_ssrf_target(url):
         raise DownloadRefused(f"host is not fetchable (SSRF target): {parsed.hostname}")
-    if has_auth_header:
+    if has_auth_header or enforce_allowlist is None:
         enforce_allowlist = True
-    if enforce_allowlist and not is_host_allowed(url, DEFAULT_MODEL_HOSTS):
+    if enforce_allowlist and not _host_is_loopback(url) \
+            and not is_host_allowed(url, DEFAULT_MODEL_HOSTS):
         raise DownloadRefused(
-            "host not in allowlist (credential-bearing downloads are restricted "
-            f"to trusted hosts): {parsed.hostname}"
+            "host not in allowlist (downloads are default-deny; add the host "
+            f"to the source registry to allow it): {parsed.hostname}"
         )
 
 
@@ -451,6 +492,7 @@ class Downloader:
         max_concurrent: int = 3,
         allowed_hosts: set[str] | None = None,
         extra_allowed_hosts: set[str] | None = None,
+        enforce_allowlist: bool | None = None,
         client: httpx.AsyncClient | None = None,
         chunk_size: int = DEFAULT_CHUNK,
         stream_retries: int = DEFAULT_STREAM_RETRIES,
@@ -498,7 +540,19 @@ class Downloader:
             self._allowed_hosts = set(base) | set(extra_allowed_hosts)
         else:
             self._allowed_hosts = set(base)
-        self._enforce_allowlist = bool(allowed_hosts)  # if caller passed set, enforce
+        # v4.17.7 (P0): DEFAULT-DENY. An unspecified policy means "enforce".
+        # Previously this read ``bool(allowed_hosts)``, so the default was to
+        # accept any host while SECURITY.md claimed default-deny at every
+        # entry point — a documentation/code contradiction that let a crafted
+        # download URL reach an arbitrary origin. Callers that genuinely want
+        # the old permissive behaviour must now say so explicitly, and passing
+        # an explicit ``allowed_hosts`` set always enforces it.
+        if enforce_allowlist is None:
+            self._enforce_allowlist = True
+        else:
+            self._enforce_allowlist = bool(enforce_allowlist)
+        if allowed_hosts is not None:
+            self._enforce_allowlist = True
         self._client = client
         self._client_owned = client is None
         # Connection pool built lazily in `_get_client` when no client was
@@ -629,10 +683,26 @@ class Downloader:
         free = dir_free_bytes(dest_path)
         # 取不到剩余空间（0）时按"不足"处理：宁可拒绝，也不让任务跑几小时后
         # 才发现盘满。
-        if free < needed + self._min_free_bytes:
+        if free < needed + self._effective_reserve(dest_path):
             raise InsufficientDiskSpace(
-                str(dest_path), free, needed + self._min_free_bytes
+                str(dest_path), free, needed + self._effective_reserve(dest_path)
             )
+
+    def _effective_reserve(self, dest_path: Path) -> int:
+        """实际预留字节数：上限与"总容量 2%"取小，但不低于 256MB。
+
+        v4.17.7: 固定 2GB 预留会在小盘/容器上把**所有**下载都拒掉。
+        总容量读不到时退回上限值（保守）。
+        """
+        cap = self._min_free_bytes
+        if cap <= 0:
+            return 0
+        try:
+            total = shutil.disk_usage(str(dest_path.parent)).total
+        except OSError:
+            return cap
+        adaptive = max(MIN_FREE_FLOOR_BYTES, total // MIN_FREE_TOTAL_DIVISOR)
+        return min(cap, adaptive)
 
     @staticmethod
     def scan_orphan_partials(
@@ -714,9 +784,13 @@ class Downloader:
             return
         remaining = max(0, total_bytes - have_bytes)
         free = dir_free_bytes(dest_path)
-        if free < remaining + self._min_free_bytes:
+        # v4.17.7: 与启动前预检用同一个自适应预留值。旧代码这里写死
+        # ``self._min_free_bytes``（默认 2GB），于是小盘机器上即使启动预检
+        # 放行了，拿到 Content-Length 后仍会被拒——两处策略必须一致。
+        reserve = self._effective_reserve(dest_path)
+        if free < remaining + reserve:
             raise InsufficientDiskSpace(
-                str(dest_path), free, remaining + self._min_free_bytes
+                str(dest_path), free, remaining + reserve
             )
 
     def _ensure_watchdog(self) -> None:
@@ -873,7 +947,8 @@ class Downloader:
         # carries an Authorization credential (P0-2): never leak a Bearer token
         # to a host outside the trusted set.
         enforce = self._enforce_allowlist or has_auth_header
-        if enforce and not is_host_allowed(url, self._allowed_hosts):
+        if enforce and not _host_is_loopback(url) \
+                and not is_host_allowed(url, self._allowed_hosts):
             raise DownloadRefused(f"host not in allowlist: {parsed.hostname}")
 
     def _build_candidate_chain(

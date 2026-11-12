@@ -231,7 +231,9 @@ def _find_mnnconvert() -> str | None:
         return which
     # 2) pymnn wheel ships a python converter (MNN.tools.converter)
     with contextlib.suppress(Exception):  # MNN not installed → fall through
-        import MNN  # noqa: F401
+        import MNN  # noqa: F401  — probe: only its submodules are imported
+        if not MNN:
+            return None
         for mod in ("MNN.tools.converter", "MNN.converter"):
             try:
                 __import__(mod, fromlist=["main"])

@@ -55,11 +55,11 @@ function readFileAsDataUrl(file) {
 let knowledgeInited = false;
 let currentKbId = null;
 
-export function escapeHtml(s) {
-  return String(s == null ? "" : s)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
+// Re-exported for the module's existing consumers/tests, but there is only one
+// implementation now (net.js). The local copy did not escape single quotes.
+import { escapeHtml } from "./net.js";
+
+export { escapeHtml };
 
 /**
  * Build HTML for the numbered source list attached to a grounded answer.

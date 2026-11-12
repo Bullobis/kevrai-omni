@@ -898,8 +898,10 @@ class EngineManager:
                 if "proc" in locals() and proc.poll() is None:
                     proc.kill()
                     proc.wait(timeout=10)
-            except Exception:
-                pass
+            except Exception as kill_err:  # noqa: BLE001 — never mask the real error
+                # v4.17.7: was a bare ``pass`` (ruff S110). Log it instead so a
+                # stuck/orphaned pip child is diagnosable from the sidecar log.
+                log.warning("engines: failed to kill pip child process: %s", kill_err)
             self._set_state(eid, EngineState.FAILED,
                             last_error=f"pip exception: {e}",
                             install_mode="pip")
@@ -1085,9 +1087,14 @@ def install_git_engine(
                 message=f"cloned {repo_url}",
             )
         msg = (proc.stderr or proc.stdout or "").strip()[-500:]
+        # v4.17.7: the old ``f"git clone failed: {msg}" or "git clone failed"``
+        # was dead logic (SIM222) — a non-empty f-string is always truthy, so
+        # the fallback never fired while an empty ``msg`` produced a dangling
+        # "git clone failed: ". Build the message conditionally instead.
+        message = f"git clone failed: {msg}" if msg else "git clone failed (no output)"
         return InstallResult(
             engine_id=eid, path=str(target), ok=False,
-            message=f"git clone failed: {msg}" or "git clone failed",
+            message=message,
         )
     except FileNotFoundError:
         return InstallResult(
@@ -1152,6 +1159,57 @@ def try_download_engine(url: str, root: Path, eid: str) -> InstallResult:
     return download_zip_engine(url_s, root, eid)
 
 
+def _tool_path(name: str) -> str:
+    """Resolve an external tool to an absolute path.
+
+    v4.17.7 (S607): invoking a bare ``"zstd"`` / ``"git"`` lets the OS resolve
+    it through ``PATH``, so a writable directory earlier in ``PATH`` can shadow
+    the real binary. Resolving once with :func:`shutil.which` pins the absolute
+    path. When the tool is absent the bare name is returned so the caller's
+    existing ``FileNotFoundError`` handling still applies.
+    """
+    found = shutil.which(name)
+    return found or name
+
+
+def _safe_extract_tar(tf: Any, dest: Path) -> None:
+    """Extract only regular files and directories from ``tf`` into ``dest``.
+
+    Any symlink, hardlink, FIFO, socket or device member is skipped: an engine
+    tarball has no legitimate need for them, and each is a classic escape
+    primitive (create a link, then write through it). Every destination is
+    re-resolved and confirmed to stay inside ``dest`` immediately before the
+    write, so a member name that only *looks* contained cannot win.
+
+    Raises :class:`ValueError` when a member would land outside ``dest``.
+    """
+    base = dest.resolve()
+    for member in tf.getmembers():
+        if not (member.isfile() or member.isdir()):
+            continue
+        target = (base / member.name).resolve()
+        try:
+            target.relative_to(base)
+        except ValueError as exc:
+            raise ValueError(f"tar member escapes target: {member.name}") from exc
+        if member.isdir():
+            target.mkdir(parents=True, exist_ok=True)
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        src = tf.extractfile(member)
+        if src is None:  # pragma: no cover — isfile() guarantees a reader
+            continue
+        with src, target.open("wb") as out:
+            _shutil_copyfileobj(src, out)
+
+
+def _shutil_copyfileobj(src: Any, dst: Any) -> None:
+    """Copy ``src`` to ``dst`` in chunks (patchable in tests)."""
+    import shutil as _s
+
+    _s.copyfileobj(src, dst, 1024 * 1024)
+
+
 def _download_and_extract_tarball(url: str, root: Path, eid: str) -> InstallResult:
     """Download a .tar.gz / .tgz / .tar.zst archive and extract into engine_dir."""
     import shutil as _shutil
@@ -1182,12 +1240,13 @@ def _download_and_extract_tarball(url: str, root: Path, eid: str) -> InstallResu
             extracted_tar = Path(str(tmp) + ".tar")
             try:
                 subprocess.run(
-                    ["zstd", "-d", "-f", str(tmp), "-o", str(extracted_tar)],
+                    [_tool_path("zstd"), "-d", "-f", str(tmp), "-o", str(extracted_tar)],
                     check=True, capture_output=True, timeout=120,
                 )
                 to_extract = extracted_tar
-            except (FileNotFoundError, subprocess.CalledProcessError):
+            except (FileNotFoundError, subprocess.CalledProcessError) as zerr:
                 # Fall back to pure-Python zstd if subprocess fails
+                log.debug("engines: zstd CLI failed (%s), trying zstandard", zerr)
                 try:
                     import zstandard as zstd
                     with tmp.open("rb") as fin, extracted_tar.open("wb") as fout:
@@ -1218,12 +1277,15 @@ def _download_and_extract_tarball(url: str, root: Path, eid: str) -> InstallResu
                         engine_id=eid, path="", ok=False,
                         message=f"tar member escapes target: {member.name}",
                     )
-            # Python 3.12+ 的 data filter 还会额外拦截符号链接/设备文件；
-            # 老版本退回上面的手工检查。
-            try:
-                tf.extractall(staging, filter="data")  # noqa: S202 — members 已手工校验，filter 再兜底
-            except TypeError:  # pragma: no cover — Python < 3.12
-                tf.extractall(staging)  # noqa: S202 — 仅 Python<3.12 回退，members 已校验
+            # v4.17.7: never call ``extractall`` here. The old code relied on
+            # ``filter="data"`` for symlink/hardlink/device rejection, and its
+            # ``except TypeError`` fallback (Python < 3.12) then extracted the
+            # archive with NO filter at all — so a symlink member pointing at
+            # /etc could be created and a later member written through it.
+            # ``_safe_extract_tar`` extracts regular files and directories
+            # only, and re-checks each link-free destination itself, which is
+            # correct on every Python version.
+            _safe_extract_tar(tf, staging)
 
         # GitHub 源码归档带一层 <repo>-<branch>/ 顶层目录。引擎目录必须
         # 直接就是仓库根（否则运行时找不到可执行文件/入口），所以单层

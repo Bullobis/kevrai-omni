@@ -14,7 +14,7 @@ on:
       tag:
         description: "要发布的 tag（手动运行时使用）"
         required: true
-        default: "v4.17.6"
+        default: "v4.17.7"
 
 permissions:
   contents: write

@@ -10,9 +10,15 @@ Iron rules honoured here (design §3.3):
 
 * The circuit breaker and TTL cache are **imported** from ``app.hub.net`` — no
   second implementation lives in this module.
-* 4 dead mirrors (``hf-mirror.us`` / ``hf-cn-mirror.com`` /
-  ``huggingface.dl.in.tel`` / ``hf-cdn.sufy.com``) are **kept** but
-  ``enabled=False`` so a user's historical config is never silently dropped.
+* 3 dead mirrors (``hf-mirror.us`` / ``hf-cn-mirror.com`` /
+  ``huggingface.dl.in.tel``) are **kept** but ``enabled=False`` so a user's
+  historical config is never silently dropped.
+* ``hf-cdn.sufy.com`` is a phishing typosquat and is **not shipped at all**
+  (v4.17.7). It used to be a disabled preset, which still put the host in the
+  shipped source list and in the UI's mirror picker; a phishing mirror has no
+  business being selectable. It remains in ``DEFAULT_BLOCKED_MIRRORS`` so a
+  user who pastes it into their own mirror list is still refused at download
+  time.
 * GitCode is **pluggable and disabled by default** — no unverified URL is ever
   hard-coded (see :data:`PRESET_SOURCES` and :func:`build_gitcode_candidates`).
 * Everything is offline-testable: the clock and cache are injectable.
@@ -102,19 +108,6 @@ PRESET_SOURCES: list[dict[str, Any]] = [
         "enabled": False,
         "preset": True,
         "note": "实测不可用（连接失败）",
-    },
-    {
-        "id": "hf-cdn-sufy-com",
-        "name": "HF CDN（hf-cdn.sufy.com）",
-        "origin": "https://hf-cdn.sufy.com",
-        "type": TYPE_HF_MIRROR,
-        "host_patterns": ["hf-cdn.sufy.com"],
-        "path_rule": RULE_HF_PATH,
-        "default_weight": 0.4,
-        "requires_token": False,
-        "enabled": False,
-        "preset": True,
-        "note": "实测不可用（HTTP 403 反爬）",
     },
     {
         "id": "modelscope",

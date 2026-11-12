@@ -126,9 +126,9 @@ def _import_llm():
 
 def is_engine_available() -> bool:
     try:
-        import MNN  # noqa: F401
-        import MNN.llm  # noqa: F401
-        return True
+        import MNN  # noqa: F401  — base package presence check
+        import MNN.llm  # noqa: F401  — the submodule actually used at run time
+        return bool(MNN and MNN.llm)
     except Exception:  # noqa: BLE001
         return False
 

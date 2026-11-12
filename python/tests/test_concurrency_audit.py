@@ -344,7 +344,8 @@ async def test_downloader_single_flight_same_dest():
     """Two start() calls for the SAME dest must coalesce onto one task."""
     from app.downloader import Downloader
 
-    dl = Downloader(max_concurrent=2, stream_retries=0, stream_backoff=(0.0,))
+    dl = Downloader(max_concurrent=2, stream_retries=0, stream_backoff=(0.0,),
+                    extra_allowed_hosts={"x"})
     # Pre-register an in-flight dest directly (bypass network).
     async with dl._tasks_lock:  # noqa: SLF001
         from app.downloader import DownloadStatus, DownloadTask

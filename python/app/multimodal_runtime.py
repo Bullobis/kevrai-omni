@@ -107,9 +107,12 @@ def import_transformers(data_root: Path | None = None) -> Any:
         # import is triggered transitively during that lazy load), it raises
         # "module 'numpy._core' has no attribute 'multiarray'". Importing it
         # up front makes the later accelerate import deterministic.
-        import numpy as _np  # noqa: F401
+        import numpy as _np
         import transformers  # type: ignore
 
+        # Reference ``_np`` so the import is not flagged as unused while it
+        # still runs before ``transformers`` (the ordering is the whole point).
+        assert _np is not None  # noqa: S101 — proves the import executed
         return transformers
     except Exception as e:  # noqa: BLE001 — surface any native load failure
         raise MultimodalEngineMissing(

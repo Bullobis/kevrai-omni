@@ -676,7 +676,9 @@ def _load_pipeline(model_id: str, mode: str) -> Any:
     class names it tried when diffusers is present but has no matching class.
     """
     try:
-        import torch  # noqa: F401
+        import torch
+        if torch is None:  # pragma: no cover — defensive
+            raise ImportError("torch resolved to None")
     except ImportError as e:
         raise ThreeDEngineMissing(
             "3D 生成需要先安装推理引擎："
