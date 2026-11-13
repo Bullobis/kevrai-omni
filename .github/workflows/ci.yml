@@ -19,6 +19,22 @@ permissions:
 jobs:
 
   # ------------------------------------------------------------------
+  # 0. version consistency — hard gate
+  #    v4.17.7 shipped with python/pyproject.toml still at 4.17.6 while
+  #    package.json / __init__.py / the tag were 4.17.7. Never let a
+  #    declared version drift silently again.
+  # ------------------------------------------------------------------
+  version-consistency:
+    name: version consistency
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Assert declared versions match
+        run: bash scripts/check-versions.sh
+
+  # ------------------------------------------------------------------
   # 1. python — full pytest + coverage floor gate (>= 65%)
   # ------------------------------------------------------------------
   python:

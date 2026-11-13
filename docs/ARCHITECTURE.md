@@ -22,7 +22,7 @@
 Kevrai Omni 是一个 **Electron 桌面壳 + Python 推理 sidecar** 的双进程架构：
 
 - **Electron 主进程**（Node 20.x，随 Electron 33 分发）：管窗口、生命周期、自动更新、把 Python sidecar 当子进程拉起来。
-- **渲染进程**（Chromium，原生 JS/HTML/CSS，无前端框架）：UI，约 29 个 ES 模块。
+- **渲染进程**（Chromium，原生 JS/HTML/CSS，无前端框架）：UI，功能模块位于 `renderer/modules/`（数量随版本变化，以目录为准，不在文档中写死）。
 - **preload 桥**（`contextBridge`）：渲染进程拿不到 Node，只能通过白名单 IPC 通道和主进程说话。
 - **Python sidecar**（FastAPI + Uvicorn）：真正的控制面——目录、引擎、下载、GPU 探测、推理运行时（llama.cpp / MNN / LTX 等），HTTP + WebSocket 都绑在 `127.0.0.1:17890`。
 

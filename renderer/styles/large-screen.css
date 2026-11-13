@@ -1,0 +1,68 @@
+/* ==========================================================================
+   large-screen.css — Kevrai Omni 大屏 / 4K 适配
+   --------------------------------------------------------------------------
+   只在 >= 1600px 生效，不改动 styles.css 中已有的 1280px 断点与组件规则，
+   因此可以整文件回退而不影响原有布局。
+
+   设计原则沿用 styles.css 开头的中性优先 / 表面色阶 / 内容先于装饰：
+   大屏不靠"把卡片拉宽"填满屏幕，而是收束内容宽度、限制列数、
+   让详情列随视口弹性变化，并把装饰性位移换成边框与背景变化。
+   ========================================================================== */
+
+@media (min-width: 1600px) {
+  .app-shell {
+    /* 详情列随视口增长，但设上限，避免 4K 下视线横移过远 */
+    --detail-w: clamp(360px, 22vw, 520px);
+    grid-template-columns: 64px minmax(0, 1fr) var(--detail-w);
+  }
+
+  .app-shell.sidebar-expanded {
+    grid-template-columns: clamp(200px, 14vw, 260px) minmax(0, 1fr) var(--detail-w);
+  }
+
+  /* 主区收束：3840px 宽时内容仍是 1760px 的可扫视宽度，
+     卡片列数与工具栏不再被拉成数千米的长条。 */
+  .main > .pane {
+    width: 100%;
+    max-width: 1760px;
+    margin-inline: auto;
+  }
+
+  /* 工具栏允许换行；搜索框有上限，计数与对比入口靠右 */
+  .toolbar {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  .toolbar .search-wrap {
+    flex: 1 1 420px;
+    max-width: 720px;
+  }
+  .toolbar .counter { margin-left: auto; }
+
+  /* 网格列数由内容最大宽度间接限制；卡宽始终落在 280–460px 区间 */
+  .engine-grid,
+  .skeleton-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+
+  /* 大屏悬停用边框/背景表达状态，避免整片卡片 translateY 造成视觉抖动 */
+  .vgrid-item:hover {
+    transform: none;
+    border-color: var(--bord-strong);
+    background: var(--card-hover);
+  }
+  .vgrid-item:focus-visible { transform: none; }
+}
+
+@media (min-width: 2560px) {
+  .app-shell { --detail-w: clamp(420px, 20vw, 560px); }
+  .main > .pane { max-width: 1920px; }
+  .toolbar { column-gap: 14px; }
+}
+
+/* 尊重系统「减少动态效果」：大屏同样只保留状态变化，不做位移/缩放 */
+@media (prefers-reduced-motion: reduce) {
+  .vgrid-item { transition: none; }
+  .vgrid-item:hover,
+  .vgrid-item:focus-visible { transform: none; }
+}

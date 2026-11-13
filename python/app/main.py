@@ -3162,16 +3162,27 @@ def _v1_stream(prompt: str, hist: list[dict[str, str]], images: list[str],
                 }],
             }
             yield f"data: {json.dumps(final, ensure_ascii=False)}\n\n"
-        except mnn_runtime.MnnEngineMissing as e:
-            yield f"data: {json.dumps({'error': {'message': str(e), 'type': 'engine_missing'}})}\n\n"
-        except RuntimeError as e:
-            yield f"data: {json.dumps({'error': {'message': str(e), 'type': 'runtime_error'}})}\n\n"
-        except ValueError as e:
-            yield f"data: {json.dumps({'error': {'message': str(e), 'type': 'invalid_request'}})}\n\n"
-        except Exception as e:  # noqa: BLE001
-            yield f"data: {json.dumps({'error': {'message': f'推理失败：{e}', 'type': 'internal_error'}})}\n\n"
-        finally:
+            # Only a *successful* stream is closed with [DONE]. Emitting it from
+            # `finally` made a failed request look like a completed one to any
+            # client that treats [DONE] / clean close as success.
             yield "data: [DONE]\n\n"
+        except mnn_runtime.MnnEngineMissing as e:
+            log.exception("SSE chat stream failed: engine missing")
+            yield "event: error\n" + f"data: {json.dumps({'error': {'message': str(e), 'type': 'engine_missing'}})}\n\n"
+            return
+        except RuntimeError as e:
+            log.exception("SSE chat stream failed: runtime error")
+            yield "event: error\n" + f"data: {json.dumps({'error': {'message': str(e), 'type': 'runtime_error'}})}\n\n"
+            return
+        except ValueError as e:
+            log.exception("SSE chat stream failed: invalid request")
+            yield "event: error\n" + f"data: {json.dumps({'error': {'message': str(e), 'type': 'invalid_request'}})}\n\n"
+            return
+        except Exception as e:  # noqa: BLE001
+            log.exception("SSE chat stream failed: internal error")
+            yield "event: error\n" + f"data: {json.dumps({'error': {'message': f'推理失败：{e}', 'type': 'internal_error'}})}\n\n"
+            return
+        finally:
             # N5：流式生成器在客户端断开 / 异常 / 正常结束时都会走到这里，
             # 统一清理本请求临时落盘的媒体文件。
             if created_temp:
@@ -5224,9 +5235,8 @@ def ocr_capabilities_route() -> dict[str, Any]:
     version: str | None = None
     error = ""
     try:
-        from importlib import metadata
-
         import rapidocr  # noqa: F401
+        from importlib import metadata
         version = metadata.version("rapidocr")
         installed = True
     except Exception as e:  # noqa: BLE001
@@ -5243,6 +5253,7 @@ def ocr_capabilities_route() -> dict[str, Any]:
 @app.post("/api/ocr/recognize")
 def ocr_recognize_route(request: Request, req: OcrRecognizeReq) -> dict[str, Any]:
     import base64
+    import io
     from pathlib import Path as _Path
 
     if req.image_b64:
@@ -5311,15 +5322,18 @@ async def multimodal_chat_route(
                                  "finish_reason": "stop"}],
                 }
                 yield f"data: {json.dumps(final, ensure_ascii=False)}\n\n"
+                # [DONE] is a success terminator: never emit it from `finally`.
+                yield "data: [DONE]\n\n"
             except multimodal_runtime.MultimodalError as e:
                 etype = "engine_missing" if isinstance(
                     e, multimodal_runtime.MultimodalEngineMissing) else (
                     "invalid_request" if isinstance(
                         e, multimodal_runtime.MultimodalParamError)
                     else "model_error")
-                yield f"data: {json.dumps({'error': {'message': str(e), 'type': etype}})}\n\n"
+                log.exception("SSE multimodal stream failed")
+                yield "event: error\n" + f"data: {json.dumps({'error': {'message': str(e), 'type': etype}})}\n\n"
+                return
             finally:
-                yield "data: [DONE]\n\n"
                 _cleanup_temp(created)
 
         return StreamingResponse(

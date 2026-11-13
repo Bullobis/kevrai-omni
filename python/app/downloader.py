@@ -1368,7 +1368,28 @@ class Downloader:
         # blocklist before issuing the next request. A 302 from a trusted host
         # must not bounce us onto cloud metadata (169.254.169.254), a blocked /
         # phishing mirror, or any host outside the curated set.
+        # Normalise a URL for loop detection: lowercase scheme/host, keep the
+        # path/query as-is, drop the fragment. A 302 back to the same URL or a
+        # cycle between mirrors used to burn all ten connection attempts.
+        def _redirect_key(u: str) -> str:
+            parsed = httpx.URL(u)
+            host = (parsed.host or "").lower()
+            return (f"{parsed.scheme.lower()}://{host}"
+                    f"{parsed.raw_path.decode('utf-8', 'ignore')}")
+
+        visited: set[str] = set()
+        hosts: set[str] = set()
         for _hop in range(10):
+            key = _redirect_key(url)
+            if key in visited:
+                raise DownloadRefused(f"redirect loop: {task.url}")
+            visited.add(key)
+            host = (httpx.URL(url).host or "").lower()
+            if host not in hosts:
+                hosts.add(host)
+                if len(hosts) > 5:
+                    raise DownloadRefused(
+                        f"too many redirect hosts: {task.url}")
             async with client.stream("GET", url, headers=headers) as r:
                 if r.status_code in (301, 302, 303, 307, 308):
                     loc = r.headers.get("Location") or ""

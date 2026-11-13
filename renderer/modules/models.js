@@ -511,10 +511,17 @@ async function fetchHubDetail(item) {
 }
 
 // Reject a promise after `ms` so the UI never hangs on a dead network call.
+// The timer must be cleared when the wrapped promise settles first, otherwise
+// every fast detail lookup leaves a live timeout behind (and keeps a rejected
+// promise alive until it fires).
 function withTimeout(promise, ms) {
+  let timer;
+  const timeout = new Promise((_, rej) => {
+    timer = setTimeout(() => rej(new Error("timeout")), ms);
+  });
   return Promise.race([
-    promise,
-    new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms)),
+    promise.finally(() => clearTimeout(timer)),
+    timeout,
   ]);
 }
 
