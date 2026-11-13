@@ -88,6 +88,9 @@ export const api = {
   // 此前唯独缺这一层封装，导致 multimodal.js 调用时抛 "api.multimodalGenerateImage
   // is not a function" —— 功能在后端可用、在 UI 上必崩。
   multimodalGenerateImage: wrap("multimodalGenerateImage", (payload) => k().multimodalGenerateImage(payload)),
+  localTransformersChat:   wrap("localTransformersChat",   (payload) => k().localTransformersChat(payload)),
+  localVideo:              wrap("localVideo",              (payload) => k().localVideo(payload)),
+  localAudio:              wrap("localAudio",              (payload) => k().localAudio(payload)),
   // 引擎路由：后端 /api/engine/route 是"该用哪个引擎"的唯一决策点。
   engineRoute: wrap("engineRoute", (params) => k().engineRoute(params)),
   // ----- 通道补全：与 preload 一一对应 -----

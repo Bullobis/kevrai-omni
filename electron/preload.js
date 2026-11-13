@@ -180,6 +180,9 @@ const api = {
   multimodalCapabilities: () => invoke("api:multimodal:capabilities"),
   multimodalChat:         (payload) => invoke("api:multimodal:chat", payload),
   multimodalGenerateImage:(payload) => invoke("api:multimodal:generate-image", payload),
+  localTransformersChat:  (payload) => invoke("api:local:transformers-chat", payload),
+  localVideo:             (payload) => invoke("api:local:video", payload),
+  localAudio:             (payload) => invoke("api:local:audio", payload),
   // Native MusicGen text-to-music.
   musicCapabilities: () => invoke("api:music:capabilities"),
   musicGenerate:     (payload) => invoke("api:music:generate", payload),

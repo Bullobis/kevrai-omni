@@ -408,11 +408,19 @@ class MultimodalManager:
         seed: int | None = None,
         num_images: int = 1,
         do_sample: bool = False,
+        width: int = 512,
+        height: int = 512,
+        num_inference_steps: int = 20,
+        allow_any_diffusers: bool = False,
     ) -> dict[str, Any]:
-        """Generate images from a text prompt via an autoregressive VQ model.
+        """Generate images from a text prompt.
 
-        Returns a dict with PIL ``images``, the resolved ``repo`` and timing.
-        Only models in :data:`IMAGE_GEN_CAPABLE` expose this path.
+        Two paths are supported:
+        * native VQ image models (Janus family) through ``transformers``;
+        * any standard ``diffusers`` pipeline, including a **local downloaded
+          directory** that contains ``model_index.json``. This is what makes
+          the catalog's 19 image models usable after download instead of only
+          occupying disk.
         """
         import time
 
@@ -448,33 +456,71 @@ class MultimodalManager:
                     "count": len(imgs), "engine": "preview",
                     "elapsed_s": round(time.monotonic() - started, 3)}
 
-        # Diffusers 文生图（含官方 tiny SD，用于低配机/CI 验证）。
-        repo_l = str(self.resolve_repo(mid)).lower()
-        if repo_l.startswith("diffusers/") or "/tiny-stable-diffusion" in repo_l:
+        # Diffusers 文生图：官方 tiny SD、任意 diffusers 仓库、以及下载到
+        # 本地的目录（含 model_index.json）都走同一条标准管线。
+        repo = self.resolve_repo(mid)
+        repo_l = str(repo).lower()
+        local_dir = Path(repo).expanduser()
+        is_local_diffusers = (
+            local_dir.is_dir()
+            and (local_dir / "model_index.json").is_file()
+        )
+        is_diffusers = (
+            repo_l.startswith("diffusers/")
+            or "/tiny-stable-diffusion" in repo_l
+            or is_local_diffusers
+            or bool(allow_any_diffusers)
+        )
+        if is_diffusers:
             started = time.monotonic()
             import torch
             from diffusers import DiffusionPipeline
-            pipe = DiffusionPipeline.from_pretrained(
-                self.resolve_repo(mid), torch_dtype=torch.float32,
-                safety_checker=None)
-            pipe = pipe.to("cpu")
-            gen = torch.Generator(device="cpu")
+
+            width = max(256, min(int(width), 2048))
+            height = max(256, min(int(height), 2048))
+            width -= width % 8
+            height -= height % 8
+            steps = max(1, min(int(num_inference_steps), 100))
+            cuda = bool(torch.cuda.is_available())
+            dtype = torch.float16 if cuda else torch.float32
+            kwargs_load: dict[str, Any] = {
+                "torch_dtype": dtype,
+                "safety_checker": None,
+            }
+            if local_dir.is_dir():
+                kwargs_load["local_files_only"] = True
+            try:
+                pipe = DiffusionPipeline.from_pretrained(repo, **kwargs_load)
+            except TypeError:
+                # 有些管线没有 safety_checker 参数；不要因为一个可选参数
+                # 把整个模型判死。
+                kwargs_load.pop("safety_checker", None)
+                pipe = DiffusionPipeline.from_pretrained(repo, **kwargs_load)
+            pipe = pipe.to("cuda" if cuda else "cpu")
+            gen = torch.Generator(device="cuda" if cuda else "cpu")
             if seed is not None:
                 gen = gen.manual_seed(int(seed))
             kwargs: dict[str, Any] = {
                 "prompt": prompt,
-                "num_inference_steps": 4,
+                "num_inference_steps": steps,
                 "guidance_scale": max(1.0, float(guidance_scale)),
-                "width": 256, "height": 256,
+                "width": width, "height": height,
                 "generator": gen,
             }
             if int(num_images) > 1:
                 kwargs["num_images_per_prompt"] = max(1, min(int(num_images), 4))
             out = pipe(**kwargs)
             imgs = list(getattr(out, "images", []) or [])
-            return {"images": imgs, "repo": self.resolve_repo(mid),
+            return {"images": imgs, "repo": repo,
                     "count": len(imgs), "engine": "diffusers",
+                    "width": width, "height": height, "steps": steps,
                     "elapsed_s": round(time.monotonic() - started, 3)}
+
+        if local_dir.is_dir() and not is_local_diffusers:
+            raise MultimodalParamError(
+                f"本地目录 {repo} 没有 model_index.json，不是 diffusers 管线；"
+                "请用对应的专用运行时加载"
+            )
 
         started = time.monotonic()
         model, processor, _ = self.load(mid)

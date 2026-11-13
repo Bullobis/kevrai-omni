@@ -12,6 +12,7 @@ import pytest
 from app.importer import (
     import_local,
     load_local_registry,
+    register_reference,
     save_local_registry,
 )
 
@@ -69,3 +70,38 @@ def test_registry_missing_file_returns_empty(tmp_path: Path):
 def test_import_local_missing_raises(tmp_path: Path):
     with pytest.raises(FileNotFoundError):
         import_local(tmp_path / "nope", tmp_path / "models")
+
+
+def test_register_reference_points_at_existing_dir_without_copy(tmp_path: Path):
+    """A finished hub download must become visible without a second copy."""
+    download_dir = tmp_path / "downloads" / "hub" / "hf" / "owner__model"
+    download_dir.mkdir(parents=True)
+    (download_dir / "config.json").write_text('{"model_type":"llama"}', encoding="utf-8")
+    (download_dir / "model.safetensors").write_bytes(b"W" * 4096)
+
+    models_dir = tmp_path / "models"
+    entry = register_reference(
+        download_dir, models_dir,
+        catalog_id="demo-model", name="Demo Model",
+        repo="owner/model", engine=["transformers"], category="llm",
+    )
+
+    assert entry["id"].startswith("download-")
+    assert entry["path"] == str(download_dir.resolve())
+    assert entry["size_bytes"] > 0
+    assert entry["mode"] == "reference"
+    # No model files were duplicated into models/ — only the registry JSON
+    # lives there; the model itself stays in the download directory.
+    assert [p.name for p in models_dir.iterdir()] == ["_local.json"]
+
+    reg = load_local_registry(models_dir)
+    assert len(reg) == 1
+    # Idempotent: a second completion callback refreshes instead of appending.
+    again = register_reference(
+        download_dir, models_dir,
+        catalog_id="demo-model", name="Demo Model v2",
+        repo="owner/model", engine=["transformers"], category="llm",
+    )
+    assert again["id"] == entry["id"]
+    assert again["name"] == "Demo Model v2"
+    assert len(load_local_registry(models_dir)) == 1

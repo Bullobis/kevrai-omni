@@ -689,6 +689,20 @@ function fmtDate(iso) {
   return s.replace("T", " ").replace("Z", " UTC").slice(0, 23);
 }
 
+function renderAvailability(a) {
+  const nativeLabels = (a.native || []).map((x) => x.label).join(" / ");
+  const externalLabels = (a.external || []).map((x) => x.service).join(" / ");
+  const conversion = a.conversion
+    ? `<span class="er-note">${escapeHtml(a.conversion.label)}</span>` : "";
+  if (a.status === "native") {
+    return `<p class="engine-route-row ok"><span class="er-label">${t("market.availabilityTitle")}</span><span class="er-value">${escapeHtml(t("market.availabilityNative", { list: nativeLabels }))}</span>${conversion}</p>`;
+  }
+  if (a.status === "external") {
+    return `<p class="engine-route-row warn"><span class="er-label">${t("market.availabilityTitle")}</span><span class="er-value">${escapeHtml(t("market.availabilityExternal", { list: externalLabels }))}</span><span class="er-note">${escapeHtml(a.reason || "")}</span>${conversion}</p>`;
+  }
+  return `<p class="engine-route-row warn"><span class="er-label">${t("market.availabilityTitle")}</span><span class="er-value">${t("market.availabilityUnsupported")}</span><span class="er-note">${escapeHtml(a.reason || "")}</span>${conversion}</p>`;
+}
+
 function renderDetail(m, gguf) {
   const engines = Array.isArray(m.engines) ? m.engines
                  : (Array.isArray(m.engine) ? m.engine
@@ -730,6 +744,7 @@ function renderDetail(m, gguf) {
     ${(m.description || chineseNameOf(m))
       ? `<p class="card-desc">${escapeHtml(m.description || chineseNameOf(m))}</p>` : ""}
     ${m.gated ? `<p class="hint">${t("market.gatedHint")}</p>` : ""}
+    ${m.availability ? renderAvailability(m.availability) : ""}
 
     ${isRemote ? `
     <h3 class="section">${t("market.basicInfo")}</h3>

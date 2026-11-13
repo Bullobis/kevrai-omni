@@ -66,6 +66,7 @@ from . import (
     USER_AGENT,
     __version__,
     asr_runtime,
+    availability,
     comfyui_image,
     comfyui_music,
     comfyui_runtime,
@@ -73,6 +74,7 @@ from . import (
     embedding_runtime,
     knowledge_base,
     ltx_runtime,
+    media_runtime,
     ming_tts_runtime,
     mnn_runtime,
     multimodal_runtime,
@@ -138,7 +140,14 @@ from .importer import (
     list_gguf_files,
     list_repo_revisions,
     load_local_registry,
+    register_reference,
     snapshot_progress,
+)
+from .llm_runtime import (
+    BrainEngineMissing,
+    BrainModelError,
+    BrainParamError,
+    TextBrainManager,
 )
 from .ltx_runtime import LtxBusyError, LtxManager, LtxParamError, LtxParams
 from .model_roles import (
@@ -882,6 +891,12 @@ def categories() -> dict[str, Any]:
     ]}
 
 
+@app.get("/api/availability/summary")
+def availability_summary() -> dict[str, Any]:
+    """How many catalog entries are natively runnable / external / waiting."""
+    return availability.summary(CATALOG.models)
+
+
 @app.get("/api/models")
 def list_models(category: str | None = None, q: str | None = None,
                 sort: str | None = None) -> dict[str, Any]:
@@ -923,7 +938,9 @@ def model_detail(
             # v2.3.0 — no synchronous GGUF enumeration here: on cold hits it
             # can take 10s+ and would block the whole detail panel. The UI
             # lazy-loads files via GET /api/models/{id}/gguf-files instead.
-            return m.model_dump()
+            data = m.model_dump()
+            data["availability"] = availability.describe(m)
+            return data
     for e in load_local_registry(MODELS_DIR):
         if e.get("id") == model_id:
             return annotate_registry_engines([e])[0]
@@ -1650,6 +1667,61 @@ async def hub_model_files(
     return result
 
 
+async def _register_hub_job_when_done(
+    app: Any, dl: Downloader, job_id: str, job: dict[str, Any],
+) -> None:
+    """Wait for every file in a hub job, then register the directory in place.
+
+    Without this, a completed download stayed under ``downloads/hub/...`` and
+    never appeared in the local model list — the user had to find the folder
+    manually and re-import it (which copied the whole model again). The
+    registry entry points at the existing directory, so no disk is duplicated.
+    """
+    terminal = {"done", "failed", "cancelled", "expired"}
+    tasks = list(job.get("tasks", {}))
+    if not tasks:
+        return
+    for _ in range(24 * 60 * 60 // 2):  # up to 24h; jobs are user-driven
+        await asyncio.sleep(2)
+        snaps = []
+        for task_id in tasks:
+            try:
+                snaps.append(await dl.progress(task_id))
+            except Exception:  # noqa: BLE001 — a vanished task must not hang the watcher
+                snaps.append(None)
+        states = [str((s or {}).get("status") or "") for s in snaps]
+        if all(st in terminal for st in states):
+            done = sum(1 for st in states if st == "done")
+            if done == len(tasks):
+                meta = job.get("model") or {}
+                try:
+                    await asyncio.to_thread(
+                        register_reference,
+                        Path(str(job["dest_root"])),
+                        MODELS_DIR,
+                        catalog_id=str(meta.get("id") or f"download-{job_id[:8]}"),
+                        name=str(meta.get("name") or Path(str(job["dest_root"])).name),
+                        repo=str(meta.get("repo") or ""),
+                        engine=list(meta.get("engine") or []),
+                        category=str(meta.get("category") or ""),
+                    )
+                    job["registered"] = True
+                except Exception as e:  # noqa: BLE001 — registration failure must not
+                    # turn a successful download into a failed job.
+                    log.warning("hub job register failed", extra={
+                        "job_id": job_id, "err": str(e)[:200],
+                    })
+                    job["register_error"] = str(e)[:200]
+            else:
+                # Partial downloads are not registered: a half-populated
+                # model directory would look runnable and fail at load time.
+                job["register_error"] = (
+                    f"partial download: {done}/{len(tasks)} files"
+                )
+            job["finished_at"] = time.time()
+            return
+
+
 @app.post("/api/hub/download")
 async def hub_download(request: Request, body: HubDownloadReq) -> dict[str, Any]:
     """Multi-file download orchestration (design §2.7 / §4.3).
@@ -1786,8 +1858,30 @@ async def hub_download(request: Request, body: HubDownloadReq) -> dict[str, Any]
         tasks_out.append({"task_id": task_id, "path": rel, "dest": str(dest)})
         task_meta[task_id] = {"path": rel, "dest": str(dest), "size": int(info.get("size") or 0)}
 
+    model_meta = next(
+        (m for m in CATALOG.models if body.repo in (m.repo, m.gguf_repo)),
+        None,
+    )
     jobs[job_id] = {"tasks": task_meta, "dest_root": str(dest_root),
-                    "created_at": time.time()}
+                    "created_at": time.time(),
+                    "model": (model_meta.model_dump() if model_meta else {
+                        "id": f"download-{job_id[:8]}",
+                        "name": Path(body.repo).name,
+                        "repo": body.repo,
+                        "engine": [],
+                        "category": "",
+                    })}
+    # Fire-and-forget: poll task states, then register the downloaded folder
+    # in place. The download response returns immediately; the watcher runs on
+    # the app's event loop for at most 24h.
+    watchers = getattr(request.app.state, "hub_watchers", None)
+    if watchers is None:
+        watchers = set()
+        request.app.state.hub_watchers = watchers
+    watcher = asyncio.create_task(_register_hub_job_when_done(
+        request.app, dl, job_id, jobs[job_id]))
+    watchers.add(watcher)
+    watcher.add_done_callback(watchers.discard)
     # Bound the in-process job table (restart-only lifetime, §2.7).
     if len(jobs) > 200:
         for stale in sorted(jobs, key=lambda k: jobs[k].get("created_at", 0))[:100]:
@@ -1845,6 +1939,9 @@ async def hub_job(request: Request, job_id: str) -> dict[str, Any]:
         "files_failed": files_failed, "bytes_total": bytes_total,
         "bytes_done": bytes_done, "ratio": round(min(1.0, max(0.0, ratio)), 4),
         "status": status, "dest_root": job.get("dest_root"), "tasks": tasks_snap,
+        "registered": bool(job.get("registered")),
+        "register_error": job.get("register_error", ""),
+        "model_id": (job.get("model") or {}).get("id", ""),
     }
 
 
@@ -5171,6 +5268,33 @@ class MultimodalImageReq(BaseModel):
     seed: int | None = None
     num_images: int = 1
     do_sample: bool = False
+    width: int = 512
+    height: int = 512
+    num_inference_steps: int = 20
+    allow_any_diffusers: bool = False
+
+
+class LocalVideoReq(BaseModel):
+    model: str = ""
+    prompt: str = ""
+    image_path: str | None = None
+    width: int = 512
+    height: int = 512
+    num_frames: int = 16
+    fps: int = 8
+    num_inference_steps: int = 20
+    guidance_scale: float = 5.0
+    seed: int | None = None
+    output_format: str = "mp4"
+
+
+class LocalAudioReq(BaseModel):
+    model: str = ""
+    prompt: str = ""
+    duration_s: float = 10.0
+    num_inference_steps: int = 50
+    guidance_scale: float = 3.0
+    seed: int | None = None
 
 
 async def _extract_multimodal(
@@ -5371,6 +5495,107 @@ async def multimodal_chat_route(
     })
 
 
+class LocalTransformersChatReq(BaseModel):
+    model: str = ""
+    question: str = ""
+    system: str = ""
+    max_new_tokens: int = 512
+
+
+@app.post("/api/local/transformers/chat")
+async def local_transformers_chat(
+    request: Request, req: LocalTransformersChatReq
+) -> JSONResponse:
+    """Run a downloaded HF causal-LM directory through Transformers.
+
+    This closes the "transformers engine downloads but has no load endpoint"
+    gap for the catalog's non-GGUF LLMs. The model argument accepts either a
+    catalog repo id or an absolute local directory registered by the download
+    watcher.
+    """
+    model = (req.model or "").strip()
+    question = (req.question or "").strip()
+    if not model:
+        raise HTTPException(status_code=400, detail="model required")
+    if not question:
+        raise HTTPException(status_code=400, detail="question required")
+    if not (1 <= int(req.max_new_tokens) <= 4096):
+        raise HTTPException(status_code=400, detail="max_new_tokens must be 1..4096")
+    mgr = getattr(request.app.state, "local_chat", None)
+    if mgr is None:
+        mgr = TextBrainManager(APP_ROOT)
+        request.app.state.local_chat = mgr
+    try:
+        answer = await asyncio.to_thread(
+            mgr.answer,
+            model,
+            question,
+            system=req.system,
+            max_new_tokens=int(req.max_new_tokens),
+        )
+    except BrainEngineMissing as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except BrainParamError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except BrainModelError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    return JSONResponse({
+        "model": model, "answer": answer,
+        "engine": "transformers",
+    })
+
+
+@app.post("/api/local/video")
+async def local_video(request: Request, req: LocalVideoReq) -> JSONResponse:
+    """Generate MP4/GIF with any downloaded diffusers video pipeline."""
+    model = (req.model or "").strip()
+    if not model:
+        raise HTTPException(status_code=400, detail="model required")
+    try:
+        result = await asyncio.to_thread(
+            media_runtime.generate_video,
+            model, req.prompt,
+            image_path=req.image_path,
+            width=req.width, height=req.height,
+            num_frames=req.num_frames, fps=req.fps,
+            num_inference_steps=req.num_inference_steps,
+            guidance_scale=req.guidance_scale, seed=req.seed,
+            output_format=req.output_format,
+            output_dir=APP_ROOT / "outputs" / "media",
+        )
+    except media_runtime.MediaEngineMissing as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except media_runtime.MediaParamError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=422, detail=str(e)[:500]) from e
+    return JSONResponse(result)
+
+
+@app.post("/api/local/audio")
+async def local_audio(request: Request, req: LocalAudioReq) -> JSONResponse:
+    """Generate WAV with any downloaded diffusers audio pipeline."""
+    model = (req.model or "").strip()
+    if not model:
+        raise HTTPException(status_code=400, detail="model required")
+    try:
+        result = await asyncio.to_thread(
+            media_runtime.generate_audio,
+            model, req.prompt,
+            duration_s=req.duration_s,
+            num_inference_steps=req.num_inference_steps,
+            guidance_scale=req.guidance_scale, seed=req.seed,
+            output_dir=APP_ROOT / "outputs" / "media",
+        )
+    except media_runtime.MediaEngineMissing as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except media_runtime.MediaParamError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=422, detail=str(e)[:500]) from e
+    return JSONResponse(result)
+
+
 @app.post("/api/multimodal/generate-image")
 async def multimodal_generate_image_route(
     request: Request, req: MultimodalImageReq
@@ -5383,6 +5608,9 @@ async def multimodal_generate_image_route(
             mgr.generate_image, req.model, req.prompt,
             guidance_scale=req.guidance_scale, seed=req.seed,
             num_images=req.num_images, do_sample=req.do_sample,
+            width=req.width, height=req.height,
+            num_inference_steps=req.num_inference_steps,
+            allow_any_diffusers=req.allow_any_diffusers,
         )
     except multimodal_runtime.MultimodalEngineMissing as e:
         raise HTTPException(status_code=503, detail=str(e)) from e

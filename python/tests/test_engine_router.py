@@ -90,11 +90,24 @@ def test_llamacpp_maps_to_engines():
 
 
 def test_engine_without_runtime_is_reported_not_silently_accepted():
-    """diffusers / vllm 等当前无应用内加载端点 —— 必须如实说明，不假装能跑。"""
-    r = resolve_engine(["diffusers"])
+    """insightface 等暂无应用内端点 —— 必须如实说明，不假装能跑。"""
+    r = resolve_engine(["insightface"])
     assert r["runtime"] == "other"
     assert r["route"] is None
-    assert "diffusers" in r["note"], "应说明是哪个引擎没有端点"
+    assert "insightface" in r["note"], "应说明是哪个引擎没有端点"
+
+
+def test_diffusers_maps_to_generic_image_endpoint():
+    r = resolve_engine(["diffusers"])
+    assert r["runtime"] == "diffusers"
+    assert r["route"] == "/api/multimodal/generate-image"
+
+
+def test_external_engine_is_not_claimed_as_local():
+    r = resolve_engine(["vllm"])
+    assert r["runtime"] == "external"
+    assert r["route"] is None
+    assert "vLLM" in r["note"]
 
 
 # ---------------------------------------------------------------------------
@@ -178,7 +191,7 @@ async def test_route_endpoint_honours_settings_default(_isolated):
 
 async def test_route_endpoint_reports_other_runtime(_isolated):
     async with _client() as c:
-        r = await c.get("/api/engine/route", params={"engine": "diffusers"})
+        r = await c.get("/api/engine/route", params={"engine": "insightface"})
     body = r.json()
     assert body["runtime"] == "other"
     assert body["route"] is None

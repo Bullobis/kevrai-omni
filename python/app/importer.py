@@ -221,6 +221,78 @@ def import_local_struct(
     )
 
 
+def register_reference(
+    path: Path,
+    models_dir: Path,
+    *,
+    catalog_id: str,
+    name: str,
+    repo: str = "",
+    engine: list[str] | None = None,
+    category: str = "",
+) -> dict[str, Any]:
+    """Register an already-downloaded directory **in place** (no copy).
+
+    Hub downloads land under ``downloads/hub/<hub>/<owner__repo>/``. Copying
+    a 20–200 GB model into ``models/`` just to make it visible is wasteful and
+    was the reason a completed download never showed up in the local model
+    list. This adds a registry entry that points at the existing directory;
+    ``annotate_registry_engines`` still computes compatibility at read time.
+
+    The id is derived from the repo + path, so repeated completion callbacks
+    are idempotent even when the same repo is downloaded twice.
+    """
+    path = Path(path).expanduser().resolve()
+    if not path.exists() or not path.is_dir():
+        raise FileNotFoundError(str(path))
+    models_dir = Path(models_dir).expanduser().resolve()
+    models_dir.mkdir(parents=True, exist_ok=True)
+
+    key = hashlib.sha256(
+        f"hub:{repo}:{path}".encode("utf-8", "replace")
+    ).hexdigest()
+    short = key[:16]
+    entry_id = f"download-{short}"
+    size = file_size_or_tree(path)
+
+    with _per_models_dir_lock(models_dir):
+        reg = load_local_registry(models_dir)
+        for entry in reg:
+            if entry.get("id") == entry_id or entry.get("path") == str(path):
+                # Refresh metadata that may have been missing on the first pass.
+                entry.update({
+                    "name": name or entry.get("name") or path.name,
+                    "catalog_id": catalog_id or entry.get("catalog_id", ""),
+                    "repo": repo or entry.get("repo", ""),
+                    "engine": list(engine or entry.get("engine") or []),
+                    "category": category or entry.get("category", ""),
+                    "size_bytes": size,
+                    "last_seen_at": _now_iso(),
+                })
+                save_local_registry(models_dir, reg)
+                return dict(entry)
+        entry = {
+            "id": entry_id,
+            "name": name or path.name,
+            "path": str(path),
+            "sha256": key,
+            "sha256_short": short,
+            "size_bytes": size,
+            "imported_from": str(path),
+            "source_filename": path.name,
+            "imported_at": _now_iso(),
+            "last_seen_at": _now_iso(),
+            "mode": "reference",
+            "catalog_id": catalog_id,
+            "repo": repo,
+            "engine": list(engine or []),
+            "category": category,
+        }
+        reg.append(entry)
+        save_local_registry(models_dir, reg)
+        return dict(entry)
+
+
 def _import_local_impl(
     *,
     src: Path,

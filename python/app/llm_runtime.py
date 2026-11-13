@@ -83,23 +83,48 @@ class TextBrainManager:
     def _open(self, repo: str) -> None:
         if self._model is not None and self._repo == repo:
             return
-        if not isinstance(repo, str) or "/" not in repo:
-            raise BrainParamError("brain model must be an 'owner/name' repo id")
+        if not isinstance(repo, str) or not repo.strip():
+            raise BrainParamError("brain model must be an 'owner/name' repo id or local path")
+        repo = repo.strip()
+        local = Path(repo).expanduser()
+        is_local = local.is_dir()
+        if not is_local and "/" not in repo:
+            raise BrainParamError("brain model must be an 'owner/name' repo id or local path")
         try:
             tf = import_transformers(self.data_root)
             import torch  # engine torch, resolvable after the path bootstrap
 
-            tokenizer = tf.AutoTokenizer.from_pretrained(repo)
-            model = tf.AutoModelForCausalLM.from_pretrained(
-                repo, torch_dtype="auto"
+            tokenizer_kw: dict[str, Any] = {}
+            if is_local:
+                tokenizer_kw["local_files_only"] = True
+            tokenizer = tf.AutoTokenizer.from_pretrained(repo, **tokenizer_kw)
+            # Use GPU when available; device_map="auto" also shards a model too
+            # large for one card. It needs accelerate, so fall back to CPU if
+            # that optional dependency is absent.
+            load_kw: dict[str, Any] = {"torch_dtype": "auto"}
+            if is_local:
+                load_kw["local_files_only"] = True
+            cuda_ok = bool(
+                getattr(getattr(torch, "cuda", None), "is_available", lambda: False)()
             )
+            if cuda_ok:
+                load_kw["device_map"] = "auto"
+            try:
+                model = tf.AutoModelForCausalLM.from_pretrained(repo, **load_kw)
+            except Exception:
+                if "device_map" not in load_kw:
+                    raise
+                load_kw.pop("device_map", None)
+                model = tf.AutoModelForCausalLM.from_pretrained(repo, **load_kw)
             model.eval()
+            if not cuda_ok and hasattr(model, "to"):
+                model.to("cpu")
         except ImportError as e:
             raise BrainEngineMissing(
                 "Transformers 引擎未安装：请先在「多模态对话」页安装引擎。"
             ) from e
         except Exception as e:  # noqa: BLE001
-            raise BrainModelError(f"无法加载大脑模型 {repo}: {e}") from e
+            raise BrainModelError(f"无法加载模型 {repo}: {e}") from e
         self._torch = torch
         self._tf = tf
         self._tokenizer = tokenizer

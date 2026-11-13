@@ -161,6 +161,33 @@ function renderGGUF() {
   }).join("");
 }
 
+function _localOverlay(html) {
+  const old = document.getElementById("local-result-overlay");
+  if (old) old.remove();
+  const div = document.createElement("div");
+  div.id = "local-result-overlay";
+  div.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);"
+    + "display:flex;align-items:center;justify-content:center;padding:24px";
+  div.innerHTML = `<div style="max-width:860px;max-height:90vh;overflow:auto;background:var(--bg,#fff);"
+    + "color:var(--fg,#111);border-radius:12px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.4)">`
+    + `${html}<p style="text-align:right;margin:12px 0 0">`
+    + `<button type="button" class="secondary small" data-close-local>关闭</button></p></div>`;
+  div.addEventListener("click", (e) => {
+    if (e.target === div || e.target.closest("[data-close-local]")) div.remove();
+  });
+  document.body.appendChild(div);
+}
+
+function showLocalText(text) {
+  _localOverlay(`<pre style="white-space:pre-wrap;word-break:break-word;margin:0">${escapeHtml(text)}</pre>`);
+}
+
+function showLocalImage(name, dataUrl) {
+  _localOverlay(`<h3 style="margin:0 0 12px">${escapeHtml(name)}</h3>`
+    + `<img src="${escapeHtml(dataUrl)}" alt="${escapeHtml(name)}" `
+    + `style="max-width:100%;max-height:70vh;border-radius:8px" />`);
+}
+
 function renderLocal() {
   const el = $("#local-list");
   if (!el) return;
@@ -183,6 +210,10 @@ function renderLocal() {
     const es = m.compatible_engines || [];
     const canLlm = es.includes("llama.cpp");
     const canMnn = es.includes("mnn");
+    const canChat = es.includes("transformers");
+    const canImage = es.includes("diffusers") && (!m.category || m.category === "image");
+    const canVideo = es.includes("diffusers") && m.category === "video";
+    const canAudio = es.includes("diffusers") && m.category === "audio";
     const running = state.llm && state.llm.running && state.llm.model_path === m.path;
     const engLine = es.length ? `<div class="sub">${t("local.availableEngines", { list: escapeHtml(es.join("、")) })}</div>` : "";
     return `
@@ -198,6 +229,14 @@ function renderLocal() {
         canLlm ? `<button class="secondary small" data-action="llm-start"
               data-path="${escapeHtml(m.path || "")}" aria-label="${t("local.startLlamaAria")}">${t("local.start")}</button>` : ""}
       ${canMnn ? `<span class="pill">${t("local.mnnLoadable")}</span>` : ""}
+      ${canChat ? `<button class="secondary small" data-action="local-chat"
+            data-path="${escapeHtml(m.path || "")}" data-name="${escapeHtml(m.name || "")}">${t("local.chat")}</button>` : ""}
+      ${canImage ? `<button class="secondary small" data-action="local-image"
+            data-path="${escapeHtml(m.path || "")}" data-name="${escapeHtml(m.name || "")}">${t("local.image")}</button>` : ""}
+      ${canVideo ? `<button class="secondary small" data-action="local-video"
+            data-path="${escapeHtml(m.path || "")}" data-name="${escapeHtml(m.name || "")}">${t("local.video")}</button>` : ""}
+      ${canAudio ? `<button class="secondary small" data-action="local-audio"
+            data-path="${escapeHtml(m.path || "")}" data-name="${escapeHtml(m.name || "")}">${t("local.audio")}</button>` : ""}
       <span class="pill ok">${t("local.localBadge")}</span>
       ${m.path ? `<button class="secondary small" data-action="reveal-local"
               data-path="${escapeHtml(m.path)}" aria-label="${t("local.revealAria")}">${t("local.locate")}</button>` : ""}
@@ -411,6 +450,84 @@ function wireGlobalUI() {
           toast(t("toast.llmStartFailed", { err: err.message }), { kind: "err" });
           llmStartBtn.disabled = false;
         });
+    }
+    // Local Transformers chat: downloaded HF causal-LM directory.
+    const chatBtn = e.target.closest("[data-action=local-chat]");
+    if (chatBtn) {
+      e.preventDefault();
+      const modelPath = chatBtn.dataset.path;
+      if (!modelPath) return;
+      const question = window.prompt(t("local.chatPrompt", { name: chatBtn.dataset.name || "" }));
+      if (!question || !question.trim()) return;
+      chatBtn.disabled = true;
+      toast(t("local.chatRunning"));
+      api.localTransformersChat({ model: modelPath, question })
+        .then((r) => {
+          const body = (r && r.body) || r || {};
+          showLocalText(body.answer || t("local.chatEmpty"));
+        })
+        .catch((err) => toast(String(err.message || err), { kind: "err" }))
+        .finally(() => { chatBtn.disabled = false; });
+    }
+    // Local Diffusers image: any downloaded pipeline with model_index.json.
+    const imageBtn = e.target.closest("[data-action=local-image]");
+    if (imageBtn) {
+      e.preventDefault();
+      const modelPath = imageBtn.dataset.path;
+      if (!modelPath) return;
+      const prompt = window.prompt(t("local.imagePrompt", { name: imageBtn.dataset.name || "" }));
+      if (!prompt || !prompt.trim()) return;
+      imageBtn.disabled = true;
+      toast(t("local.imageRunning"));
+      api.multimodalGenerateImage({
+        model: modelPath, prompt, allow_any_diffusers: true,
+        width: 512, height: 512, num_inference_steps: 20,
+      })
+        .then((r) => {
+          const body = (r && r.body) || r || {};
+          const img = (body.images || [])[0];
+          if (!img || !img.data_url) throw new Error(t("local.imageEmpty"));
+          showLocalImage(imageBtn.dataset.name || "", img.data_url);
+        })
+        .catch((err) => toast(String(err.message || err), { kind: "err" }))
+        .finally(() => { imageBtn.disabled = false; });
+    }
+    // Local Diffusers video / audio: generic DiffusionPipeline adapters.
+    const videoBtn = e.target.closest("[data-action=local-video]");
+    if (videoBtn) {
+      e.preventDefault();
+      const modelPath = videoBtn.dataset.path;
+      if (!modelPath) return;
+      const prompt = window.prompt(t("local.videoPrompt", { name: videoBtn.dataset.name || "" }));
+      if (!prompt || !prompt.trim()) return;
+      videoBtn.disabled = true;
+      toast(t("local.videoRunning"));
+      api.localVideo({ model: modelPath, prompt, num_frames: 16, fps: 8 })
+        .then((r) => {
+          const body = (r && r.body) || r || {};
+          if (!body.output_path) throw new Error(t("local.videoEmpty"));
+          showLocalText(t("local.videoDone", { path: body.output_path }));
+        })
+        .catch((err) => toast(String(err.message || err), { kind: "err" }))
+        .finally(() => { videoBtn.disabled = false; });
+    }
+    const audioBtn = e.target.closest("[data-action=local-audio]");
+    if (audioBtn) {
+      e.preventDefault();
+      const modelPath = audioBtn.dataset.path;
+      if (!modelPath) return;
+      const prompt = window.prompt(t("local.audioPrompt", { name: audioBtn.dataset.name || "" }));
+      if (!prompt || !prompt.trim()) return;
+      audioBtn.disabled = true;
+      toast(t("local.audioRunning"));
+      api.localAudio({ model: modelPath, prompt, duration_s: 10 })
+        .then((r) => {
+          const body = (r && r.body) || r || {};
+          if (!body.output_path) throw new Error(t("local.audioEmpty"));
+          showLocalText(t("local.audioDone", { path: body.output_path }));
+        })
+        .catch((err) => toast(String(err.message || err), { kind: "err" }))
+        .finally(() => { audioBtn.disabled = false; });
     }
     const llmStopBtn = e.target.closest("[data-action=llm-stop]");
     if (llmStopBtn) {

@@ -24,16 +24,69 @@ from __future__ import annotations
 
 from typing import Any
 
-# 引擎 id → 应用内运行时。
+# 引擎 id → 应用内运行时 + 端点。
 #
-# 只登记**确实存在加载端点**的引擎。其余（diffusers / vllm / transformers /
-# comfyui / sglang / onnxruntime / ollama / mlx / …）当前没有对应的应用内
-# 加载端点，路由结果记为 "other"，由调用方如实告知用户，而不是假装能跑。
+# 这里登记的是**确实存在加载端点**的引擎。外置服务（vLLM / SGLang /
+# ComfyUI / Ollama / MLX）没有应用内端点，但可以路由到用户启动的服务；
+# 返回 runtime="external" 并给出服务名，而不是谎称 "other"。
 RUNTIME_BY_ENGINE: dict[str, str] = {
     "mnn": "mnn",
     "llama.cpp": "llamacpp",
     "llamacpp": "llamacpp",
     "llama_cpp": "llamacpp",
+    "transformers": "transformers",
+    "diffusers": "diffusers",
+    "sentence-transformers": "embeddings",
+    "faster-whisper": "asr",
+    "demucs": "separation",
+    "audio-separator": "separation",
+    "piper": "piper",
+    "ltx-video": "ltx",
+    "music-runtime": "music",
+    "trellis": "three-d",
+    "triposr": "three-d",
+    "hunyuan3d": "three-d",
+    "direct3d-s2": "three-d",
+    "partcrafter": "three-d",
+    "triposg": "three-d",
+    "hunyuanworld": "three-d",
+    "sam3d": "three-d",
+    "pixal3d": "three-d",
+    "4danyone": "three-d",
+    "onnxruntime": "onnx",
+}
+
+ROUTE_BY_RUNTIME: dict[str, str] = {
+    "mnn": "/api/mnn/load",
+    "llamacpp": "/api/engines",
+    "transformers": "/api/local/transformers/chat",
+    "diffusers": "/api/multimodal/generate-image",
+    "embeddings": "/v1/embeddings",
+    "asr": "/api/asr/transcribe",
+    "separation": "/api/separation/separate",
+    "piper": "/api/tts-piper/synthesize",
+    "ltx": "/api/ltx/generate",
+    "music": "/api/music/generate",
+    "three-d": "/api/3d/generate",
+    "onnx": "/api/ocr/recognize",
+}
+
+#: Services the user must start separately; a route cannot launch them.
+EXTERNAL_ENGINE_SERVICES: dict[str, str] = {
+    "vllm": "vLLM",
+    "sglang": "SGLang",
+    "sglang-omni": "SGLang-Omni",
+    "comfyui": "ComfyUI",
+    "ollama": "Ollama",
+    "mlx": "MLX",
+    "kokoro-engine": "Kokoro",
+    "fish-speech": "Fish Speech",
+    "f5-tts": "F5-TTS",
+    "cosyvoice": "CosyVoice",
+    "spark-tts": "Spark-TTS",
+    "chatterbox": "Chatterbox",
+    "indextts": "IndexTTS",
+    "gpt-sovits": "GPT-SoVITS",
 }
 
 
@@ -58,8 +111,9 @@ def resolve_engine(
       - ``engine``：选中的引擎 id（无候选时为 ``None``）
       - ``source``：``explicit`` / ``default`` / ``catalog`` / ``none``
       - ``candidates``：归一化后的候选列表
-      - ``runtime``：``mnn`` / ``llamacpp`` / ``other`` / ``unknown``
-      - ``route``：建议调用的应用内端点（无则 ``None``）
+      - ``runtime``：``mnn`` / ``llamacpp`` / ``transformers`` / ``diffusers`` /
+        ``external`` / ``other`` / ``unknown``
+      - ``route``：建议调用的应用内端点（外置服务为 ``None``）
       - ``note``：需要告知用户的说明
     """
     cand = _normalize(candidates)
@@ -89,15 +143,23 @@ def resolve_engine(
     else:
         chosen = cand[0]
 
-    runtime = RUNTIME_BY_ENGINE.get(str(chosen).lower(), "other")
-    route = {"mnn": "/api/mnn/load", "llamacpp": "/api/engines"}.get(runtime)
-
-    note = ""
-    if runtime == "other":
-        note = (
-            f"引擎 {chosen!r} 当前没有对应的应用内加载端点"
-            f"（可下载 / 可被工作流调用，但不在本路由表内）"
-        )
+    key = str(chosen).lower()
+    service = EXTERNAL_ENGINE_SERVICES.get(key)
+    if service:
+        runtime = "external"
+        route = None
+        note = f"引擎 {chosen!r} 需要先启动 {service} 服务，应用内不负责拉起该进程"
+    else:
+        runtime = RUNTIME_BY_ENGINE.get(key, "other")
+        route = ROUTE_BY_RUNTIME.get(runtime)
+        note = ""
+        if runtime == "other":
+            note = (
+                f"引擎 {chosen!r} 当前没有对应的应用内加载端点"
+                f"（可下载 / 可被工作流调用，但不在本路由表内）"
+            )
+        elif key == "onnxruntime":
+            note = "ONNX 路由当前覆盖 OCR；超分/检测模型需各自的预处理与后处理"
 
     return _result(chosen, source, cand, runtime=runtime, route=route, note=note)
 

@@ -199,7 +199,11 @@
     "category_3d": "3D 生成",
     "category_vision": "多模态",
     "category_pending": "待定",
-    "category_other": "其他"
+    "category_other": "其他",
+    "availabilityTitle": "运行状态",
+    "availabilityNative": "本地可运行：{list}",
+    "availabilityExternal": "需外置引擎：{list}",
+    "availabilityUnsupported": "暂未接入运行时"
   },
   "engines": {
     "title": "AI 引擎",
@@ -243,7 +247,25 @@
     "revealAria": "在文件管理器中定位",
     "pendingEmptyTitle": "暂无待开源模型",
     "pendingEmptyHint": "这里会列出尚未开源权重的模型。官方公开权重后会自动上架到模型市场。",
-    "pendingBadge": "待开源"
+    "pendingBadge": "待开源",
+    "chat": "💬 对话",
+    "image": "🖼 出图",
+    "chatPrompt": "用本地 Transformers 模型回答：",
+    "chatRunning": "正在加载模型并生成回复…",
+    "chatEmpty": "（模型返回空）",
+    "imagePrompt": "用本地 Diffusers 模型生成图片，输入提示词：",
+    "imageRunning": "正在加载管线并出图…",
+    "imageEmpty": "管线没有返回图片",
+    "video": "🎬 视频",
+    "audio": "🎵 音频",
+    "videoPrompt": "为 {name} 输入视频提示词",
+    "videoRunning": "正在生成视频（首次加载较慢）…",
+    "videoDone": "视频已生成：{path}",
+    "videoEmpty": "视频生成未返回文件",
+    "audioPrompt": "为 {name} 输入音频提示词",
+    "audioRunning": "正在生成音频…",
+    "audioDone": "音频已生成：{path}",
+    "audioEmpty": "音频生成未返回文件"
   },
   "gguf": {
     "title": "GGUF 仓库",

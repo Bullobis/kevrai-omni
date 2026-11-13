@@ -144,6 +144,41 @@ curl "http://127.0.0.1:17890/api/models?category=llm&sort=trending"
 ### `GET /api/models/{model_id}`
 
 单个模型详情。`model_id` 非法形状返回 `400`，不存在返回 `404`。
+返回体新增 `availability`：`native`（本地可直接运行）/`external`（需启动
+ComfyUI、vLLM、SGLang 等服务）/`unsupported`（暂无适配器），并列出可用
+引擎与原因。此字段是 UI “运行状态”提示的唯一来源。
+
+### `GET /api/availability/summary`
+
+返回整个目录的可运行性统计，按状态与分类聚合：
+
+```json
+{
+  "total": 259,
+  "counts": {"native": 198, "external": 41, "unsupported": 20},
+  "by_category": {"llm": {"native": 105, "external": 12, "unsupported": 2}, "video": {"native": 21, "external": 0, "unsupported": 0}}
+}
+```
+
+### `POST /api/local/transformers/chat`
+
+用已下载的 HuggingFace 因果语言模型目录（或仓库 id）在本机 Transformers
+引擎上对话。Body：`{"model": "/abs/path", "question": "...", "system": "", "max_new_tokens": 512}`。
+缺引擎返回 `503`，模型加载失败返回 `422`。
+
+### `POST /api/local/video`
+
+用已下载的 Diffusers 视频管线生成本地视频。Body：`model`、`prompt`、
+`image_path`（可选，图生视频）、`width`、`height`、`num_frames`、`fps`、
+`num_inference_steps`、`guidance_scale`、`seed`、`output_format`（`mp4`/`gif`）。
+返回 `output_path` 与生成参数。不同上游管线的帧数参数名不统一，运行时会在
+`num_frames` / `video_length` 之间自动回退；结构不兼容时返回可读的 `422`。
+
+### `POST /api/local/audio`
+
+用已下载的 Diffusers 音频管线生成 WAV。Body：`model`、`prompt`、
+`duration_s`、`num_inference_steps`、`guidance_scale`、`seed`。返回
+`output_path`、`sampling_rate`。
 
 ### `GET /api/models/{model_id}/gguf-files`
 

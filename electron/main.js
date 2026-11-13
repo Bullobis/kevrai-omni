@@ -952,6 +952,10 @@ function createWindow(bootstrapMode = false) {
 function err(msg, code = "EINVAL") { const e = new Error(msg); e.code = code; return e; }
 
 function isString(v, max = 4096) { return typeof v === "string" && v.length > 0 && v.length <= max; }
+function clampInt(v, min, max, dflt) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.trunc(n))) : dflt;
+}
 function isOneOf(v, list)       { return typeof v === "string" && list.includes(v); }
 function isInt(v)               { return Number.isInteger(v); }
 
@@ -1428,7 +1432,7 @@ function registerIpc() {
     assert(payload && typeof payload === "object", "payload: invalid");
     assert(isString(payload.prompt, 2000), "prompt: invalid");
     const body = {
-      model: isString(payload.model, 128) ? payload.model : "janus-pro-7b",
+      model: isString(payload.model, 4096) ? payload.model : "janus-pro-7b",
       prompt: payload.prompt,
       guidance_scale: Number.isFinite(Number(payload.guidance_scale))
         ? Number(payload.guidance_scale) : 5.0,
@@ -1437,10 +1441,74 @@ function registerIpc() {
       num_images: Number.isFinite(Number(payload.num_images))
         ? Math.min(4, Math.max(1, Number(payload.num_images))) : 1,
       do_sample: payload.do_sample === true,
+      width: Number.isFinite(Number(payload.width))
+        ? Math.min(2048, Math.max(256, Number(payload.width))) : 512,
+      height: Number.isFinite(Number(payload.height))
+        ? Math.min(2048, Math.max(256, Number(payload.height))) : 512,
+      num_inference_steps: Number.isFinite(Number(payload.num_inference_steps))
+        ? Math.min(100, Math.max(1, Number(payload.num_inference_steps))) : 20,
+      allow_any_diffusers: payload.allow_any_diffusers === true,
     };
     return sidecarFetch("/api/multimodal/generate-image", {
       method: "POST", rawBody: Buffer.from(JSON.stringify(body)),
       headers: { "Content-Type": "application/json" }, timeoutMs: 600_000,
+    });
+  });
+  ipcMain.handle("api:local:transformers-chat", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.model, 4096), "model: invalid");
+    assert(isString(payload.question, 8000), "question: invalid");
+    const body = {
+      model: payload.model,
+      question: payload.question,
+      system: isString(payload.system, 4000) ? payload.system : "",
+      max_new_tokens: Number.isFinite(Number(payload.max_new_tokens))
+        ? Math.min(4096, Math.max(1, Number(payload.max_new_tokens))) : 512,
+    };
+    return sidecarFetch("/api/local/transformers/chat", {
+      method: "POST", rawBody: Buffer.from(JSON.stringify(body)),
+      headers: { "Content-Type": "application/json" }, timeoutMs: 1_800_000,
+    });
+  });
+  ipcMain.handle("api:local:video", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.model, 4096), "model: invalid");
+    assert(isString(payload.prompt, 8000), "prompt: invalid");
+    const body = {
+      model: payload.model,
+      prompt: payload.prompt,
+      image_path: isString(payload.image_path, 4096) ? payload.image_path : null,
+      width: clampInt(payload.width, 256, 2048, 512),
+      height: clampInt(payload.height, 256, 2048, 512),
+      num_frames: clampInt(payload.num_frames, 4, 257, 16),
+      fps: clampInt(payload.fps, 1, 60, 8),
+      num_inference_steps: clampInt(payload.num_inference_steps, 1, 100, 20),
+      guidance_scale: Number.isFinite(Number(payload.guidance_scale))
+        ? Number(payload.guidance_scale) : 5,
+      seed: Number.isFinite(Number(payload.seed)) ? Number(payload.seed) : null,
+      output_format: payload.output_format === "gif" ? "gif" : "mp4",
+    };
+    return sidecarFetch("/api/local/video", {
+      method: "POST", rawBody: Buffer.from(JSON.stringify(body)),
+      headers: { "Content-Type": "application/json" }, timeoutMs: 3_600_000,
+    });
+  });
+  ipcMain.handle("api:local:audio", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.model, 4096), "model: invalid");
+    assert(isString(payload.prompt, 8000), "prompt: invalid");
+    const body = {
+      model: payload.model,
+      prompt: payload.prompt,
+      duration_s: Math.min(120, Math.max(1, Number(payload.duration_s) || 10)),
+      num_inference_steps: clampInt(payload.num_inference_steps, 1, 200, 50),
+      guidance_scale: Number.isFinite(Number(payload.guidance_scale))
+        ? Number(payload.guidance_scale) : 3,
+      seed: Number.isFinite(Number(payload.seed)) ? Number(payload.seed) : null,
+    };
+    return sidecarFetch("/api/local/audio", {
+      method: "POST", rawBody: Buffer.from(JSON.stringify(body)),
+      headers: { "Content-Type": "application/json" }, timeoutMs: 3_600_000,
     });
   });
   ipcMain.handle("api:music:capabilities", async () =>

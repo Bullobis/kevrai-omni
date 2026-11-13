@@ -199,7 +199,11 @@
     "category_3d": "3D generation",
     "category_vision": "Multimodal",
     "category_pending": "Pending",
-    "category_other": "Other"
+    "category_other": "Other",
+    "availabilityTitle": "Run status",
+    "availabilityNative": "Runs locally: {list}",
+    "availabilityExternal": "Requires external engine: {list}",
+    "availabilityUnsupported": "No runtime adapter yet"
   },
   "engines": {
     "title": "AI Engines",
@@ -243,7 +247,25 @@
     "revealAria": "Reveal in file manager",
     "pendingEmptyTitle": "No pending-open-weight models",
     "pendingEmptyHint": "Models whose weights are not yet open will be listed here. They appear in the market once officially released.",
-    "pendingBadge": "Pending open"
+    "pendingBadge": "Pending open",
+    "chat": "💬 Chat",
+    "image": "🖼 Image",
+    "chatPrompt": "Ask the local Transformers model:",
+    "chatRunning": "Loading model and generating…",
+    "chatEmpty": "(empty answer)",
+    "imagePrompt": "Prompt for the local Diffusers pipeline:",
+    "imageRunning": "Loading pipeline and generating…",
+    "imageEmpty": "Pipeline returned no image",
+    "video": "🎬 Video",
+    "audio": "🎵 Audio",
+    "videoPrompt": "Video prompt for {name}",
+    "videoRunning": "Generating video (first load is slow)…",
+    "videoDone": "Video written: {path}",
+    "videoEmpty": "The video task returned no file",
+    "audioPrompt": "Audio prompt for {name}",
+    "audioRunning": "Generating audio…",
+    "audioDone": "Audio written: {path}",
+    "audioEmpty": "The audio task returned no file"
   },
   "gguf": {
     "title": "GGUF Repos",

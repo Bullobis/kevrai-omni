@@ -488,7 +488,7 @@
       "category": "llm",
       "name": "GLM-4.5 (355B-A32B MoE)",
       "repo": "zai-org/GLM-4.5",
-      "gguf_repo": "",
+      "gguf_repo": "unsloth/GLM-4.5-GGUF",
       "size_gb": 668,
       "engine": [
         "llama.cpp",
@@ -5265,7 +5265,7 @@
       "category": "llm",
       "name": "Hunyuan Hy3 (295B A21B)",
       "repo": "tencent/Hy3",
-      "gguf_repo": "",
+      "gguf_repo": "AngelSlim/Hy3-GGUF",
       "size_gb": 557,
       "engine": [
         "vllm",
@@ -5791,7 +5791,7 @@
       "category": "llm",
       "name": "Zamba2-VL 7B",
       "repo": "Zyphra/Zamba2-VL-7B",
-      "gguf_repo": "",
+      "gguf_repo": "1bit-MONSTER/Zamba2-VL-7B-GGUF",
       "size_gb": 15,
       "engine": [
         "llama.cpp"
@@ -5837,7 +5837,7 @@
       "category": "llm",
       "name": "Zamba2-VL 2.7B",
       "repo": "Zyphra/Zamba2-VL-2.7B",
-      "gguf_repo": "",
+      "gguf_repo": "1bit-MONSTER/Zamba2-VL-2.7B-GGUF",
       "size_gb": 6,
       "engine": [
         "llama.cpp"
@@ -5883,7 +5883,7 @@
       "category": "llm",
       "name": "Zamba2-VL 1.2B",
       "repo": "Zyphra/Zamba2-VL-1.2B",
-      "gguf_repo": "",
+      "gguf_repo": "1bit-MONSTER/Zamba2-VL-1.2B-GGUF",
       "size_gb": 4,
       "engine": [
         "llama.cpp"
@@ -5929,7 +5929,7 @@
       "category": "llm",
       "name": "Granite 4.2 8B (IBM)",
       "repo": "ibm-granite/granite-4.2-8b",
-      "gguf_repo": "",
+      "gguf_repo": "ibm-granite/granite-4.2-8b-GGUF",
       "size_gb": 16,
       "engine": [
         "transformers",
@@ -5980,7 +5980,7 @@
       "category": "llm",
       "name": "Granite 4.2 30B (IBM)",
       "repo": "ibm-granite/granite-4.2-30b",
-      "gguf_repo": "",
+      "gguf_repo": "ibm-granite/granite-4.2-30b-GGUF",
       "size_gb": 55,
       "engine": [
         "transformers",
@@ -6084,7 +6084,7 @@
       "category": "llm",
       "name": "Muse Glimmer 30B (Meta)",
       "repo": "meta-models/Muse-Glimmer-30B",
-      "gguf_repo": "",
+      "gguf_repo": "meta-models/Muse-Glimmer-30B-GGUF",
       "size_gb": 56,
       "engine": [
         "transformers",
@@ -6194,7 +6194,7 @@
       "category": "llm",
       "name": "GLM-5.3 (智谱)",
       "repo": "zai-org/GLM-5.3",
-      "gguf_repo": "",
+      "gguf_repo": "unsloth/GLM-5.3-GGUF",
       "size_gb": 704,
       "engine": [
         "vllm",
@@ -6247,7 +6247,7 @@
       "category": "llm",
       "name": "LFM2.5-VL-3B (Liquid·端侧 VLM)",
       "repo": "LiquidAI/LFM2.5-VL-3B",
-      "gguf_repo": "",
+      "gguf_repo": "LiquidAI/LFM2.5-VL-3B-GGUF",
       "size_gb": 6,
       "engine": [
         "transformers",
@@ -11227,7 +11227,8 @@
         "Microsoft",
         "MIT",
         "本地部署"
-      ]
+      ],
+      "gguf_repo": "bartowski/FrogNano-4B-2609-GGUF"
     },
     {
       "id": "gemma-4-e2b",
