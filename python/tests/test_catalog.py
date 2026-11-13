@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from app.catalog import (
@@ -26,9 +27,14 @@ def test_catalog_loads():
 def test_all_categories_have_models():
     cat, _ = load_catalog(CATALOG_DIR)
     cats = {m.category for m in cat.models}
-    required = {"llm", "tts", "video", "image", "superres", "audio", "3d", "pending"}
+    required = {"llm", "tts", "video", "image", "superres", "audio", "3d"}
     missing = required - cats
     assert not missing, f"missing categories: {missing}"
+    # v4.18.0: closed / no-weight entries are removed, so every declared
+    # category must still have at least one real model.
+    declared = {c["id"] for c in cat.categories}
+    empty = declared - cats
+    assert not empty, f"declared categories without models: {empty}"
 
 
 def test_blocked_mirror_in_models_now_accepted():
@@ -114,10 +120,30 @@ def test_gguf_repo_entries_have_owner_repo():
         assert g.sources, f"gguf_repo without sources: {g.id}"
 
 
-def test_pending_minimax_2k_present():
+def test_open_h3_regenerate_2k_present():
     cat, _ = load_catalog(CATALOG_DIR)
-    pend = [m for m in cat.models if m.category == "pending"]
-    assert pend, "must have at least one pending entry"
-    assert any(
-        "MiniMax" in m.name or "minimax" in (m.description or "").lower() for m in pend
-    ), "MiniMax 2K pending entry missing"
+    ids = {m.id for m in cat.models}
+    assert "minimax-2k-pending" not in ids, "stale closed placeholder must be gone"
+    m = next(x for x in cat.models if x.id == "open-h3-regenerate-2k")
+    assert m.repo == "Efficient-Large-Model/Open-H3-Regenerate-2K"
+    assert any("nvlabs.github.io" in u for u in m.sources)
+    raw = json.loads((CATALOG_DIR / "models.json").read_text(encoding="utf-8"))
+    entry = next(x for x in raw["models"] if x["id"] == "open-h3-regenerate-2k")
+    assert "仅 API" in entry["note"], "must distinguish official API-only module"
+
+
+def test_every_catalog_entry_has_a_downloadable_repo():
+    """v4.18.0 truth rule: no catalog row without a real owner/repo source.
+
+    Entries whose weights are not published are removed, not kept as
+    "pending" placeholders. This catches a regression where a pretty card
+    is added but its Install button can only 404.
+    """
+    data = json.loads((CATALOG_DIR / "models.json").read_text(encoding="utf-8"))
+    bad = []
+    for m in data["models"]:
+        repo = (m.get("repo") or m.get("gguf_repo") or "").strip()
+        if not repo or "/" not in repo:
+            bad.append((m["id"], repo))
+    assert not bad, f"entries without a real repo: {bad}"
+    assert all(m["category"] != "pending" for m in data["models"])

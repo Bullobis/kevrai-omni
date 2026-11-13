@@ -71,7 +71,7 @@ curl http://127.0.0.1:17890/api/health
 ```json
 {
   "ok": true,
-  "version": "4.17.8",
+  "version": "4.17.9",
   "models_dir": "/Users/you/Library/Application Support/KevraiOmni/models",
   "app_root": "/Users/you/Library/Application Support/KevraiOmni"
 }
@@ -91,7 +91,6 @@ curl http://127.0.0.1:17890/api/health
   {"id": "audio", "label": "音频生成 / Audio"},
   {"id": "3d", "label": "3D 生成 / 3D"},
   {"id": "vision", "label": "视觉工具 / Vision"},
-  {"id": "pending", "label": "待官方开源 / Pending"},
   {"id": "other", "label": "其它 / Other"}
 ] }
 ```

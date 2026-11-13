@@ -47,10 +47,15 @@ def test_catalog_minimax_entries_corrected():
     assert models["minimax-h3"]["repo"] == "Comfy-Org/MiniMax-H3"
     assert "768p" in models["minimax-h3-omni"]["description"]
     assert "Regenerate-2K" in models["minimax-h3-omni"]["description"]
-    pend = models["minimax-2k-pending"]
-    assert "Regenerate-2K" in pend["name"]
-    assert "AMA" in pend["description"]
-    assert any("minimax.io" in u for u in pend["sources"])
+    # v4.18.0: the official H3-Regenerate-2K remains API-only, but NVIDIA/MIT's
+    # Open-H3-Regenerate-2K publishes weights + inference code, so the stale
+    # "pending" entry is replaced by the genuinely downloadable open model.
+    assert "minimax-2k-pending" not in models
+    op = models["open-h3-regenerate-2k"]
+    assert op["repo"] == "Efficient-Large-Model/Open-H3-Regenerate-2K"
+    assert any("nvlabs.github.io/Sana/Open-H3-Regenerate-2K" in u for u in op["sources"])
+    assert "官方 H3-Regenerate-2K 仍仅 API" in op["note"]
+    assert models["minimax-h3-image"]["repo"] == "MiniMaxAI/MiniMax-H3-Image"
 
 
 def test_catalog_ltx25_gated_and_16gb():

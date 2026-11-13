@@ -1,7 +1,7 @@
 {
-  "version": "4.17.8",
-  "updated": "2026-10-12",
-  "notice": "v4.1.0：为 72 个 HF-only 模型自动补充魔搭模型广场（modelscope.cn）直链（只保留 API 验证存在的路径），国内用户免令牌即可直接下载。\nv2.9.0 数据核验：修正 14 处失效/错误仓库 slug(THUDM/glm-4-9b-chat→zai-org/GLM-4.5, Tencent-Hunyuan→tencent, xinntao/Real-ESRGAN→ai-forever, Kiteretsu77/APISR→camenduru, Fanghua-Yu/SUPIR→camenduru[非官方转存], Kim2091/4x-UltraSharp→lokCX, haoheliu/audioldm2→audioldm2-full, ASLP-lab/DiffRhythm→DiffRhythm-base, VAST-AI-Research/TripoSR→stabilityai, RVC-Boss/GPT-SoVITS→lj1995, THU-MIG/yolov10→onnx-community, hpcaitech/Open-Sora→hpcai-tech, dummy9996/MiniMax-Music3-w4a8→NidAll, buffalo_l→immich-app/buffalo_l)；清除广告软文式描述；按平台分拆 sources（GitHub/HF 各用各 slug）。",
+  "version": "4.17.9",
+  "updated": "2026-11-13",
+  "notice": "目录真实性修正（2026-11）：移除无权重/闭源占位条目（GLM-5-Code、Wan 3.0、HappyShrimp 1.0、官方 H3-Regenerate-2K），补入 NVIDIA/MIT Open-H3-Regenerate-2K 与 MiniMax H3-Image；修正 demucs、apple/Sharp、Piper 的失效仓库地址。",
   "categories": [
     {
       "id": "llm",
@@ -34,10 +34,6 @@
     {
       "id": "vision",
       "label": "视觉/多模态工具 / Vision & Multimodal Tools"
-    },
-    {
-      "id": "pending",
-      "label": "待官方开源 / Awaiting Official Release"
     }
   ],
   "models": [
@@ -2599,41 +2595,6 @@
       ]
     },
     {
-      "id": "minimax-2k-pending",
-      "category": "pending",
-      "name": "MiniMax H3-Regenerate-2K（待官方开源）",
-      "repo": "",
-      "gguf_repo": "",
-      "size_gb": 0,
-      "engine": [
-        "diffusers"
-      ],
-      "license": "Unknown",
-      "trending": true,
-      "description": "H3 的 2K 输出模块，截至 2026-09-01 尚未开源。进展时间线：2026-07-31 H3 发布并承诺开放权重；2026-08-03 H3-Base 基础权重开源（本地最高 768p）；2026-08-07 官方团队在 Reddit AMA 确认「计划开源 H3-Regenerate-2K，不会太久」，但未给出确切日期；稀疏注意力参考实现也在计划中。本条目保留，官方权重上线后自动上架。",
-      "sources": [
-        "https://www.minimax.io/news/minimax-h3-open-source",
-        "https://huggingface.co/MiniMaxAI/MiniMax-H3",
-        "https://github.com/MiniMax-AI/MiniMax-H3"
-      ],
-      "hardware": {
-        "vram_gb": 32,
-        "min_vram_gb": 16,
-        "ram_gb": 64,
-        "disk_gb": 32,
-        "notes": "待开源；官方称正在优化效率与质量以适合本地使用"
-      },
-      "tags": [
-        "diffusers",
-        "pending",
-        "trending",
-        "即将推出",
-        "待开源",
-        "热门"
-      ],
-      "note": "官方尚未发布可下载权重，暂无下载地址。"
-    },
-    {
       "id": "qwen3.8-27b",
       "category": "llm",
       "name": "Qwen3.8-27B（官方稠密多模态）",
@@ -4202,29 +4163,6 @@
       ]
     },
     {
-      "id": "glm-5-code",
-      "category": "pending",
-      "name": "GLM-5-Code（代码专用）",
-      "repo": "",
-      "gguf_repo": "",
-      "size_gb": 0,
-      "engine": [],
-      "license": "自定义（智谱AI）",
-      "trending": false,
-      "description": "智谱 GLM-5-Code 代码专用模型，开源较新，社区适配跟进中。",
-      "sources": [
-        "https://huggingface.co/models?search=GLM-5-Code",
-        "https://hf-mirror.com/models?search=GLM-5-Code"
-      ],
-      "primary_url": "https://huggingface.co/models?search=GLM-5-Code",
-      "tags": [
-        "pending",
-        "即将推出",
-        "待开源"
-      ],
-      "note": "官方尚未发布可下载权重，链接仅为搜索页，暂不可下载。"
-    },
-    {
       "id": "minimax-h3",
       "category": "video",
       "name": "MiniMax H3（ComfyUI 官方重打包）",
@@ -4239,12 +4177,14 @@
       ],
       "license": "MiniMax H3 Community License",
       "trending": true,
-      "description": "Comfy-Org 为 ComfyUI 官方重打包的 MiniMax H3 权重（diffusion_models/text_encoders/vae），提供 int8 convrot / pruned fp8 等量化档位，配官方 T2V、I2V、R2V 工作流模板；配合 ComfyUI ≥0.30 使用。注意：本地开源权重最高输出 768p，2K 需未开源的 Regenerate-2K 模块。",
+      "description": "Comfy-Org 为 ComfyUI 官方重打包的 MiniMax H3 权重（diffusion_models/text_encoders/vae），提供 int8 convrot / pruned fp8 等量化档位，配官方 T2V、I2V、R2V 工作流模板；配合 ComfyUI ≥0.30 使用。本地权重最高 768p；2K/4K 可接 NVIDIA/MIT 的 Open-H3-Regenerate-2K 开放实现（见 open-h3-regenerate-2k）；MiniMax 官方 2K 模块仍仅 API。",
       "sources": [
         "https://huggingface.co/Comfy-Org/MiniMax-H3/",
         "https://hf-mirror.com/Comfy-Org/MiniMax-H3/",
         "https://modelscope.cn/models/Comfy-Org/MiniMax-H3/",
-        "https://modelscope.cn/models/MiniMax/MiniMax-H3"
+        "https://modelscope.cn/models/MiniMax/MiniMax-H3",
+        "https://nvlabs.github.io/Sana/Open-H3-Regenerate-2K/",
+        "https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K"
       ],
       "primary_url": "https://huggingface.co/Comfy-Org/MiniMax-H3/",
       "hardware": {
@@ -4368,31 +4308,6 @@
       ]
     },
     {
-      "id": "wan3.0",
-      "category": "pending",
-      "name": "Wan 3.0（待开源）",
-      "repo": "",
-      "gguf_repo": "",
-      "size_gb": 0,
-      "engine": [],
-      "license": "—",
-      "trending": true,
-      "description": "阿里 Wan 3.0，8/24 已上线公测，开源状态待确认。",
-      "sources": [
-        "https://huggingface.co/models?search=Wan3",
-        "https://hf-mirror.com/models?search=Wan3"
-      ],
-      "primary_url": "https://huggingface.co/models?search=Wan3",
-      "tags": [
-        "pending",
-        "trending",
-        "即将推出",
-        "待开源",
-        "热门"
-      ],
-      "note": "截至 2026-10，Wan-AI 官方未发布 3.0 开源权重，本条暂无可下载地址；页面上的链接只是搜索页。可用的仍是 Wan 2.2 系列。"
-    },
-    {
       "id": "minimax-music3",
       "category": "audio",
       "name": "MiniMax-Music3（官方全精度）",
@@ -4491,29 +4406,6 @@
         ],
         "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
       }
-    },
-    {
-      "id": "happyshrimp-1.0",
-      "category": "pending",
-      "name": "HappyShrimp 1.0（待开源）",
-      "repo": "",
-      "gguf_repo": "",
-      "size_gb": 0,
-      "engine": [],
-      "license": "—",
-      "trending": false,
-      "description": "阿里 HappyShrimp 1.0 音乐生成，已上线 API 公测，本地部署信息待确认。",
-      "sources": [
-        "https://huggingface.co/models?search=HappyShrimp",
-        "https://hf-mirror.com/models?search=HappyShrimp"
-      ],
-      "primary_url": "https://huggingface.co/models?search=HappyShrimp",
-      "tags": [
-        "pending",
-        "即将推出",
-        "待开源"
-      ],
-      "note": "官方尚未发布可下载权重，链接仅为搜索页，暂不可下载。"
     },
     {
       "id": "minimax-music3-comfyui",
@@ -6420,11 +6312,13 @@
       ],
       "license": "MiniMax H3 Community License",
       "trending": true,
-      "description": "MiniMax H3 官方开放权重（2026-08-03 上线 HuggingFace）：33B 稠密全模态生成模型（H3-Base，FL2VA / Ref2VA 双检查点），文/图/视频/音频混合输入 → 最长 15 秒、带 32kHz 原生立体声的视频。注意：本地部署最高输出 768p；2K 由未开源的 H3-Regenerate-2K 模块完成（官方 2026-08-07 AMA 承诺将开源，暂无日期），目前 2K 只能走官方 API。支持 SGLang / vLLM / diffusers / ComfyUI 部署。",
+      "description": "MiniMax H3 官方开放权重（2026-08-03 上线 HuggingFace）：33B 稠密全模态生成模型（H3-Base，FL2VA / Ref2VA 双检查点），文/图/视频/音频混合输入 → 最长 15 秒、带 32kHz 原生立体声的视频。本地部署最高输出 768p；2K/4K 可接 NVIDIA/MIT 的 Open-H3-Regenerate-2K 开放实现（非 MiniMax 官方模块，官方 2K 仍仅 API）。支持 SGLang / vLLM / diffusers / ComfyUI 部署。",
       "sources": [
         "https://huggingface.co/MiniMaxAI/MiniMax-H3/",
         "https://hf-mirror.com/MiniMaxAI/MiniMax-H3/",
-        "https://github.com/MiniMax-AI/MiniMax-H3"
+        "https://github.com/MiniMax-AI/MiniMax-H3",
+        "https://nvlabs.github.io/Sana/Open-H3-Regenerate-2K/",
+        "https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K"
       ],
       "primary_url": "https://huggingface.co/MiniMaxAI/MiniMax-H3/",
       "hardware": {
@@ -10198,7 +10092,7 @@
       "id": "apple-sharp",
       "category": "3d",
       "name": "Apple Sharp（ML-Sharp）",
-      "repo": "apple/ml-sharp",
+      "repo": "apple/Sharp",
       "gguf_repo": "",
       "size_gb": 2.8,
       "engine": [
@@ -10209,8 +10103,7 @@
       "description": "苹果 2025-12 开源的单图转 3D 扩散模型（ml-sharp，权重 sharp_2572gikvuh.pt 约 2.8GB），HF likes 408、下载 2400+；苹果在生成式 3D 资产方向的首个公开权重，几何与纹理质量较高。",
       "sources": [
         "https://huggingface.co/apple/Sharp",
-        "https://hf-mirror.com/apple/Sharp",
-        "https://modelscope.cn/models/apple/Sharp"
+        "https://github.com/apple/ml-sharp"
       ],
       "primary_url": "https://huggingface.co/apple/Sharp",
       "hardware": {
@@ -14329,7 +14222,7 @@
       "id": "htdemucs",
       "category": "audio",
       "name": "HTDemucs 音源分离",
-      "repo": "demucs/htdemucs",
+      "repo": "iBoostAI/Demucs-v4",
       "size_gb": 0.08,
       "engine": [
         "demucs"
@@ -14338,11 +14231,11 @@
       "trending": true,
       "description": "默认混合 Transformer 模型，将歌曲分离为鼓/贝斯/其他/人声 4 轨，速度与质量均衡。",
       "sources": [
-        "https://github.com/facebookresearch/demucs/blob/main/demucs/remote/htdemucs.yaml",
+        "https://huggingface.co/iBoostAI/Demucs-v4",
         "https://github.com/facebookresearch/demucs",
         "https://pypi.org/project/demucs/"
       ],
-      "primary_url": "https://github.com/facebookresearch/demucs/blob/main/demucs/remote/htdemucs.yaml",
+      "primary_url": "https://huggingface.co/iBoostAI/Demucs-v4",
       "hardware": {
         "vram_gb": 2,
         "min_vram_gb": 1,
@@ -14363,13 +14256,18 @@
         "Demucs",
         "人声提取",
         "Stems"
+      ],
+      "note": "运行时由 Demucs 自行管理权重；此仓库为可下载的社区重打包。",
+      "files": [
+        "955717e8-8726e21a.th",
+        "htdemucs.yaml"
       ]
     },
     {
       "id": "htdemucs-ft",
       "category": "audio",
       "name": "HTDemucs FT 音源分离",
-      "repo": "demucs/htdemucs_ft",
+      "repo": "iBoostAI/Demucs-v4",
       "size_gb": 0.32,
       "engine": [
         "demucs"
@@ -14378,11 +14276,11 @@
       "trending": false,
       "description": "4 个微调模型的组合，分离质量最高，需下载约 320MB、运行较慢。",
       "sources": [
-        "https://github.com/facebookresearch/demucs/blob/main/demucs/remote/htdemucs_ft.yaml",
+        "https://huggingface.co/iBoostAI/Demucs-v4",
         "https://github.com/facebookresearch/demucs",
         "https://pypi.org/project/demucs/"
       ],
-      "primary_url": "https://github.com/facebookresearch/demucs/blob/main/demucs/remote/htdemucs_ft.yaml",
+      "primary_url": "https://huggingface.co/iBoostAI/Demucs-v4",
       "hardware": {
         "vram_gb": 2,
         "min_vram_gb": 1,
@@ -14403,13 +14301,21 @@
         "Demucs",
         "人声提取",
         "Stems"
+      ],
+      "note": "运行时由 Demucs 自行管理权重；此仓库为可下载的社区重打包。",
+      "files": [
+        "f7e0c4bc-ba3fe64a.th",
+        "d12395a8-e57c48e6.th",
+        "92cfc3b6-ef3bcb9c.th",
+        "04573f0d-f3cf25b2.th",
+        "htdemucs_ft.yaml"
       ]
     },
     {
       "id": "htdemucs-6s",
       "category": "audio",
       "name": "HTDemucs 6S 音源分离",
-      "repo": "demucs/htdemucs_6s",
+      "repo": "iBoostAI/Demucs-v4",
       "size_gb": 0.17,
       "engine": [
         "demucs"
@@ -14418,11 +14324,11 @@
       "trending": false,
       "description": "6 音轨模型，在 4 轨基础上额外分离钢琴与吉他。",
       "sources": [
-        "https://github.com/facebookresearch/demucs/blob/main/demucs/remote/htdemucs_6s.yaml",
+        "https://huggingface.co/iBoostAI/Demucs-v4",
         "https://github.com/facebookresearch/demucs",
         "https://pypi.org/project/demucs/"
       ],
-      "primary_url": "https://github.com/facebookresearch/demucs/blob/main/demucs/remote/htdemucs_6s.yaml",
+      "primary_url": "https://huggingface.co/iBoostAI/Demucs-v4",
       "hardware": {
         "vram_gb": 2,
         "min_vram_gb": 1,
@@ -14443,13 +14349,18 @@
         "Demucs",
         "人声提取",
         "Stems"
+      ],
+      "note": "运行时由 Demucs 自行管理权重；此仓库为可下载的社区重打包。",
+      "files": [
+        "5c90dfd2-34c22ccb.th",
+        "htdemucs_6s.yaml"
       ]
     },
     {
       "id": "piper-en-lessac",
       "category": "tts",
       "name": "Piper 英语 Lessac（美音）",
-      "repo": "piper-en-lessac",
+      "repo": "rhasspy/piper-voices",
       "size_gb": 0.063,
       "engine": [
         "piper"
@@ -14483,13 +14394,18 @@
         "Piper",
         "离线TTS",
         "ONNX"
+      ],
+      "note": "Piper 运行时按 voice id 下载单个 onnx，不需要整仓下载。",
+      "files": [
+        "en/en_US/lessac/medium/en_US-lessac-medium.onnx",
+        "en/en_US/lessac/medium/en_US-lessac-medium.onnx.json"
       ]
     },
     {
       "id": "piper-en-amy",
       "category": "tts",
       "name": "Piper 英语 Amy（美音）",
-      "repo": "piper-en-amy",
+      "repo": "rhasspy/piper-voices",
       "size_gb": 0.063,
       "engine": [
         "piper"
@@ -14523,13 +14439,18 @@
         "Piper",
         "离线TTS",
         "ONNX"
+      ],
+      "note": "Piper 运行时按 voice id 下载单个 onnx，不需要整仓下载。",
+      "files": [
+        "en/en_US/amy/medium/en_US-amy-medium.onnx",
+        "en/en_US/amy/medium/en_US-amy-medium.onnx.json"
       ]
     },
     {
       "id": "piper-zh-huayan",
       "category": "tts",
       "name": "Piper 中文 华颜（普通话）",
-      "repo": "piper-zh-huayan",
+      "repo": "rhasspy/piper-voices",
       "size_gb": 0.063,
       "engine": [
         "piper"
@@ -14563,6 +14484,11 @@
         "Piper",
         "离线TTS",
         "ONNX"
+      ],
+      "note": "Piper 运行时按 voice id 下载单个 onnx，不需要整仓下载。",
+      "files": [
+        "zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx",
+        "zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx.json"
       ]
     },
     {
@@ -14861,6 +14787,102 @@
         "mel_band_roformer/vocals_viperx/model.safetensors",
         "mel_band_roformer/vocals_viperx/config.yaml"
       ]
+    },
+    {
+      "id": "open-h3-regenerate-2k",
+      "category": "video",
+      "name": "Open-H3-Regenerate-2K（NVIDIA/MIT 开放 2K 再生成）",
+      "repo": "Efficient-Large-Model/Open-H3-Regenerate-2K",
+      "gguf_repo": "",
+      "size_gb": 165,
+      "engine": [
+        "comfyui",
+        "diffusers"
+      ],
+      "license": "MiniMax H3 Community License（衍生开放实现）",
+      "trending": true,
+      "description": "NVIDIA + MIT 对官方闭源 H3-Regenerate-2K 的开放替代：把 H3 768p 草稿在 latent 空间放大后三步重生成到 2K（2560×1440），也支持 4K。权重与推理代码已开放；MiniMax 官方 H3-Regenerate-2K 仍只提供 API。",
+      "sources": [
+        "https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K",
+        "https://nvlabs.github.io/Sana/Open-H3-Regenerate-2K/",
+        "https://github.com/NVlabs/Sana/tree/sol-engine/models/Open-H3-Regenerate-2K",
+        "https://www.minimaxi.com/news/minimax-h3-open-source"
+      ],
+      "primary_url": "https://huggingface.co/Efficient-Large-Model/Open-H3-Regenerate-2K",
+      "hardware": {
+        "vram_gb": 150,
+        "min_vram_gb": 24,
+        "ram_gb": 256,
+        "disk_gb": 165,
+        "notes": "官方 SoL-Engine 单卡约 150GB 显存（B200/GB200），Linux + CUDA 13；ComfyUI 低显存工作流需量化/分块"
+      },
+      "modality": {
+        "multimodal": false,
+        "understand": [],
+        "generate": [
+          "video"
+        ],
+        "notes": "768p H3 草稿 → 2K/4K 再生成"
+      },
+      "tags": [
+        "video",
+        "2k",
+        "4k",
+        "comfyui",
+        "diffusers",
+        "nvidia",
+        "open-weights",
+        "trending"
+      ],
+      "note": "非 MiniMax 官方模块；官方 H3-Regenerate-2K 仍仅 API。"
+    },
+    {
+      "id": "minimax-h3-image",
+      "category": "image",
+      "name": "MiniMax H3-Image（官方开放权重）",
+      "repo": "MiniMaxAI/MiniMax-H3-Image",
+      "gguf_repo": "",
+      "size_gb": 204,
+      "engine": [
+        "diffusers",
+        "comfyui"
+      ],
+      "license": "MiniMax H3-Image Community License",
+      "trending": true,
+      "description": "MiniMax 于 2026-11-10 开放的图像生成/编辑统一模型：单个 checkpoint 支持文生图和多图编辑，原生约 16MP（4096×4096 至 6272×2688），6 步蒸馏、无 CFG。BF16 DiT 约 68.65GB，整仓约 204GB。",
+      "sources": [
+        "https://huggingface.co/MiniMaxAI/MiniMax-H3-Image",
+        "https://github.com/MiniMax-AI/MiniMax-H3-Image",
+        "https://modelscope.cn/models/MiniMax/MiniMax-H3-Image"
+      ],
+      "primary_url": "https://huggingface.co/MiniMaxAI/MiniMax-H3-Image",
+      "hardware": {
+        "vram_gb": 80,
+        "min_vram_gb": 24,
+        "ram_gb": 128,
+        "disk_gb": 204,
+        "notes": "BF16 DiT 68.65GB；官方支持 vLLM/ComfyUI/diffusers，低显存需量化或分块"
+      },
+      "modality": {
+        "multimodal": true,
+        "understand": [
+          "image"
+        ],
+        "generate": [
+          "image"
+        ],
+        "notes": "文生图 + 图像编辑"
+      },
+      "tags": [
+        "image",
+        "16mp",
+        "diffusers",
+        "comfyui",
+        "minimax",
+        "open-weights",
+        "trending"
+      ],
+      "note": "官方开放权重，非 API-only；整仓包含重复的 transformer/ 与 transformer_diffusers/ 目录，按需下载可减半。"
     }
   ],
   "gguf_repos": [

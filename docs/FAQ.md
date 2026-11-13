@@ -1,6 +1,6 @@
 # FAQ.md — 常见问题
 
-> 基于 v4.17.8 源码与实际错误消息整理。每条都能在代码里找到出处；如果你的问题不在这，先看 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)。
+> 基于 v4.17.9 源码与实际错误消息整理。每条都能在代码里找到出处；如果你的问题不在这，先看 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)。
 
 ## 目录
 

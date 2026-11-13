@@ -95,7 +95,7 @@ export async function loadAll() {
     setHealthOk(`sidecar v${h?.body?.version || "?"}`);
     // 非首屏面板（引擎 / 本地模型 / GGUF / 待开源）在空闲期渲染，让出主线程给
     // 首屏可交互；这些面板默认隐藏，用户切过去之前渲染即可。
-    whenIdle(() => { renderEngines(); renderLocal(); renderGGUF(); renderPending(); });
+    whenIdle(() => { renderEngines(); renderLocal(); renderGGUF(); });
     // v2.4.0 — drive the market grid through the super search (facets, sort).
     runSearch({ resetPage: true }).catch(() => {});
   } catch (e) {
@@ -205,32 +205,6 @@ function renderLocal() {
   }).join("");
 }
 
-// 待官方开源列表：无数据时显示统一空状态。
-function renderPending() {
-  const el = $("#pending-list");
-  if (!el) return;
-  const list = state.pending || [];
-  if (!list.length) {
-    const es = createEmptyState({
-      icon: "clock",
-      title: t("local.pendingEmptyTitle"),
-      hint: t("local.pendingEmptyHint"),
-    });
-    el.replaceChildren(es);
-    return;
-  }
-  el.innerHTML = list.map((m) => {
-    const name = m.name || m.id || t("market.unnamed");
-    return `
-    <div class="row">
-      <div class="grow">
-        <div class="name">${escapeHtml(name)}</div>
-        ${m.description ? `<div class="sub">${escapeHtml(m.description)}</div>` : ""}
-      </div>
-      <span class="pill warn">${t("local.pendingBadge")}</span>
-    </div>`;
-  }).join("");
-}
 
 function switchView(name) {
   $$(".pane-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));

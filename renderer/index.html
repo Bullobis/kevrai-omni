@@ -179,9 +179,6 @@
         <button class="pane-tab" data-tab="gguf" title="GGUF 仓库" data-i18n-title="nav.gguf">
           <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg></span> <span class="tab-label" data-i18n="nav.gguf">GGUF 仓库</span>
         </button>
-        <button class="pane-tab" data-tab="pending" title="待官方开源" data-i18n-title="nav.pending">
-          <span class="ico" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span> <span class="tab-label" data-i18n="nav.pending">待官方开源</span>
-        </button>
           </div>
         </div>
       </nav>
@@ -270,12 +267,6 @@
       <section id="pane-gguf" class="pane" aria-label="GGUF 仓库">
         <p class="hint" data-i18n="gguf.hint">列出所有 GGUF 文件。每个文件都可以在 Kevrai Omni 中单独下载，由 llama.cpp 或 MNN 加载。</p>
         <div id="gguf-repos" class="list"></div>
-      </section>
-
-      <!-- Pending pane -->
-      <section id="pane-pending" class="pane" aria-label="待官方开源">
-        <p class="hint" data-i18n="pending.hint">保留给尚未开源的模型条目。官方公开权重后会自动上架到模型市场。</p>
-        <div id="pending-list" class="list"></div>
       </section>
 
       <!-- MNN engine pane -->

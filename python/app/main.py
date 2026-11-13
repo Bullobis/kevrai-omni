@@ -878,7 +878,6 @@ def categories() -> dict[str, Any]:
         {"id": "embedding", "label": "向量嵌入 / Embeddings"},
         {"id": "3d",        "label": "3D 生成 / 3D"},
         {"id": "vision",    "label": "视觉工具 / Vision"},
-        {"id": "pending",   "label": "待官方开源 / Pending"},
         {"id": "other",     "label": "其它 / Other"},
     ]}
 
