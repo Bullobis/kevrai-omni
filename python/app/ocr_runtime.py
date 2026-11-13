@@ -11,6 +11,7 @@ Public API:
     manager = OCRManager(data_root)
     text = manager.extract(image_bytes)   # recognised lines joined with \\n
 """
+
 from __future__ import annotations
 
 import logging
@@ -74,8 +75,7 @@ def import_rapidocr(data_root: Path | None = None) -> Any:
         return rapidocr
     except Exception as e:  # noqa: BLE001 — surface any native load failure
         raise OCREngineMissing(
-            "RapidOCR 引擎未安装或无法加载，请先在引擎页安装 RapidOCR"
-            f"（含 onnxruntime）。原始错误：{e}"
+            "RapidOCR 引擎未安装或无法加载，请先在引擎页安装 RapidOCR" f"（含 onnxruntime）。原始错误：{e}"
         ) from e
 
 
@@ -94,9 +94,7 @@ def _decode_image(image_bytes: bytes) -> Any:
     except OCRParamError:
         raise
     except Exception as e:  # noqa: BLE001 — unknown / corrupt image format
-        raise OCRModelError(
-            f"无法读取该图片（格式不支持或已损坏）：{e}"
-        ) from e
+        raise OCRModelError(f"无法读取该图片（格式不支持或已损坏）：{e}") from e
 
 
 def _keys_file(rec_dir: Path) -> Path:
@@ -109,7 +107,7 @@ def _keys_file(rec_dir: Path) -> Path:
     if not cfg.is_file():
         raise OCRParamError(f"PP-OCR 识别模型缺少 inference.yml：{rec_dir}")
     doc = yaml.safe_load(cfg.read_text(encoding="utf-8", errors="ignore")) or {}
-    chars = ((doc.get("PostProcess") or {}).get("character_dict") or [])
+    chars = (doc.get("PostProcess") or {}).get("character_dict") or []
     if not chars:
         raise OCRParamError(f"PP-OCR 识别模型没有 character_dict：{rec_dir}")
     path = Path(tempfile.gettempdir()) / f"kevrai-ppocr-keys-{abs(hash(str(rec_dir)))}.txt"
@@ -133,9 +131,7 @@ class OCRManager:
                 try:
                     self._engine = rapidocr.RapidOCR()
                 except Exception as e:  # noqa: BLE001 — model/backend init failure
-                    raise OCRModelError(
-                        f"RapidOCR 初始化失败（模型或 onnxruntime 异常）：{e}"
-                    ) from e
+                    raise OCRModelError(f"RapidOCR 初始化失败（模型或 onnxruntime 异常）：{e}") from e
             return self._engine
 
     def _get_custom_engine(self, det_dir: str, rec_dir: str) -> Any:
@@ -155,9 +151,7 @@ class OCRManager:
                 try:
                     self._custom[key] = rapidocr.RapidOCR(params=params)
                 except Exception as e:  # noqa: BLE001
-                    raise OCRModelError(
-                        f"PP-OCRv6 自定义模型初始化失败：{e}"
-                    ) from e
+                    raise OCRModelError(f"PP-OCRv6 自定义模型初始化失败：{e}") from e
             return self._custom[key]
 
     def extract_custom(self, image_bytes: bytes, det_dir: str, rec_dir: str) -> str:
