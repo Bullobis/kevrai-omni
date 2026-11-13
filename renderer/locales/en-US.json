@@ -188,7 +188,7 @@
     "clearSearchHistory": "✕ Clear search history",
     "searchHistoryCleared": "Search history cleared",
     "sourceUnreachable": "Cannot reach {names} — source hidden",
-    "degradedBanner": "Online search is unavailable ({labels}); showing curated local results only.",
+    "degradedBanner": "Some online sources are unavailable ({labels}); showing the results that did load.",
     "facetEngine": "Engine",
     "facetSize": "Size",
     "engineChip": "Engine: {name}",
