@@ -265,7 +265,12 @@
     "audioPrompt": "Audio prompt for {name}",
     "audioRunning": "Generating audio…",
     "audioDone": "Audio written: {path}",
-    "audioEmpty": "The audio task returned no file"
+    "audioEmpty": "The audio task returned no file",
+    "tts": "🔊 Speech",
+    "ttsPrompt": "Text to synthesize with the local TTS model:",
+    "ttsRunning": "Synthesizing speech…",
+    "ttsDone": "Speech written: {path}",
+    "ttsEmpty": "TTS returned no audio file"
   },
   "gguf": {
     "title": "GGUF Repos",

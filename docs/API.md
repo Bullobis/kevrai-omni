@@ -155,8 +155,8 @@ ComfyUI、vLLM、SGLang 等服务）/`unsupported`（暂无适配器），并列
 ```json
 {
   "total": 259,
-  "counts": {"native": 198, "external": 41, "unsupported": 20},
-  "by_category": {"llm": {"native": 105, "external": 12, "unsupported": 2}, "video": {"native": 21, "external": 0, "unsupported": 0}}
+  "counts": {"native": 214, "external": 45, "unsupported": 0},
+  "by_category": {"llm": {"native": 107, "external": 12, "unsupported": 0}, "vision": {"native": 9, "external": 0, "unsupported": 0}}
 }
 ```
 
@@ -179,6 +179,28 @@ ComfyUI、vLLM、SGLang 等服务）/`unsupported`（暂无适配器），并列
 用已下载的 Diffusers 音频管线生成 WAV。Body：`model`、`prompt`、
 `duration_s`、`num_inference_steps`、`guidance_scale`、`seed`。返回
 `output_path`、`sampling_rate`。
+
+### 专用模型适配端点
+
+目录中不适用通用 Transformers/Diffusers 管线的模型，各有独立适配器；未安装
+对应上游包时返回 `503` 并给出安装命令，不会静默失败。
+
+| 端点 | Body / 表单 | 适用模型 |
+|---|---|---|
+| `POST /api/local/tts` | `model`, `text`, `speaker`, `language`, `instruct`, `reference_audio`, `reference_text` | MOSS-TTS、dots.tts、VoxCPM2、Qwen3-TTS、Orpheus |
+| `POST /api/local/superres` | multipart `file`, `model`, `outscale` | Real-ESRGAN、4x-UltraSharp |
+| `POST /api/local/vision/faces` | multipart `file`, `model_dir` | InsightFace buffalo_l |
+| `POST /api/local/vision/detect` | multipart `file`, `model`, `conf` | YOLOv10 |
+| `POST /api/local/audio/chat` | `model`, `audio_path`, `question` | Qwen2-Audio |
+| `POST /api/local/audio/diarize` | `model`, `audio_path` | pyannote、Nemotron |
+| `POST /api/local/decide` | `model`, `text`, `labels` 或 `questions` | GLiNER2.5、Laya |
+| `POST /api/ocr/recognize` | `image_path`/`image_b64`, `det_model`, `rec_model` | PP-OCRv6 det+rec |
+
+PP-OCRv6 det/rec 是成对的 ONNX 检测/识别组件：在 `POST /api/ocr/recognize`
+同时传 `det_model` 与 `rec_model` 两个本地目录即可，由 RapidOCR 加载；AuK 走
+SGLang-Omni，Breeze TTS 走官方 `breeze_infer` API，Magenta RealTime 2 走
+`magenta-realtime-2` 服务，CLM 走 `contrastive-lm` 服务。它们和本地适配器
+一样保留在目录中，不因“未内置”被删除。
 
 ### `GET /api/models/{model_id}/gguf-files`
 

@@ -99,12 +99,31 @@ def _decode_image(image_bytes: bytes) -> Any:
         ) from e
 
 
+def _keys_file(rec_dir: Path) -> Path:
+    """Extract PP-OCR's character dict from ``inference.yml`` for RapidOCR."""
+    import tempfile
+
+    import yaml
+
+    cfg = rec_dir / "inference.yml"
+    if not cfg.is_file():
+        raise OCRParamError(f"PP-OCR 识别模型缺少 inference.yml：{rec_dir}")
+    doc = yaml.safe_load(cfg.read_text(encoding="utf-8", errors="ignore")) or {}
+    chars = ((doc.get("PostProcess") or {}).get("character_dict") or [])
+    if not chars:
+        raise OCRParamError(f"PP-OCR 识别模型没有 character_dict：{rec_dir}")
+    path = Path(tempfile.gettempdir()) / f"kevrai-ppocr-keys-{abs(hash(str(rec_dir)))}.txt"
+    path.write_text("\n".join(str(c) for c in chars), encoding="utf-8")
+    return path
+
+
 class OCRManager:
     """Owns a cached RapidOCR engine; safe to share (load/generate serialized)."""
 
     def __init__(self, data_root: Path | None = None) -> None:
         self.data_root = Path(data_root) if data_root is not None else default_data_root()
         self._engine: Any = None
+        self._custom: dict[tuple[str, str], Any] = {}
         self._lock = threading.Lock()
 
     def _get_engine(self) -> Any:
@@ -118,6 +137,46 @@ class OCRManager:
                         f"RapidOCR 初始化失败（模型或 onnxruntime 异常）：{e}"
                     ) from e
             return self._engine
+
+    def _get_custom_engine(self, det_dir: str, rec_dir: str) -> Any:
+        key = (str(Path(det_dir)), str(Path(rec_dir)))
+        with self._lock:
+            if key not in self._custom:
+                rapidocr = import_rapidocr(self.data_root)
+                det = key[0]
+                rec = key[1]
+                params = {
+                    "Det.model_path": str(Path(det) / "inference.onnx"),
+                    "Det.model_type": "medium",
+                    "Rec.model_path": str(Path(rec) / "inference.onnx"),
+                    "Rec.model_type": "medium",
+                    "Rec.rec_keys_path": str(_keys_file(Path(rec))),
+                }
+                try:
+                    self._custom[key] = rapidocr.RapidOCR(params=params)
+                except Exception as e:  # noqa: BLE001
+                    raise OCRModelError(
+                        f"PP-OCRv6 自定义模型初始化失败：{e}"
+                    ) from e
+            return self._custom[key]
+
+    def extract_custom(self, image_bytes: bytes, det_dir: str, rec_dir: str) -> str:
+        """Run a downloaded PP-OCRv6 det+rec ONNX pair."""
+        if not det_dir or not rec_dir:
+            raise OCRParamError("det_dir 与 rec_dir 必须同时提供")
+        arr = _decode_image(image_bytes)
+        engine = self._get_custom_engine(det_dir, rec_dir)
+        try:
+            with self._lock:
+                result = engine(arr)
+        except OCRError:
+            raise
+        except Exception as e:  # noqa: BLE001
+            raise OCRModelError(f"PP-OCRv6 识别失败：{e}") from e
+        txts = getattr(result, "txts", None)
+        if not txts:
+            return ""
+        return "\n".join(str(t) for t in txts)
 
     def extract(self, image_bytes: bytes) -> str:
         """Recognise text in an image; return lines joined with newlines.

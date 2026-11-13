@@ -265,7 +265,12 @@
     "audioPrompt": "为 {name} 输入音频提示词",
     "audioRunning": "正在生成音频…",
     "audioDone": "音频已生成：{path}",
-    "audioEmpty": "音频生成未返回文件"
+    "audioEmpty": "音频生成未返回文件",
+    "tts": "🔊 语音",
+    "ttsPrompt": "用本地 TTS 模型合成语音，输入文本：",
+    "ttsRunning": "正在合成语音…",
+    "ttsDone": "语音已生成：{path}",
+    "ttsEmpty": "TTS 没有返回音频文件"
   },
   "gguf": {
     "title": "GGUF 仓库",

@@ -81,6 +81,7 @@ from . import (
     music_runtime,
     ocr_runtime,
     piper_runtime,
+    special_runtime,
     vllm_runtime,
 )
 from . import clawdchat as clawdchat_mod
@@ -5297,6 +5298,34 @@ class LocalAudioReq(BaseModel):
     seed: int | None = None
 
 
+class LocalTTSReq(BaseModel):
+    model: str = ""
+    text: str = ""
+    speaker: str = ""
+    language: str = ""
+    instruct: str = ""
+    reference_audio: str = ""
+    reference_text: str = ""
+
+
+class LocalAudioChatReq(BaseModel):
+    model: str = ""
+    audio_path: str = ""
+    question: str = ""
+
+
+class LocalDiarizeReq(BaseModel):
+    model: str = ""
+    audio_path: str = ""
+
+
+class LocalDecideReq(BaseModel):
+    model: str = ""
+    text: str = ""
+    labels: dict[str, list[str]] | None = None
+    questions: dict[str, Any] | None = None
+
+
 async def _extract_multimodal(
     messages: list[dict[str, Any]],
 ) -> tuple[str, list[dict[str, str]], list[str], list[str]]:
@@ -5349,6 +5378,8 @@ class OcrRecognizeReq(BaseModel):
     image_path: str = ""
     image_b64: str = ""
     language: str = "ch"
+    det_model: str = ""
+    rec_model: str = ""
 
 
 @app.get("/api/ocr/capabilities")
@@ -5393,7 +5424,15 @@ def ocr_recognize_route(request: Request, req: OcrRecognizeReq) -> dict[str, Any
         raise HTTPException(status_code=400, detail="image_path 与 image_b64 至少提供一项")
     mgr = getattr(request.app.state, "ocr", None) or ocr_runtime.OCRManager(APP_ROOT)
     try:
-        text = mgr.extract(raw)
+        if req.det_model or req.rec_model:
+            if not (req.det_model and req.rec_model):
+                raise HTTPException(
+                    status_code=400,
+                    detail="PP-OCRv6 需要 det_model 与 rec_model 同时提供",
+                )
+            text = mgr.extract_custom(raw, req.det_model, req.rec_model)
+        else:
+            text = mgr.extract(raw)
     except ocr_runtime.OCREngineMissing as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
     except ocr_runtime.OCRParamError as e:
@@ -5593,6 +5632,124 @@ async def local_audio(request: Request, req: LocalAudioReq) -> JSONResponse:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=422, detail=str(e)[:500]) from e
+    return JSONResponse(result)
+
+
+def _raise_special(e: Exception) -> None:
+    """Translate specialized-adapter errors into actionable HTTP codes."""
+    if isinstance(e, special_runtime.SpecialEngineMissing):
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    if isinstance(e, special_runtime.SpecialParamError):
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    if isinstance(e, special_runtime.SpecialModelError):
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    raise HTTPException(status_code=422, detail=str(e)[:500]) from e
+
+
+@app.post("/api/local/tts")
+async def local_tts(req: LocalTTSReq) -> JSONResponse:
+    """Synthesize speech with MOSS / Dots / VoxCPM / Qwen3-TTS / Transformers."""
+    try:
+        result = await asyncio.to_thread(
+            special_runtime.synthesize,
+            req.model, req.text,
+            output_dir=APP_ROOT / "outputs" / "tts",
+            speaker=req.speaker, language=req.language,
+            instruct=req.instruct, reference_audio=req.reference_audio,
+            reference_text=req.reference_text,
+        )
+    except Exception as e:  # noqa: BLE001
+        _raise_special(e)
+    return JSONResponse(result)
+
+
+@app.post("/api/local/superres")
+async def local_superres(
+    file: UploadFile = File(...),  # noqa: B008 — FastAPI DI pattern
+    model: str = Form(...),
+    outscale: int = Form(4),
+) -> JSONResponse:
+    """Upscale an uploaded image with a local Real-ESRGAN RRDB checkpoint."""
+    data = await file.read()
+    try:
+        result = await asyncio.to_thread(
+            special_runtime.upscale, model, data, outscale=outscale
+        )
+    except Exception as e:  # noqa: BLE001
+        _raise_special(e)
+    return JSONResponse(result)
+
+
+@app.post("/api/local/vision/faces")
+async def local_faces(
+    file: UploadFile = File(...),  # noqa: B008 — FastAPI DI pattern
+    model_dir: str = Form(...),
+) -> JSONResponse:
+    """Run InsightFace buffalo_l on an uploaded image."""
+    data = await file.read()
+    try:
+        result = await asyncio.to_thread(
+            special_runtime.faces, model_dir, data
+        )
+    except Exception as e:  # noqa: BLE001
+        _raise_special(e)
+    return JSONResponse(result)
+
+
+@app.post("/api/local/vision/detect")
+async def local_detect(
+    file: UploadFile = File(...),  # noqa: B008 — FastAPI DI pattern
+    model: str = Form(...),
+    conf: float = Form(0.25),
+) -> JSONResponse:
+    """Run a YOLOv10 checkpoint on an uploaded image."""
+    data = await file.read()
+    try:
+        result = await asyncio.to_thread(
+            special_runtime.detect, model, data, conf=conf
+        )
+    except Exception as e:  # noqa: BLE001
+        _raise_special(e)
+    return JSONResponse(result)
+
+
+@app.post("/api/local/audio/chat")
+async def local_audio_chat(req: LocalAudioChatReq) -> JSONResponse:
+    try:
+        result = await asyncio.to_thread(
+            special_runtime.audio_chat, req.model, req.audio_path, req.question
+        )
+    except Exception as e:  # noqa: BLE001
+        _raise_special(e)
+    return JSONResponse(result)
+
+
+@app.post("/api/local/audio/diarize")
+async def local_diarize(req: LocalDiarizeReq) -> JSONResponse:
+    try:
+        result = await asyncio.to_thread(
+            special_runtime.diarize, req.model, req.audio_path
+        )
+    except Exception as e:  # noqa: BLE001
+        _raise_special(e)
+    return JSONResponse(result)
+
+
+@app.post("/api/local/decide")
+async def local_decide(req: LocalDecideReq) -> JSONResponse:
+    try:
+        if "laya" in (req.model or "").lower():
+            result = await asyncio.to_thread(
+                special_runtime.laya_decide,
+                req.model, req.text, req.questions,
+            )
+        else:
+            result = await asyncio.to_thread(
+                special_runtime.decide,
+                req.model, req.text, req.labels,
+            )
+    except Exception as e:  # noqa: BLE001
+        _raise_special(e)
     return JSONResponse(result)
 
 

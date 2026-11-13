@@ -1511,6 +1511,24 @@ function registerIpc() {
       headers: { "Content-Type": "application/json" }, timeoutMs: 3_600_000,
     });
   });
+  ipcMain.handle("api:local:tts", async (_e, payload) => {
+    assert(payload && typeof payload === "object", "payload: invalid");
+    assert(isString(payload.model, 4096), "model: invalid");
+    assert(isString(payload.text, 8000), "text: invalid");
+    const body = {
+      model: payload.model,
+      text: payload.text,
+      speaker: isString(payload.speaker, 128) ? payload.speaker : "",
+      language: isString(payload.language, 64) ? payload.language : "",
+      instruct: isString(payload.instruct, 2000) ? payload.instruct : "",
+      reference_audio: isString(payload.reference_audio, 4096) ? payload.reference_audio : "",
+      reference_text: isString(payload.reference_text, 4000) ? payload.reference_text : "",
+    };
+    return sidecarFetch("/api/local/tts", {
+      method: "POST", rawBody: Buffer.from(JSON.stringify(body)),
+      headers: { "Content-Type": "application/json" }, timeoutMs: 1_800_000,
+    });
+  });
   ipcMain.handle("api:music:capabilities", async () =>
     sidecarFetch("/api/music/capabilities"));
   ipcMain.handle("api:music:generate", async (_e, payload) => {

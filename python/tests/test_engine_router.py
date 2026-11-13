@@ -90,11 +90,11 @@ def test_llamacpp_maps_to_engines():
 
 
 def test_engine_without_runtime_is_reported_not_silently_accepted():
-    """insightface 等暂无应用内端点 —— 必须如实说明，不假装能跑。"""
-    r = resolve_engine(["insightface"])
+    """未知引擎 —— 必须如实说明，不假装能跑。"""
+    r = resolve_engine(["future-engine"])
     assert r["runtime"] == "other"
     assert r["route"] is None
-    assert "insightface" in r["note"], "应说明是哪个引擎没有端点"
+    assert "future-engine" in r["note"], "应说明是哪个引擎没有端点"
 
 
 def test_diffusers_maps_to_generic_image_endpoint():
@@ -191,7 +191,7 @@ async def test_route_endpoint_honours_settings_default(_isolated):
 
 async def test_route_endpoint_reports_other_runtime(_isolated):
     async with _client() as c:
-        r = await c.get("/api/engine/route", params={"engine": "insightface"})
+        r = await c.get("/api/engine/route", params={"engine": "future-engine"})
     body = r.json()
     assert body["runtime"] == "other"
     assert body["route"] is None

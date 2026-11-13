@@ -28,7 +28,7 @@ def test_laya_is_classification_not_generation():
 
 def test_laya_runs_on_python_cpu():
     m = _BY_ID["laya-decision"]
-    assert "python" in m["engine"]
+    assert {"laya", "python"} & set(m["engine"])
     assert m["hardware"]["vram_gb"] == 0
 
 

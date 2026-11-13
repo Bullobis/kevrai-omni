@@ -17,15 +17,13 @@ def test_every_catalog_entry_is_downloadable():
         assert verdict["status"] in {"native", "external", "unsupported"}
 
 
-def test_llama_cpp_without_gguf_is_not_claimed_native():
-    # GLiNER2.5 is an entity-linking model, not a causal LLM; llama.cpp is
-    # listed as an upstream label but has no GGUF repo and no adapter.
+def test_gliner_is_claimed_through_its_own_adapter():
+    # GLiNER2.5 is a classification head, not a causal LLM; it must be
+    # native through gliner2, never through llama.cpp.
     m = next(x for x in MODELS if x["id"] == "gliner2.5")
     v = availability.describe(m)
-    assert "llama.cpp" in v["engines"]
-    assert all(x["engine"] != "llama.cpp" for x in v["native"]), (
-        "GLiNER2.5 has no GGUF repo; llama.cpp must not be advertised as native"
-    )
+    assert v["engines"] == ["gliner2"]
+    assert [x["engine"] for x in v["native"]] == ["gliner2"]
 
 
 def test_image_models_have_a_native_diffusers_path():
@@ -50,11 +48,31 @@ def test_video_and_audio_models_have_a_generic_diffusers_path():
         ), m["id"]
 
 
-def test_unsupported_mnn_model_offers_conversion():
-    m = next(x for x in MODELS if x["id"] == "real-esrgan")
-    v = availability.describe(m)
+def test_all_catalog_entries_have_a_runtime_or_external_path():
+    for m in MODELS:
+        v = availability.describe(m)
+        assert v["status"] in {"native", "external"}, m["id"]
+
+
+def test_conversion_is_offered_for_a_model_without_runtime():
+    from types import SimpleNamespace
+
+    fake = SimpleNamespace(
+        id="fake-conversion", category="llm", repo="owner/repo",
+        engine=["mnn"], mnn_repo="", name="fake",
+    )
+    v = availability.describe(fake)
     assert v["status"] == "unsupported"
-    assert v["conversion"]["kind"] in ("hf-to-mnn", "torch-to-onnx")
+    assert v["conversion"]["kind"] == "hf-to-mnn"
+
+
+def test_missing_engine_moves_to_external_not_unsupported():
+    # AuK's official path is SGLang-Omni; it must be reported as external,
+    # not as an unsupported model that cannot be used.
+    m = next(x for x in MODELS if x["id"] == "auk")
+    v = availability.describe(m)
+    assert v["status"] == "external"
+    assert any(x["engine"] == "sglang-omni" for x in v["external"])
 
 
 def test_summary_counts_add_up():

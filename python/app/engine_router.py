@@ -54,6 +54,15 @@ RUNTIME_BY_ENGINE: dict[str, str] = {
     "pixal3d": "three-d",
     "4danyone": "three-d",
     "onnxruntime": "onnx",
+    "tts-runtime": "tts",
+    "realesrgan": "superres",
+    "insightface": "faces",
+    "yolov10": "detect",
+    "diarization": "diarize",
+    "qwen2-audio": "audio-chat",
+    "gliner2": "decide",
+    "laya": "decide",
+    "paddleocr": "ocr",
 }
 
 ROUTE_BY_RUNTIME: dict[str, str] = {
@@ -69,6 +78,14 @@ ROUTE_BY_RUNTIME: dict[str, str] = {
     "music": "/api/music/generate",
     "three-d": "/api/3d/generate",
     "onnx": "/api/ocr/recognize",
+    "tts": "/api/local/tts",
+    "superres": "/api/local/superres",
+    "faces": "/api/local/vision/faces",
+    "detect": "/api/local/vision/detect",
+    "diarize": "/api/local/audio/diarize",
+    "audio-chat": "/api/local/audio/chat",
+    "decide": "/api/local/decide",
+    "ocr": "/api/ocr/recognize",
 }
 
 #: Services the user must start separately; a route cannot launch them.
@@ -87,6 +104,9 @@ EXTERNAL_ENGINE_SERVICES: dict[str, str] = {
     "chatterbox": "Chatterbox",
     "indextts": "IndexTTS",
     "gpt-sovits": "GPT-SoVITS",
+    "breeze-tts": "Breeze TTS API",
+    "magenta-rt": "Magenta RealTime",
+    "contrastive-lm": "Contrastive-LM",
 }
 
 

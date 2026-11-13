@@ -214,6 +214,7 @@ function renderLocal() {
     const canImage = es.includes("diffusers") && (!m.category || m.category === "image");
     const canVideo = es.includes("diffusers") && m.category === "video";
     const canAudio = es.includes("diffusers") && m.category === "audio";
+    const canTts = m.category === "tts";
     const running = state.llm && state.llm.running && state.llm.model_path === m.path;
     const engLine = es.length ? `<div class="sub">${t("local.availableEngines", { list: escapeHtml(es.join("、")) })}</div>` : "";
     return `
@@ -237,6 +238,8 @@ function renderLocal() {
             data-path="${escapeHtml(m.path || "")}" data-name="${escapeHtml(m.name || "")}">${t("local.video")}</button>` : ""}
       ${canAudio ? `<button class="secondary small" data-action="local-audio"
             data-path="${escapeHtml(m.path || "")}" data-name="${escapeHtml(m.name || "")}">${t("local.audio")}</button>` : ""}
+      ${canTts ? `<button class="secondary small" data-action="local-tts"
+            data-path="${escapeHtml(m.path || "")}" data-name="${escapeHtml(m.name || "")}">${t("local.tts")}</button>` : ""}
       <span class="pill ok">${t("local.localBadge")}</span>
       ${m.path ? `<button class="secondary small" data-action="reveal-local"
               data-path="${escapeHtml(m.path)}" aria-label="${t("local.revealAria")}">${t("local.locate")}</button>` : ""}
@@ -528,6 +531,24 @@ function wireGlobalUI() {
         })
         .catch((err) => toast(String(err.message || err), { kind: "err" }))
         .finally(() => { audioBtn.disabled = false; });
+    }
+    const ttsBtn = e.target.closest("[data-action=local-tts]");
+    if (ttsBtn) {
+      e.preventDefault();
+      const modelPath = ttsBtn.dataset.path;
+      if (!modelPath) return;
+      const text = window.prompt(t("local.ttsPrompt", { name: ttsBtn.dataset.name || "" }));
+      if (!text || !text.trim()) return;
+      ttsBtn.disabled = true;
+      toast(t("local.ttsRunning"));
+      api.localTTS({ model: modelPath, text })
+        .then((r) => {
+          const body = (r && r.body) || r || {};
+          if (!body.output_path) throw new Error(t("local.ttsEmpty"));
+          showLocalText(t("local.ttsDone", { path: body.output_path }));
+        })
+        .catch((err) => toast(String(err.message || err), { kind: "err" }))
+        .finally(() => { ttsBtn.disabled = false; });
     }
     const llmStopBtn = e.target.closest("[data-action=llm-stop]");
     if (llmStopBtn) {

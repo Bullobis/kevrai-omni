@@ -1229,7 +1229,7 @@
       "gguf_repo": "",
       "size_gb": 5,
       "engine": [
-        "transformers"
+        "dots-tts"
       ],
       "license": "Apache-2.0",
       "trending": true,
@@ -1791,8 +1791,7 @@
       "gguf_repo": "",
       "size_gb": 0.07,
       "engine": [
-        "onnxruntime",
-        "mnn"
+        "realesrgan"
       ],
       "license": "BSD-3",
       "trending": true,
@@ -1906,7 +1905,7 @@
       "gguf_repo": "",
       "size_gb": 0.07,
       "engine": [
-        "onnxruntime"
+        "realesrgan"
       ],
       "license": "CC-BY-NC-SA-4.0",
       "trending": true,
@@ -2566,7 +2565,7 @@
       "gguf_repo": "",
       "size_gb": 0.07,
       "engine": [
-        "onnxruntime"
+        "ultralytics"
       ],
       "license": "AGPL-3.0",
       "trending": false,
@@ -4799,7 +4798,7 @@
       "gguf_repo": "",
       "size_gb": 15.6,
       "engine": [
-        "transformers"
+        "magenta-rt"
       ],
       "license": "CC-BY-4.0",
       "trending": true,
@@ -7612,7 +7611,7 @@
       "gguf_repo": "",
       "size_gb": 7,
       "engine": [
-        "transformers"
+        "sglang-omni"
       ],
       "license": "MIT",
       "trending": true,
@@ -8995,7 +8994,7 @@
       "gguf_repo": "",
       "size_gb": 0.06,
       "engine": [
-        "onnxruntime"
+        "paddleocr"
       ],
       "license": "Apache-2.0",
       "trending": false,
@@ -9040,7 +9039,7 @@
       "gguf_repo": "",
       "size_gb": 0.08,
       "engine": [
-        "onnxruntime"
+        "paddleocr"
       ],
       "license": "Apache-2.0",
       "trending": false,
@@ -9483,7 +9482,7 @@
       "gguf_repo": "",
       "size_gb": 5,
       "engine": [
-        "transformers"
+        "voxcpm"
       ],
       "license": "Apache-2.0",
       "trending": true,
@@ -9531,7 +9530,7 @@
       "gguf_repo": "Serveurperso/Qwen3-TTS-GGUF",
       "size_gb": 5,
       "engine": [
-        "transformers"
+        "qwen-tts"
       ],
       "license": "Apache-2.0",
       "trending": true,
@@ -11000,7 +10999,7 @@
       "gguf_repo": "cstr/breeze-tts-2-GGUF",
       "size_gb": 7,
       "engine": [
-        "transformers"
+        "breeze-tts"
       ],
       "license": "其他（other）",
       "trending": true,
@@ -11069,7 +11068,7 @@
       "repo": "pyannote/speaker-diarization-community-1",
       "size_gb": 0.5,
       "engine": [
-        "python"
+        "pyannote.audio"
       ],
       "license": "CC-BY-4.0",
       "trending": true,
@@ -11112,8 +11111,7 @@
       "repo": "fastino/GLiNER2.5-Decide",
       "size_gb": 2,
       "engine": [
-        "python",
-        "llama.cpp"
+        "gliner2"
       ],
       "license": "Apache-2.0",
       "trending": true,
@@ -11154,7 +11152,7 @@
       "repo": "Contrastive-LM/CLM-v0.1-8B",
       "size_gb": 0.1,
       "engine": [
-        "python"
+        "contrastive-lm"
       ],
       "license": "Apache-2.0",
       "trending": false,
@@ -11432,7 +11430,7 @@
       "repo": "convaiinnovations/laya",
       "size_gb": 2,
       "engine": [
-        "python"
+        "laya"
       ],
       "license": "Apache-2.0",
       "trending": true,
@@ -11595,7 +11593,7 @@
       "repo": "nvidia/Nemotron-3-Diarization",
       "size_gb": 1,
       "engine": [
-        "python"
+        "nemo"
       ],
       "license": "other",
       "trending": false,

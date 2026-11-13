@@ -65,6 +65,33 @@ EXTERNAL_ENGINES: dict[str, dict[str, str]] = {
 }
 
 
+#: Dedicated adapters that are not selected by the generic engine label.
+SPECIAL_NATIVE: dict[str, dict[str, str]] = {
+    "moss-tts-1.5": {"engine": "tts-runtime", "action": "tts", "label": "MOSS-TTS 本地语音"},
+    "dots-tts-soar": {"engine": "tts-runtime", "action": "tts", "label": "dots.tts 本地语音"},
+    "voxcpm2": {"engine": "tts-runtime", "action": "tts", "label": "VoxCPM2 本地语音"},
+    "qwen3-tts-1.7b-customvoice": {"engine": "tts-runtime", "action": "tts", "label": "Qwen3-TTS 本地语音"},
+    "orpheus-3b": {"engine": "tts-runtime", "action": "tts", "label": "Orpheus 本地语音"},
+    "real-esrgan": {"engine": "realesrgan", "action": "superres", "label": "Real-ESRGAN 超分"},
+    "4x-ultrasharp": {"engine": "realesrgan", "action": "superres", "label": "4x-UltraSharp 超分"},
+    "insightface": {"engine": "insightface", "action": "faces", "label": "InsightFace 人脸"},
+    "yolov10": {"engine": "yolov10", "action": "detect", "label": "YOLOv10 检测"},
+    "pp-ocrv6-det": {"engine": "paddleocr", "action": "ocr", "label": "PP-OCRv6 检测组件"},
+    "pp-ocrv6-rec": {"engine": "paddleocr", "action": "ocr", "label": "PP-OCRv6 识别组件"},
+    "pyannote-diarization-community-1": {"engine": "diarization", "action": "diarize", "label": "pyannote 分轨"},
+    "nemotron-3-diarization": {"engine": "diarization", "action": "diarize", "label": "Nemotron 分轨"},
+    "qwen2-audio-7b": {"engine": "qwen2-audio", "action": "audio-chat", "label": "Qwen2-Audio 对话"},
+    "gliner2.5": {"engine": "gliner2", "action": "decide", "label": "GLiNER2.5 决策"},
+    "laya-decision": {"engine": "laya", "action": "decide", "label": "Laya 决策"},
+}
+
+SPECIAL_EXTERNAL: dict[str, dict[str, str]] = {
+    "auk": {"engine": "sglang-omni", "service": "SGLang-Omni", "label": "AuK / SGLang-Omni"},
+    "breeze-tts-2": {"engine": "breeze-tts", "service": "Breeze TTS API", "label": "Breeze TTS 官方服务"},
+    "magenta-realtime-2": {"engine": "magenta-rt", "service": "Magenta RT", "label": "Magenta RealTime 服务"},
+    "clm-v0.1-8b": {"engine": "contrastive-lm", "service": "Contrastive-LM", "label": "CLM 服务"},
+}
+
 #: Music models with a dedicated in-process runtime (``music_runtime``).
 MUSIC_NATIVE_IDS: frozenset[str] = frozenset({
     "preview-music", "musicgen-small", "musicgen-medium", "musicgen-large",
@@ -194,25 +221,37 @@ def describe(model: Any) -> dict[str, Any]:
             "engine": "ltx-video", "action": "video",
             "label": "LTX 视频生成",
         })
+    if model_id in SPECIAL_NATIVE:
+        native.append(dict(SPECIAL_NATIVE[model_id]))
     for engine in engines:
         if engine not in NATIVE_ENGINES:
             continue
         ok, reason = _compatible_native(model, engine)
         if ok:
             action, label = _native_label(engine, category)
-            native.append({
-                "engine": engine,
-                "action": action,
-                "label": label,
-            })
+            if not any(x["engine"] == engine for x in native):
+                native.append({
+                    "engine": engine,
+                    "action": action,
+                    "label": label,
+                })
     external: list[dict[str, str]] = []
+    if model_id in SPECIAL_EXTERNAL:
+        special = SPECIAL_EXTERNAL[model_id]
+        external.append({
+            "engine": special["engine"],
+            "service": special["service"],
+            "label": special["label"],
+        })
     for engine in engines:
         if engine in EXTERNAL_ENGINES:
-            external.append({
-                "engine": engine,
-                "service": EXTERNAL_ENGINES[engine]["service"],
-                "label": EXTERNAL_ENGINES[engine]["label"],
-            })
+            service = EXTERNAL_ENGINES[engine]["service"]
+            if not any(x["service"] == service for x in external):
+                external.append({
+                    "engine": engine,
+                    "service": service,
+                    "label": EXTERNAL_ENGINES[engine]["label"],
+                })
 
     if native:
         status = "native"
@@ -230,7 +269,7 @@ def describe(model: Any) -> dict[str, Any]:
         "native": native,
         "external": external,
         "reason": reason,
-        "conversion": _conversion_hint(engines, native),
+        "conversion": None if external else _conversion_hint(engines, native),
         "downloadable": bool(str(_attr(model, "repo", "")).strip()),
     }
 

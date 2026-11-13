@@ -10,7 +10,7 @@ Kevrai Omni 是一个 **Electron + 原生 HTML/CSS/JS** 的桌面应用，搭配
 - **模型市场**：浏览 / 搜索 / 筛选模型，支持模糊匹配、拼音式缩写、中文搜索；按分类、排序（相关度 / 热门 / 名称 / 体积）、热门开关过滤；虚拟滚动网格。
 - **模型收藏与最近使用**：一键收藏模型（上限 200 个），记录最近打开的模型（上限 20 条），可在工具栏「收藏 / 最近使用」筛选。
 - **本地模型管理**：从硬盘导入 GGUF / safetensors 文件或整个文件夹，也可直接把文件拖入窗口；市场下载完成后自动登记为本地模型（原地引用，不重复复制权重）。
-- **运行状态**：每张模型卡会把“本地可直接运行 / 需外置引擎 / 暂未适配”如实标出，不再把“能下载”当成“能跑”。
+- **运行状态**：每张模型卡会把“本地可直接运行 / 需外置引擎”如实标出；目录 259 条已全部清零 `unsupported`，不再把“能下载”当成“能跑”。
 - **通用本地推理**：Transformers 因果语言模型目录可直接对话，Diffusers 管线目录可直接出图、出视频、出音频；llama.cpp / MNN / vLLM / SGLang / ComfyUI / ONNX 等仍按各自入口接入。
 - **GGUF 仓库**：列出所有可用 GGUF 量化文件，按需单独下载，由 llama.cpp 或 MNN 加载。
 - **AI 引擎管理**：llama.cpp 等引擎按需下载、安装 / 卸载 / 检查更新，已装自动跳过。
@@ -21,7 +21,7 @@ Kevrai Omni 是一个 **Electron + 原生 HTML/CSS/JS** 的桌面应用，搭配
 - **ComfyUI 图像生成**：接入本地 ComfyUI，支持文生图 / 图生图，含流式 WebSocket（逐帧采样进度）、模板预设与历史画廊。
 - **3D 生成**：Hunyuan3D / TRELLIS / TripoSR / Direct3D-S2 / TripoSG / PartCrafter 等引擎，支持图像 / 文本生成 3D 模型，导出 PLY / GLB。
 - **音乐生成**：ComfyUI-FL-MiniMaxMusic3，支持文本生成音乐，多模板与参数预设。
-- **TTS 语音合成**：Piper / Kokoro / Fish-Speech / F5-TTS / CosyVoice / Spark-TTS / Chatterbox / IndexTTS / GPT-SoVITS / Ming-3.0（MNN）等引擎，支持声音克隆、语气控制。
+- **TTS 语音合成**：Piper / Kokoro / Fish-Speech / F5-TTS / CosyVoice / Spark-TTS / Chatterbox / IndexTTS / GPT-SoVITS / Ming-3.0（MNN），以及 MOSS-TTS / dots.tts / VoxCPM2 / Qwen3-TTS / Orpheus 专用适配器；支持声音克隆、语气控制。
 - **音源分离**：Demucs 人声 / 伴奏分离。
 - **语音转写（ASR）**：faster-whisper 本地转写。
 - **超分辨率**：Real-ESRGAN / APISR / SUPIR 等图像增强。
