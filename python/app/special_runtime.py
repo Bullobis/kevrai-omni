@@ -378,7 +378,8 @@ def diarize(model: str, audio_path: str) -> dict[str, Any]:
                     continue
                 speaker, start, end = parts[-1], parts[0], parts[1]
             turns.append({
-                "start": float(start), "end": float(end),
+                "start": float(start) if start is not None else 0.0,
+                "end": float(end) if end is not None else 0.0,
                 "speaker": str(speaker),
             })
         return {"ok": True, "engine": "nemotron", "turns": turns}
