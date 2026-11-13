@@ -168,6 +168,11 @@ export class VirtualGrid {
         const c = i % cols;
         const node = document.createElement("div");
         node.className = `${this.itemClass} skeleton`;
+        node.setAttribute("aria-hidden", "true");
+        node.innerHTML = '<div class="sk-line sk-w55"></div>'
+          + '<div class="sk-line sk-w90"></div>'
+          + '<div class="sk-line sk-w70"></div>'
+          + '<div class="sk-foot"><span class="sk-pill"></span><span class="sk-btn"></span></div>';
         node.style.position = "absolute";
         node.style.left   = `${this.padding + c * skeletonInnerW / cols}px`;
         node.style.width  = `${skeletonInnerW / cols - this.gap}px`;

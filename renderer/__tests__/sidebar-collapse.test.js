@@ -70,26 +70,29 @@ const resetDom = () => {
   return { appShell: shell, sidebar: $(".sidebar"), toggle: btn };
 };
 
-test("initSidebarToggle: 点击切换类名/文案/aria，并写入 localStorage", () => {
+test("initSidebarToggle: 首次启动默认展开，点击切换并写入 localStorage", () => {
   const els = resetDom();
   const ok = initSidebarToggle(t);
   assert.equal(ok, true, "DOM 齐备时应返回 true");
-  assert.equal(els.toggle.textContent, "☰", "默认折叠");
-
-  els.toggle.click();
-  assert.equal(els.appShell.classList.contains("sidebar-expanded"), true, "展开类已加");
-  assert.equal(els.sidebar.classList.contains("expanded"), true, "侧栏自身的类也已加");
-  assert.equal(els.toggle.textContent, "⟨", "按钮文案切为折叠符号");
-  assert.equal(els.toggle.getAttribute("aria-label"), "app.collapseSidebar");
+  assert.equal(els.toggle.textContent, "‹", "首次启动默认展开");
+  assert.equal(els.appShell.classList.contains("sidebar-expanded"), true);
   assert.equal(els.toggle.getAttribute("aria-expanded"), "true");
-  assert.equal(localStorage.getItem("kevrai:sidebar-expanded"), "1", "展开态已持久化");
 
   els.toggle.click();
-  assert.equal(els.appShell.classList.contains("sidebar-expanded"), false, "再点一次收起");
-  assert.equal(els.toggle.textContent, "☰");
+  assert.equal(els.appShell.classList.contains("sidebar-expanded"), false, "点击后收起");
+  assert.equal(els.sidebar.classList.contains("expanded"), false, "侧栏自身的类同步移除");
+  assert.equal(els.toggle.textContent, "☰", "收起后显示展开符号");
   assert.equal(els.toggle.getAttribute("aria-label"), "app.expandSidebar");
   assert.equal(els.toggle.getAttribute("aria-expanded"), "false");
-  assert.equal(localStorage.getItem("kevrai:sidebar-expanded"), "0", "折叠态也应持久化");
+  assert.equal(localStorage.getItem("kevrai:sidebar-expanded"), "0", "收起态已持久化");
+
+  els.toggle.click();
+  assert.equal(els.appShell.classList.contains("sidebar-expanded"), true, "再点一次展开");
+  assert.equal(els.sidebar.classList.contains("expanded"), true);
+  assert.equal(els.toggle.textContent, "‹");
+  assert.equal(els.toggle.getAttribute("aria-label"), "app.collapseSidebar");
+  assert.equal(els.toggle.getAttribute("aria-expanded"), "true");
+  assert.equal(localStorage.getItem("kevrai:sidebar-expanded"), "1", "展开态也应持久化");
 });
 
 test("initSidebarToggle: 启动时按持久化值恢复，不跳回默认", () => {
@@ -100,7 +103,7 @@ test("initSidebarToggle: 启动时按持久化值恢复，不跳回默认", () =
   initSidebarToggle(t);
   assert.equal(els.appShell.classList.contains("sidebar-expanded"), true,
     "刷新后应保持展开，而不是先收起再被点击覆盖");
-  assert.equal(els.toggle.textContent, "⟨");
+  assert.equal(els.toggle.textContent, "‹");
 });
 
 test("initSidebarToggle: 缺少必要 DOM 时返回 false 而不是抛错", () => {

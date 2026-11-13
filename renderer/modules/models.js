@@ -24,11 +24,30 @@ export function getVgrid() { return vgrid; }
 
 export function initModels() {
   vgrid = new VirtualGrid($("#models-grid"), {
-    itemHeight: 168,
+    itemHeight: 220,
     renderItem: renderCard,
     onItemClick: onCardClick,
   });
   buildGridSkeleton();
+  // The detail column is contextual: it only takes horizontal space once a
+  // model is opened, and can be dismissed without changing the selection ring.
+  const close = $("#detail-close");
+  if (close) {
+    close.addEventListener("click", () => {
+      setState({ selectedId: null });
+      syncSelectedCards();
+      setDetailOpen(false);
+    });
+  }
+  window.addEventListener("kevrai:view-change", (e) => {
+    const view = e.detail && e.detail.view;
+    setDetailOpen(view === "market" && !!state.selectedId);
+  });
+}
+
+function setDetailOpen(open) {
+  const shell = document.querySelector(".app-shell");
+  if (shell) shell.classList.toggle("has-detail", !!open);
 }
 
 // First-load skeleton: 8 placeholder cards that mirror the real grid layout.
@@ -215,89 +234,68 @@ function renderCard(m) {
   const descHtml = descHl.length
     ? highlightText(m.description || "", descHl)
     : escapeHtml(m.description || "");
-  const scoreTag = (m._score && m._score > 0)
-    ? `<span class="pill score" title="${t("market.scoreTitle", { n: m._score })}">·</span>` : "";
   const isRemote = m.hub && m.hub !== "curated";
-  // v2.8.0 — remote cards: show the hub badge and, when the size is unknown,
-  // say so explicitly instead of rendering "0 B" / NaN (E28).
   const hubBadge = isRemote
     ? `<span class="pill hub-${escapeHtml(m.hub)}">${hubLogo(m.hub, m.hub_display)}${escapeHtml(m.hub_display || m.hub)}</span>` : "";
   const sizePill = m.size_known === false || (!m.size_gb && isRemote)
     ? `<span class="pill" title="${t("market.sizeUnknownTitle")}">${t("market.sizeUnknown")}</span>`
     : (m.size_gb ? `<span class="pill">${(+m.size_gb).toFixed(1)} GB</span>` : "");
-  // v2.9.0 — type (category) + function (task) + heat, per the user's request
-  // to surface everything the upstream actually provides.
   const typePill = m.category
     ? `<span class="pill" title="${t("market.typeLabel")}">${escapeHtml(categoryLabel(m.category))}</span>` : "";
-  const taskPill = m.task
-    ? `<span class="pill" title="${t("market.taskLabel")}">${escapeHtml(taskLabel(m.task))}</span>` : "";
+  const licensePill = m.license
+    ? `<span class="pill license" title="${escapeHtml(m.license)}">${escapeHtml(m.license)}</span>` : "";
+  const trendBadge = m.trending
+    ? `<span class="card-trend" title="${t("market.trendingTitle")}">🔥</span>` : "";
   const heatParts = [];
   if (m.downloads > 0) heatParts.push(`⬇ ${fmtCount(m.downloads)}`);
   if (m.likes > 0) heatParts.push(`♥ ${fmtCount(m.likes)}`);
-  if (m.trending_score > 0) heatParts.push(`🔥 ${fmtCount(m.trending_score)}`);
-  const heatPill = heatParts.length
-    ? `<span class="pill heat" title="${t("market.heatTitle")}">${heatParts.join(" · ")}</span>` : "";
+  const heatText = heatParts.join("  ");
   const favBtn = favButtonHtml(m);
   const compareBtn = compareButtonHtml(m);
-  if (isRemote && !m.description) {
-    // Cards for remote models have no upstream prose — show the repo instead of
-    // leaving an empty paragraph, so the card never looks broken.
-    root.innerHTML = `
-    <div class="card-head">
-      <div class="card-head-main">
-        <div class="card-title">${nameHtml}</div>
-        <div class="card-pills">
-          ${sizePill}
-          ${hubBadge}
-          ${typePill}
-          ${taskPill}
-          ${m.license ? `<span class="pill">${escapeHtml(m.license)}</span>` : ""}
-          ${m.trending ? `<span class="pill warn">🔥 trending</span>` : ""}
-          ${engineList.includes("mnn") ? `<span class="pill ok">${t("market.mnnOptional")}</span>` : ""}
-          ${m.import_only ? `<span class="pill">${t("market.importOnly")}</span>` : ""}
-          ${scoreTag}
-        </div>
-      </div>
-      <div class="card-actions">${favBtn}${compareBtn}</div>
-    </div>
-    <div class="card-body">
-      <p class="card-desc mut mono-repo">${escapeHtml(m.repo || "")}</p>
-      ${heatPill ? `<p class="card-heat">${heatPill}</p>` : ""}
-    </div>
-    <div class="card-foot">
-      <span class="mut">${escapeHtml(m.owner || "")}${hw.vram_gb ? ` · ${t("market.suggestedVram", { n: escapeHtml(hw.vram_gb) })}` : ""}</span>
-      <button class="primary small" data-action="install" aria-label="${t("market.installAria")}">${t("market.install")}</button>
-    </div>
-  `;
-    return root;
-  }
+  const owner = escapeHtml(m.owner || m.category || "");
+  const bodyHtml = isRemote && !m.description
+    ? `<p class="card-desc card-repo">${escapeHtml(m.repo || "")}</p>`
+    : `<p class="card-desc">${descHtml}</p>`;
+  const statsHtml = heatText ? `<span class="card-stats">${heatText}</span>` : "";
+  const installBtn = `<button class="primary small install-btn" data-action="install" aria-label="${t("market.installAria")}">${t("market.install")}</button>`;
+
   root.innerHTML = `
     <div class="card-head">
       <div class="card-head-main">
-        <div class="card-title">${nameHtml}</div>
-        <div class="card-pills">
+        <div class="card-title-row">
+          <div class="card-title">${nameHtml}</div>
+        </div>
+        <div class="card-meta">
+          ${trendBadge}
           ${sizePill}
           ${hubBadge}
           ${typePill}
-          ${taskPill}
-          ${m.license ? `<span class="pill">${escapeHtml(m.license)}</span>` : ""}
-          ${m.trending ? `<span class="pill warn">🔥 trending</span>` : ""}
-          ${engineList.includes("mnn") ? `<span class="pill ok">${t("market.mnnOptional")}</span>` : ""}
-          ${m.import_only ? `<span class="pill">${t("market.importOnly")}</span>` : ""}
-          ${scoreTag}
+          ${licensePill}
         </div>
       </div>
       <div class="card-actions">${favBtn}${compareBtn}</div>
     </div>
-    <div class="card-body">
-      <p class="card-desc">${descHtml}</p>
-      ${heatPill ? `<p class="card-heat">${heatPill}</p>` : ""}
-    </div>
+    <div class="card-body">${bodyHtml}</div>
     <div class="card-foot">
-      <span class="mut">${escapeHtml(m.owner || m.category || "")}${hw.vram_gb ? ` · ${t("market.suggestedVram", { n: escapeHtml(hw.vram_gb) })}` : ""}</span>
-      <button class="primary small" data-action="install" aria-label="${t("market.installAria")}">${t("market.install")}</button>
+      <div class="card-foot-left">
+        <span class="card-owner">${owner}</span>
+        ${statsHtml}
+      </div>
+      ${installBtn}
     </div>
   `;
+  // Keep sub-line labels consistent with the detail view without turning the
+  // card into a wall of pills. VRAM (when known) is surfaced as a quiet hint.
+  if (hw.vram_gb) {
+    const meta = root.querySelector(".card-meta");
+    if (meta) meta.insertAdjacentHTML("beforeend",
+      `<span class="pill vram" title="${t("market.suggestedVram", { n: escapeHtml(hw.vram_gb) })}">VRAM ${escapeHtml(hw.vram_gb)} GB</span>`);
+  }
+  if (engineList.includes("mnn")) {
+    const meta = root.querySelector(".card-meta");
+    if (meta) meta.insertAdjacentHTML("beforeend",
+      `<span class="pill ok">${t("market.mnnOptional")}</span>`);
+  }
   return root;
 }
 
@@ -534,6 +532,12 @@ let _detailSeq = 0;
 export async function showDetail(item) {
   const host = detailHost();
   if (!host) return;
+  setDetailOpen(true);
+  // #detail-panel starts life with the empty-state classes. Leaving them on
+  // after injecting content centers every row and makes the spec sheet look
+  // like a placeholder; strip them before the first paint.
+  host.classList.remove("detail-empty", "empty-state");
+  host.classList.add("detail-content");
   const seq = ++_detailSeq;
   host.innerHTML = renderSkeleton(item);
 

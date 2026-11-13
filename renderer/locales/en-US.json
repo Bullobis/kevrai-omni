@@ -19,6 +19,7 @@
   },
   "nav": {
     "market": "Model Market",
+    "plugins": "Plugin Market",
     "hardware": "Hardware Picks",
     "engines": "AI Engines",
     "mnn": "MNN Engine",
@@ -63,6 +64,10 @@
     "notifications": "Notifications"
   },
   "market": {
+    "eyebrow": "LOCAL LIBRARY",
+    "heading": "Model Market",
+    "subheading": "Discover, download and run open-source models locally.",
+    "closeDetail": "Close details",
     "allCategories": "All categories",
     "sortRelevance": "Relevance",
     "sortTrending": "Trending",

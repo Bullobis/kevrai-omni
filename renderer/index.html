@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="styles/appearance.css" />
   <!-- 1920px / 2K / 4K 大屏适配；只在 >=1600px 生效，可随时整文件回退 -->
   <link rel="stylesheet" href="styles/large-screen.css" />
+  <link rel="stylesheet" href="styles/ui-refresh.css" />
 </head>
 <body>
   <a href="#main" class="skip-link" data-i18n="app.skipToContent">跳到正文</a>
@@ -66,7 +67,7 @@
     </div>
   </header>
 
-  <div class="app-shell">
+  <div class="app-shell sidebar-expanded">
     <!-- Sidebar -->
     <aside class="sidebar" aria-label="分类导航" data-i18n-aria-label="app.categoryNav">
       <nav>
@@ -196,6 +197,13 @@
     <main id="main" class="main" tabindex="-1">
       <!-- Market pane -->
       <section id="pane-market" class="pane active" aria-label="模型市场">
+        <div class="market-head">
+          <div class="market-head-copy">
+            <span class="eyebrow" data-i18n="market.eyebrow">本地模型库</span>
+            <h2 data-i18n="market.heading">模型市场</h2>
+            <p data-i18n="market.subheading">发现、下载并在本机运行的开源模型。</p>
+          </div>
+        </div>
         <div class="toolbar" role="search">
           <label class="visually-hidden" for="cat-filter" data-i18n="market.catLabel">分类</label>
           <select id="cat-filter" aria-label="按分类筛选" data-i18n-aria-label="market.catAria">
@@ -1017,6 +1025,9 @@
 
     <!-- Right detail panel -->
     <aside class="detail" aria-label="详情">
+      <button class="detail-close" id="detail-close" type="button" aria-label="关闭详情" data-i18n-aria-label="market.closeDetail" title="关闭详情" data-i18n-title="market.closeDetail">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg>
+      </button>
       <div id="detail-panel" class="detail-empty empty-state">
         <div class="empty-state-iconwrap">
           <svg class="ic empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h6"/><path d="M2 12c2.7 0 4.5-1.8 4.5-4.5C6.5 4.8 4.7 3 2 3"/><path d="M2 12c2.7 0 4.5 1.8 4.5 4.5 0 2.7-1.8 4.5-4.5 4.5"/><path d="M22 12h-6"/><path d="M22 12c-2.7 0-4.5-1.8-4.5-4.5C17.5 4.8 19.3 3 22 3"/><path d="M22 12c-2.7 0-4.5 1.8-4.5 4.5 0 2.7 1.8 4.5 4.5 4.5"/></svg>

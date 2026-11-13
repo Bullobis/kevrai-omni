@@ -19,6 +19,7 @@
   },
   "nav": {
     "market": "模型市场",
+    "plugins": "插件市场",
     "hardware": "硬件推荐",
     "engines": "AI 引擎",
     "mnn": "MNN 引擎",
@@ -63,6 +64,10 @@
     "notifications": "通知"
   },
   "market": {
+    "eyebrow": "本地模型库",
+    "heading": "模型市场",
+    "subheading": "发现、下载并在本机运行的开源模型。",
+    "closeDetail": "关闭详情",
     "allCategories": "全部分类",
     "sortRelevance": "相关度",
     "sortTrending": "热门优先",

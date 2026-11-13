@@ -495,8 +495,11 @@ function renderDegradedBanner() {
     else if (toolbar) toolbar.after(host);
     else return;
   }
-  const labels = searchState.warnings
-    .map((w) => `${w.hub || "remote"}（${w.code || "err"}）`).join("、");
+  // Raw hub/code pairs like "curated（network）" read like debug output. Map
+  // them to product names and keep the technical code out of the primary line.
+  const HUB_NAMES = { curated: "本地精选", hf: "HuggingFace", modelscope: "魔搭", local: "本地" };
+  const hubs = [...new Set(searchState.warnings.map((w) => HUB_NAMES[w.hub] || w.hub || "在线源"))];
+  const labels = hubs.join("、");
   host.innerHTML = `${t("market.degradedBanner", { labels: escapeHtml(labels) })}
     <button class="link-btn" id="hub-degraded-retry">${t("market.retry")}</button>`;
   const btn = host.querySelector("#hub-degraded-retry");
@@ -529,18 +532,19 @@ function renderFacets() {
   host.innerHTML = `
     ${chips.length ? `<div class="facet-chips">${chips.map((c, i) =>
       `<button class="facet-chip active" data-clear="${i}">${escapeHtml(c.label)} ✕</button>`).join("")}</div>` : ""}
-    <div class="facet-row">
+    ${engineTop.length ? `<div class="facet-row">
       <span class="facet-label">${t("market.facetEngine")}</span>
       ${engineTop.map((e) =>
         `<button class="facet-chip ${searchState.engine === e.value ? "active" : ""}" data-engine="${escapeAttr(e.value)}">${escapeHtml(e.value)} <span class="facet-n">${escapeHtml(String(e.count ?? ""))}</span></button>`
       ).join("")}
-    </div>
-    <div class="facet-row">
+    </div>` : ""}
+    ${sizeTop.length ? `<div class="facet-row">
       <span class="facet-label">${t("market.facetSize")}</span>
       ${sizeTop.map((s) =>
         `<button class="facet-chip ${searchState.sizeBucket === s.value ? "active" : ""}" data-size="${escapeAttr(s.value)}">${escapeHtml(s.value)} <span class="facet-n">${escapeHtml(String(s.count ?? ""))}</span></button>`
       ).join("")}
-    </div>`;
+    </div>` : ""}`;
+  host.hidden = !host.innerHTML.trim();
   host.querySelectorAll("[data-engine]").forEach((b) => b.addEventListener("click", () => {
     searchState.engine = b.getAttribute("data-engine");
     runSearch({ resetPage: true });

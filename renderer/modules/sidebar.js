@@ -7,10 +7,20 @@
 "use strict";
 
 const SIDEBAR_KEY = "kevrai:sidebar-expanded";
+const SIDEBAR_KEY_V2 = "kevrai:sidebar-expanded:v2";
 
-/** 读取持久化的展开态；localStorage 不可用时回落为折叠。 */
+/** 读取持久化的展开态；首次启动默认展开，localStorage 不可用时也展开。
+ *
+ * v2 key: the old build defaulted to the 64px rail, so legacy users have a
+ * stored "0" they never explicitly chose. Ignoring that legacy value once is
+ * safer than bringing the unlabeled icon rail back after this UI refresh.
+ */
 export function readSidebarExpanded() {
-  try { return localStorage.getItem(SIDEBAR_KEY) === "1"; } catch (_) { return false; }
+  try {
+    const stored = localStorage.getItem(SIDEBAR_KEY_V2);
+    if (stored !== null) return stored !== "0";
+    return true;
+  } catch (_) { return true; }
 }
 
 /** 把展开态应用到 DOM，并同步按钮文案与 aria-label。 */
@@ -18,7 +28,7 @@ export function applySidebarState({ appShell, sidebar, toggle, expanded, t = (k)
   if (!appShell || !sidebar || !toggle) return false;
   appShell.classList.toggle("sidebar-expanded", expanded);
   sidebar.classList.toggle("expanded", expanded);
-  toggle.textContent = expanded ? "⟨" : "☰";
+  toggle.textContent = expanded ? "‹" : "☰";
   toggle.setAttribute("aria-label", expanded ? t("app.collapseSidebar") : t("app.expandSidebar"));
   toggle.setAttribute("aria-expanded", String(expanded));
   return true;
@@ -39,7 +49,10 @@ export function initSidebarToggle(t) {
   toggle.addEventListener("click", () => {
     const expanded = !appShell.classList.contains("sidebar-expanded");
     applySidebarState({ ...els, expanded, t });
-    try { localStorage.setItem(SIDEBAR_KEY, expanded ? "1" : "0"); } catch (_) {}
+    try {
+      localStorage.setItem(SIDEBAR_KEY, expanded ? "1" : "0");
+      localStorage.setItem(SIDEBAR_KEY_V2, expanded ? "1" : "0");
+    } catch (_) {}
   });
   return true;
 }
