@@ -126,7 +126,14 @@ def _frames_to_array(frames: Any) -> list[Any]:
     if isinstance(frames, np.ndarray) and frames.ndim == 5:
         frames = frames[0]
     if isinstance(frames, np.ndarray) and frames.ndim == 4:
+        # Diffusers video tensors may be (C, F, H, W) or (F, H, W, C).
+        # Blindly treating a channel-first tensor as four frames produces a
+        # tiny broken video instead of raising, so normalize by shape.
+        if frames.shape[0] in (1, 3, 4) and frames.shape[-1] not in (1, 3, 4):
+            frames = np.transpose(frames, (1, 2, 3, 0))
         frames = list(frames)
+    if isinstance(frames, np.ndarray) and frames.ndim == 3:
+        frames = [frames]
     out = []
     for f in frames:
         if hasattr(f, "detach"):

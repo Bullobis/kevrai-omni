@@ -21,6 +21,7 @@ loader tries a list of known class names and reports a clear
 from __future__ import annotations
 
 import contextlib
+import os
 import threading
 import time
 import uuid
@@ -421,6 +422,27 @@ def _load_pipeline(model_id: str, mode: str, task: LtxTask) -> Any:
             "LTX-2.5 需要先安装推理引擎：pip install torch diffusers transformers accelerate imageio imageio-ffmpeg"
         ) from e
 
+    # Fail fast when the weights are not on disk. `from_pretrained(repo_id)`
+    # otherwise performs a network HEAD/GET that can hang for minutes, leaving
+    # the task stuck in LOADING and making a missing download look like a
+    # broken engine. The market's "download" button is the intended path.
+    local = Path(model_id).expanduser()
+    if not local.is_dir() and os.environ.get("KEVRAI_ALLOW_REMOTE_MODELS") != "1":
+        cached = None
+        try:
+            from huggingface_hub import try_to_load_from_cache
+            cached = try_to_load_from_cache(
+                repo_id=model_id, filename="model_index.json"
+            )
+        except Exception:  # noqa: BLE001
+            cached = None
+        if not isinstance(cached, str):
+            raise LtxEngineMissing(
+                f"LTX 模型 {model_id} 未下载到本地：请先在模型市场下载，"
+                "或把 model_id 指向本地目录"
+            )
+    source: str = str(local) if local.is_dir() else model_id
+
     # LTX-2.5 ships under different class names across diffusers versions.
     t2v_classes = [
         "LTX2VideoPipeline", "LTXVideoPipeline", "LTXPipeline",
@@ -442,7 +464,7 @@ def _load_pipeline(model_id: str, mode: str, task: LtxTask) -> Any:
             cls = getattr(diffusers, cls_name, None)
             if cls is None:
                 continue
-            pipe = cls.from_pretrained(model_id, torch_dtype=_autocast_dtype())
+            pipe = cls.from_pretrained(source, torch_dtype=_autocast_dtype())
             break
         except Exception as e:  # noqa: BLE001
             last_err = e
@@ -451,7 +473,7 @@ def _load_pipeline(model_id: str, mode: str, task: LtxTask) -> Any:
         # Fall back to DiffusionPipeline auto-detection.
         try:
             from diffusers import DiffusionPipeline
-            pipe = DiffusionPipeline.from_pretrained(model_id, torch_dtype=_autocast_dtype())
+            pipe = DiffusionPipeline.from_pretrained(source, torch_dtype=_autocast_dtype())
         except Exception as e:  # noqa: BLE001
             raise LtxEngineMissing(
                 f"无法加载 LTX-2.5 管线（尝试了 {names}）：{last_err or e}"

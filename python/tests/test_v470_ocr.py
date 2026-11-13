@@ -70,8 +70,16 @@ def test_corrupt_image_raises():
 
 
 def test_missing_engine_raises(monkeypatch):
-    # Ensure no rapidocr is importable and no engine dir exists.
+    # Ensure no rapidocr is importable and no engine dir exists. A host may
+    # have rapidocr preinstalled (this project itself can install it), so
+    # delete the module *and* stub the loader; otherwise the test asserts
+    # against the ambient machine instead of the missing-engine path.
     monkeypatch.delitem(sys.modules, "rapidocr", raising=False)
+
+    def _missing(*_args, **_kwargs):
+        raise ocr_runtime.OCREngineMissing("missing rapidocr")
+
+    monkeypatch.setattr(ocr_runtime, "import_rapidocr", _missing)
     m = ocr_runtime.OCRManager(data_root="/definitely-no-such-root-12345")
     with pytest.raises(ocr_runtime.OCREngineMissing):
         m.extract(_png_bytes())

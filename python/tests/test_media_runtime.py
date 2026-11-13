@@ -26,6 +26,15 @@ def test_frames_to_array_accepts_pil_list():
     assert arr[0].size == (8, 8)
 
 
+def test_frames_to_array_accepts_channel_first_video_tensor():
+    # (C, F, H, W) is what many diffusers video pipelines return.
+    frames = np.zeros((3, 4, 16, 16), dtype=np.float32)
+    frames[:, 1] = 1.0
+    arr = media_runtime._frames_to_array(frames)
+    assert len(arr) == 4
+    assert arr[0].size == (16, 16)
+
+
 def test_generate_video_rejects_bad_format_before_importing_torch():
     with pytest.raises(media_runtime.MediaParamError):
         media_runtime.generate_video("m", "p", output_format="webm")
