@@ -30,6 +30,7 @@ import logging
 import os
 import re
 import shutil
+import socket
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -397,6 +398,50 @@ def _check_url(url: str, *, enforce_allowlist: bool | None = None,
             "host not in allowlist (downloads are default-deny; add the host "
             f"to the source registry to allow it): {parsed.hostname}"
         )
+
+
+async def _assert_public_resolution(url: str) -> None:
+    """Reject hostnames that resolve to a private / loopback / link-local IP.
+
+    The literal-IP checks in ``_host_is_ssrf_target`` cannot see a DNS name
+    that points at ``127.0.0.1`` or ``169.254.169.254``; a rebinding mirror
+    would pass the syntactic checks and only turn private inside httpx. Resolve
+    once per redirect hop and refuse before opening the connection.
+
+    Literal loopback hosts (``localhost`` / ``127.0.0.1``) stay allowed: they
+    are the documented local-engine case and cannot be rebound.
+    """
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").strip("[]").lower()
+    if not host:
+        return
+    if _host_is_loopback(url):
+        return
+    # Curated hosts may legitimately resolve to a LAN proxy / mirror (this
+    # sandbox resolves huggingface.co to 192.168.x.x). They are already
+    # allowlisted; the rebinding risk is for hosts outside that set.
+    if is_host_allowed(url, DEFAULT_MODEL_HOSTS):
+        return
+    if host.startswith("::ffff:"):
+        host = host[7:]
+    with contextlib.suppress(ValueError):
+        ipaddress.ip_address(host)
+        return  # literal IP already handled by _host_is_ssrf_target
+    try:
+        infos = await asyncio.get_running_loop().getaddrinfo(host, None)
+    except (socket.gaierror, UnicodeError):
+        return  # unresolvable: the real connect will fail with a clearer error
+    for info in infos:
+        addr_text = str(info[4][0]).split("%", 1)[0]
+        try:
+            addr = ipaddress.ip_address(addr_text)
+        except ValueError:
+            continue
+        if (any(addr in net for net in _SSRF_IP_NETS)
+                or addr.is_loopback or addr.is_link_local
+                or addr.is_private or addr.is_reserved):
+            raise DownloadRefused(
+                f"host resolves to a non-public address: {host} -> {addr_text}")
 
 
 # ---------------------------------------------------------------------------
@@ -1390,6 +1435,7 @@ class Downloader:
                 if len(hosts) > 5:
                     raise DownloadRefused(
                         f"too many redirect hosts: {task.url}")
+            await _assert_public_resolution(url)
             async with client.stream("GET", url, headers=headers) as r:
                 if r.status_code in (301, 302, 303, 307, 308):
                     loc = r.headers.get("Location") or ""

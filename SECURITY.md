@@ -157,3 +157,26 @@ notes once patched.
   `wget` against a URL not on one of the allowlists above.
 * **Never** disable `jsonschema` validation in `app.catalog` to "fix a
   test" — fix the test, not the schema.
+
+## v4.17.8 hardening notes
+
+* **DNS rebinding / SSRF** — every download redirect hop resolves the target
+  hostname before connecting and refuses loopback / link-local / private /
+  reserved answers. Curated hosts are exempt because they may legitimately
+  resolve to a LAN mirror/proxy; literal loopback stays available for local
+  engines.
+* **Untrusted external content** — `web_search` observations are prefixed with
+  `UNTRUSTED_EXTERNAL_CONTENT` and the ReAct system prompt states that page or
+  document text is data, never instructions. Knowledge-base context carries the
+  same “fact reference only” marker. This reduces prompt-injection steering but
+  does not grant the model fewer tools: the tool registry remains the boundary.
+* **Plugins are not a sandbox** — plugin code executes in the sidecar process
+  with the user's privileges. Deactivation removes registered tools/routes and
+  unloads the module from `sys.modules`; it cannot revoke code that a plugin
+  already ran. Only install plugins you trust.
+* **Media tools** — `asr_transcribe`, `separate_audio`, `vision_ask`, etc. read
+  the absolute path supplied by the caller. The approval gate applies to the
+  tool call, but the default `auto` policy does not prompt. Treat model- or
+  web-driven paths as untrusted.
+* **Pending approvals** — requests live in memory only; a restart discards them
+  and the blocked run is treated as rejected.

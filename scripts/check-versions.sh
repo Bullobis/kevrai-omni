@@ -75,4 +75,10 @@ for f in website/index.html website/downloads/index.html; do
   fi
 done
 
-echo "OK: all declared versions match $pkg"
+notes="$root/RELEASE_NOTES_$pkg.md"
+if [ ! -f "$notes" ]; then
+  echo "::error::missing release notes for v$pkg: $notes" >&2
+  exit 1
+fi
+
+echo "OK: all declared versions match $pkg (release notes present)"

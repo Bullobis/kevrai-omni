@@ -218,6 +218,18 @@ function keyOf(m) {
   return `${m.hub || "curated"}:${(m.repo || m.id || "").toLowerCase()}`;
 }
 
+// Same-page dedupe: the hub merges curated / HF / ModelScope and can return
+// the same repo twice. Exported for the unit test.
+export function dedupeItems(items) {
+  const seen = new Set();
+  return (items || []).filter((m) => {
+    const k = keyOf(m);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
 // Client-side overlay on top of the server result set, driven by state.favFilter.
 //   "favorites" → keep only favorited cards
 //   "recent"    → keep recently-used cards, re-ordered by recency (newest first)
@@ -313,9 +325,12 @@ export async function runSearch(opts = {}) {
   const isHub = !r.fallback;
   searchState.usingHub = isHub;
 
+  // Same-page dedupe: the hub merges curated / HF / ModelScope and can return
+  // the same repo twice. Pagination already deduped; the first page did not.
+  const deduped = dedupeItems(body.items || []);
   // Client-side favorites/recent overlay sits on top of whatever the server
   // returned (the server has no knowledge of local favorites).
-  searchState.items = applyFavFilter(body.items || []);
+  searchState.items = applyFavFilter(deduped);
   searchState.facets = body.facets || null;
   searchState.suggestions = body.suggestions || [];
   // When the local overlay is active, #models-count must reflect the filtered

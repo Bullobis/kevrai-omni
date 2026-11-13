@@ -200,3 +200,23 @@ def test_activate_rejects_entry_outside_plugin_dir(tmp_path):
     pm.install(repo.as_uri(), "escape")
     with pytest.raises(RuntimeError, match="入口"):
         pm.activate("escape")
+
+
+@pytest.mark.skipif(not _has_git(), reason="git not installed")
+def test_deactivate_unloads_module_for_clean_reactivation(tmp_path):
+    """v4.17.8: deactivate must drop kevrai_plugin_<id> from sys.modules."""
+    root = tmp_path / "data"
+    root.mkdir()
+    pm = _plugin(root)
+    pm.mount_routes(FastAPI())
+
+    pm.activate("demo")
+    first = sys.modules.get("kevrai_plugin_demo")
+    assert first is not None
+
+    pm.deactivate("demo")
+    assert "kevrai_plugin_demo" not in sys.modules
+
+    pm.activate("demo")
+    second = sys.modules.get("kevrai_plugin_demo")
+    assert second is not None and second is not first

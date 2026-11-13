@@ -403,8 +403,12 @@ async function installManagedPythonWindows() {
   try {
     await runCmd("tar", ["-xf", zipPath, "-C", dir]);
   } catch (_) {
+    // PowerShell single-quoted strings escape `'` by doubling it. A raw
+    // userData path containing an apostrophe used to break out of the
+    // -LiteralPath argument.
+    const psQuote = (v) => `'${String(v).replace(/'/g, "''")}'`;
     await runCmd("powershell", ["-NoProfile", "-Command",
-      `Expand-Archive -LiteralPath '${zipPath}' -DestinationPath '${dir}' -Force`]);
+      `Expand-Archive -LiteralPath ${psQuote(zipPath)} -DestinationPath ${psQuote(dir)} -Force`]);
   }
   try { fs.unlinkSync(zipPath); } catch (_) {}
 
@@ -2619,6 +2623,11 @@ async function bootstrap() {
     session.defaultSession.setPermissionCheckHandler(() => false);
   } catch (e) { logWarn("permission handler setup failed", String(e && e.message || e)); }
 
+  // A previous crash can leave an orphan sidecar holding 17890. Wait for it
+  // to exit (bounded) before spawning, otherwise this boot burns its restart
+  // budget against a port that is not ours.
+  const portFree = await waitForPortFree();
+  if (!portFree) logWarn("sidecar port still busy after 8s; spawning anyway");
   const sc = startSidecar();
   if (sc === "no-python") {
     // 没有任何 Python：进引导页，软件内一键安装运行环境。

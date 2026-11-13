@@ -42,6 +42,7 @@ access to the sidecar state (``engines``, ``models``, ``catalog``).
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import json
 import logging
@@ -392,6 +393,9 @@ class PluginManager:
                 f"kevrai_plugin_{plugin_id}", str(main_file))
             if spec is None or spec.loader is None:
                 raise RuntimeError(f"cannot import {main_file}")
+            # Drop any module left by a previous activate(): reusing a stale
+            # module object couples the new plugin instance to old globals.
+            sys.modules.pop(spec.name, None)
             mod = importlib.util.module_from_spec(spec)
             sys.modules[spec.name] = mod
             spec.loader.exec_module(mod)
@@ -444,6 +448,12 @@ class PluginManager:
         # raise AttributeError and turn a harmless double-click into a 500.
         if handle is not None:
             self._unmount_routes(handle)
+        # Best-effort unload: plugin code may keep module-level state that
+        # would otherwise survive a deactivate -> activate cycle. This does
+        # not provide sandboxing (plugins still run in-process), only a clean
+        # re-import boundary.
+        with contextlib.suppress(Exception):
+            sys.modules.pop(f"kevrai_plugin_{plugin_id}", None)
         meta.active = False
         return meta
 

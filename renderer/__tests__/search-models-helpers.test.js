@@ -73,3 +73,16 @@ test("an unknown category id falls back to the id itself", () => {
 test("an empty id returns an empty string", () => {
   assert.equal(categoryLabel(""), "");
 });
+
+// ── dedupeItems (v4.17.8) ─────────────────────────────────────────────────
+test("first page drops duplicate hub:repo pairs but keeps the first", async () => {
+  const { dedupeItems } = await import("../modules/search.js");
+  const items = [
+    { hub: "hf", repo: "Org/Model" },
+    { hub: "hf", repo: "org/model" },        // case-insensitive duplicate
+    { hub: "modelscope", repo: "org/model" }, // different hub → kept
+    { id: "curated-1" },
+  ];
+  assert.deepEqual(dedupeItems(items).map((m) => m.hub || m.id),
+    ["hf", "modelscope", "curated-1"]);
+});

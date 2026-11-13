@@ -223,9 +223,16 @@ class TextBrainManager:
         *,
         system: str = "",
         max_new_tokens: int = 512,
+        should_stop=None,
     ) -> str:
         """Answer a standalone user question using the model's chat template
-        (as opposed to ``generate``, which continues a raw ReAct scratchpad)."""
+        (as opposed to ``generate``, which continues a raw ReAct scratchpad).
+
+        ``should_stop`` is a zero-arg callable polled after every generated
+        token, matching :meth:`generate`. Before v4.17.8 this kwarg was missing
+        while ``ModelRouter.chat`` always passed it, so a Transformers brain
+        raised ``TypeError`` on every autonomous turn.
+        """
         if not question or not str(question).strip():
             raise BrainParamError("question is empty")
         max_new_tokens = int(max_new_tokens)
@@ -252,11 +259,16 @@ class TextBrainManager:
                 if len(ids) > budget:
                     ids = ids[-budget:]
                 input_ids = torch.tensor([ids], dtype=torch.long)
+                stopping = None
+                if should_stop is not None:
+                    stopping = self._tf.StoppingCriteriaList(
+                        [_StopOnSignal(should_stop)])
                 with torch.no_grad():
                     output = self._model.generate(
                         input_ids,
                         max_new_tokens=max_new_tokens,
                         do_sample=False,
+                        stopping_criteria=stopping,
                     )
                 generated = output[0][len(ids):]
                 return strip_reasoning(
