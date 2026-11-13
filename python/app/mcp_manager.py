@@ -30,6 +30,12 @@ VALID_TRANSPORTS = ("streamable-http", "sse", "stdio")
 # with a readable error instead of blocking the request forever.
 HANDSHAKE_TIMEOUT = 30.0
 
+# A tool call has no natural upper bound (the server may stream forever). The
+# agent loop is synchronous, so without this a single hung MCP server would
+# freeze the whole chat turn. 60s is long enough for real remote tools and
+# short enough that the user sees an error instead of a spinner that never ends.
+CALL_TIMEOUT = 60.0
+
 # Shell interpreters that must never be configured as an MCP stdio command.
 # ``StdioServerParameters`` spawns the command as an argv list (no ``shell=True``),
 # so we cannot get shell *injection* via args — but a configured command of
@@ -286,9 +292,15 @@ class MCPManager:
         server = self.get_server(server_id)
         session, ctx = await self._session(server)
         try:
-            result = await session.call_tool(tool, arguments or {})
-        except BaseException as e:  # noqa: BLE001
-            raise MCPError(f"tool call failed: {e}") from None
+            try:
+                result = await asyncio.wait_for(
+                    session.call_tool(tool, arguments or {}), timeout=CALL_TIMEOUT)
+            except asyncio.TimeoutError:
+                raise MCPError(
+                    f"tool call timed out after {CALL_TIMEOUT:.0f}s: {tool}"
+                ) from None
+            except BaseException as e:  # noqa: BLE001
+                raise MCPError(f"tool call failed: {e}") from None
         finally:
             await self._safe_close(session)
             await self._safe_close(ctx)

@@ -631,9 +631,14 @@ function _resetSessionView(root) {
 async function _loadSessionMessages() {
   const container = document.getElementById("agent-messages");
   if (!container) return;
+  // Snapshot the session this load belongs to. If the user switches chats while
+  // the request is in flight, the late response must not fill the new chat's
+  // container with the old chat's messages.
+  const sid = _sessionId;
   container.innerHTML = "";
   try {
-    const res = unwrap(await api.agentSessionMessages(_sessionId, 100));
+    const res = unwrap(await api.agentSessionMessages(sid, 100));
+    if (_sessionId !== sid) return;
     for (const msg of res.messages || []) {
       _appendMessage(msg.role, msg.content, false, msg.tools_used || [], msg.id);
     }

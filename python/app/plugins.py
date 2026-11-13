@@ -83,6 +83,33 @@ def _safe_plugin_id(value: Any) -> str | None:
         return None
     return pid
 
+
+def _normalize_git_url(git_url: Any) -> str:
+    """Normalize and screen a repository URL before handing it to ``git clone``.
+
+    Two classes of input are refused rather than "fixed":
+
+    * empty / non-string values;
+    * anything starting with ``-``. ``git clone`` parses a leading-dash repo
+      argument as an option, so ``--upload-pack=/bin/sh`` would execute a
+      command — the classic argument-injection bug. The clone call also passes
+      an explicit ``--`` separator as a second layer.
+    """
+    url = str(git_url or "").strip()
+    if not url:
+        raise RuntimeError("插件仓库地址不能为空")
+    if url.startswith("-"):
+        raise RuntimeError("插件仓库地址不能以 '-' 开头")
+    if any(ch in url for ch in ("\x00", "\r", "\n")):
+        raise RuntimeError("插件仓库地址包含非法控制字符")
+
+    # DSH convention: github shorthand like "owner/repo". Only expand when the
+    # input carries NO scheme at all — otherwise legitimate non-https URLs
+    # (file:///..., ssh://...) get mangled into "https://github.com/file:///..."
+    if ("://" not in url and not url.startswith("git@") and "/" in url):
+        url = f"https://github.com/{url}"
+    return url
+
 try:
     import yaml  # type: ignore[import-not-found]
 except Exception:
@@ -271,13 +298,7 @@ class PluginManager:
 
     def install(self, git_url: str, plugin_id: str | None = None) -> PluginMeta:
         """Clone a plugin from GitHub (or any git repo)."""
-        # DSH convention: github shorthand like "owner/repo".
-        # Only expand when the input carries NO scheme at all — otherwise
-        # legitimate non-https URLs (file:///..., ssh://...) get mangled into
-        # "https://github.com/file:///..." and clone fails with exit 128.
-        if ("://" not in git_url and not git_url.startswith("git@")
-                and "/" in git_url):
-            git_url = f"https://github.com/{git_url}"
+        git_url = _normalize_git_url(git_url)
 
         pid = plugin_id or git_url.rstrip("/").rsplit("/", 1)[-1]
         if pid.endswith(".git"):
@@ -299,7 +320,7 @@ class PluginManager:
                            check=False, timeout=30)
         else:
             subprocess.run(
-                [_tool_path("git"), "clone", "--depth", "1", git_url, str(target)],
+                [_tool_path("git"), "clone", "--depth", "1", "--", git_url, str(target)],
                 check=True, timeout=60,
             )
 

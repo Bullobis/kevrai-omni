@@ -1,6 +1,6 @@
 # FAQ.md — 常见问题
 
-> 基于 v2.9.0 源码与实际错误消息整理。每条都能在代码里找到出处；如果你的问题不在这，先看 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)。
+> 基于 v4.17.7 源码与实际错误消息整理。每条都能在代码里找到出处；如果你的问题不在这，先看 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)。
 
 ## 目录
 
@@ -94,7 +94,9 @@ python3 -m uvicorn app.main:app --host 127.0.0.1 --port 17890 --reload
 
 ### Q8. 17890 端口被别的程序占了怎么办？
 
-临时改端口：启动前设环境变量 `KEVRAI_PORT=17891`。注意 Electron 主进程和 sidecar 都读这个变量，两边要一致（主进程 spawn sidecar 时会把 `KEVRAI_PORT` 传下去）。
+4.17.7 里端口是**写死的常量**：`electron/main.js` 的 `SIDECAR_PORT = 17890`，不读取 `KEVRAI_PORT`。所以设这个环境变量不会换端口，只会改变传给子进程的值，Electron 仍然连 17890。
+
+正确做法：找出占用者并结束它（Linux/macOS `lsof -i :17890`，Windows `netstat -ano | findstr 17890`），或者退出正在占用该端口的另一个 Kevrai Omni 实例。若只是单独调试 sidecar，可以自己用 `uvicorn --port 17891` 起（此时 Electron 不会连它，且除 `/api/health` 外的接口需要 Bearer secret，见 [API.md](./API.md)）。
 
 ---
 

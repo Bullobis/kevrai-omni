@@ -517,13 +517,13 @@ function renderFacets() {
     <div class="facet-row">
       <span class="facet-label">${t("market.facetEngine")}</span>
       ${engineTop.map((e) =>
-        `<button class="facet-chip ${searchState.engine === e.value ? "active" : ""}" data-engine="${escapeAttr(e.value)}">${escapeHtml(e.value)} <span class="facet-n">${e.count}</span></button>`
+        `<button class="facet-chip ${searchState.engine === e.value ? "active" : ""}" data-engine="${escapeAttr(e.value)}">${escapeHtml(e.value)} <span class="facet-n">${escapeHtml(String(e.count ?? ""))}</span></button>`
       ).join("")}
     </div>
     <div class="facet-row">
       <span class="facet-label">${t("market.facetSize")}</span>
       ${sizeTop.map((s) =>
-        `<button class="facet-chip ${searchState.sizeBucket === s.value ? "active" : ""}" data-size="${escapeAttr(s.value)}">${escapeHtml(s.value)} <span class="facet-n">${s.count}</span></button>`
+        `<button class="facet-chip ${searchState.sizeBucket === s.value ? "active" : ""}" data-size="${escapeAttr(s.value)}">${escapeHtml(s.value)} <span class="facet-n">${escapeHtml(String(s.count ?? ""))}</span></button>`
       ).join("")}
     </div>`;
   host.querySelectorAll("[data-engine]").forEach((b) => b.addEventListener("click", () => {
@@ -542,7 +542,7 @@ function renderFacets() {
 
 function renderNoResults() {
   let host = $("#no-results");
-  if (searchState.count > 0 || !searchState.q.trim()) {
+  if (searchState.count > 0) {
     if (host) host.remove();
     return;
   }
@@ -553,17 +553,28 @@ function renderNoResults() {
     const grid = $("#models-grid");
     grid.parentNode.insertBefore(host, grid.nextSibling);
   }
+  const q = searchState.q.trim();
+  const filtered = !!(searchState.engine || searchState.license
+    || searchState.sizeBucket
+    || (searchState.favFilter && searchState.favFilter !== "all"));
   const sug = searchState.suggestions.length
     ? `<p>${t("market.didYouMean")}：${searchState.suggestions.slice(0, 3).map((s) =>
         `<button class="link-btn" data-suggest="${escapeAttr(s)}">${escapeHtml(s)}</button>`).join(" ")}</p>`
     : "";
+  // A first visit with no query used to leave the grid completely blank. Give
+  // the empty state a purpose in that case too, instead of pretending the user
+  // searched for "" and found nothing.
+  const title = q ? t("market.noResults") : (filtered ? t("market.emptyFilteredTitle") : t("market.emptyBrowseTitle"));
+  const body = q
+    ? t("market.noResultsBody", { q: `<strong>${escapeHtml(q)}</strong>` })
+    : (filtered ? t("market.emptyFilteredHint") : t("market.emptyBrowseHint"));
   host.innerHTML = `
     <div class="no-results-icon">${emptyStateIconSvg("search")}</div>
-    <h3 class="empty-state-title">${t("market.noResults")}</h3>
-    <p>${t("market.noResultsBody", { q: `<strong>${escapeHtml(searchState.q)}</strong>` })}</p>
+    <h3 class="empty-state-title">${title}</h3>
+    <p>${body}</p>
     ${sug}
     <p class="mut tiny">${t("market.suggestionHint")}</p>
-    <button type="button" class="secondary small es-clear-search">${t("market.clearSearch")}</button>`;
+    ${q ? `<button type="button" class="secondary small es-clear-search">${t("market.clearSearch")}</button>` : ""}`;
   host.querySelectorAll("[data-suggest]").forEach((b) => b.addEventListener("click", () => {
     $("#search").value = b.getAttribute("data-suggest");
     searchState.q = b.getAttribute("data-suggest");

@@ -14,6 +14,7 @@ from app.agent.tools.mcp_tools import _call_mcp_tool, _list_mcp_tools
 from app.mcp_manager import (
     MCPConfigError,
     MCPConnectionError,
+    MCPError,
     MCPManager,
 )
 
@@ -247,3 +248,24 @@ def test_route_call_missing_tool_400(hub_client):
         assert r.status_code == 400
     finally:
         hub_client.delete(f"/api/mcp/servers/{sid}")
+
+
+def test_tool_call_times_out_instead_of_hanging(tmp_path, monkeypatch):
+    """A server that never returns must surface an error, not freeze the turn."""
+    import app.mcp_manager as mcp_mod
+
+    class HangingSession:
+        async def call_tool(self, tool, args):
+            await asyncio.sleep(3600)
+
+    mgr = MCPManager(tmp_path)
+    sid = mgr.add_server("slow", "streamable-http", "https://example.com/mcp")["id"]
+
+    async def fake_session(server):
+        return HangingSession(), None
+
+    monkeypatch.setattr(mgr, "_session", fake_session)
+    monkeypatch.setattr(mcp_mod, "CALL_TIMEOUT", 0.05)
+
+    with pytest.raises(MCPError, match="timed out"):
+        asyncio.run(mgr.a_call(sid, "slow_tool", {}))

@@ -172,6 +172,10 @@
     "retry": "Retry",
     "noResults": "No matching models",
     "noResultsBody": "No models match “{q}”",
+    "emptyBrowseTitle": "The model market is empty",
+    "emptyBrowseHint": "Try searching above, or pick a model from a category.",
+    "emptyFilteredTitle": "No models under these filters",
+    "emptyFilteredHint": "Clear a filter, or try a different keyword.",
     "didYouMean": "Did you mean:",
     "clearSearch": "Clear search",
     "suggestionHint": "Tip: check spelling, use fewer keywords, or clear filters",
@@ -401,6 +405,8 @@
     "accentCyan": "Cyan",
     "densityComfortable": "Comfortable",
     "densityCompact": "Compact",
+    "uiScale": "UI scale",
+    "uiScaleHint": "On large or 4K displays, 125–150% keeps cards and text readable; the whole window is scaled.",
     "tokenEstimate": "Show an estimated token count next to input boxes"
   },
   "webdav": {

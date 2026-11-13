@@ -1,6 +1,6 @@
 # DEPLOYMENT.md — 终端用户本地部署指南
 
-> 适用版本：Kevrai Omni v2.9.0。本文面向**普通终端用户**（在自己的工作站上安装、跑起来、下模型）。
+> 适用版本：Kevrai Omni v4.17.7。本文面向**普通终端用户**（在自己的工作站上安装、跑起来、下模型）。
 > 开发者从源码搭建环境请见 [DEVELOPMENT.md](./DEVELOPMENT.md)；架构原理见 [ARCHITECTURE.md](./ARCHITECTURE.md)。
 
 ## 目录
@@ -223,7 +223,7 @@ App 的下载器与 hub 客户端尊重标准 Hugging Face 环境变量（透传
 | `HF_HUB_OFFLINE=1` | 强制离线模式，禁止任何对 HF 的网络请求。 |
 | `HF_TOKEN` | Hugging Face 访问令牌（gated 模型需要；也可在 App「设置」里填，二者取其一）。 |
 | `KEVRAI_PYTHON` | 覆盖 sidecar 使用的 Python 解释器路径（开发/调试用）。 |
-| `KEVRAI_PORT` | sidecar HTTP 端口，默认 17890（一般不用改）。 |
+| `KEVRAI_PORT` | 传给 sidecar 的端口值（= 主进程常量 17890）。**不是**可配置项：主进程不读取该变量，改它不会换端口。 |
 
 > App 内置的镜像选择器（设置 → 多源镜像）默认已经把 `https://hf-mirror.com` 加进 `extra_model_mirrors`，并对每个源做测速。离线场景下请在设置里**关闭自动测速**、锁定你要用的本地/内网源，避免 App 反复探测外网超时。
 
@@ -254,14 +254,20 @@ RUN pip install --no-cache-dir -i https://mirrors.tencent.com/pypi/simple/ \
 COPY python /app/python
 COPY catalog /app/catalog
 
-# sidecar 监听 17890；容器内绑定 0.0.0.0 才能被宿主访问（桌面版默认绑 127.0.0.1）
+# app/main.py 没有 __main__ 入口，必须用 uvicorn 启动；容器内绑 0.0.0.0 才能
+# 被宿主访问（桌面版默认绑 127.0.0.1）。sidecar 除 /api/health 外强制要求
+# Bearer secret，容器里没有 Electron 生成的随机值，必须自己注入。
+WORKDIR /app/python
+ENV KEVRAI_SIDECAR_SECRET=change-me-in-production
+ENV PYTHONUNBUFFERED=1
 EXPOSE 17890
-CMD ["python", "-m", "app.main"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "17890"]
 ```
 
 注意：
 
 - 桌面版主进程把 sidecar 绑在 `127.0.0.1:17890`；容器化时需自行改 host 或做端口转发。
+- 容器内必须设置 `KEVRAI_SIDECAR_SECRET`，并在请求里带 `Authorization: Bearer <该值>`；否则除 `/api/health` 外的接口会 fail-closed 返回 500。
 - GPU 透传需要 `--gpus all`（NVIDIA Container Toolkit）或 ROCm/ASCEND 对应设备插件。
 - 模型体积大，建议把 `models/` 挂成卷：`-v /data/kevrai/models:/root/.local/share/KevraiOmni/models`。
 

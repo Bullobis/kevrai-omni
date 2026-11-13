@@ -14,6 +14,7 @@ import json
 import os
 import subprocess
 import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -120,6 +121,44 @@ def test_safe_plugin_id_rejects(bad):
 @pytest.mark.parametrize("good", ["demo", "a.b_c-1", "x" * 64])
 def test_safe_plugin_id_accepts(good):
     assert _safe_plugin_id(good) == good
+
+
+def test_normalize_git_url_rejects_option_injection():
+    """A repo URL starting with '-' is parsed by git as an option."""
+    from app.plugins import _normalize_git_url
+
+    with pytest.raises(RuntimeError):
+        _normalize_git_url("--upload-pack=/bin/sh")
+    with pytest.raises(RuntimeError):
+        _normalize_git_url("   ")
+    with pytest.raises(RuntimeError):
+        _normalize_git_url("https://x/y\n--evil")
+    assert _normalize_git_url("owner/repo") == "https://github.com/owner/repo"
+    assert _normalize_git_url(" https://example.com/a.git ") == "https://example.com/a.git"
+
+
+def test_install_uses_dash_separator_before_repo(tmp_path, monkeypatch):
+    """Defence in depth: the clone command must carry '--' before the URL."""
+    from app.plugins import PluginManager
+    import app.plugins as plugins_mod
+
+    root = tmp_path / "data"
+    root.mkdir()
+    pm = PluginManager(root)
+    seen: list[list[str]] = []
+
+    def fake_run(cmd, **kw):
+        seen.append(list(cmd))
+        return types.SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(plugins_mod.subprocess, "run", fake_run)
+    with pytest.raises(RuntimeError, match="cordis.yml|plugin.json"):
+        pm.install("https://example.com/a.git", "demo")
+    assert seen, "clone must be attempted"
+    clone = seen[0]
+    assert clone[:4] == [clone[0], "clone", "--depth", "1"]
+    assert clone[4] == "--"
+    assert clone[5] == "https://example.com/a.git"
 
 
 @pytest.mark.skipif(not _has_git(), reason="git not installed")

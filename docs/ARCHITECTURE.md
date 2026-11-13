@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — Kevrai Omni 系统架构
 
-> 本文描述 v2.9.0 的实际架构。所有模块名、端口、路由均来自源码；如与代码漂移，以代码为准。
+> 本文描述 v4.17.7 的实际架构。所有模块名、端口、路由均来自源码；如与代码漂移，以代码为准。
 > 面向想读懂/改代码的工程师；终端用户请见 [DEPLOYMENT.md](./DEPLOYMENT.md)。
 
 ## 目录
@@ -76,7 +76,7 @@ flowchart TB
 | sidecar 启动命令 | `python -m uvicorn app.main:app --host 127.0.0.1 --port 17890` | `main.js` spawn 段 |
 | 自动重启上限 | `SIDECAR_RESTART_MAX = 3`，线性退避 | `main.js` |
 | Python 解释器解析顺序 | `KEVRAI_PYTHON` 环境变量 → 用户数据目录下 `python-runtime/` → 系统 `python3` | `main.js` |
-| sidecar 环境变量透传 | `KEVRAI_PORT`、`PYTHONUNBUFFERED=1`、`PYTHONIOENCODING=UTF-8`、`ELECTRON_RUN_AS_NODE=""`，继承 `process.env` | `sidecarEnv()` |
+| sidecar 环境变量透传 | `KEVRAI_PORT`（恒为常量 17890，仅透传不可配置）、`PYTHONUNBUFFERED=1`、`PYTHONIOENCODING=UTF-8`、`ELECTRON_RUN_AS_NODE=""`，继承 `process.env` | `sidecarEnv()` |
 | 日志滚动 | `main.log` → `main.log.1` → `main.log.2`（丢弃最老） | `main.js` |
 
 通信分三类：

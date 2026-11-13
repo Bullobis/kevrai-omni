@@ -28,6 +28,7 @@ const { spawn } = require("node:child_process");
 const http = require("node:http");
 const { URL } = require("node:url");
 const windowState = require("./window-state");
+const { normalizeMeasureArgs } = require("./measure-args");
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -650,6 +651,19 @@ async function stopSidecar(graceMs = SHUTDOWN_TIMEOUT_MS) {
 // so existing installs keep their data.
 // ---------------------------------------------------------------------------
 const DEFAULT_WORKSPACE_ID = "default";
+// Generated ids are always ws_ + 6 random bytes (12 hex chars). Validating the
+// shape is what keeps a caller from passing "../../etc" into the recursive
+// rmSync in removeWorkspace() below.
+const WORKSPACE_ID_RE = /^ws_[0-9a-f]{12}$/;
+
+function isWorkspaceId(id) {
+  return id === DEFAULT_WORKSPACE_ID || WORKSPACE_ID_RE.test(String(id || ""));
+}
+
+function assertWorkspaceId(id) {
+  assert(isWorkspaceId(id), "workspace id: invalid");
+  return id;
+}
 
 function workspacesConfigPath() {
   return path.join(userDataDir(), "workspaces.json");
@@ -668,9 +682,22 @@ function loadWorkspaces() {
   try {
     const raw = JSON.parse(fs.readFileSync(workspacesConfigPath(), "utf8"));
     if (raw && Array.isArray(raw.workspaces) && raw.workspaces.length) {
-      const ids = raw.workspaces.map((w) => w.id);
-      const active = ids.includes(raw.active) ? raw.active : raw.workspaces[0].id;
-      return { active, workspaces: raw.workspaces };
+      // A corrupted or hand-edited workspaces.json must never smuggle a
+      // traversal-shaped id into workspaceDir()/KEVRAI_DATA_ROOT. Keep only
+      // well-formed ids, and always keep the builtin default.
+      const valid = raw.workspaces
+        .filter((w) => w && typeof w === "object" && isWorkspaceId(w.id) && w.id !== DEFAULT_WORKSPACE_ID)
+        .map((w) => ({
+          id: w.id,
+          name: (typeof w.name === "string" && w.name.trim() ? w.name.trim() : "Workspace").slice(0, 120),
+          created_at: typeof w.created_at === "string" ? w.created_at : "",
+        }));
+      const list = [
+        { id: DEFAULT_WORKSPACE_ID, name: "Default", builtin: true, created_at: "" },
+        ...valid,
+      ];
+      const active = list.some((w) => w.id === raw.active) ? raw.active : DEFAULT_WORKSPACE_ID;
+      return { active, workspaces: list };
     }
   } catch (_) { /* first run / corrupt → defaults */ }
   return _defaultWorkspaceState();
@@ -685,6 +712,7 @@ function workspacesRoot() { return path.join(userDataDir(), "workspaces"); }
 
 function workspaceDir(id) {
   if (id === DEFAULT_WORKSPACE_ID) return null; // classic root
+  assertWorkspaceId(id);
   const dir = path.join(workspacesRoot(), id);
   fs.mkdirSync(dir, { recursive: true });
   return dir;
@@ -697,7 +725,7 @@ function activeWorkspaceDir() {
 function createWorkspace(name) {
   const state = loadWorkspaces();
   const id = "ws_" + crypto.randomBytes(6).toString("hex");
-  const nm = (name || "").trim()
+  const nm = (typeof name === "string" ? name.trim().slice(0, 120) : "")
     || "Workspace " + (state.workspaces.length + 1);
   const ws = { id, name: nm, created_at: new Date().toISOString() };
   state.workspaces.push(ws);
@@ -707,10 +735,11 @@ function createWorkspace(name) {
 }
 
 function renameWorkspace(id, name) {
+  assertWorkspaceId(id);
   const state = loadWorkspaces();
   const ws = state.workspaces.find((w) => w.id === id);
   if (!ws) throw new Error("workspace not found");
-  const nm = (name || "").trim();
+  const nm = (typeof name === "string" ? name.trim().slice(0, 120) : "");
   if (!nm) throw new Error("name is empty");
   ws.name = nm;
   saveWorkspaces(state);
@@ -718,6 +747,7 @@ function renameWorkspace(id, name) {
 }
 
 function removeWorkspace(id) {
+  assertWorkspaceId(id);
   if (id === DEFAULT_WORKSPACE_ID) {
     throw new Error("the default workspace cannot be removed");
   }
@@ -725,6 +755,10 @@ function removeWorkspace(id) {
   if (state.active === id) {
     throw new Error("switch away from a workspace before removing it");
   }
+  // Only delete a directory we actually own: an id that is not in the saved
+  // list must be rejected BEFORE rmSync, never treated as a path fragment.
+  const ws = state.workspaces.find((w) => w.id === id);
+  if (!ws) throw new Error("workspace not found");
   state.workspaces = state.workspaces.filter((w) => w.id !== id);
   saveWorkspaces(state);
   const dir = path.join(workspacesRoot(), id);
@@ -751,6 +785,7 @@ async function waitForPortFree(timeoutMs = 8_000) {
 }
 
 async function switchWorkspace(id) {
+  assertWorkspaceId(id);
   const state = loadWorkspaces();
   if (!state.workspaces.some((w) => w.id === id)) {
     throw new Error("unknown workspace");
@@ -1681,6 +1716,23 @@ function registerIpc() {
   ipcMain.handle("window:close", () => { try { if (mainWindow) mainWindow.close(); } catch (_) {} });
   ipcMain.handle("window:is-maximized", () => !!(mainWindow && mainWindow.isMaximized()));
 
+  // --- UI scale (large-screen / 4K readability) ---------------------------
+  // The renderer persists the choice in localStorage and re-applies it on every
+  // load; this handler only validates and applies it. The clamp is deliberate:
+  // a corrupted/malicious value must not shrink the window to an unusable size
+  // or blow it up past the viewport.
+  ipcMain.handle("ui:set-scale", (_e, factor) => {
+    const n = Number(factor);
+    assert(Number.isFinite(n), "ui scale: not a finite number");
+    const scale = Math.min(1.75, Math.max(0.8, Math.round(n * 100) / 100));
+    try {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.setZoomFactor(scale);
+      }
+    } catch (_) { /* window may be closing; the preference is still persisted */ }
+    return { ok: true, scale };
+  });
+
   // --- New handlers -------------------------------------------------------
 
   ipcMain.handle("kevrai:detect-gpu", async () => sidecarFetch("/api/gpu"));
@@ -1705,7 +1757,13 @@ function registerIpc() {
   ipcMain.handle("kevrai:measure-sources", async (_e, body) => {
     assert(body && typeof body === "object", "body: invalid");
     assertArray(body.urls, "urls");
-    return sidecarFetch("/api/sources/measure", { method: "POST", body });
+    // Re-run the same normalizer the preload uses: this is defence in depth for
+    // any caller that reaches the channel without the bridge (and it caps the
+    // request at 32 http(s) URLs instead of forwarding an arbitrary payload).
+    let payload;
+    try { payload = normalizeMeasureArgs(body); }
+    catch (e) { throw err(`body: ${e.message}`); }
+    return sidecarFetch("/api/sources/measure", { method: "POST", body: payload });
   });
 
   // v2.8.1 — source registry / health / lock (design T03).

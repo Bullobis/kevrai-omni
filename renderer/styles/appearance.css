@@ -56,3 +56,21 @@ html[data-density="compact"] .card-pills .pill { padding: 1px 6px; }
   .swatch, .density-opt { transition: none; }
   .swatch:hover { transform: none; }
 }
+
+/* ── 大屏几何（v4.17.7+） ──────────────────────────────────────────────
+   在 4K 显示器上，280×168 的卡片会变成一堵“小方块墙”：列数过多、每张卡片
+   的信息密度反而下降。这里按视口宽度放大网格变量（而不是缩放整个界面，
+   后者交给「界面缩放」），VirtualGrid 在 resize 时会重新读取这两个变量。
+   compact 密度单独覆盖，因为它的选择器权重更高，不能被 :root 规则盖掉。 */
+@media (min-width: 1600px) {
+  :root { --grid-min-w: 300px; --grid-item-h: 180px; }
+  html[data-density="compact"] { --grid-min-w: 256px; --grid-item-h: 148px; }
+}
+@media (min-width: 2200px) {
+  :root { --grid-min-w: 330px; --grid-item-h: 196px; }
+  html[data-density="compact"] { --grid-min-w: 284px; --grid-item-h: 160px; }
+}
+@media (min-width: 3000px) {
+  :root { --grid-min-w: 380px; --grid-item-h: 220px; }
+  html[data-density="compact"] { --grid-min-w: 320px; --grid-item-h: 180px; }
+}

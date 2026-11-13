@@ -172,6 +172,10 @@
     "retry": "重试",
     "noResults": "没有找到相关模型",
     "noResultsBody": "没有找到与 “{q}” 相关的模型",
+    "emptyBrowseTitle": "模型市场还没有内容",
+    "emptyBrowseHint": "试试在上方搜索，或从分类里挑一个模型。",
+    "emptyFilteredTitle": "当前筛选下没有模型",
+    "emptyFilteredHint": "清除筛选条件，或换一个关键词试试。",
     "didYouMean": "你是不是要找：",
     "clearSearch": "清除搜索",
     "suggestionHint": "建议：检查拼写、减少关键词、或清除筛选条件",
@@ -401,6 +405,8 @@
     "accentCyan": "青色",
     "densityComfortable": "舒适",
     "densityCompact": "紧凑",
+    "uiScale": "界面缩放",
+    "uiScaleHint": "大屏 / 4K 显示器可放大到 125–150%，让卡片与文字保持可读；缩放对整个窗口生效。",
     "tokenEstimate": "在输入框旁显示 Token 预估"
   },
   "webdav": {

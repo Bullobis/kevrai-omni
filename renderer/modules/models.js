@@ -518,9 +518,16 @@ function withTimeout(promise, ms) {
   ]);
 }
 
+// Monotonic token for the detail panel. A remote detail request can take up to
+// 6s; clicking model B while A is still in flight used to let A's response
+// overwrite B's panel (wrong repo/engine, and install buttons acting on a
+// stale model). Every await re-checks that this call is still the latest.
+let _detailSeq = 0;
+
 export async function showDetail(item) {
   const host = detailHost();
   if (!host) return;
+  const seq = ++_detailSeq;
   host.innerHTML = renderSkeleton(item);
 
   const isRemote = !!(item.hub && item.hub !== "curated" && item.repo);
@@ -529,14 +536,17 @@ export async function showDetail(item) {
   if (isRemote && window.kevrai && typeof window.kevrai.hubModel === "function") {
     try {
       const remote = await fetchHubDetail(item);
+      if (seq !== _detailSeq) return;
       if (remote) detail = { ...item, ...remote };
     } catch (_) { /* keep lite detail; banner below explains */ }
   }
+  if (seq !== _detailSeq) return;
 
   try {
     // Curated / cached path: the local detail API responds instantly.
     if (!isRemote) {
       const r = await withTimeout(api.modelDetail(item.id || item.owner_repo), 4_000);
+      if (seq !== _detailSeq) return;
       if (r && r.body) detail = r.body;
       else if (r) detail = r;
     }
@@ -547,6 +557,7 @@ export async function showDetail(item) {
   try {
     gguf = await withTimeout(api.ggufRepos(), 4_000);
   } catch (_) { /* fine */ }
+  if (seq !== _detailSeq) return;
   const ggufForModel = (gguf?.body?.repos || gguf?.repos || [])
     .find((r) => r.owner_repo === (detail.owner_repo || detail.repo));
 

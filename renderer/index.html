@@ -1225,6 +1225,17 @@
                 <button type="button" class="density-opt" data-density-choice="compact" role="radio" aria-checked="false" data-i18n="settings.densityCompact">紧凑</button>
               </div>
             </div>
+            <div class="appearance-block">
+              <span class="appearance-label" data-i18n="settings.uiScale">界面缩放</span>
+              <div class="density-toggle" id="scale-toggle" role="radiogroup" data-i18n-aria-label="settings.uiScale">
+                <button type="button" class="density-opt" data-scale-choice="0.9" role="radio" aria-checked="false">90%</button>
+                <button type="button" class="density-opt is-active" data-scale-choice="1" role="radio" aria-checked="true">100%</button>
+                <button type="button" class="density-opt" data-scale-choice="1.1" role="radio" aria-checked="false">110%</button>
+                <button type="button" class="density-opt" data-scale-choice="1.25" role="radio" aria-checked="false">125%</button>
+                <button type="button" class="density-opt" data-scale-choice="1.5" role="radio" aria-checked="false">150%</button>
+              </div>
+              <p class="mut tiny" data-i18n="settings.uiScaleHint">大屏 / 4K 显示器可放大到 125–150%，让卡片与文字保持可读；缩放对整个窗口生效。</p>
+            </div>
             <label class="appearance-check">
               <input type="checkbox" id="token-estimate-toggle" checked />
               <span data-i18n="settings.tokenEstimate">在输入框旁显示 Token 预估</span>

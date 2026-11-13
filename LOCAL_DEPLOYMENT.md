@@ -120,7 +120,7 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 17890 --log-level info
        http://127.0.0.1:17890/api/categories
   ```
 - WebSocket 升级请求同样要求在握手时带 `Authorization: Bearer ...`。
-- 改端口：`--port` 即可；Electron 拉起时端口固定为 17890，环境变量 `KEVRAI_PORT` 与之对应。
+- 改端口：单独跑 `uvicorn` 时用 `--port`；Electron 拉起时端口**固定为 17890**（`SIDECAR_PORT` 常量，`KEVRAI_PORT` 只是透传值，改它不会生效）。
 
 > 注意：sidecar 只是「编排层」，真正的推理引擎（llama.cpp/MNN/…）仍需按第 4、5 节
 > 单独安装或下载到引擎目录。

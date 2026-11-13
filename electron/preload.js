@@ -721,6 +721,13 @@ const api = {
   winClose:          () => invoke("window:close"),
   winIsMaximized:    () => invoke("window:is-maximized"),
   onWinMaxChange:    (cb) => listen("window:maximize-change", cb),
+  // Large-screen / 4K readability: renderer asks main to zoom the whole window.
+  // Main re-validates and clamps; this bridge only rejects non-numbers.
+  setUiScale: (factor) => {
+    const n = Number(factor);
+    if (!Number.isFinite(n)) throw new Error("ui scale: not a finite number");
+    return invoke("ui:set-scale", n);
+  },
   // Resolve the absolute path of a dropped/selected File object. The nonstandard
   // File.path was removed in Electron 32 (the app runs Electron 33); webUtils is
   // the supported replacement and must be called from preload under context

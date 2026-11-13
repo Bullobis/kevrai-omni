@@ -385,6 +385,10 @@ html[data-theme="light"] .skip-link { color: #fff; }
   transition: transform .18s cubic-bezier(.22,1,.36,1), border-color .18s ease,
               background .18s ease, box-shadow .18s ease;
   display: flex; flex-direction: column; gap: 8px;
+  /* The virtual grid pins every row to --grid-item-h. A card whose pills wrap
+     or whose description runs long must clip inside its own box instead of
+     painting over the next row. */
+  overflow: hidden;
 }
 .vgrid-item:hover {
   transform: translateY(-3px);

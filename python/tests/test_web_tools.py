@@ -113,6 +113,18 @@ def test_clean_results_respects_limit_and_falls_back_title_to_url():
     assert out[0]["title"] == "https://x0.example.com"
 
 
+def test_clean_results_strips_markup_and_unescapes_entities():
+    rows = [{
+        "title": "<b>Hello</b> &amp; <span>world</span>",
+        "url": "https://a.example.com/x",
+        "snippet": "a <script>alert(1)</script> b <i>c</i>",
+    }]
+    out = wt._clean_results(rows, limit=1)
+    assert out[0]["title"] == "Hello & world"
+    assert out[0]["snippet"] == "a b c"
+    assert "<" not in out[0]["snippet"]
+
+
 # --------------------------------------------------------------------------
 # Engines
 # --------------------------------------------------------------------------
@@ -212,6 +224,27 @@ def test_tool_clamps_limit(monkeypatch):
     # Absurd / non-numeric limits must never crash the agent.
     assert wt.web_search.handler({"query": "q", "limit": "abc"}, ctx())["count"] == 2
     assert wt.web_search.handler({"query": "q", "limit": 999}, ctx())["count"] == 2
+
+
+def test_tool_clamps_bad_timeout_without_raising(monkeypatch):
+    """A model-supplied timeout used to escape as ValueError and kill the run."""
+    stub(monkeypatch, lambda url, **kw: (200, DDG_HTML))
+    for bad in ("abc", None, -5, 1e9, float("nan"), float("inf")):
+        out = wt.web_search.handler({"query": "q", "timeout": bad}, ctx())
+        assert out["count"] == 2, bad
+        assert "results" in out, bad
+
+
+def test_tool_normalises_query_whitespace(monkeypatch):
+    seen: dict = {}
+
+    def handler(url, **kw):
+        seen.update(kw.get("params") or {})
+        return 200, DDG_HTML
+
+    stub(monkeypatch, handler)
+    wt.web_search.handler({"query": "  hello \n\t world  "}, ctx())
+    assert seen.get("q") == "hello world"
 
 
 def test_tool_prefers_configured_searxng(monkeypatch):

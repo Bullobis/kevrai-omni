@@ -94,3 +94,51 @@ test("command-palette actions can drive accent and density", async () => {
   __getRegisteredAction("zz-density-compact").handler();
   assert.equal(document.documentElement.getAttribute("data-density"), "compact");
 });
+
+const SCALE_BODY = `${BODY}
+<div id="scale-toggle">
+  <button data-scale-choice="0.9"></button>
+  <button data-scale-choice="1"></button>
+  <button data-scale-choice="1.1"></button>
+  <button data-scale-choice="1.25"></button>
+  <button data-scale-choice="1.5"></button>
+</div>`;
+
+test("ui scale is validated, persisted and applied through the bridge", async () => {
+  const { window } = setupDom(SCALE_BODY);
+  let applied = null;
+  window.kevrai = { setUiScale: (n) => { applied = n; return Promise.resolve({ ok: true, scale: n }); } };
+  let resized = 0;
+  window.addEventListener("resize", () => { resized += 1; });
+  const ap3 = await import(`../modules/appearance.js?z=${Math.random()}`);
+  ap3.initAppearance();
+  document.querySelector('[data-scale-choice="1.25"]').click();
+  assert.equal(document.documentElement.getAttribute("data-ui-scale"), "1.25");
+  assert.equal(globalThis.localStorage.getItem("kevrai:ui-scale"), "1.25");
+  assert.equal(applied, 1.25);
+  assert.equal(document.querySelector('[data-scale-choice="1.25"]').getAttribute("aria-checked"), "true");
+  assert.ok(resized >= 1, "resize dispatched so the virtual grid reflows");
+});
+
+test("ui scale rejects values outside the discrete list", async () => {
+  setupDom(SCALE_BODY);
+  const ap4 = await import(`../modules/appearance.js?w=${Math.random()}`);
+  ap4.initAppearance();
+  const before = document.documentElement.getAttribute("data-ui-scale");
+  assert.equal(before, "1", "init applies the 100% default");
+  ap4.setUiScale("2");
+  assert.equal(document.documentElement.getAttribute("data-ui-scale"), before);
+  assert.equal(ap4.isValidScale("2"), false);
+  assert.equal(ap4.isValidScale(1.5), true);
+});
+
+test("persisted ui scale is restored and re-applied on init", async () => {
+  const { window } = setupDom(SCALE_BODY);
+  globalThis.localStorage.setItem("kevrai:ui-scale", "1.1");
+  let applied = null;
+  window.kevrai = { setUiScale: (n) => { applied = n; return Promise.resolve({ ok: true }); } };
+  const ap5 = await import(`../modules/appearance.js?v=${Math.random()}`);
+  ap5.initAppearance();
+  assert.equal(document.documentElement.getAttribute("data-ui-scale"), "1.1");
+  assert.equal(applied, 1.1);
+});

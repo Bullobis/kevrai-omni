@@ -22,19 +22,29 @@ Electron 渲染层通过主进程 IPC 转发访问它；外部脚本也可以直
 
 ### 认证方式
 
-**sidecar 本身不要求调用方携带任何认证头**。它的安全模型是：
+**sidecar 要求 Bearer secret**（4.x 起启用；P0-1 安全强化）。它不再是一个“本机任意进程都能调用”的裸控制面：
 
-1. 只绑定 `127.0.0.1`，外部网络无法直连；
-2. CORS 限定在 Electron 本地源与 dev server（`app://.`、`file://`、
-   `http://localhost:5173/3000` 等，见 `main.py` 的 `ALLOWED_ORIGINS`）；
-3. 下载 URL 走主机白名单（详见 [../SECURITY.md](../SECURITY.md)）。
+1. Electron 主进程每次启动 sidecar 时生成 32 字节随机 secret，通过环境变量
+   `KEVRAI_SIDECAR_SECRET` 传入，并在所有 HTTP 请求上附加
+   `Authorization: Bearer <secret>`（见 `electron/main.js` 的 `sidecarSecret`）；
+2. Python 侧的 `_auth_middleware` 对**除 `/api/health` 外**的所有路径做
+   Bearer 校验：缺失或不匹配返回 `401`；未配置 secret（例如直接 `uvicorn`
+   启动）时 **fail-closed**，除健康检查外一律返回 `500`；
+3. WebSocket 升级同样校验：优先读 `Authorization`，浏览器 WebSocket 无法设
+   自定义头时允许 `?token=<secret>`（`_ws_authorize`），失败以 `1008` 关闭；
+4. CORS 只约束浏览器读取，不替代认证；下载 URL 另有主机白名单
+   （详见 [../SECURITY.md](../SECURITY.md)）。
 
-> 唯一出现 `Bearer` 的地方是 **sidecar 服务端**在下载 HuggingFace gated 模型时，
-> 用你在「设置」里填写的 **HF Token** 作为 `Authorization: Bearer <hf_token>`
-> 附加给 HF 请求。这个 Token 只存本机，`GET/PUT /api/settings` 永远**不会**
-> 把明文 Token 回显给前端（返回的是 `hf_token_set: true` 之类的存在性标记）。
+> 直接调试 sidecar 时，两种方式二选一：由 Electron 启动（推荐，secret 自动注入），
+> 或自己设置 `KEVRAI_SIDECAR_SECRET` 并在 `curl` 里带上同名 Bearer。仅访问
+> `/api/health` 时无需认证。
 
-因此：本机任意进程都可以调用这些接口——不要把端口暴露到 `0.0.0.0`，
+> 另一个 `Bearer` 用途是**出站**：下载 HuggingFace gated 模型时，sidecar 用你在
+> 「设置」里填写的 **HF Token** 作为 `Authorization: Bearer <hf_token>` 附加给
+> HF 请求。这个 Token 只存本机，`GET/PUT /api/settings` 永远**不会**把明文
+> Token 回显给前端（返回 `hf_token_set: true` 之类的存在性标记）。
+
+因此：不要因为“只监听回环”就放松警惕——端口仍不要暴露到 `0.0.0.0`，
 也不要在不受信任的环境里运行 sidecar。
 
 ---
@@ -61,7 +71,7 @@ curl http://127.0.0.1:17890/api/health
 ```json
 {
   "ok": true,
-  "version": "3.0.0",
+  "version": "4.17.7",
   "models_dir": "/Users/you/Library/Application Support/KevraiOmni/models",
   "app_root": "/Users/you/Library/Application Support/KevraiOmni"
 }

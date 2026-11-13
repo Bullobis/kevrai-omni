@@ -18,7 +18,10 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
+import re
+from html import unescape
 from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
@@ -189,6 +192,46 @@ def _parse_html(html: str, parser: HTMLParser) -> list[dict[str, str]]:
 # ---------------------------------------------------------------------------
 # Engines
 # ---------------------------------------------------------------------------
+def _plain_text(value: Any) -> str:
+    """Turn an upstream title/snippet into flat text.
+
+    Search engines sometimes embed markup in their snippets (``<b>`` emphasis,
+    ``<span class="…">``). The agent should see text, not tags, and a stray
+    ``<script>`` must never reach the transcript. Tags are stripped with the
+    stdlib parser and HTML entities are unescaped.
+    """
+    raw = str(value or "")
+    if not raw:
+        return ""
+
+    class _TextOnly(HTMLParser):
+        def __init__(self) -> None:
+            super().__init__(convert_charrefs=True)
+            self.parts: list[str] = []
+            self._skip = 0
+
+        def handle_starttag(self, tag: str, attrs) -> None:
+            if tag in ("script", "style"):
+                self._skip += 1
+
+        def handle_endtag(self, tag: str) -> None:
+            if tag in ("script", "style") and self._skip:
+                self._skip -= 1
+
+        def handle_data(self, data: str) -> None:
+            if not self._skip:
+                self.parts.append(data)
+
+    parser = _TextOnly()
+    try:
+        parser.feed(raw)
+        parser.close()
+        text = "".join(parser.parts)
+    except Exception:  # noqa: BLE001 — malformed markup must not break the tool
+        text = re.sub(r"<[^>]*>", " ", raw)
+    return " ".join(unescape(text).split())
+
+
 def _clean_results(rows: list[dict[str, str]], limit: int) -> list[dict[str, str]]:
     """Drop malformed / non-http rows, de-duplicate by URL, cap at ``limit``."""
     out: list[dict[str, str]] = []
@@ -202,10 +245,11 @@ def _clean_results(rows: list[dict[str, str]], limit: int) -> list[dict[str, str
         if key in seen:
             continue
         seen.add(key)
+        title = _plain_text(row.get("title"))[:300]
         out.append({
-            "title": (row.get("title") or "").strip() or url,
+            "title": title or url,
             "url": url,
-            "snippet": (row.get("snippet") or "").strip(),
+            "snippet": _plain_text(row.get("snippet"))[:400],
         })
         if len(out) >= limit:
             break
@@ -300,15 +344,29 @@ def searxng_base_url(ctx: ToolContext | None = None) -> str:
 # Tool
 # ---------------------------------------------------------------------------
 def _web_search(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
-    query = str(params.get("query") or "").strip()
+    # Collapse internal whitespace and cap length: search engines treat 5 KB of
+    # pasted text as an attack, and a control character in the query makes the
+    # upstream return an empty page we would otherwise misreport as "offline".
+    query = " ".join(str(params.get("query") or "").split())
     if not query:
-        return {"error": "query is required"}
+        return {"error": "query is required", "error_type": "InvalidQuery",
+                "results": [], "count": 0}
+    if len(query) > 400:
+        query = query[:400].rstrip()
     try:
         limit = int(params.get("limit") or 5)
     except (TypeError, ValueError):
         limit = 5
     limit = max(1, min(limit, MAX_LIMIT))
-    timeout = float(params.get("timeout") or DEFAULT_TIMEOUT)
+    # ``timeout`` is user/model supplied: a NaN, an infinity, a string or a
+    # negative value used to raise out of this handler and abort the whole
+    # agent run, contradicting the tool's "never raises" contract. Clamp it.
+    try:
+        timeout = float(params.get("timeout") or DEFAULT_TIMEOUT)
+    except (TypeError, ValueError):
+        timeout = DEFAULT_TIMEOUT
+    if not math.isfinite(timeout) or not (0.5 <= timeout <= 30.0):
+        timeout = DEFAULT_TIMEOUT
 
     engine_used = ""
     results: list[dict[str, str]] = []
