@@ -54,6 +54,16 @@ _POLL_INTERVAL_SECONDS = 0.2
 #: 既烦又容易漏——尤其是 Agent 在无人值守时反复重试同一个工具的场景。
 VALID_POLICIES = ("auto", "confirm", "deny")
 
+
+class ApprovalSessionMismatch(PermissionError):
+    """Raised when a resolver tries to decide another session's request.
+
+    Every pending request carries the ``session_id`` of the chat that produced
+    it. The renderer passes its current chat id; the REST layer maps this to
+    ``403`` so a background chat cannot be approved (or rejected) from a
+    different chat window.
+    """
+
 #: 持久化里可能出现的等价写法。大小写与空白差异不算"不认识的值"，
 #: 它们必须被还原成同一个策略，否则一次格式变化就会让用户的选择失效。
 _POLICY_ALIASES = {
@@ -292,16 +302,23 @@ class ApprovalManager:
         self,
         request_id: str,
         edited_params: dict[str, Any] | None = None,
+        session_id: str | None = None,
     ) -> ApprovalRequest | None:
         """Approve a pending request, optionally with edited parameters.
 
-        Returns the resolved request, or ``None`` when the id is unknown or the
-        request was already resolved (the caller should map that to a 404).
+        When ``session_id`` is given, the request must belong to that session;
+        otherwise :class:`ApprovalSessionMismatch` is raised. Returns the
+        resolved request, or ``None`` when the id is unknown or the request was
+        already resolved (the caller should map that to a 404).
         """
         with self._lock:
             req = self._requests.get(request_id)
             if req is None or req.decided:
                 return None
+        if session_id and req.session_id != session_id:
+            raise ApprovalSessionMismatch(
+                f"approval request {request_id} belongs to another session"
+            )
         if isinstance(edited_params, dict) and edited_params:
             effective: dict[str, Any] | None = dict(edited_params)
             decision = "edit"
@@ -311,13 +328,19 @@ class ApprovalManager:
         self._resolve(req, decision=decision, effective_params=effective)
         return req
 
-    def reject(self, request_id: str) -> ApprovalRequest | None:
+    def reject(self, request_id: str,
+               session_id: str | None = None) -> ApprovalRequest | None:
         """Reject a pending request. Returns the request, or ``None`` if unknown
-        / already resolved."""
+        / already resolved. Raises :class:`ApprovalSessionMismatch` when the
+        request belongs to a different session."""
         with self._lock:
             req = self._requests.get(request_id)
             if req is None or req.decided:
                 return None
+        if session_id and req.session_id != session_id:
+            raise ApprovalSessionMismatch(
+                f"approval request {request_id} belongs to another session"
+            )
         self._resolve(req, decision="reject", effective_params=None)
         return req
 

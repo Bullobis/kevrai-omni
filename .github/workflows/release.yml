@@ -14,7 +14,7 @@ on:
       tag:
         description: "要发布的 tag（手动运行时使用）"
         required: true
-        default: "v4.17.7"
+        default: "v4.17.8"
 
 permissions:
   contents: write
@@ -249,10 +249,13 @@ jobs:
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+            tag="${{ github.event.inputs.tag }}"
           else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+            tag="${GITHUB_REF#refs/tags/}"
           fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          # electron-builder 的 artifactName 不含前导 v：v4.17.8 -> 4.17.8
+          echo "ver=${tag#v}" >> "$GITHUB_OUTPUT"
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
@@ -273,11 +276,11 @@ jobs:
 
             | 平台 | 文件 | 安装方式 |
             |------|------|----------|
-            | Linux | `Kevrai-Omni-${{ steps.rtag.outputs.tag }}-x86_64.AppImage` | `chmod +x` 后直接运行 |
-            | Linux | `Kevrai-Omni-${{ steps.rtag.outputs.tag }}-amd64.deb` | `sudo dpkg -i` |
-            | Windows | `Kevrai-Omni-${{ steps.rtag.outputs.tag }}-x64.exe` | 双击 NSIS 安装器 |
-            | Windows | `Kevrai-Omni-${{ steps.rtag.outputs.tag }}-x64.zip` | 解压便携版运行 `Kevrai Omni.exe` |
-            | macOS | `Kevrai-Omni-${{ steps.rtag.outputs.tag }}-x64.dmg` / `arm64.dmg` | 拖入 Applications |
+            | Linux | `Kevrai-Omni-${{ steps.rtag.outputs.ver }}-x86_64.AppImage` | `chmod +x` 后直接运行 |
+            | Linux | `Kevrai-Omni-${{ steps.rtag.outputs.ver }}-amd64.deb` | `sudo dpkg -i` |
+            | Windows | `Kevrai-Omni-${{ steps.rtag.outputs.ver }}-x64.exe` | 双击 NSIS 安装器 |
+            | Windows | `Kevrai-Omni-${{ steps.rtag.outputs.ver }}-x64.zip` | 解压便携版运行 `Kevrai Omni.exe` |
+            | macOS | `Kevrai-Omni-${{ steps.rtag.outputs.ver }}-x64.dmg` / `arm64.dmg` | 拖入 Applications |
 
             ### 🏗️ 技术栈
 

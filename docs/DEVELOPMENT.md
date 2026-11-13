@@ -31,7 +31,7 @@ Electron 启动时会以子进程方式拉起 sidecar（`uvicorn app.main:app`�
 ```bash
 git clone https://github.com/Bullobis/kevrai-omni.git
 cd kevrai-omni
-git checkout main                    # 开发主线；复现发布版可 checkout tag v4.17.7
+git checkout main                    # 开发主线；复现发布版可 checkout tag v4.17.8
 ```
 
 ---
@@ -197,7 +197,7 @@ npm run dev
 - 可另开终端直接打 API 调试：
   ```bash
   curl http://127.0.0.1:17890/api/health
-  # {"ok": true, "version": "4.17.7", ...}
+  # {"ok": true, "version": "4.17.8", ...}
   ```
 
 ---

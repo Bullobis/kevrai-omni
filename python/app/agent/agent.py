@@ -508,6 +508,31 @@ class Agent:
     # ------------------------------------------------------------------
     # Rule-based fallback (no LLM loaded)
     # ------------------------------------------------------------------
+    def _rule_tool_call(self, session_id: str, tool: str,
+                        params: dict[str, Any]) -> dict[str, Any]:
+        """Run a deterministic rule-mode tool through the approval gate.
+
+        Rule mode used to call ``registry.execute`` directly at five sites,
+        bypassing the ``confirm``/``deny`` policy that the ReAct loop honours.
+        The gate is cheap in the default ``auto`` policy (returns immediately),
+        so routing every rule-mode call through it keeps behaviour unchanged for
+        normal users while making the policy real.
+        """
+        with self._cancel_lock:
+            cancel_ev = self._cancel_events.get(session_id)
+        gate = self.approval.gate(session_id, tool, params, cancel_event=cancel_ev)
+        if gate.reason == "cancel":
+            return {"ok": False, "error": "已取消", "error_type": "Cancelled"}
+        if not gate.approved:
+            why = "已超时，按未批准处理" if gate.reason == "timeout" else "用户未批准"
+            return {
+                "ok": False,
+                "error": f"{why}：未执行工具 {tool}。",
+                "error_type": "ApprovalDenied",
+                "approval": gate.reason,
+            }
+        return self.registry.execute(tool, gate.effective_params, self.ctx)
+
     def _rule_based_response(self, message: str, session_id: str) -> AgentResult:
         """Deterministic response when no LLM is loaded.
 
@@ -578,7 +603,7 @@ class Agent:
                 w in msg_lower for w in ["爽剧", "逆袭", "钩子", "打脸", "竖屏短剧"]
             ) else "micro_film"
             step = AgentStep(iteration=1, action_tool="drama_storycraft", action_params={"mode": mode})
-            obs = self.registry.execute("drama_storycraft", {"mode": mode}, self.ctx)
+            obs = self._rule_tool_call(session_id, "drama_storycraft", {"mode": mode})
             step.observation = obs
             steps.append(step)
             if obs.get("ok") is not False:
@@ -625,7 +650,7 @@ class Agent:
                 else {"subject": subject}
             )
             step = AgentStep(iteration=1, action_tool=tool, action_params=params)
-            obs = self.registry.execute(tool, params, self.ctx)
+            obs = self._rule_tool_call(session_id, tool, params)
             step.observation = obs
             steps.append(step)
             if obs.get("ok") is not False and "error" not in obs:
@@ -643,7 +668,7 @@ class Agent:
         if _has("writing_outline") and any(w in msg_lower for w in ["大纲", "提纲"]):
             params = {"topic": message[:200], "doc_type": "通用"}
             step = AgentStep(iteration=1, action_tool="writing_outline", action_params=params)
-            obs = self.registry.execute("writing_outline", params, self.ctx)
+            obs = self._rule_tool_call(session_id, "writing_outline", params)
             step.observation = obs
             steps.append(step)
             if obs.get("ok") is not False and obs.get("outline"):
@@ -661,7 +686,7 @@ class Agent:
             w in msg_lower for w in ["硬件", "显存", "vram", "配置", "我能跑", "我的电脑"]
         ):
             step = AgentStep(iteration=1, action_tool="check_hardware")
-            obs = self.registry.execute("check_hardware", {}, self.ctx)
+            obs = self._rule_tool_call(session_id, "check_hardware", {})
             step.observation = obs
             steps.append(step)
             if obs.get("ok") is not False and "summary" in obs:
@@ -686,7 +711,7 @@ class Agent:
                     break
             step = AgentStep(iteration=1, action_tool="search_models",
                              action_params={"query": message, "category": category, "limit": 8})
-            obs = self.registry.execute("search_models", {"query": message, "category": category, "limit": 8}, self.ctx)
+            obs = self._rule_tool_call(session_id, "search_models", {"query": message, "category": category, "limit": 8})
             step.observation = obs
             steps.append(step)
             results = obs.get("results", [])

@@ -313,8 +313,17 @@ const api = {
   envUpgrade: (opts) => {
     assertObject(opts, "opts");
     assertString(opts.name, "opts.name", 128);
-    if (opts.mirrors != null && !Array.isArray(opts.mirrors)) {
-      throw new Error("opts.mirrors must be an array of urls");
+    if (opts.mirrors != null) {
+      if (!Array.isArray(opts.mirrors)) {
+        throw new Error("opts.mirrors must be an array of urls");
+      }
+      // Same rule as envInstall: a pip index over plain http would let an
+      // on-path attacker serve packages into the managed runtime.
+      for (const m of opts.mirrors) {
+        if (typeof m !== "string" || !/^https:\/\//.test(m)) {
+          throw new Error("opts.mirrors entries must be https:// urls");
+        }
+      }
     }
     return invoke("kevrai:env-upgrade", opts);
   },
@@ -536,13 +545,15 @@ const api = {
   },
   // ----- Agent tool-call approval gate -----
   agentApprovals: () => invoke("kevrai:agent-approvals"),
-  agentApproveTool: (requestId, editedParams) => {
+  agentApproveTool: (requestId, sessionId, editedParams) => {
     assertString(requestId, "requestId", 64);
-    return invoke("kevrai:agent-approval-approve", requestId, editedParams || null);
+    if (sessionId != null) assertString(sessionId, "sessionId", 128);
+    return invoke("kevrai:agent-approval-approve", requestId, sessionId || null, editedParams || null);
   },
-  agentRejectTool: (requestId) => {
+  agentRejectTool: (requestId, sessionId) => {
     assertString(requestId, "requestId", 64);
-    return invoke("kevrai:agent-approval-reject", requestId);
+    if (sessionId != null) assertString(sessionId, "sessionId", 128);
+    return invoke("kevrai:agent-approval-reject", requestId, sessionId || null);
   },
   agentApprovalPolicy: (sessionId) =>
     invoke("kevrai:agent-approval-policy", sessionId || "default"),

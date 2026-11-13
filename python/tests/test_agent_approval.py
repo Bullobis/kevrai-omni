@@ -22,6 +22,8 @@ import asyncio
 import threading
 import time
 
+import pytest
+
 from app.agent import Agent, AgentMemory, ToolContext
 from app.agent.tool_registry import Tool, ToolRegistry
 
@@ -411,3 +413,90 @@ def test_rest_approval_reject_resolves_blocked_gate(hub_client):
         assert holder["gate"].reason == "reject"
     finally:
         agent.set_tool_approval_policy("rest-rej", "auto")
+
+
+# ===========================================================================
+# v4.17.8 — approval must be resolved by the owning session
+# ===========================================================================
+def test_approve_from_other_session_is_rejected(tmp_path):
+    """A pending request carries its session; another chat cannot decide it."""
+    from app.agent.approval import ApprovalSessionMismatch
+
+    agent = _build_agent(tmp_path, _GateRouter(["最终答案：done"]), [])
+    agent.set_tool_approval_policy("owner-sess", "confirm")
+    holder: dict = {}
+
+    def _park() -> None:
+        holder["gate"] = agent.approval.gate("owner-sess", "rec_tool", {"x": 1})
+
+    th = threading.Thread(target=_park, daemon=True)
+    th.start()
+
+    req = _wait_pending(agent, "owner-sess")
+    with pytest.raises(ApprovalSessionMismatch):
+        agent.approval.approve(req["id"], session_id="intruder-sess")
+    with pytest.raises(ApprovalSessionMismatch):
+        agent.approval.reject(req["id"], session_id="intruder-sess")
+
+    # Still pending after both refusals, and the owner can resolve it.
+    assert agent.approval.list_pending()
+    agent.approval.approve(req["id"], session_id="owner-sess")
+    th.join(timeout=5)
+    assert not th.is_alive()
+    assert holder["gate"].approved is True
+
+
+def test_rest_approve_wrong_session_is_403(hub_client):
+    hub_client.get("/api/agent/tools")
+    from app import main as app_main
+
+    agent = app_main._AGENT_SINGLETON["agent"]
+    agent.set_tool_approval_policy("rest-owner", "confirm")
+    try:
+        holder: dict = {}
+
+        def _park() -> None:
+            holder["gate"] = agent.approval.gate("rest-owner", "rest_tool", {"x": 1})
+
+        th = threading.Thread(target=_park, daemon=True)
+        th.start()
+
+        pid = None
+        deadline = time.time() + 5
+        while time.time() < deadline:
+            body = hub_client.get("/api/agent/approvals").json()
+            pend = [r for r in body["requests"] if r["session_id"] == "rest-owner"]
+            if pend:
+                pid = pend[0]["id"]
+                break
+            time.sleep(0.05)
+        assert pid
+
+        resp = hub_client.post(
+            f"/api/agent/approvals/{pid}/approve",
+            json={"session_id": "rest-intruder", "edited_params": {"x": 99}},
+        )
+        assert resp.status_code == 403
+        assert hub_client.get("/api/agent/approvals").json()["count"] >= 1
+
+        resp = hub_client.post(
+            f"/api/agent/approvals/{pid}/approve",
+            json={"session_id": "rest-owner"},
+        )
+        assert resp.status_code == 200
+        th.join(timeout=5)
+        assert not th.is_alive()
+        assert holder["gate"].approved is True
+    finally:
+        agent.set_tool_approval_policy("rest-owner", "auto")
+
+
+def test_rule_mode_tool_call_honours_deny_policy(tmp_path):
+    """Rule-mode tools must not bypass the approval gate any more."""
+    hits: list[dict] = []
+    agent = _build_agent(tmp_path, _GateRouter(["最终答案：done"]), hits)
+    agent.set_tool_approval_policy("rule-sess", "deny")
+    obs = agent._rule_tool_call("rule-sess", "rec_tool", {"query": "x"})
+    assert obs.get("ok") is False
+    assert obs.get("error_type") == "ApprovalDenied"
+    assert hits == []

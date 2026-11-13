@@ -281,7 +281,13 @@ class MCPManager:
         server = self.get_server(server_id)
         session, ctx = await self._session(server)
         try:
-            result = await session.list_tools()
+            try:
+                result = await asyncio.wait_for(
+                    session.list_tools(), timeout=CALL_TIMEOUT)
+            except asyncio.TimeoutError:
+                raise MCPError(
+                    f"list_tools timed out after {CALL_TIMEOUT:.0f}s"
+                ) from None
             return [self._tool_dict(t) for t in result.tools]
         finally:
             await self._safe_close(session)

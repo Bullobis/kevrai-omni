@@ -319,6 +319,19 @@ function bootstrapProgress(stage, pct, text) {
 }
 
 // https download with redirect follow + mirror fallback.
+// Redirects are constrained to https and to the vendors we actually bootstrap
+// from: the downloaded zip/dmg is executed, so a hijacked mirror redirect must
+// not be able to point the downloader at an arbitrary host.
+const BOOTSTRAP_HOST_SUFFIXES = [
+  "python.org", "pypi.org", "npmmirror.com", "huaweicloud.com",
+  "github.com", "githubusercontent.com",
+];
+
+function isBootstrapHostAllowed(hostname) {
+  const h = String(hostname || "").toLowerCase();
+  return BOOTSTRAP_HOST_SUFFIXES.some((d) => h === d || h.endsWith(`.${d}`));
+}
+
 function downloadFile(urls, dest, stage) {
   const https = require("node:https");
   const tryOne = (url, redirectsLeft) => new Promise((resolve, reject) => {
@@ -326,8 +339,11 @@ function downloadFile(urls, dest, stage) {
       if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location && redirectsLeft > 0) {
         res.resume();
         let next = res.headers.location;
-        try { next = new URL(next, url).toString(); } catch (_) {}
-        return tryOne(next, redirectsLeft - 1).then(resolve, reject);
+        try { next = new URL(next, url); } catch (_) { return reject(new Error("bad redirect: " + url)); }
+        if (next.protocol !== "https:" || !isBootstrapHostAllowed(next.hostname)) {
+          return reject(new Error(`refused redirect to ${next.hostname}: ${url}`));
+        }
+        return tryOne(next.toString(), redirectsLeft - 1).then(resolve, reject);
       }
       if (res.statusCode !== 200) {
         res.resume();
@@ -2182,16 +2198,19 @@ function registerIpc() {
   // per-session policy. Mirrors Cherry Studio's confirm-before-run UX.
   ipcMain.handle("kevrai:agent-approvals", async () =>
     sidecarFetch("/api/agent/approvals"));
-  ipcMain.handle("kevrai:agent-approval-approve", async (_e, requestId, editedParams) => {
+  ipcMain.handle("kevrai:agent-approval-approve", async (_e, requestId, sessionId, editedParams) => {
     assert(typeof requestId === "string" && requestId.length > 0, "requestId: invalid");
     const body = (editedParams && typeof editedParams === "object")
       ? { edited_params: editedParams } : {};
+    if (typeof sessionId === "string" && sessionId) body.session_id = sessionId.slice(0, 128);
     return sidecarFetch(`/api/agent/approvals/${encodeURIComponent(requestId)}/approve`,
       { method: "POST", body });
   });
-  ipcMain.handle("kevrai:agent-approval-reject", async (_e, requestId) => {
+  ipcMain.handle("kevrai:agent-approval-reject", async (_e, requestId, sessionId) => {
     assert(typeof requestId === "string" && requestId.length > 0, "requestId: invalid");
-    return sidecarFetch(`/api/agent/approvals/${encodeURIComponent(requestId)}/reject`,
+    const sid = (typeof sessionId === "string" && sessionId)
+      ? `?session_id=${encodeURIComponent(sessionId.slice(0, 128))}` : "";
+    return sidecarFetch(`/api/agent/approvals/${encodeURIComponent(requestId)}/reject${sid}`,
       { method: "POST", body: {} });
   });
   ipcMain.handle("kevrai:agent-approval-policy", async (_e, sessionId) => {
@@ -2473,8 +2492,11 @@ function registerIpc() {
     // path and reject traversal (`..`) — only a reveal, not a read/write primitive.
     const raw = isString(o.path, 4096) ? o.path : "";
     if (!raw || !path.isAbsolute(raw)) throw err("path: invalid");
+    // Reject literal traversal segments *before* normalize(): after normalize
+    // they are already resolved away, so the old `norm.includes("..")` check
+    // could never fire and also rejected innocent names like "a..b.txt".
+    if (raw.split(/[\\/]+/).some((seg) => seg === "..")) throw err("path: traversal not allowed");
     const norm = path.normalize(raw);
-    if (norm.includes("..")) throw err("path: traversal not allowed");
     await fsp.access(norm, fs.constants.F_OK).catch(() => { throw err("path: not found"); });
     shell.showItemInFolder(norm);
   });

@@ -772,7 +772,7 @@ function _wireApprovals(container) {
       }
       approveBtn.disabled = rejectBtn.disabled = true;
       try {
-        unwrap(await api.agentApproveTool(id, edited));
+        unwrap(await api.agentApproveTool(id, _sessionId, edited));
       } catch (err) {
         toast(t("agent.approveFailed", { err: err.message || err }), { kind: "err" });
         approveBtn.disabled = rejectBtn.disabled = false;
@@ -780,7 +780,7 @@ function _wireApprovals(container) {
     } else if (rejectBtn) {
       approveBtn.disabled = rejectBtn.disabled = true;
       try {
-        unwrap(await api.agentRejectTool(id));
+        unwrap(await api.agentRejectTool(id, _sessionId));
       } catch (err) {
         toast(t("agent.rejectFailed", { err: err.message || err }), { kind: "err" });
         approveBtn.disabled = rejectBtn.disabled = false;
@@ -792,7 +792,11 @@ function _wireApprovals(container) {
 function _renderApprovals(requests) {
   const container = document.getElementById("agent-approvals");
   if (!container) return;
-  const list = Array.isArray(requests) ? requests : [];
+  // Only surface approvals that belong to the chat currently on screen. The
+  // backend rejects cross-session decisions (403), so showing another chat's
+  // card here would just produce a dead button.
+  const list = (Array.isArray(requests) ? requests : [])
+    .filter((r) => !r || !r.session_id || r.session_id === _sessionId);
   if (!list.length) {
     container.hidden = true;
     container.innerHTML = "";

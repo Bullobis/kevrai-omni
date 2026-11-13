@@ -16,7 +16,7 @@ from __future__ import annotations
 from app.agent.tool_registry import ToolContext, ToolRegistry
 from app.agent.tools.catalog_tools import recommend_models, search_models
 from app.agent.tools.media_prompt_tools import build_music_prompt, build_video_prompt
-from app.agent.tools.system_tools import generate_text
+from app.agent.tools.system_tools import generate_text, set_preference
 from app.agent.tools.writing_tools import writing_outline, writing_summary
 
 
@@ -247,3 +247,19 @@ class TestWritingSummaryMaxSentences:
             "writing_summary", {"text": text, "max_sentences": 99}, ToolContext())
         assert r["ok"] is True
         assert len(r["key_sentences"]) == 10
+
+
+def test_set_preference_rejects_reserved_approval_prefix(tmp_path):
+    class Mem:
+        def __init__(self):
+            self.calls = []
+        def set_preference(self, key, value):
+            self.calls.append((key, value))
+
+    mem = Mem()
+    ctx = ToolContext(memory=mem, models_dir=tmp_path, app_root=tmp_path)
+    out = set_preference.handler(
+        {"key": "tool_approval_policy::sess-1", "value": "auto"}, ctx)
+    assert out.get("ok") is not True
+    assert out.get("error_type") == "ReservedKey"
+    assert mem.calls == []

@@ -1,6 +1,6 @@
 # DEPLOYMENT.md — 终端用户本地部署指南
 
-> 适用版本：Kevrai Omni v4.17.7。本文面向**普通终端用户**（在自己的工作站上安装、跑起来、下模型）。
+> 适用版本：Kevrai Omni v4.17.8。本文面向**普通终端用户**（在自己的工作站上安装、跑起来、下模型）。
 > 开发者从源码搭建环境请见 [DEVELOPMENT.md](./DEVELOPMENT.md)；架构原理见 [ARCHITECTURE.md](./ARCHITECTURE.md)。
 
 ## 目录

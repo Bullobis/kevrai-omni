@@ -269,3 +269,24 @@ def test_tool_call_times_out_instead_of_hanging(tmp_path, monkeypatch):
 
     with pytest.raises(MCPError, match="timed out"):
         asyncio.run(mgr.a_call(sid, "slow_tool", {}))
+
+
+def test_list_tools_times_out_instead_of_hanging(tmp_path, monkeypatch):
+    """A server that never answers list_tools must not block the worker."""
+    import app.mcp_manager as mcp_mod
+
+    class HangingSession:
+        async def list_tools(self):
+            await asyncio.sleep(3600)
+
+    mgr = MCPManager(tmp_path)
+    sid = mgr.add_server("slow2", "streamable-http", "https://example.com/mcp")["id"]
+
+    async def fake_session(server):
+        return HangingSession(), None
+
+    monkeypatch.setattr(mgr, "_session", fake_session)
+    monkeypatch.setattr(mcp_mod, "CALL_TIMEOUT", 0.05)
+
+    with pytest.raises(MCPError, match="timed out"):
+        asyncio.run(mgr.a_list_tools(sid))

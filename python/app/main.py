@@ -6207,6 +6207,10 @@ class ApprovalResolveReq(BaseModel):
     # Optional edited parameters to run the tool with on approval. When empty /
     # null the tool runs with its original parsed parameters.
     edited_params: dict[str, Any] | None = None
+    # The chat that is resolving the request. When present it must match the
+    # request's owning session; a background chat cannot be decided from
+    # another chat window.
+    session_id: str | None = Field(default=None, max_length=128)
 
 
 @app.post("/api/agent/approvals/{request_id}/approve")
@@ -6218,10 +6222,17 @@ def agent_approve_tool_call(
     """Approve a pending tool call, optionally with edited parameters.
 
     Wakes the blocked ReAct loop: it runs the tool with the (possibly edited)
-    parameters. 404 when the request id is unknown or already resolved.
+    parameters. 404 when the request id is unknown or already resolved; 403
+    when it belongs to a different chat session.
     """
+    from .agent.approval import ApprovalSessionMismatch
+
     agent = _get_agent(request)
-    resolved = agent.approval.approve(request_id, edited_params=req.edited_params)
+    try:
+        resolved = agent.approval.approve(
+            request_id, edited_params=req.edited_params, session_id=req.session_id)
+    except ApprovalSessionMismatch as e:
+        raise HTTPException(status_code=403, detail=str(e)) from None
     if resolved is None:
         raise HTTPException(status_code=404, detail="approval request not found or already resolved")
     return {
@@ -6233,15 +6244,21 @@ def agent_approve_tool_call(
 
 
 @app.post("/api/agent/approvals/{request_id}/reject")
-def agent_reject_tool_call(request: Request, request_id: str) -> dict[str, Any]:
+def agent_reject_tool_call(request: Request, request_id: str,
+                           session_id: str = "") -> dict[str, Any]:
     """Reject a pending tool call.
 
     Wakes the blocked ReAct loop: it does NOT run the tool and feeds the model a
     "用户未批准" observation so it adapts or concludes. 404 when the request id
-    is unknown or already resolved.
+    is unknown or already resolved; 403 when it belongs to another session.
     """
+    from .agent.approval import ApprovalSessionMismatch
+
     agent = _get_agent(request)
-    resolved = agent.approval.reject(request_id)
+    try:
+        resolved = agent.approval.reject(request_id, session_id=session_id or None)
+    except ApprovalSessionMismatch as e:
+        raise HTTPException(status_code=403, detail=str(e)) from None
     if resolved is None:
         raise HTTPException(status_code=404, detail="approval request not found or already resolved")
     return {"ok": True, "id": request_id, "decision": resolved.decision}

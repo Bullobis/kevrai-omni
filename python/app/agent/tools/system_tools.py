@@ -265,6 +265,11 @@ def _set_preference(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
         return {"error": "key is required"}
     if len(key) > 128:
         return {"error": "key too long (max 128 chars)"}
+    # Approval policies are persisted under this internal prefix. Allowing the
+    # model to write it would let a prompt-injected turn silently switch a
+    # session from ``confirm``/``deny`` to ``auto`` on the next restart.
+    if key.startswith("tool_approval_policy::"):
+        return {"error": "key is reserved", "error_type": "ReservedKey"}
     mem = ctx.memory
     if mem is None:
         return {"error": "memory not available"}

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -104,7 +105,7 @@ def _embed_text(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
         mgr = _manager(ctx, "embedding", EmbeddingManager)
         res = mgr.embed(repo, texts, normalize_embeddings=True)
         # Persist vectors (often large) to a JSON sidecar instead of inlining.
-        out = _artifact_dir() / f"embeddings_{int(time.time()*1000)}.json"
+        out = _artifact_dir() / f"embeddings_{int(time.time()*1000)}_{uuid.uuid4().hex[:6]}.json"
         out.write_text(
             json.dumps(
                 {"model": repo, "dimensions": res["dimensions"],
@@ -281,7 +282,13 @@ def _gen_image(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
         from ...multimodal_runtime import MultimodalManager
 
         mgr = _manager(ctx, "multimodal", MultimodalManager)
-        num_images = int(params.get("num_images") or 1)
+        try:
+            num_images = int(params.get("num_images") or 1)
+        except (TypeError, ValueError):
+            num_images = 1
+        # Bound the batch: an unbounded value would allocate one image tensor
+        # per unit and can OOM the local runtime (or stall the agent turn).
+        num_images = max(1, min(num_images, 8))
         kw: dict[str, Any] = {"num_images": num_images}
         if params.get("guidance_scale") is not None:
             kw["guidance_scale"] = float(params["guidance_scale"])
@@ -291,7 +298,7 @@ def _gen_image(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
         out_dir = _artifact_dir()
         paths: list[str] = []
         for i, img in enumerate(res.get("images", [])):
-            p = out_dir / f"agentimg_{int(time.time()*1000)}_{i}.png"
+            p = out_dir / f"agentimg_{int(time.time()*1000)}_{uuid.uuid4().hex[:6]}_{i}.png"
             img.save(p)
             paths.append(str(p))
         return {"images": paths, "count": len(paths), "model": model}
@@ -335,7 +342,7 @@ def _gen_music(params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
             kw["guidance_scale"] = float(params["guidance_scale"])
         if params.get("seed") is not None and params.get("seed") != "":
             kw["seed"] = int(params["seed"])
-        out = _artifact_dir() / f"agentmusic_{int(time.time()*1000)}.wav"
+        out = _artifact_dir() / f"agentmusic_{int(time.time()*1000)}_{uuid.uuid4().hex[:6]}.wav"
         res = mgr.generate_to_file(model, prompt, out, **kw)
         return {
             "audio_path": res["audio_path"],
