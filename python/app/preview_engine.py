@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import hashlib
 import math
-import struct
 import wave
 from pathlib import Path
 from typing import Any
@@ -45,8 +44,8 @@ def _palette(seed: int) -> tuple[tuple[int, int, int], tuple[int, int, int], tup
 def make_image(prompt: str, width: int = 768, height: int = 432,
                seed: int | None = None) -> Any:
     """Render an abstract poster-like RGB image (PIL.Image)."""
-    from PIL import Image, ImageDraw, ImageFilter, ImageFont
     import numpy as np
+    from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
     width = max(64, min(int(width), 2048))
     height = max(64, min(int(height), 2048))
@@ -172,7 +171,6 @@ def make_mesh(prompt: str, *, seed: int | None = None) -> Any:
     import trimesh
 
     s = _seed_for(prompt, seed)
-    rng = np.random.default_rng(s)
     mesh = trimesh.creation.icosphere(subdivisions=3, radius=1.0)
     v = np.asarray(mesh.vertices)
     # Multi-frequency radial displacement → rock/asteroid look.
@@ -191,7 +189,6 @@ def make_mesh(prompt: str, *, seed: int | None = None) -> Any:
 
 def write_mesh(prompt: str, out_path: Path, *, fmt: str = "glb",
                seed: int | None = None) -> Path:
-    import trimesh
 
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)

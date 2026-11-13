@@ -117,7 +117,7 @@ def status() -> dict[str, Any]:
         import vllm  # type: ignore
         installed = True
         version = str(getattr(vllm, "__version__", ""))
-    except Exception:  # noqa: BLE001
+    except Exception:  # noqa: BLE001, S110 - optional dependency probe
         pass
     return {
         "engine": "vllm",

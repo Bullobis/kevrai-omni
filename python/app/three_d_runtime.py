@@ -31,9 +31,9 @@ when nothing matches. It never silently guesses; it reports what it tried.
 from __future__ import annotations
 
 import contextlib
+import logging
 import os
 import sys
-import logging
 import threading
 import time
 import uuid
@@ -470,12 +470,12 @@ class ThreeDManager:
                 import trimesh  # noqa: PLC0415
                 mesh = trimesh.load(written)
                 if hasattr(mesh, "geometry"):
-                    task.mesh_faces = sum(len(g.faces) for g in mesh.geometry.values())
-                    task.mesh_vertices = sum(len(g.vertices) for g in mesh.geometry.values())
+                    task.mesh_faces = sum(len(g.faces) for g in mesh.geometry.values())  # type: ignore[attr-defined]
+                    task.mesh_vertices = sum(len(g.vertices) for g in mesh.geometry.values())  # type: ignore[attr-defined]
                 else:
-                    task.mesh_faces = len(mesh.faces)
-                    task.mesh_vertices = len(mesh.vertices)
-            except Exception:  # noqa: BLE001 - 统计失败不影响产物
+                    task.mesh_faces = len(mesh.faces)  # type: ignore[attr-defined]
+                    task.mesh_vertices = len(mesh.vertices)  # type: ignore[attr-defined]
+            except Exception:  # noqa: BLE001, S110 - 统计失败不影响产物
                 pass
             task.progress = 1.0
             task.state = TaskState.DONE
@@ -545,18 +545,18 @@ def requires_trimesh(output_format: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def _fill_mesh_metrics(task: "ThreeDTask", path: Path) -> None:
+def _fill_mesh_metrics(task: ThreeDTask, path: Path) -> None:
     """Populate face/vertex counts after export (preview and real models alike)."""
     try:
         import trimesh  # noqa: PLC0415
         mesh = trimesh.load(path)
         if hasattr(mesh, "geometry"):
-            task.mesh_faces = sum(len(g.faces) for g in mesh.geometry.values())
-            task.mesh_vertices = sum(len(g.vertices) for g in mesh.geometry.values())
+            task.mesh_faces = sum(len(g.faces) for g in mesh.geometry.values())  # type: ignore[attr-defined]
+            task.mesh_vertices = sum(len(g.vertices) for g in mesh.geometry.values())  # type: ignore[attr-defined]
         else:
-            task.mesh_faces = len(mesh.faces)
-            task.mesh_vertices = len(mesh.vertices)
-    except Exception:  # noqa: BLE001 - metrics are informational, never fail a task
+            task.mesh_faces = len(mesh.faces)  # type: ignore[attr-defined]
+            task.mesh_vertices = len(mesh.vertices)  # type: ignore[attr-defined]
+    except Exception:  # noqa: BLE001, S110 - metrics are informational, never fail a task
         pass
 
 
@@ -565,7 +565,7 @@ def _is_triposr(model_id: str) -> bool:
     return "triposr" in (model_id or "").lower()
 
 
-def _triposr_generate(p: "ThreeDParams", task: "ThreeDTask",
+def _triposr_generate(p: ThreeDParams, task: ThreeDTask,
                       data_root: Path) -> Any:
     """Run the official TripoSR network on CPU.
 
@@ -613,8 +613,8 @@ def _triposr_generate(p: "ThreeDParams", task: "ThreeDTask",
     if str(src) not in sys.path:
         sys.path.insert(0, str(src))
 
-    from PIL import Image  # noqa: PLC0415
     from omegaconf import OmegaConf  # noqa: PLC0415
+    from PIL import Image  # noqa: PLC0415
     from tsr.system import TSR  # noqa: PLC0415
     from tsr.utils import resize_foreground  # noqa: PLC0415
 

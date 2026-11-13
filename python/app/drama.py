@@ -439,7 +439,7 @@ def brainstorm(topic: str, mode: str = DEFAULT_STORY_MODE) -> dict[str, Any]:
         obj = {
             "angle": f"以「{topic}」为核心，按{md['label']}的结构推进：{' → '.join(acts)}。",
             "questions": [
-                f"这个创意的世界观/时代背景是什么？为什么它非发生在那里不可？",
+                "这个创意的世界观/时代背景是什么？为什么它非发生在那里不可？",
                 "主角最想要什么？最怕失去什么？这两者如何互相冲突？",
                 f"核心钩子放在第几秒？{('第一镜 3 秒内' if mode == 'hook_drama' else '开场 15 秒内')}要让观众看到什么反常识画面？",
                 "目标观众是谁、在哪个平台播出？单集时长和集数怎么定？",
@@ -454,7 +454,8 @@ def brainstorm(topic: str, mode: str = DEFAULT_STORY_MODE) -> dict[str, Any]:
     questions = [_clean_str(q, 300) for q in questions if _clean_str(q, 300)]
     if not questions:
         raise LlmOutputError("对话 AI 未返回引导问题")
-    out = {"angle": angle, "questions": questions[:6], "topic": topic, "mode": mode}
+    out: dict[str, Any] = {"angle": angle, "questions": questions[:6],
+                            "topic": topic, "mode": mode}
     if obj.get("offline"):
         out["offline"] = True
     return out

@@ -139,8 +139,8 @@ def test_normalize_git_url_rejects_option_injection():
 
 def test_install_uses_dash_separator_before_repo(tmp_path, monkeypatch):
     """Defence in depth: the clone command must carry '--' before the URL."""
-    from app.plugins import PluginManager
     import app.plugins as plugins_mod
+    from app.plugins import PluginManager
 
     root = tmp_path / "data"
     root.mkdir()

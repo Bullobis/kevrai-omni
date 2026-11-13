@@ -500,10 +500,10 @@ class MusicManager:
             from . import preview_engine
             duration_s = float(kwargs.get("duration_s", 15.0))
             seed = kwargs.get("seed")
-            audio_path = preview_engine.write_music(
+            preview_path = preview_engine.write_music(
                 prompt, Path(out_path), duration_s=duration_s, seed=seed)
             return {
-                "audio_path": str(audio_path), "sampling_rate": 44100,
+                "audio_path": str(preview_path), "sampling_rate": 44100,
                 "repo": "kevrai/preview-music", "requested_s": duration_s,
                 "elapsed_s": 0.0, "engine": "preview",
             }

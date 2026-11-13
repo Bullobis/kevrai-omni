@@ -5224,8 +5224,9 @@ def ocr_capabilities_route() -> dict[str, Any]:
     version: str | None = None
     error = ""
     try:
-        import rapidocr  # noqa: F401
         from importlib import metadata
+
+        import rapidocr  # noqa: F401
         version = metadata.version("rapidocr")
         installed = True
     except Exception as e:  # noqa: BLE001
@@ -5242,7 +5243,6 @@ def ocr_capabilities_route() -> dict[str, Any]:
 @app.post("/api/ocr/recognize")
 def ocr_recognize_route(request: Request, req: OcrRecognizeReq) -> dict[str, Any]:
     import base64
-    import io
     from pathlib import Path as _Path
 
     if req.image_b64:
