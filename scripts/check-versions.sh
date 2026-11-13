@@ -69,8 +69,13 @@ fi
 
 for f in website/index.html website/downloads/index.html; do
   v="$(read_site_version "$root/$f")"
-  if [ -n "$v" ] && [ "$v" != "$pkg" ]; then
-    echo "::error::$f advertises v$v but package.json is $pkg" >&2
+  # The public site advertises the last shipped installer, not the source
+  # branch. Keep the source version and the published version separately
+  # checkable so a version bump does not make the download links point at
+  # assets that do not exist yet.
+  published="$(cat "$root/website/published-version.txt")"
+  if [ -n "$v" ] && [ "$v" != "$published" ]; then
+    echo "::error::$f advertises v$v but website/published-version.txt is v$published" >&2
     exit 1
   fi
 done

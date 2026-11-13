@@ -14,7 +14,7 @@ on:
       tag:
         description: "要发布的 tag（手动运行时使用）"
         required: true
-        default: "v4.17.9"
+        default: "v4.18.0"
 
 permissions:
   contents: write
@@ -254,7 +254,7 @@ jobs:
             tag="${GITHUB_REF#refs/tags/}"
           fi
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
-          # electron-builder 的 artifactName 不含前导 v：v4.17.9 -> 4.17.9
+          # electron-builder 的 artifactName 不含前导 v：v4.18.0 -> 4.18.0
           echo "ver=${tag#v}" >> "$GITHUB_OUTPUT"
 
       - name: Publish to GitHub Releases

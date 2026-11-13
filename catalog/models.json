@@ -1,5 +1,5 @@
 {
-  "version": "4.17.9",
+  "version": "4.18.0",
   "updated": "2026-11-13",
   "notice": "目录真实性修正（2026-11）：移除无权重/闭源占位条目（GLM-5-Code、Wan 3.0、HappyShrimp 1.0、官方 H3-Regenerate-2K），补入 NVIDIA/MIT Open-H3-Regenerate-2K 与 MiniMax H3-Image；修正 demucs、apple/Sharp、Piper 的失效仓库地址。",
   "categories": [

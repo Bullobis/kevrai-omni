@@ -66,3 +66,22 @@ test("approvalCardHtml: empty params render as an empty-object JSON body", () =>
   const html = approvalCardHtml({ id: "x", tool_name: "check_hardware", tool_params: {} });
   assert.match(html, /\{\s*\}/);
 });
+
+test("approvalCardHtml: keeps params collapsed behind a details disclosure", () => {
+  setupDom(`<div id="host"></div>`);
+  const host = document.getElementById("host");
+  host.innerHTML = approvalCardHtml({
+    id: "abc",
+    tool_name: "download_model",
+    tool_params: { repo: "Qwen/Qwen3-32B-GGUF" },
+  });
+  const card = host.querySelector(".agent-approval-card");
+  const details = card.querySelector("details.agent-approval-details");
+  const textarea = card.querySelector("textarea.agent-approval-params");
+  assert.ok(details, "params have a disclosure");
+  assert.equal(details.open, false, "the raw JSON does not dominate the card");
+  assert.ok(details.contains(textarea), "the editor lives inside the disclosure");
+  assert.equal(card.getAttribute("tabindex"), "0", "the checkpoint can receive focus");
+  assert.equal(card.querySelector(".agent-approval-state").textContent, "等待你的确认");
+  assert.doesNotMatch(card.textContent, /[✅✋⏸️]/);
+});

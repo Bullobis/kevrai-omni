@@ -40,16 +40,23 @@ export function parseEditedParams(text) {
 export function approvalCardHtml(req) {
   const paramsText = esc(JSON.stringify(req.tool_params || {}, null, 2));
   return `
-      <div class="agent-approval-card" data-id="${esc(req.id)}">
+      <div class="agent-approval-card" data-id="${esc(req.id)}" role="group"
+        tabindex="0" aria-keyshortcuts="Enter Escape"
+        aria-label="${t("agentApproval.waiting")}">
         <div class="agent-approval-head">
-          ${t("agentApproval.waiting")}
+          <span class="agent-approval-state">${t("agentApproval.waiting")}</span>
           <code class="agent-approval-tool">${esc(req.tool_name)}</code>
+          <span class="agent-approval-hint">${t("agentApproval.scope")}</span>
         </div>
-        <textarea class="agent-approval-params" spellcheck="false"
-          title="${t("agentApproval.editableHint")}">${paramsText}</textarea>
+        <details class="agent-approval-details">
+          <summary>${t("agentApproval.details")}</summary>
+          <textarea class="agent-approval-params" spellcheck="false"
+            title="${t("agentApproval.editableHint")}">${paramsText}</textarea>
+        </details>
         <div class="agent-approval-actions">
           <button type="button" class="btn btn-primary btn-sm" data-approval-approve>${t("agentApproval.approve")}</button>
-          <button type="button" class="btn btn-sm agent-msg-btn-danger" data-approval-reject>${t("agentApproval.reject")}</button>
+          <button type="button" class="btn btn-sm agent-approval-reject" data-approval-reject>${t("agentApproval.reject")}</button>
+          <span class="agent-approval-keyboard">${t("agentApproval.keyboard")}</span>
         </div>
       </div>`;
 }

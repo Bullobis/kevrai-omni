@@ -30,7 +30,7 @@ export class StreamBubble {
     this.div = document.createElement("div");
     this.div.className = "agent-msg agent-msg-assistant agent-msg-streaming";
     this.div.innerHTML = `
-      <div class="agent-msg-label">Kevrai Agent</div>
+      <div class="agent-msg-head"><span class="agent-msg-label">${t("agent.agentName")}</span></div>
       <div class="agent-msg-content agent-msg-stream-text"></div>
     `;
     container.appendChild(this.div);
@@ -65,19 +65,19 @@ export class StreamBubble {
         tools.map((x) => `<span class="agent-tool-tag">${this.esc(x)}</span>`).join("")
       }</div>`
       : "";
-    const regenBtn = `<button type="button" class="agent-msg-btn" data-msg-action="regen" title="${t("agent.regenTitle")}">↻ ${t("agent.regen")}</button>`;
+    const regenBtn = `<button type="button" class="agent-msg-btn" data-msg-action="regen" title="${t("agent.regenTitle")}">${t("agent.regen")}</button>`;
     const deleteBtn = msgId != null
-      ? `<button type="button" class="agent-msg-btn agent-msg-btn-danger" data-msg-action="delete-msg" title="${t("agent.deleteMsgTitle")}">🗑 ${t("agent.deleteMsg")}</button>`
+      ? `<button type="button" class="agent-msg-btn agent-msg-btn-danger" data-msg-action="delete-msg" title="${t("agent.deleteMsgTitle")}">${t("agent.deleteMsg")}</button>`
       : "";
     this.div.classList.remove("agent-msg-streaming");
     this.div.classList.add("agent-msg-md");
     this.div.innerHTML = `
-      <div class="agent-msg-label">Kevrai Agent</div>
+      <div class="agent-msg-head"><span class="agent-msg-label">${t("agent.agentName")}</span></div>
       <div class="agent-msg-content agent-msg-md">${this.renderMarkdown(text)}</div>
       ${traceHtml || ""}
       ${toolsHtml}
       <div class="agent-msg-actions">
-        <button type="button" class="agent-msg-btn" data-msg-action="copy" title="${t("agent.copyTitle")}">⧉ ${t("agent.copy")}</button>
+        <button type="button" class="agent-msg-btn" data-msg-action="copy" title="${t("agent.copyTitle")}">${t("agent.copy")}</button>
         ${regenBtn}
         ${deleteBtn}
       </div>

@@ -52,41 +52,53 @@ function _agentEmptyHtml() {
       <div class="agent-welcome-mark" aria-hidden="true">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3"/><path d="M13 15h4"/></svg>
       </div>
-      <h3 class="agent-welcome-title">${t("agent.welcomeTitle")}</h3>
-      <p class="agent-welcome-hint">${t("agent.welcomeHint")}</p>
+      <div class="agent-empty-copy">
+        <h3 class="agent-welcome-title">${t("agent.welcomeTitle")}</h3>
+        <p class="agent-welcome-hint">${t("agent.welcomeHint")}</p>
+        <div class="agent-empty-actions">
+          <button type="button" class="agent-empty-action" data-agent-starter="hardware">${t("agent.starterHardware")}</button>
+          <button type="button" class="agent-empty-action" data-agent-starter="models">${t("agent.starterModels")}</button>
+          <button type="button" class="agent-empty-action" data-agent-starter="local">${t("agent.starterLocal")}</button>
+        </div>
+      </div>
     </div>`;
 }
 
 function _renderShell() {
   return `
     <div class="agent-container">
-      <div class="agent-header">
+      <header class="agent-header">
         <div class="agent-header-copy">
-          <span class="eyebrow">${t("agent.kicker")}</span>
-          <h2>${t("agent.title")}</h2>
-          <p class="hint">${t("agent.hint")}
+          <span class="agent-kicker">${t("agent.kicker")}</span>
+          <div class="agent-title-row">
+            <h2>${t("agent.title")}</h2>
             <span id="agent-mode-badge" class="agent-badge">${t("agent.loading")}</span>
-          </p>
+          </div>
+          <p class="agent-hint">${t("agent.hint")}</p>
         </div>
         <div class="agent-actions">
-          <button id="agent-new-btn" class="btn btn-sm" title="${t("agent.newSessionTitle")}">${t("agent.newSession")}</button>
           <select id="agent-session-select" class="agent-session-select" title="${t("agent.historyTitle")}"></select>
+          <button id="agent-new-btn" class="btn btn-sm" title="${t("agent.newSessionTitle")}">${t("agent.newSession")}</button>
           <button id="agent-rename-btn" class="btn btn-sm ghost" title="${t("agent.renameTitle")}">${t("agent.rename")}</button>
           <button id="agent-export-btn" class="btn btn-sm ghost" title="${t("agent.exportSessionTitle")}">${t("agent.exportSession")}</button>
         </div>
-      </div>
-      <div class="agent-brain-bar">
-        <label class="agent-brain-label" for="agent-brain-select">${t("agent.brain")}</label>
-        <select id="agent-brain-select" class="agent-brain-select" title="${t("agent.brainTitle")}"></select>
-        <label class="agent-brain-label" for="agent-persona-select">${t("agent.persona")}</label>
-        <select id="agent-persona-select" class="agent-brain-select" title="${t("agent.personaTitle")}"></select>
+      </header>
+      <div class="agent-brain-bar" role="group" aria-label="${t("agent.brain")} / ${t("agent.persona")}">
+        <div class="agent-field">
+          <label class="agent-brain-label" for="agent-brain-select">${t("agent.brain")}</label>
+          <select id="agent-brain-select" class="agent-brain-select" title="${t("agent.brainTitle")}"></select>
+        </div>
+        <div class="agent-field">
+          <label class="agent-brain-label" for="agent-persona-select">${t("agent.persona")}</label>
+          <select id="agent-persona-select" class="agent-brain-select" title="${t("agent.personaTitle")}"></select>
+        </div>
         <span class="hint" id="agent-brain-hint"></span>
         <label class="agent-approval-toggle" title="${t("agent.approvalTooltip")}">
           <input type="checkbox" id="agent-approval-confirm">
           ${t("agent.approvalToggle")}
         </label>
       </div>
-      <div id="agent-approvals" class="agent-approvals" hidden></div>
+      <div id="agent-approvals" class="agent-approvals" aria-live="polite" hidden></div>
       <details class="agent-skills-panel" id="agent-skills-panel">
         <summary>
           ${t("agent.skillsLibrary")}
@@ -121,27 +133,36 @@ function _renderShell() {
           </div>
         </div>
       </details>
-      <div id="agent-messages" class="agent-messages">${_agentEmptyHtml()}</div>
-      <div class="agent-quickphrases" id="agent-quickphrases">
-        <button type="button" id="agent-qp-toggle" class="agent-qp-toggle"
-          title="${t("agent.quickPhrasesTitle")}"
-          aria-expanded="false" aria-controls="agent-qp-body">
-          ${t("agent.quickPhrases")}
-        </button>
-        <div class="agent-qp-body" id="agent-qp-body" hidden>
-          ${QUICK_PHRASE_GROUPS.map(_renderQpGroup).join("")}
+      <div class="agent-surface">
+        <div id="agent-messages" class="agent-messages">${_agentEmptyHtml()}</div>
+        <div class="agent-quickphrases" id="agent-quickphrases">
+          <button type="button" id="agent-qp-toggle" class="agent-qp-toggle"
+            title="${t("agent.quickPhrasesTitle")}"
+            aria-expanded="false" aria-controls="agent-qp-body">
+            ${t("agent.quickPhrases")}
+          </button>
+          <div class="agent-qp-body" id="agent-qp-body" hidden>
+            ${QUICK_PHRASE_GROUPS.map(_renderQpGroup).join("")}
+          </div>
         </div>
-      </div>
-      <div class="agent-input-area">
-        <textarea id="agent-input" class="agent-input" rows="2"
-          placeholder="${t("agent.inputPlaceholder")}"
-          maxlength="5000"></textarea>
-        <button id="agent-send-btn" class="btn btn-primary agent-send-btn" disabled>${t("agent.send")}</button>
-        <button id="agent-cancel-btn" class="btn agent-cancel-btn" hidden>${t("agent.stop")}</button>
-      </div>
-      <div id="agent-thinking" class="agent-thinking" style="display:none;">
-        <span class="agent-spinner"></span>
-        <span id="agent-thinking-text">${t("agent.thinking")}</span>
+        <div class="agent-input-area">
+          <div class="agent-composer">
+            <textarea id="agent-input" class="agent-input" rows="2"
+              placeholder="${t("agent.inputPlaceholder")}"
+              maxlength="5000"></textarea>
+            <div class="agent-composer-foot">
+              <span class="agent-composer-hint">${t("agent.composerHint")}</span>
+              <div class="agent-composer-actions">
+                <button id="agent-cancel-btn" class="btn agent-cancel-btn" hidden>${t("agent.stop")}</button>
+                <button id="agent-send-btn" class="btn btn-primary agent-send-btn" disabled>${t("agent.send")}</button>
+              </div>
+            </div>
+          </div>
+          <div id="agent-thinking" class="agent-thinking" style="display:none;">
+            <span class="agent-spinner"></span>
+            <span id="agent-thinking-text">${t("agent.thinking")}</span>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -504,12 +525,15 @@ async function _refreshStatus() {
     const badge = document.getElementById("agent-mode-badge");
     if (badge) {
       if (res.llm_ready) {
-        badge.textContent = t("agent.llmReady", { model: esc(res.model_name || "") });
-        badge.className = "agent-badge agent-badge-ready";
+        badge.textContent = t("agent.llmReady", { model: res.model_name || "" });
+        badge.className = "agent-badge is-ready";
       } else {
         badge.textContent = t("agent.ruleMode");
-        badge.className = "agent-badge agent-badge-fallback";
+        badge.className = "agent-badge is-basic";
       }
+      badge.title = res.llm_ready
+        ? t("agent.llmReadyTitle", { model: res.model_name || "" })
+        : t("agent.ruleModeTitle");
     }
   } catch (e) {
     console.warn("agent status failed:", e);
@@ -574,7 +598,21 @@ async function _loadSkills() {
   }
 }
 
+function _skillGlyph(text) {
+  const value = String(text == null ? "" : text).trim();
+  return value ? value.slice(0, 1).toUpperCase() : "S";
+}
+
+// Skill display names come from manifests and may carry a leading emoji.
+// The workspace uses a letter glyph and plain names; strip only the leading
+// pictographs, leaving the actual title intact.
+function _skillName(text) {
+  const raw = String(text == null ? "" : text).trim();
+  return raw.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, "").trim() || raw;
+}
+
 function _renderSkillRow(s) {
+  const displayName = _skillName(s.name);
   const locked = !!s.required;
   const tools = (s.tool_names || []).map((t) =>
     `<span class="agent-tool-tag">${esc(t)}</span>`
@@ -584,8 +622,8 @@ function _renderSkillRow(s) {
       <label class="agent-skill-head">
         <input type="checkbox" class="agent-skill-toggle" data-id="${esc(s.id)}"
           ${s.enabled ? "checked" : ""} ${locked ? "disabled" : ""}>
-        <span class="agent-skill-icon">${esc(s.icon || "🧩")}</span>
-        <span class="agent-skill-name">${esc(s.name)}
+        <span class="agent-skill-icon" aria-hidden="true">${esc(_skillGlyph(s.id || displayName))}</span>
+        <span class="agent-skill-name">${esc(displayName)}
           ${locked ? `<span class="agent-skill-lock" title="${t("agent.mandatoryTitle")}">${t("agent.mandatoryBadge")}</span>` : ""}
           ${s.default_enabled && !locked ? `<span class="agent-skill-default">${t("agent.defaultBadge")}</span>` : ""}
           ${s.source === "imported" ? `<span class="agent-skill-imported" title="${t("agent.externalTitle")}">${t("agent.externalBadge")}</span>` : ""}
@@ -635,6 +673,15 @@ function _resetSessionView(root) {
   }
   const sendBtn = $("#agent-send-btn", root);
   if (sendBtn) sendBtn.disabled = true;
+  // Pending approvals belong to the session that produced them. Do not leave
+  // the previous session's checkpoint cards mounted after a switch.
+  const approvals = document.getElementById("agent-approvals");
+  if (approvals) {
+    approvals.hidden = true;
+    approvals.innerHTML = "";
+    approvals.dataset.approvalIds = "";
+  }
+  _stopApprovalPolling();
   // 上一会话若还在流式输出/等待审批，切换后那些回调仍会往旧容器写东西。
   // 这里不断流（后端仍按 sessionId 归属），只让 UI 不再被旧会话污染。
   _busy = false;
@@ -693,12 +740,12 @@ function _collectArtifacts(obs, out = [], depth = 0) {
   return out;
 }
 
-function _artifactIcon(p) {
-  if (/\.(png|jpe?g|webp)$/i.test(p)) return "🖼️";
-  if (/\.(wav|mp3|flac|ogg|m4a)$/i.test(p)) return "🎵";
-  if (/\.(json|npy)$/i.test(p)) return "🧮";
-  if (/\.(srt|txt)$/i.test(p)) return "📄";
-  return "📁";
+function _artifactKind(p) {
+  if (/\.(png|jpe?g|webp)$/i.test(p)) return "IMG";
+  if (/\.(wav|mp3|flac|ogg|m4a)$/i.test(p)) return "AUD";
+  if (/\.(json|npy)$/i.test(p)) return "DATA";
+  if (/\.(srt|txt)$/i.test(p)) return "TXT";
+  return "DIR";
 }
 
 function _basename(p) {
@@ -728,22 +775,25 @@ function _renderTrace(steps) {
     const artifacts = _collectArtifacts(s.observation);
     const chips = artifacts.map((p) =>
       `<button type="button" class="agent-artifact" data-open="${esc(p)}"
-         title="${esc(p)}">${_artifactIcon(p)} ${esc(_basename(p))}</button>`
+         title="${esc(p)}"><span class="agent-artifact-ext">${_artifactKind(p)}</span><span class="agent-artifact-name">${esc(_basename(p))}</span></button>`
     ).join("");
     return `
       <div class="agent-trace-step">
-        <div class="agent-trace-head">
-          <span class="agent-trace-idx">${i + 1}</span>
-          🔧 <code>${esc(s.action_tool)}</code>
-          ${params ? `<span class="agent-trace-params">${esc(params)}</span>` : ""}
+        <div class="agent-trace-rail"><span class="agent-trace-dot"></span></div>
+        <div class="agent-trace-main">
+          <div class="agent-trace-head">
+            <span class="agent-trace-tool">${esc(s.action_tool)}</span>
+            <span class="agent-trace-index">${i + 1}</span>
+          </div>
+          ${params ? `<div class="agent-trace-params">${esc(params)}</div>` : ""}
+          <div class="agent-trace-obs">${esc(_summarizeObservation(s.observation))}</div>
+          ${chips ? `<div class="agent-trace-artifacts">${chips}</div>` : ""}
         </div>
-        <div class="agent-trace-obs">${esc(_summarizeObservation(s.observation))}</div>
-        ${chips ? `<div class="agent-trace-artifacts">${chips}</div>` : ""}
       </div>`;
   }).join("");
-  return `<details class="agent-trace" open>
-    <summary>${t("agent.reasoningTrace", { n: toolSteps.length })}</summary>
-    ${blocks}
+  return `<details class="agent-trace">
+    <summary><span>${t("agent.reasoningTrace", { n: toolSteps.length })}</span><span class="agent-trace-summary-hint">${t("agent.traceHint")}</span></summary>
+    <div class="agent-trace-body">${blocks}</div>
   </details>`;
 }
 
@@ -768,6 +818,21 @@ async function _loadApprovalPolicy() {
 
 function _wireApprovals(container) {
   if (!container) return;
+  container.addEventListener("keydown", (e) => {
+    const card = e.target.closest(".agent-approval-card");
+    if (!card) return;
+    if (e.key === "Escape") {
+      e.preventDefault();
+      card.querySelector("[data-approval-reject]")?.click();
+      return;
+    }
+    // Enter on the card itself approves; controls and the editable params
+    // keep their native Enter behaviour.
+    if (e.key === "Enter" && !e.target.closest("button, textarea, input, summary")) {
+      e.preventDefault();
+      card.querySelector("[data-approval-approve]")?.click();
+    }
+  });
   container.addEventListener("click", async (e) => {
     const approveBtn = e.target.closest("[data-approval-approve]");
     const rejectBtn = e.target.closest("[data-approval-reject]");
@@ -814,8 +879,18 @@ function _renderApprovals(requests) {
   if (!list.length) {
     container.hidden = true;
     container.innerHTML = "";
+    container.dataset.approvalIds = "";
     return;
   }
+  // The poll runs every second. Replacing innerHTML when the request set has
+  // not changed would erase whatever the user is editing in the params box.
+  // Keep the mounted cards unless the set of pending requests actually changes.
+  const approvalIds = list.map((r) => String(r && r.id != null ? r.id : "")).join("|");
+  if (container.dataset.approvalIds === approvalIds) {
+    container.hidden = false;
+    return;
+  }
+  container.dataset.approvalIds = approvalIds;
   container.innerHTML = list.map(approvalCardHtml).join("");
   container.hidden = false;
 }
@@ -997,22 +1072,22 @@ function _appendMessage(role, content, animate = false, tools = [], msgId = null
   const div = document.createElement("div");
   div.className = `agent-msg agent-msg-${role}`;
   if (msgId != null) div.dataset.msgId = String(msgId);
-  const label = role === "user" ? t("agent.you") : "Kevrai Agent";
+  const label = role === "user" ? t("agent.you") : t("agent.agentName");
   const toolsHtml = tools && tools.length
     ? `<div class="agent-tools-used">${t("agent.toolsUsedLabel")} ${tools.map((t) => `<span class="agent-tool-tag">${esc(t)}</span>`).join("")}</div>`
     : "";
   const regenBtn = role === "assistant"
-    ? `<button type="button" class="agent-msg-btn" data-msg-action="regen" title="${t("agent.regenTitle")}">↻ ${t("agent.regen")}</button>`
+    ? `<button type="button" class="agent-msg-btn" data-msg-action="regen" title="${t("agent.regenTitle")}">${t("agent.regen")}</button>`
     : "";
   // Delete is offered on every persisted message; edit only on user messages
   // (and only when we know its row id — optimistic sends have no id yet).
   const canDelete = msgId != null;
   const canEdit = role === "user" && msgId != null;
   const editBtn = canEdit
-    ? `<button type="button" class="agent-msg-btn" data-msg-action="edit-msg" title="${t("agent.editTitle")}">✎ ${t("agent.edit")}</button>`
+    ? `<button type="button" class="agent-msg-btn" data-msg-action="edit-msg" title="${t("agent.editTitle")}">${t("agent.edit")}</button>`
     : "";
   const deleteBtn = canDelete
-    ? `<button type="button" class="agent-msg-btn agent-msg-btn-danger" data-msg-action="delete-msg" title="${t("agent.deleteMsgTitle")}">🗑 ${t("agent.deleteMsg")}</button>`
+    ? `<button type="button" class="agent-msg-btn agent-msg-btn-danger" data-msg-action="delete-msg" title="${t("agent.deleteMsgTitle")}">${t("agent.deleteMsg")}</button>`
     : "";
   const contentHtml = role === "assistant"
     ? renderMarkdown(content)
@@ -1021,17 +1096,18 @@ function _appendMessage(role, content, animate = false, tools = [], msgId = null
     ? "agent-msg-content agent-msg-md"
     : "agent-msg-content";
   div.innerHTML = `
-    <div class="agent-msg-label">${esc(label)}</div>
+    <div class="agent-msg-head"><span class="agent-msg-label">${esc(label)}</span></div>
     <div class="${contentCls}">${contentHtml}</div>
     ${traceHtml || ""}
     ${toolsHtml}
     <div class="agent-msg-actions">
-      <button type="button" class="agent-msg-btn" data-msg-action="copy" title="${t("agent.copyTitle")}">⧉ ${t("agent.copy")}</button>
+      <button type="button" class="agent-msg-btn" data-msg-action="copy" title="${t("agent.copyTitle")}">${t("agent.copy")}</button>
       ${editBtn}
       ${regenBtn}
       ${deleteBtn}
     </div>
   `;
+  container.querySelector(".agent-welcome")?.remove();
   container.appendChild(div);
   div.querySelector('[data-msg-action="copy"]').addEventListener("click", () => _copyText(content));
   div.querySelector('[data-msg-action="regen"]')?.addEventListener("click", () => _regenerate());
@@ -1042,6 +1118,22 @@ function _appendMessage(role, content, animate = false, tools = [], msgId = null
 function _wireMessageActions(container) {
   if (!container) return;
   container.addEventListener("click", async (e) => {
+    const starter = e.target.closest("[data-agent-starter]");
+    if (starter) {
+      const prompts = {
+        hardware: t("agent.starterHardwarePrompt"),
+        models: t("agent.starterModelsPrompt"),
+        local: t("agent.starterLocalPrompt"),
+      };
+      const input = document.getElementById("agent-input");
+      if (input && prompts[starter.dataset.agentStarter]) {
+        input.value = prompts[starter.dataset.agentStarter];
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.focus();
+        input.scrollIntoView({ block: "nearest" });
+      }
+      return;
+    }
     const openBtn = e.target.closest("[data-open]");
     if (openBtn) {
       try {

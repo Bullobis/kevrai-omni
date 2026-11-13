@@ -71,7 +71,7 @@ curl http://127.0.0.1:17890/api/health
 ```json
 {
   "ok": true,
-  "version": "4.17.9",
+  "version": "4.18.0",
   "models_dir": "/Users/you/Library/Application Support/KevraiOmni/models",
   "app_root": "/Users/you/Library/Application Support/KevraiOmni"
 }
