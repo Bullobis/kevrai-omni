@@ -46,12 +46,24 @@ export async function initAgent() {
   _wireApprovals(document.getElementById("agent-approvals"));
 }
 
+function _agentEmptyHtml() {
+  return `
+    <div class="agent-welcome">
+      <div class="agent-welcome-mark" aria-hidden="true">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3"/><path d="M13 15h4"/></svg>
+      </div>
+      <h3 class="agent-welcome-title">${t("agent.welcomeTitle")}</h3>
+      <p class="agent-welcome-hint">${t("agent.welcomeHint")}</p>
+    </div>`;
+}
+
 function _renderShell() {
   return `
     <div class="agent-container">
       <div class="agent-header">
-        <div>
-          <h2 class="section">🤖 Kevrai Agent</h2>
+        <div class="agent-header-copy">
+          <span class="eyebrow">${t("agent.kicker")}</span>
+          <h2>${t("agent.title")}</h2>
           <p class="hint">${t("agent.hint")}
             <span id="agent-mode-badge" class="agent-badge">${t("agent.loading")}</span>
           </p>
@@ -64,9 +76,9 @@ function _renderShell() {
         </div>
       </div>
       <div class="agent-brain-bar">
-        <label class="agent-brain-label" for="agent-brain-select">🧠 ${t("agent.brain")}</label>
+        <label class="agent-brain-label" for="agent-brain-select">${t("agent.brain")}</label>
         <select id="agent-brain-select" class="agent-brain-select" title="${t("agent.brainTitle")}"></select>
-        <label class="agent-brain-label" for="agent-persona-select">🎭 ${t("agent.persona")}</label>
+        <label class="agent-brain-label" for="agent-persona-select">${t("agent.persona")}</label>
         <select id="agent-persona-select" class="agent-brain-select" title="${t("agent.personaTitle")}"></select>
         <span class="hint" id="agent-brain-hint"></span>
         <label class="agent-approval-toggle" title="${t("agent.approvalTooltip")}">
@@ -77,7 +89,7 @@ function _renderShell() {
       <div id="agent-approvals" class="agent-approvals" hidden></div>
       <details class="agent-skills-panel" id="agent-skills-panel">
         <summary>
-          🧩 ${t("agent.skillsLibrary")}
+          ${t("agent.skillsLibrary")}
           <span class="agent-skills-summary" id="agent-skills-summary">${t("agent.loading")}</span>
         </summary>
         <div class="agent-skills-body">
@@ -109,7 +121,7 @@ function _renderShell() {
           </div>
         </div>
       </details>
-      <div id="agent-messages" class="agent-messages"></div>
+      <div id="agent-messages" class="agent-messages">${_agentEmptyHtml()}</div>
       <div class="agent-quickphrases" id="agent-quickphrases">
         <button type="button" id="agent-qp-toggle" class="agent-qp-toggle"
           title="${t("agent.quickPhrasesTitle")}"
@@ -145,7 +157,7 @@ function _renderQpGroup(g) {
       title="${esc(p.text)}">${esc(p.label)}</button>`).join("");
   return `
     <div class="agent-qp-group">
-      <span class="agent-qp-group-label">${esc(g.icon)} ${esc(g.label)}</span>
+      <span class="agent-qp-group-label">${esc(g.label)}</span>
       <div class="agent-qp-chips">${chips}</div>
     </div>`;
 }
@@ -615,7 +627,7 @@ async function _loadSessionList() {
  */
 function _resetSessionView(root) {
   const messages = $("#agent-messages", root);
-  if (messages) messages.innerHTML = "";
+  if (messages) messages.innerHTML = _agentEmptyHtml();
   const input = $("#agent-input", root);
   if (input) {
     input.value = "";
@@ -639,9 +651,11 @@ async function _loadSessionMessages() {
   try {
     const res = unwrap(await api.agentSessionMessages(sid, 100));
     if (_sessionId !== sid) return;
-    for (const msg of res.messages || []) {
+    const rows = res.messages || [];
+    for (const msg of rows) {
       _appendMessage(msg.role, msg.content, false, msg.tools_used || [], msg.id);
     }
+    if (!rows.length) container.innerHTML = _agentEmptyHtml();
     container.scrollTop = container.scrollHeight;
   } catch (e) {
     console.warn("load messages failed:", e);

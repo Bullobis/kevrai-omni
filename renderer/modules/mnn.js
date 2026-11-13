@@ -118,10 +118,12 @@ async function renderEngineState(root) {
 
 function _renderEngineStateInner(root, el, st) {
   const installed = !!st.engine_available;
+  const rawVersion = String(st.engine_version || "").trim();
+  const showVersion = rawVersion && !/^(unknown|n\/a|none|null|-)$/i.test(rawVersion);
   el.innerHTML = installed ? `
     <div class="mnn-state-card ok">
       <div class="grow">
-        <div class="name">${t("mnn.ready")} ${st.engine_version ? `<span class="pill ok">v${esc(st.engine_version)}</span>` : ""}</div>
+        <div class="name">${t("mnn.ready")} ${showVersion ? `<span class="pill ok">v${esc(rawVersion)}</span>` : ""}</div>
         <div class="sub">${st.loaded
           ? t("mnn.loadedChat", { model: `<b>${esc(st.model_name)}</b>`, n: st.chat_count })
           : t("mnn.notLoaded")}</div>

@@ -755,3 +755,719 @@ html[data-theme="light"] .install-btn { color: #fff; }
 }
 .vgrid-item.skeleton .sk-pill { width: 58px; height: 18px; }
 .vgrid-item.skeleton .sk-btn { width: 64px; height: 28px; }
+
+/* ========================================================================== */
+/* Workspace pages: shared rhythm, surfaces and form controls                  */
+/* ========================================================================== */
+
+/* The transparent brand mark is a logo, not the launcher tile. Do not clip it
+   into a rounded square again. */
+.logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 0;
+  object-fit: contain;
+  background: transparent;
+}
+
+/* Page heading: one scale everywhere, with breathing room instead of a
+   heading glued to the first control. */
+.pane .pane-head,
+.pane .hw-toolbar {
+  margin: 0 0 20px;
+  align-items: flex-start;
+  gap: 18px;
+}
+.pane .pane-head h2,
+.pane .hw-title,
+.pane .ltx-title {
+  margin: 0;
+  font-size: 25px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+.pane .pane-head .muted,
+.pane .pane-head .hint,
+.pane .hw-toolbar .hint {
+  margin: 7px 0 0;
+  max-width: 760px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--mut);
+}
+.pane .pane-head .muted[data-i18n] { opacity: 0.9; }
+.pane .hint {
+  max-width: 780px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.pane .section {
+  margin: 22px 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--fg);
+  opacity: 0.82;
+}
+.pane .list-head { display: flex; align-items: baseline; gap: 10px; }
+
+/* Form pages had elements with class="card" but no global .card rule, so the
+   whole form floated directly on the page background. This is the one surface
+   rule those pages were missing. */
+.pane .card {
+  background: var(--stack-1);
+  border: 1px solid var(--bord);
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: none;
+}
+.pane .asr-form.card,
+.pane .asr-form,
+.pane .asr-result.card,
+.pane .asr-engine-missing,
+.pane .compare-models-card,
+.pane .compare-question-card {
+  width: 100%;
+  max-width: 940px;
+  box-sizing: border-box;
+}
+.pane .asr-form.card { display: flex; flex-direction: column; gap: 16px; }
+.pane .asr-form.card > .form-actions { margin-top: 2px; }
+.pane .form-row { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pane .form-row > label,
+.pane .card > label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--fg);
+  opacity: 0.82;
+  margin: 0;
+}
+.pane .form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px 18px;
+}
+.pane .form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.pane .form-actions .primary { min-width: 108px; }
+
+/* Inputs: normalise the native widgets that made every page look unfinished. */
+.pane .card input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.pane .card select,
+.pane .card textarea,
+.pane .asr-engine-missing input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 38px;
+  padding: 9px 11px;
+  border: 1px solid var(--bord);
+  border-radius: 9px;
+  background: var(--bg-2);
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 1.45;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.pane .card select {
+  appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b929b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+}
+.pane .card textarea { min-height: 74px; resize: vertical; line-height: 1.6; }
+.pane .card input:focus,
+.pane .card select:focus,
+.pane .card textarea:focus {
+  border-color: var(--acc);
+  box-shadow: var(--focus);
+}
+.pane .card input::placeholder,
+.pane .card textarea::placeholder { color: var(--mut); opacity: .55; }
+.pane .card input[type="file"] {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 4px;
+  border: 1px dashed var(--bord);
+  border-radius: 9px;
+  background: var(--bg-2);
+  color: var(--mut);
+  font-size: 12px;
+}
+.pane .card input[type="file"]::file-selector-button {
+  margin-right: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--bord);
+  border-radius: 7px;
+  background: var(--stack-3);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.pane .card input[type="checkbox"],
+.pane .card input[type="radio"] { accent-color: var(--acc); }
+.pane .field-hint,
+.pane .card small.field-hint { color: var(--mut); font-size: 11px; line-height: 1.5; }
+
+/* Missing-runtime callout: a calm card with a single clear action, not a
+   sentence and a button stranded in a full-width empty box. */
+.pane .asr-engine-missing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+  margin: 0 0 16px;
+  border: 1px solid var(--bord);
+  border-left: 3px solid var(--warn);
+  border-radius: 12px;
+  background: var(--stack-1);
+}
+.pane .asr-engine-missing p {
+  margin: 0;
+  max-width: 720px;
+  color: var(--mut);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.pane .asr-engine-missing .mono { font-size: 11px; word-break: break-all; }
+.pane .asr-engine-missing .primary { flex: 0 0 auto; }
+
+/* Page-level result surfaces. Empty result cards should not reserve a tall
+   blank strip; they only appear once the module has content. */
+.pane .asr-result.card { padding: 18px 20px; }
+.pane .asr-result.card:empty { display: none; }
+
+/* ASR / embeddings / separation / TTS share the form rhythm, but keep their
+   engine-specific details aligned. */
+#pane-asr .pane-head,
+#pane-embeddings .pane-head,
+#pane-separation .pane-head,
+#pane-piper .pane-head,
+#pane-knowledge .pane-head,
+#pane-image .pane-head,
+#pane-3d .pane-head,
+#pane-multimodal .pane-head,
+#pane-music .pane-head,
+#pane-translate .pane-head,
+#pane-compare-answers .pane-head { margin-bottom: 20px; }
+#pane-asr .pane-head h2,
+#pane-embeddings .pane-head h2,
+#pane-separation .pane-head h2,
+#pane-piper .pane-head h2,
+#pane-knowledge .pane-head h2,
+#pane-image .pane-head h2,
+#pane-3d .pane-head h2,
+#pane-multimodal .pane-head h2,
+#pane-music .pane-head h2,
+#pane-translate .pane-head h2,
+#pane-compare-answers .pane-head h2 { font-size: 25px; margin: 0; }
+
+/* Import card (Local models). */
+.pane .import-card {
+  max-width: 940px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+}
+.pane .import-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pane .import-title { font-size: 14px; font-weight: 600; }
+.pane .import-sub { font-size: 12px; color: var(--mut); line-height: 1.5; }
+.pane .import-row { display: flex; gap: 8px; margin: 0; flex: 0 0 auto; }
+.pane .import-row button { white-space: nowrap; }
+@media (max-width: 760px) {
+  .pane .import-card { align-items: flex-start; flex-direction: column; }
+  .pane .import-row { width: 100%; }
+  .pane .import-row button { flex: 1; }
+}
+
+/* Engine cards: identity first, actions aligned, no giant empty middle. */
+.pane .engine-grid {
+  grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+  gap: 12px;
+  align-items: stretch;
+  margin-top: 14px;
+}
+.pane .engine-card {
+  gap: 10px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--stack-1);
+}
+.pane .engine-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.pane .engine-card-head .card-title { font-size: 14px; line-height: 1.3; }
+.pane .engine-desc {
+  margin: 0;
+  color: var(--mut);
+  font-size: 12.5px;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pane .engine-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.pane .engine-meta .pill { font-size: 10px; }
+.pane .engine-repo {
+  margin: 0;
+  color: var(--mut);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.pane .engine-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.pane .engine-foot .engine-version { color: var(--mut); font-size: 11px; }
+.pane .engine-foot .primary,
+.pane .engine-foot .secondary { padding: 7px 14px; }
+
+/* Compare-answer page never had layout rules. */
+#pane-compare-answers .card { max-width: 940px; margin-bottom: 14px; }
+#pane-compare-answers .ca-models {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+#pane-compare-answers .ca-model {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border: 1px solid var(--bord);
+  border-radius: 9px;
+  background: var(--bg-2);
+  font-size: 12px;
+  line-height: 1.35;
+  cursor: pointer;
+}
+#pane-compare-answers .ca-model:has(input:checked) {
+  border-color: var(--acc);
+  background: color-mix(in srgb, var(--acc) 8%, var(--bg-2));
+}
+#pane-compare-answers .ca-model span {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#pane-compare-answers #ca-question { min-height: 132px; margin-top: 10px; }
+#pane-compare-answers .form-actions { margin-top: 14px; }
+#pane-compare-answers #ca-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  max-width: 1200px;
+}
+#pane-compare-answers .ca-col {
+  border: 1px solid var(--bord);
+  border-radius: 12px;
+  background: var(--stack-1);
+  padding: 16px;
+  min-width: 0;
+}
+#pane-compare-answers .ca-col-head {
+  margin-bottom: 10px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#pane-compare-answers .ca-answer { margin: 0; line-height: 1.7; font-size: 13px; white-space: pre-wrap; }
+#pane-compare-answers .ca-error { color: var(--err); font-size: 12px; line-height: 1.6; }
+
+/* Hardware page: keep the information dense but no emoji icons, and no raw
+   backend translation keys in the fit badge. */
+.pane .hw-toolbar { display: flex; justify-content: space-between; align-items: flex-start; }
+.pane .hw-toolbar-actions { display: flex; gap: 8px; align-items: center; flex: 0 0 auto; }
+.pane .hw-toolbar-actions select {
+  appearance: none;
+  min-height: 36px;
+  padding: 7px 34px 7px 11px;
+  border: 1px solid var(--bord);
+  border-radius: 9px;
+  background: var(--stack-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b929b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 11px center;
+  color: var(--fg);
+  font-size: 12px;
+}
+.pane .hw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.pane .hw-card {
+  border: 1px solid var(--bord);
+  border-radius: 14px;
+  background: var(--stack-1);
+  padding: 16px;
+  box-shadow: none;
+}
+.pane .hw-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.pane .hw-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 5px;
+  background: var(--bg-2);
+  color: var(--mut);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .05em;
+}
+.pane .hw-kv { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 4px 0; }
+.pane .hw-k { color: var(--mut); font-size: 11.5px; white-space: nowrap; }
+.pane .hw-v { color: var(--fg); font-size: 12.5px; text-align: right; min-width: 0; overflow-wrap: anywhere; }
+.pane .hw-score-card { grid-column: span 1; }
+.pane .hw-score-num { font-size: 30px; letter-spacing: -.03em; }
+.pane .hw-score-bar { margin-top: 8px; }
+.pane .hw-rec-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  padding: 16px;
+}
+.pane .hw-rec-row .name { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.pane .hw-rec-row .sub { margin-top: 5px; }
+.pane .hw-rec-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 104px;
+}
+.pane .hw-reason { color: var(--mut); font-size: 11.5px; line-height: 1.55; margin-top: 3px; }
+.pane .hw-snapshot > p.mut { color: var(--mut); }
+
+/* Agent page: remove the emoji-decorated control bar and give the empty chat
+   an intentional starting point. */
+.agent-header-copy { min-width: 0; }
+.agent-header-copy h2 {
+  margin: 0;
+  font-size: 25px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
+.agent-header-copy .hint { margin: 7px 0 0; max-width: 760px; font-size: 12.5px; line-height: 1.55; }
+.agent-header .agent-actions { align-items: center; }
+.agent-actions .btn,
+.agent-actions select {
+  min-height: 34px;
+  border-radius: 9px;
+}
+.agent-actions #agent-new-btn {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: #fff;
+  font-weight: 500;
+}
+html[data-theme="dark"] .agent-actions #agent-new-btn { color: #0b1020; }
+.agent-brain-bar {
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border-color: var(--bord);
+  background: var(--stack-1);
+}
+.agent-brain-label { color: var(--mut); font-size: 11px; font-weight: 600; letter-spacing: .02em; }
+.agent-brain-select { min-height: 34px; background: var(--bg-2); border-color: var(--bord); border-radius: 8px; }
+.agent-skills-panel { border-color: var(--bord); border-radius: 12px; background: var(--stack-1); }
+.agent-messages {
+  border: 1px solid var(--bord);
+  border-radius: 14px;
+  background: var(--stack-1);
+  padding: 20px;
+}
+.agent-welcome {
+  margin: auto;
+  max-width: 440px;
+  text-align: center;
+  padding: 28px 16px;
+}
+.agent-welcome-mark {
+  display: inline-flex;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 14px;
+  border: 1px solid var(--bord);
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  color: var(--acc);
+  background: var(--bg-2);
+}
+.agent-welcome-title { margin: 0 0 7px; font-size: 17px; font-weight: 600; }
+.agent-welcome-hint { margin: 0; color: var(--mut); font-size: 13px; line-height: 1.65; }
+.agent-input-area {
+  padding: 10px;
+  border: 1px solid var(--bord);
+  border-radius: 14px;
+  background: var(--stack-1);
+  align-items: flex-end;
+}
+.agent-input {
+  min-height: 54px;
+  max-height: 160px;
+  border: 0;
+  background: transparent;
+  padding: 8px 10px;
+}
+.agent-input:focus-visible { box-shadow: none; border: 0; }
+.agent-send-btn { height: 40px; border-radius: 9px; }
+.agent-quickphrases { margin-bottom: 10px; }
+.agent-qp-toggle {
+  border-radius: 8px;
+  background: transparent;
+  color: var(--mut);
+  border-color: var(--bord);
+}
+
+@media (max-width: 760px) {
+  .pane .pane-head,
+  .pane .hw-toolbar { flex-direction: column; align-items: stretch; }
+  .pane .hw-toolbar-actions { justify-content: flex-start; }
+  .pane .hw-rec-row { grid-template-columns: 1fr; }
+  .pane .hw-rec-side { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; }
+  .pane .engine-grid { grid-template-columns: 1fr; }
+  .pane .form-actions { justify-content: stretch; }
+  .pane .form-actions > button { flex: 1; }
+  .agent-header { flex-direction: column; }
+}
+.pane .engine-title-wrap { min-width: 0; }
+.pane .engine-title-wrap .card-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pane .engine-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+.pane .engine-actions button { white-space: nowrap; }
+.pane .engine-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 6px;
+}
+.pane .engine-toolbar #engines-update-hint { color: var(--mut); font-size: 12px; }
+.pane .ltx-header { align-items: flex-start; gap: 18px; margin-bottom: 18px; }
+.pane .ltx-title { margin: 0; }
+.pane .ltx-header .hint { margin-top: 7px; }
+.pane .plugins-head h2 { font-size: 25px; font-weight: 600; letter-spacing: -.02em; }
+.pane .plugins-head .pill { vertical-align: 2px; }
+.pane .hw-loading {
+  display: flex; align-items: center; gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--bord);
+  border-radius: 14px;
+  background: var(--stack-1);
+}
+.pane .hw-loading strong { display: block; font-size: 14px; font-weight: 600; }
+.pane .hw-loading span { display: block; margin-top: 3px; color: var(--mut); font-size: 12px; line-height: 1.5; }
+.pane .hw-loading-spinner {
+  width: 18px; height: 18px; flex: 0 0 auto;
+  border: 2px solid var(--bord);
+  border-top-color: var(--acc);
+  border-radius: 50%;
+  animation: agent-spin .7s linear infinite;
+}
+.pane .hw-rec-skeleton {
+  min-height: 112px;
+  padding: 18px;
+  border: 1px solid var(--bord);
+  border-radius: 12px;
+  background: var(--stack-1);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.pane .hw-rec-skeleton .sk-line { height: 11px; }
+.skeleton-grid {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  padding: 0;
+}
+.skeleton-card { height: 220px; background: var(--stack-1); border-color: var(--bord); }
+.sk-w45 { width: 45%; }
+/* Fixed: the old page-specific rules flattened the missing-runtime callout
+   into a gray paragraph with no semantic accent. */
+#pane-image .asr-engine-missing,
+#pane-3d .asr-engine-missing {
+  background: var(--stack-1);
+  border: 1px solid var(--bord);
+  border-left: 3px solid var(--warn);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+#pane-image .asr-engine-missing p,
+#pane-3d .asr-engine-missing p { color: var(--mut); font-size: 13px; line-height: 1.6; }
+#pane-3d .fit-bar {
+  background: var(--stack-2);
+  border: 1px solid var(--bord);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 0;
+}
+#pane-3d .fit-bar .fit-line { font-size: 13px; font-weight: 600; }
+#pane-3d .fit-bar .fit-detail { margin-top: 3px; font-size: 12px; line-height: 1.5; }
+#pane-3d .form-row-inline { display: flex; gap: 8px; flex-wrap: wrap; }
+#pane-3d .form-row-inline label {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid var(--bord);
+  border-radius: 9px;
+  background: var(--bg-2);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Translation: the global card-control rule must not stretch the two
+   language selects across the toolbar. */
+#pane-translate .translate-toolbar { padding: 14px 16px; max-width: 940px; }
+#pane-translate .translate-lang-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 6px 12px;
+}
+#pane-translate .translate-lang-row > label {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--mut);
+}
+#pane-translate .translate-lang-row > label:nth-of-type(1) { grid-column: 1; grid-row: 1; }
+#pane-translate .translate-lang-row > label:nth-of-type(2) { grid-column: 3; grid-row: 1; }
+#pane-translate .translate-lang-row select { grid-row: 2; min-height: 38px; }
+#pane-translate .translate-lang-row #translate-src-lang { grid-column: 1; }
+#pane-translate .translate-lang-row #translate-swap { grid-column: 2; grid-row: 2; align-self: stretch; }
+#pane-translate .translate-lang-row #translate-tgt-lang { grid-column: 3; }
+#pane-translate .translate-columns { gap: 14px; margin-top: 14px; }
+#pane-translate .translate-col { padding: 0; overflow: hidden; }
+#pane-translate .translate-col textarea {
+  display: block;
+  min-height: 300px;
+  padding: 16px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  font-size: 13px;
+  line-height: 1.7;
+}
+#pane-translate .translate-col textarea:focus-visible { border: 0; box-shadow: inset 0 0 0 2px var(--acc); }
+#pane-translate .token-counter { padding: 0 16px 12px; }
+#pane-translate .translate-actions { padding-top: 16px; margin-top: 0; border-top: 1px solid var(--line); }
+#pane-asr .form-actions,
+#pane-embeddings .form-actions,
+#pane-knowledge .form-actions,
+#pane-image .form-actions,
+#pane-3d .form-actions,
+#pane-multimodal .form-actions,
+#pane-music .form-actions { justify-content: flex-end; }
+/* File inputs: Chromium still renders the native button unless the button
+   pseudo element is explicitly styled. Keep it consistent across pages. */
+.pane input[type="file"] { padding: 6px; background: var(--bg-2); }
+.pane input[type="file"]::file-selector-button {
+  margin-right: 10px;
+  padding: 7px 12px;
+  border: 1px solid var(--bord);
+  border-radius: 8px;
+  background: var(--stack-1);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.pane input[type="file"]::file-selector-button:hover { border-color: var(--acc); color: var(--acc); }
+#pane-ltx .ltx-form,
+#pane-ltx .ltx-outputs {
+  padding: 16px;
+  border: 1px solid var(--bord);
+  border-radius: 14px;
+  background: var(--stack-1);
+}
+/* Environment: mirror rows were a single gray slab with no rhythm. */
+.pane .mirror-group {
+  margin-top: 14px;
+  padding: 8px 14px;
+  border: 1px solid var(--bord);
+  border-radius: 12px;
+  background: var(--stack-1);
+}
+.pane .mirror-row {
+  display: grid;
+  grid-template-columns: 18px minmax(110px, 170px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 10px 4px;
+  border-radius: 0;
+  border-bottom: 1px solid var(--bord);
+}
+.pane .mirror-row:last-child { border-bottom: 0; }
+.pane .mirror-row:hover { background: transparent; }
+.pane .mirror-row input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--acc); }
+.pane .mirror-label { font-size: 12.5px; font-weight: 500; }
+.pane .mirror-url {
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 11px;
+  color: var(--mut);
+  overflow-wrap: anywhere;
+}
+/* Plugin market: the old empty state used a bare .ic.lg (220px) and looked
+   like a missing asset. Reuse the shared empty-state icon shell. */
+.plugins-head { padding: 4px 0 16px; }
+.plugins-head h2 { margin: 0 0 6px; font-size: 25px; line-height: 1.22; font-weight: 600; }
+.plugins-head p { margin: 0; }
+.plugins-install-row {
+  margin-top: 16px;
+  max-width: 780px;
+  padding: 10px 12px;
+  border: 1px solid var(--bord);
+  border-radius: 12px;
+  background: var(--stack-1);
+}
+.plugins-install-row .input { min-height: 38px; }
+.plugins-grid { padding: 0 0 24px; }
+.plugins-grid .empty-state { padding: 56px 20px; }

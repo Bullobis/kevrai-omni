@@ -20,7 +20,7 @@ const FIT_LABEL = {
 };
 const FIT_CLASS = {
   perfect: "ok",
-  good: "warn",
+  good: "ok",
   tight: "warn",
   no: "err",
 };
@@ -41,9 +41,24 @@ export async function renderHardwarePage(root) {
         <button class="secondary" id="hw-refresh">${t("hardware.rescan")}</button>
       </div>
     </div>
-    <div id="hw-snapshot" class="hw-snapshot"><p class="mut">${t("hardware.detecting")}</p></div>
+    <div id="hw-snapshot" class="hw-snapshot" aria-busy="true">
+      <div class="hw-loading">
+        <span class="hw-loading-spinner" aria-hidden="true"></span>
+        <div><strong>${t("hardware.detecting")}</strong><span>${t("hardware.hint")}</span></div>
+      </div>
+    </div>
     <h3 class="section" id="hw-rec-title">${t("hardware.recTitle")}</h3>
-    <div id="hw-recs" class="list"><p class="mut">${t("hardware.analyzing")}</p></div>
+    <div id="hw-recs" class="list" aria-busy="true">
+      <div class="hw-rec-skeleton">
+        <div class="sk-line sk-w45"></div><div class="sk-line sk-w90"></div><div class="sk-line sk-w70"></div>
+      </div>
+      <div class="hw-rec-skeleton">
+        <div class="sk-line sk-w45"></div><div class="sk-line sk-w90"></div><div class="sk-line sk-w70"></div>
+      </div>
+      <div class="hw-rec-skeleton">
+        <div class="sk-line sk-w45"></div><div class="sk-line sk-w90"></div><div class="sk-line sk-w70"></div>
+      </div>
+    </div>
   `;
 
   $("#hw-refresh", root).addEventListener("click", () => load(root, true));
@@ -96,7 +111,7 @@ function renderSnapshot(el, hw) {
   el.innerHTML = `
     <div class="hw-grid">
       <div class="hw-card">
-        <div class="hw-card-head"><span class="hw-ico">🧠</span> ${t("hardware.cpu")}</div>
+        <div class="hw-card-head"><span class="hw-ico">CPU</span> ${t("hardware.cpu")}</div>
         <div class="hw-kv"><span class="hw-k">${t("hardware.model")}</span><span class="hw-v">${esc(cpu.name || t("hardware.unknown"))}</span></div>
         <div class="hw-kv"><span class="hw-k">${t("hardware.physCores")}</span><span class="hw-v">${esc(cpu.physical_cores || "?")} ${t("hardware.coresUnit")}</span></div>
         <div class="hw-kv"><span class="hw-k">${t("hardware.isa")}</span><span class="hw-v">${
@@ -104,17 +119,17 @@ function renderSnapshot(el, hw) {
         }</span></div>
       </div>
       <div class="hw-card">
-        <div class="hw-card-head"><span class="hw-ico">💽</span> ${t("hardware.memStorage")}</div>
+        <div class="hw-card-head"><span class="hw-ico">MEM</span> ${t("hardware.memStorage")}</div>
         <div class="hw-kv"><span class="hw-k">${t("hardware.ram")}</span><span class="hw-v">${esc(hw.ram_total_gb || "?")} GB</span></div>
         <div class="hw-kv"><span class="hw-k">${t("hardware.diskFree")}</span><span class="hw-v">${esc(disk.free_gb || "?")} / ${esc(disk.total_gb || "?")} GB</span></div>
         <div class="hw-kv"><span class="hw-k">${t("hardware.platform")}</span><span class="hw-v">${esc(hw.platform || "")}</span></div>
       </div>
       <div class="hw-card">
-        <div class="hw-card-head"><span class="hw-ico">🎮</span> ${t("hardware.graphics")}</div>
+        <div class="hw-card-head"><span class="hw-ico">GPU</span> ${t("hardware.graphics")}</div>
         ${gpuRows || `<div class="hw-kv"><span class="hw-v mut">${t("hardware.noDgpu")}</span></div>`}
       </div>
       <div class="hw-card">
-        <div class="hw-card-head"><span class="hw-ico">🌐</span> ${t("hardware.bandwidth")}</div>
+        <div class="hw-card-head"><span class="hw-ico">NET</span> ${t("hardware.bandwidth")}</div>
         <div class="hw-kv"><span class="hw-k">${t("hardware.downlink")}</span>
           <span class="hw-v">${hw.bandwidth_mbps ? `${esc(hw.bandwidth_mbps)} Mbps` : t("hardware.notMeasured")}
             <span class="pill ${hw.bandwidth_tier === "fast" ? "ok" : hw.bandwidth_tier === "medium" ? "warn" : ""}">${
@@ -125,7 +140,7 @@ function renderSnapshot(el, hw) {
         }</span></div>
       </div>
       <div class="hw-card hw-score-card">
-        <div class="hw-card-head"><span class="hw-ico">📊</span> ${t("hardware.scoreTitle")}</div>
+        <div class="hw-card-head"><span class="hw-ico">SCORE</span> ${t("hardware.scoreTitle")}</div>
         <div class="hw-score-row">
           <span class="hw-score-num">${score}</span>
           <span class="hw-score-label">/ 100 · ${esc(scoreLabel)}</span>
@@ -148,6 +163,10 @@ function renderRecs(root) {
   }
   el.innerHTML = items.map((m) => {
     const rec = m.recommendation || {};
+    // Old sidecars returned i18n keys (e.g. "hardware_fitGood") instead of
+    // the fit enum. Normalise both shapes so the badge never leaks a key.
+    const rawFit = String(rec.fit || "").replace(/^hardware[_.-]?fit/i, "").toLowerCase();
+    const fit = FIT_LABEL[rawFit] ? rawFit : "good";
     const need = rec.need || {};
     const reasons = (rec.reasons || []).map((r) => `<div class="hw-reason">· ${esc(r)}</div>`).join("");
     return `
@@ -160,11 +179,11 @@ function renderRecs(root) {
         <div class="sub">${esc(m.description || "")}</div>
         <div class="sub mut">${t("hardware.officialNeed", { vram: esc(need.vram_gb || "?"), ram: esc(need.ram_gb || "?"), disk: esc(need.disk_gb || "?") })}</div>
         ${reasons}
-        ${rec.disk_note ? `<div class="hw-reason">💾 ${esc(rec.disk_note)}</div>` : ""}
-        ${(m.hardware || {}).notes ? `<div class="hw-reason">💡 ${esc(m.hardware.notes)}</div>` : ""}
+        ${rec.disk_note ? `<div class="hw-reason">· ${esc(rec.disk_note)}</div>` : ""}
+        ${(m.hardware || {}).notes ? `<div class="hw-reason">· ${esc(m.hardware.notes)}</div>` : ""}
       </div>
       <div class="hw-rec-side">
-        <span class="pill ${FIT_CLASS[rec.fit] || ""}">${esc(FIT_LABEL[rec.fit] ? t(FIT_LABEL[rec.fit]) : (rec.fit || ""))}</span>
+        <span class="pill ${FIT_CLASS[fit] || ""}">${esc(t(FIT_LABEL[fit]))}</span>
         <span class="mut tiny">${esc((m.engine || []).join(" / "))}</span>
         <button class="primary small" data-action="hw-install" data-id="${esc(m.id)}">${t("market.install")}</button>
       </div>

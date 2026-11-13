@@ -59,6 +59,7 @@ function buildGridSkeleton() {
     c.className = "skeleton-card";
     c.innerHTML =
       '<div class="sk-line sk-w55"></div>' +
+      '<div class="sk-line sk-w45"></div>' +
       '<div class="sk-line sk-w90"></div>' +
       '<div class="sk-line sk-w70"></div>' +
       '<div class="sk-foot"><span class="sk-pill"></span><span class="sk-btn"></span></div>';
@@ -237,9 +238,9 @@ function renderCard(m) {
   const isRemote = m.hub && m.hub !== "curated";
   const hubBadge = isRemote
     ? `<span class="pill hub-${escapeHtml(m.hub)}">${hubLogo(m.hub, m.hub_display)}${escapeHtml(m.hub_display || m.hub)}</span>` : "";
-  const sizePill = m.size_known === false || (!m.size_gb && isRemote)
-    ? `<span class="pill" title="${t("market.sizeUnknownTitle")}">${t("market.sizeUnknown")}</span>`
-    : (m.size_gb ? `<span class="pill">${(+m.size_gb).toFixed(1)} GB</span>` : "");
+  // "Size unknown" is not a useful badge on every remote card; it reads as
+  // noise. Show the real size when the catalog has one, otherwise omit it.
+  const sizePill = m.size_gb ? `<span class="pill">${(+m.size_gb).toFixed(1)} GB</span>` : "";
   const typePill = m.category
     ? `<span class="pill" title="${t("market.typeLabel")}">${escapeHtml(categoryLabel(m.category))}</span>` : "";
   const licensePill = m.license
@@ -717,9 +718,7 @@ function renderDetail(m, gguf) {
   // v2.8.0 — remote repos live on HF or ModelScope; link to the right host.
   const repoHost = m.hub === "modelscope" ? "https://modelscope.cn/models" : "https://huggingface.co";
   const repoLabel = m.hub === "modelscope" ? t("market.viewOnModelscope") : t("market.viewOnHf");
-  const sizePill = m.size_known === false || (!m.size_gb && isRemote)
-    ? `<span class="pill">${t("market.sizeUnknown")}</span>`
-    : (m.size_gb ? `<span class="pill">${(+m.size_gb).toFixed(1)} GB</span>` : "");
+  const sizePill = m.size_gb ? `<span class="pill">${(+m.size_gb).toFixed(1)} GB</span>` : "";
   const ownerText = m.owner_full_name
     ? `${m.owner || ""}${m.owner ? " · " : ""}${m.owner_full_name}` : (m.owner || "");
   const heatBits = [];

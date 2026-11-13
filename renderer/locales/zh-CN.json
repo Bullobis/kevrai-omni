@@ -275,7 +275,9 @@
     "ttsPrompt": "用本地 TTS 模型合成语音，输入文本：",
     "ttsRunning": "正在合成语音…",
     "ttsDone": "语音已生成：{path}",
-    "ttsEmpty": "TTS 没有返回音频文件"
+    "ttsEmpty": "TTS 没有返回音频文件",
+    "importTitle": "导入本地模型",
+    "dropHint": "把 GGUF / safetensors 文件拖进窗口，或从磁盘选择。"
   },
   "gguf": {
     "title": "GGUF 仓库",
@@ -293,11 +295,11 @@
     "hint": "保留给尚未开源的模型条目。官方公开权重后会自动上架到模型市场。"
   },
   "ltx": {
-    "title": "🎥 LTX-2.5 视频生成",
+    "title": "LTX-2.5 视频生成",
     "hint": "Lightricks LTX-2.5 世界模型：文生视频 / 图生视频，12GB 显存近实时生成。",
     "outputsDir": "输出目录：",
     "engineDetecting": "检测中…",
-    "engineMissing": "⚠ 未检测到推理引擎。请在「环境管理」中安装，或手动执行：",
+    "engineMissing": "未检测到推理引擎。请在「环境管理」中安装，或手动执行：",
     "engineReadyCuda": "引擎就绪 · CUDA",
     "engineReadyCpu": "引擎就绪 · CPU",
     "engineNotInstalled": "引擎未安装",
@@ -334,7 +336,7 @@
     "recentTasks": "最近任务",
     "results": "生成结果",
     "refresh": "↻ 刷新",
-    "openFolder": "📁 打开目录",
+    "openFolder": "打开目录",
     "noTasksTitle": "暂无任务",
     "noTasksHint": "生成过的任务会按时间显示在这里。",
     "noResultsTitle": "暂无生成结果",
@@ -675,11 +677,11 @@
     "gitPlaceholder": "git 仓库地址，例如 https://github.com/owner/skills",
     "importGit": "从仓库导入",
     "skillsEmpty": "尚未加载",
-    "inputPlaceholder": "问我任何关于模型的问题，例如：\n• 我的硬件能跑什么模型？\n• 搜索音乐生成模型\n• 推荐适合8GB显存的图像模型\n• 帮我把「星际快递员」写成一部微电影短剧（短剧工坊技能）",
+    "inputPlaceholder": "问我任何关于模型的问题，或描述你想完成的任务…",
     "send": "发送",
     "thinking": "思考中…",
     "approvalTooltip": "开启后，Agent 每次调用工具前都会暂停等待你确认/编辑/拒绝",
-    "approvalToggle": "🛡️ 每次确认工具",
+    "approvalToggle": "每次确认工具",
     "approvalOn": "已开启：每次工具调用前需确认",
     "approvalOff": "已关闭：工具自动执行",
     "approvalFailed": "策略设置失败：{err}",
@@ -769,11 +771,15 @@
     "callingTool": "调用工具",
     "reasoningTrace": "推理与工具过程（{n} 步）",
     "openFailed": "无法打开：{err}",
-    "quickPhrases": "⚡ 快捷短语",
-    "quickPhrasesTitle": "展开常用提问，点击短语即可填入输入框（可再修改后发送）"
+    "quickPhrases": "快捷短语",
+    "quickPhrasesTitle": "展开常用提问，点击短语即可填入输入框（可再修改后发送）",
+    "kicker": "智能助手",
+    "title": "AI Agent",
+    "welcomeTitle": "从一个任务开始",
+    "welcomeHint": "告诉它你想下载、比较或运行哪个模型。需要确认的操作，它会先征求你的同意。"
   },
   "mnn": {
-    "title": "⬢ MNN 推理引擎（阿里巴巴开源）",
+    "title": "MNN 推理引擎（阿里巴巴开源）",
     "hint": "端侧速度怪兽：CPU 汇编级优化 + GPU 后端，跑 Qwen 系常比 llama.cpp 更快。引擎经 pip 安装（自带完整 LLM 运行时），模型为官方预转换 MNN 格式（taobao-mnn），下载即用。",
     "refresh": "刷新",
     "downloadedTitle": "已下载的 MNN 模型",
@@ -898,7 +904,7 @@
     "installFailed": "{engine} 失败：{err}"
   },
   "hardware": {
-    "title": "⚡ 硬件体检与模型推荐",
+    "title": "硬件体检与模型推荐",
     "hint": "自动读取本机 CPU / 内存 / 显卡 / 磁盘 / 网络带宽，对照每个模型的官方建议配置，推荐你的机器真正跑得动的模型。",
     "catLabel": "分类筛选",
     "allCategories": "全部分类",
@@ -943,8 +949,8 @@
     "adviceLarge": "可下载大体积模型",
     "scoreTitle": "综合评分（LLM 推理导向）",
     "scoreAria": "综合评分 {n} 分",
-    "noMatch": "当前筛选下没有匹配的推荐。试试切回全部分类，或升级硬件后再来 😄",
-    "newHot": "🔥 新热",
+    "noMatch": "当前筛选下没有匹配的推荐。试试切回全部分类，或升级硬件后再来",
+    "newHot": "新热",
     "officialNeed": "官方建议：显存 {vram}GB · 内存 {ram}GB · 磁盘 {disk}GB",
     "noEngine": "该模型暂未指定引擎",
     "installingEngine": "正在安装引擎 {engine}",
@@ -965,7 +971,11 @@
     "memStorage": "内存与存储",
     "ram": "内存",
     "diskFree": "磁盘剩余",
-    "noDgpu": "未检测到独立显卡"
+    "noDgpu": "未检测到独立显卡",
+    "fitPerfect": "完美匹配",
+    "fitGood": "可运行",
+    "fitTight": "勉强可跑",
+    "fitNo": "不可行"
   },
   "envs": {
     "title": "环境管理",
@@ -1304,7 +1314,8 @@
     "download": "下载",
     "promptFirst": "请先填写提示词",
     "ckptFirst": "请先选择或填写 Stable Diffusion 模型文件名",
-    "failed": "图片生成失败：{err}"
+    "failed": "图片生成失败：{err}",
+    "retry": "重新检测"
   },
   "threed": {
     "title": "3D 生成",
@@ -1338,7 +1349,9 @@
     "fitShort": "本机 {gb}GB 显存，远低于 {need}GB 需求",
     "fitShortHint": "强行运行大概率 OOM；建议换 TripoSR。",
     "licenseOk": "可商用",
-    "licenseCond": "商用有条件限制（见下）"
+    "licenseCond": "商用有条件限制（见下）",
+    "notReady": "3D 运行时未就绪",
+    "retry": "重新检测"
   },
   "knowledge": {
     "title": "知识库（RAG）",
@@ -1376,7 +1389,7 @@
     "enterQuery": "请输入内容",
     "empty": "（暂无知识库）",
     "failed": "知识库页加载失败",
-    "pin": "📌 钉选（全文注入，不参与检索）",
+    "pin": "钉选（全文注入，不参与检索）",
     "pinned": "已钉选",
     "pinnedDoc": "钉选文档",
     "unpin": "取消钉选",

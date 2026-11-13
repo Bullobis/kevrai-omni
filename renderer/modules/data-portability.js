@@ -346,7 +346,7 @@ export function applyImportedPreferences(parsed) {
         shell && shell.classList.toggle("sidebar-expanded", prefs.sidebarExpanded);
         sidebar && sidebar.classList.toggle("expanded", prefs.sidebarExpanded);
         if (toggle) {
-          toggle.textContent = prefs.sidebarExpanded ? "⟨" : "☰";
+          toggle.textContent = prefs.sidebarExpanded ? "‹" : "☰";
           toggle.setAttribute("aria-label",
             prefs.sidebarExpanded ? t("dataPortability.collapseSidebar") : t("dataPortability.expandSidebar"));
         }

@@ -164,36 +164,45 @@ function engineRow(e) {
   const card = document.createElement("div");
   card.className = "engine-card";
   card.dataset.engineId = e.id;
-  const updatePill = (e.installed && e.update_available)
-    ? `<span class="pill warn">${t("engines.hasNewVersion", { v: escapeHtml(e.latest_tag || "") })}</span>`
-    : (e.installed && e.version
-      ? `<span class="pill">${escapeHtml(e.version)}</span>`
-      : "");
+  const sizeLabel = e.size_mb
+    ? (Number(e.size_mb) >= 1024 ? `${(Number(e.size_mb) / 1024).toFixed(1)} GB` : `${Math.round(Number(e.size_mb))} MB`)
+    : "";
+  const meta = [
+    e.category ? `<span class="pill">${escapeHtml(e.category)}</span>` : "",
+    sizeLabel ? `<span class="pill">${escapeHtml(sizeLabel)}</span>` : "",
+    e.license ? `<span class="pill">${escapeHtml(e.license)}</span>` : "",
+    e.installed && e.update_available
+      ? `<span class="pill warn">${t("engines.hasNewVersion", { v: escapeHtml(e.latest_tag || "") })}</span>`
+      : "",
+  ].join("");
   card.innerHTML = `
-    <div class="card-head">
-      <div class="card-title">${escapeHtml(e.name || e.id)}</div>
+    <div class="engine-card-head">
+      <div class="engine-title-wrap">
+        <div class="card-title">${escapeHtml(e.name || e.id)}</div>
+        ${e.github ? `<div class="engine-repo">github.com/${escapeHtml(e.github)}</div>` : ""}
+      </div>
       <span class="pill ${e.installed ? "ok" : ""}">${e.installed ? t("market.installed") : t("market.notInstalled")}</span>
-      ${updatePill}
     </div>
-    <p class="card-desc">${escapeHtml(e.description || "")}</p>
-    ${e.github
-      ? `<p class="mut">github.com/${escapeHtml(e.github)}</p>`
-      : ""}
+    <p class="engine-desc">${escapeHtml(e.description || "")}</p>
+    ${meta ? `<div class="engine-meta">${meta}</div>` : ""}
     <div class="engine-progress" hidden>
       <div class="ep-bar"><div class="ep-bar-fill"></div></div>
       <div class="ep-label muted"></div>
       <div class="ep-host muted"></div>
     </div>
-    <div class="card-foot">
-      <button class="primary" data-action="install" data-id="${escapeHtml(e.id)}">
-        ${e.installed ? t("market.reinstall") : t("market.install")}
-      </button>
-      ${e.installed && e.update_available
-        ? `<button class="secondary" data-action="update" data-id="${escapeHtml(e.id)}">${t("engines.update")}</button>`
-        : ""}
-      ${e.installed
-        ? `<button class="danger" data-action="uninstall" data-id="${escapeHtml(e.id)}">${t("market.uninstall")}</button>`
-        : ""}
+    <div class="engine-foot">
+      <span class="engine-version">${e.installed && e.version ? escapeHtml(e.version) : ""}</span>
+      <div class="engine-actions">
+        <button class="primary small" data-action="install" data-id="${escapeHtml(e.id)}">
+          ${e.installed ? t("market.reinstall") : t("market.install")}
+        </button>
+        ${e.installed && e.update_available
+          ? `<button class="secondary small" data-action="update" data-id="${escapeHtml(e.id)}">${t("engines.update")}</button>`
+          : ""}
+        ${e.installed
+          ? `<button class="danger small" data-action="uninstall" data-id="${escapeHtml(e.id)}">${t("market.uninstall")}</button>`
+          : ""}
+      </div>
     </div>
   `;
   return card;

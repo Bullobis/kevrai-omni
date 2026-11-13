@@ -286,6 +286,10 @@ export async function initImage() {
   $("#image-steps").addEventListener("input", () => { $("#image-steps").dataset.userTouched = "1"; });
   $("#image-cfg").addEventListener("input", () => { $("#image-cfg").dataset.userTouched = "1"; });
   $("#image-run").addEventListener("click", generate);
+  const retry = $("#image-retry");
+  if (retry) retry.addEventListener("click", () => {
+    refreshStatus().then((ok) => { if (ok) populateCheckpoints(); }).catch(() => {});
+  });
   const freeBtn = $("#image-free");
   if (freeBtn) freeBtn.addEventListener("click", freeMemory);
 

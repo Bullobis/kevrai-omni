@@ -422,8 +422,10 @@ function formatCount() {
   const n = searchState.items.length;
   const base = t("market.count", { n: searchState.count || n });
   const online = searchState.usingHub ? t("market.online") : "";
-  const more = searchState.hasMore ? t("market.loadMore") : "";
-  return `${base}${online} · ${searchState.elapsedMs}ms${more}`;
+  // Latency and "keep scrolling" are implementation details, not user-facing
+  // status. The grid already loads the next page when the user reaches the
+  // bottom; the counter should stay quiet.
+  return `${base}${online}`;
 }
 
 function clearLoadMoreBar() {

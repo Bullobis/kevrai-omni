@@ -34,25 +34,25 @@ function body(res) { return (res && res.body) ? res.body : res; }
 import { escapeHtml } from "./net.js";
 
 function currentModel() {
-  const sel = $("#3d-model");
+  const sel = $("#threed-model");
   const id = sel ? sel.value : MODELS[0].id;
   return MODELS.find((m) => m.id === id) || MODELS[0];
 }
 
 function syncModeAvailability() {
   const m = currentModel();
-  const t2 = $("#3d-mode-t23d");
+  const t2 = $("#threed-mode-t23d");
   if (!t2) return;
   t2.disabled = !m.t23d;
   if (t2.disabled && t2.checked) {
-    $("#3d-mode-i23d").checked = true;
+    $("#threed-mode-i23d").checked = true;
   }
   updateFit();
 }
 
 // 本机显存 vs 模型需求：显示「跑得动哪档」与许可/商用提示。
 function updateFit() {
-  const bar = $("#3d-fit-bar");
+  const bar = $("#threed-fit-bar");
   if (!bar) return;
   const m = currentModel();
   let verdict, color, detail;
@@ -94,18 +94,21 @@ async function detectLocalVram() {
 }
 
 async function refreshCaps() {
-  const status = $("#3d-engine-status");
-  const missingCard = $("#3d-missing-card");
-  const form = $("#3d-form");
+  const status = $("#threed-engine-status");
+  const missingCard = $("#threed-missing-card");
+  const form = $("#threed-form");
   try {
     const cap = body(await api.threeDCapabilities());
     const ok = !!(cap && cap.available);
+    const missing = Array.isArray(cap && cap.missing)
+      ? cap.missing.filter(Boolean).join(", ")
+      : "";
     if (status) status.textContent = ok
       ? t("threed.engineReady")
-      : t("threed.engineMissing", { miss: (cap && cap.missing || []).join(", ") });
+      : (missing ? `${t("threed.notReady")} (${missing})` : t("threed.notReady"));
     if (missingCard) {
       missingCard.style.display = ok ? "none" : "";
-      const hint = $("#3d-install-hint");
+      const hint = $("#threed-install-hint");
       if (hint && cap && cap.install_hint) hint.textContent = cap.install_hint;
     }
     if (form) form.style.display = ok ? "" : "none";
@@ -118,7 +121,7 @@ async function refreshCaps() {
 }
 
 function populateModels() {
-  const sel = $("#3d-model");
+  const sel = $("#threed-model");
   if (!sel) return;
   sel.innerHTML = MODELS.map((m) =>
     `<option value="${escapeHtml(m.id)}">${escapeHtml(m.label)}</option>`).join("");
@@ -126,14 +129,14 @@ function populateModels() {
 }
 
 function currentMode() {
-  return $("#3d-mode-t23d") && $("#3d-mode-t23d").checked ? "t23d" : "i23d";
+  return $("#threed-mode-t23d") && $("#threed-mode-t23d").checked ? "t23d" : "i23d";
 }
 
 async function generate() {
   const mode = currentMode();
   const model = currentModel();
-  const prompt = ($("#3d-prompt").value || "").trim();
-  const imagePath = ($("#3d-image-path").value || "").trim();
+  const prompt = ($("#threed-prompt").value || "").trim();
+  const imagePath = ($("#threed-image-path").value || "").trim();
 
   if (mode === "t23d" && !prompt) {
     toast(t("threed.promptFirst"), { kind: "warn" });
@@ -144,7 +147,7 @@ async function generate() {
     return;
   }
 
-  const btn = $("#3d-run");
+  const btn = $("#threed-run");
   btn.disabled = true;
   btn.textContent = t("threed.working");
   try {
@@ -153,7 +156,7 @@ async function generate() {
       model_id: model.id,
       prompt: prompt || "a object",
       image_path: imagePath,
-      preset: $("#3d-preset").value || "fast",
+      preset: $("#threed-preset").value || "fast",
       bake_texture: true,
       remove_background: true,
     }));
@@ -173,7 +176,7 @@ async function generate() {
 }
 
 function renderTask(task) {
-  const out = $("#3d-result");
+  const out = $("#threed-result");
   if (!out || !task) return;
   const pct = Math.round((task.progress || 0) * 100);
   const state = task.state;
@@ -191,7 +194,7 @@ function renderTask(task) {
 
   if (state === "done" || state === "error" || state === "cancelled") {
     stopPolling();
-    const btn = $("#3d-run");
+    const btn = $("#threed-run");
     if (btn) { btn.disabled = false; btn.textContent = t("threed.run"); }
   }
 }
@@ -220,8 +223,10 @@ export async function initThreeD() {
   await detectLocalVram();
   updateFit();
 
-  $("#3d-model").addEventListener("change", () => { syncModeAvailability(); });
-  $("#3d-run").addEventListener("click", generate);
+  $("#threed-model").addEventListener("change", () => { syncModeAvailability(); });
+  $("#threed-run").addEventListener("click", generate);
+  const retry = $("#threed-retry");
+  if (retry) retry.addEventListener("click", () => refreshCaps().catch(() => {}));
 
   window.addEventListener("kevrai:view-change", (e) => {
     if (e.detail && e.detail.view === "3d") {

@@ -33,7 +33,7 @@
   <header class="titlebar" role="banner">
     <button class="sidebar-toggle" id="sidebar-toggle" aria-label="切换侧边栏" title="切换侧边栏展开/收起" data-i18n-aria-label="app.toggleSidebar" data-i18n-title="app.toggleSidebar">☰</button>
     <div class="brand">
-      <img class="logo" src="../assets/icons/icon-256.png" width="28" height="28" alt="Kevrai Omni" id="brand-logo" />
+      <img class="logo" src="../assets/media/logo-mark-256.png" width="30" height="30" alt="Kevrai Omni" id="brand-logo" />
       <span id="logo-fallback" class="logo-fallback" aria-hidden="true" hidden>◈</span>
       <h1 class="title" data-i18n="app.title">Kevrai Omni</h1>
       <p class="subtitle" data-i18n="app.subtitle">local AI workstation · LLM · TTS · Image · Video · 3D · Audio · SR · MNN</p>
@@ -252,7 +252,10 @@
 
       <!-- Engines pane -->
       <section id="pane-engines" class="pane" aria-label="AI 引擎">
-        <p class="hint" data-i18n="engines.hint">首次安装某类模型时会提示安装对应引擎；也可在此手动预装。引擎按需下载到本地，已安装会自动跳过；安装后可检查官方新版本。</p>
+        <div class="pane-head">
+          <h2 data-i18n="nav.engines">AI 引擎</h2>
+          <p class="muted" data-i18n="engines.hint">首次安装某类模型时会提示安装对应引擎；也可在此手动预装。引擎按需下载到本地，已安装会自动跳过；安装后可检查官方新版本。</p>
+        </div>
         <div class="engine-toolbar">
           <button id="btn-engines-check-updates" class="secondary" data-i18n="engines.checkUpdates">检查引擎更新</button>
           <span id="engines-update-hint" class="mut tiny" aria-live="polite"></span>
@@ -262,18 +265,32 @@
 
       <!-- Local pane -->
       <section id="pane-local" class="pane" aria-label="本地模型">
-        <p class="hint" data-i18n="local.hint">从你的硬盘一键导入本地模型文件（GGUF / safetensors）。也可以把文件直接拖入窗口。</p>
-        <div class="import-row">
-          <button id="btn-import-folder" data-i18n="local.pickFolder">选择文件夹</button>
-          <button id="btn-import-file" class="secondary" data-i18n="local.pickFile">选择文件</button>
+        <div class="pane-head">
+          <h2 data-i18n="nav.local">本地模型</h2>
+          <p class="muted" data-i18n="local.hint">从你的硬盘一键导入本地模型文件（GGUF / safetensors）。也可以把文件直接拖入窗口。</p>
         </div>
-        <h3 class="section" data-i18n="local.importedTitle">已导入的本地模型</h3>
+        <div class="card import-card">
+          <div class="import-copy">
+            <span class="import-title" data-i18n="local.importTitle">导入本地模型</span>
+            <span class="import-sub" data-i18n="local.dropHint">把 GGUF / safetensors 文件拖进窗口，或从磁盘选择。</span>
+          </div>
+          <div class="import-row">
+            <button id="btn-import-folder" data-i18n="local.pickFolder">选择文件夹</button>
+            <button id="btn-import-file" class="secondary" data-i18n="local.pickFile">选择文件</button>
+          </div>
+        </div>
+        <div class="list-head">
+          <h3 class="section" data-i18n="local.importedTitle">已导入的本地模型</h3>
+        </div>
         <div id="local-list" class="list"></div>
       </section>
 
       <!-- GGUF pane -->
       <section id="pane-gguf" class="pane" aria-label="GGUF 仓库">
-        <p class="hint" data-i18n="gguf.hint">列出所有 GGUF 文件。每个文件都可以在 Kevrai Omni 中单独下载，由 llama.cpp 或 MNN 加载。</p>
+        <div class="pane-head">
+          <h2 data-i18n="nav.gguf">GGUF 仓库</h2>
+          <p class="muted" data-i18n="gguf.hint">列出所有 GGUF 文件。每个文件都可以在 Kevrai Omni 中单独下载，由 llama.cpp 或 MNN 加载。</p>
+        </div>
         <div id="gguf-repos" class="list"></div>
       </section>
 
@@ -294,11 +311,11 @@
           <h2 data-i18n="compareAnswers.title">多模型对比回答</h2>
           <p class="muted" data-i18n="compareAnswers.subtitle">选择多个本地模型，对同一个问题分别作答，并排对比。</p>
         </div>
-        <div class="card">
+        <div class="card compare-models-card">
           <label data-i18n="compareAnswers.models">参与对比的模型（最多 4 个）</label>
           <div id="ca-models" class="ca-models"></div>
         </div>
-        <div class="card">
+        <div class="card compare-question-card">
           <label for="ca-question" data-i18n="compareAnswers.question">问题</label>
           <textarea id="ca-question" rows="3" maxlength="5000"></textarea>
           <div class="form-actions">
@@ -312,7 +329,7 @@
       <section id="pane-ltx" class="pane" aria-label="LTX-2.5 视频生成">
         <div class="ltx-header">
           <div>
-            <h2 class="section" data-i18n="ltx.title">🎥 LTX-2.5 视频生成</h2>
+            <h2 class="ltx-title" data-i18n="ltx.title">LTX-2.5 视频生成</h2>
             <p class="hint" data-i18n="ltx.hint">Lightricks LTX-2.5 世界模型：文生视频 / 图生视频，12GB 显存近实时生成。
               输出目录：<code id="ltx-outputs-dir" class="pathlike"></code></p>
           </div>
@@ -353,7 +370,7 @@
             <div class="ltx-row" id="ltx-image-row" hidden>
               <label class="field grow">
                 <span data-i18n="ltx.imagePath">参考图片路径</span>
-                <input id="ltx-image" type="text" placeholder="C:\\path\\to\\image.png" />
+                <input id="ltx-image" type="text" placeholder="选择或粘贴图片路径" />
               </label>
               <button class="secondary" id="ltx-pick-image" type="button" data-i18n="ltx.pickImage">选择…</button>
             </div>
@@ -847,6 +864,7 @@
 
         <div class="asr-engine-missing" id="image-missing-card">
           <p class="muted" data-i18n="image.missingHint">需要一个正在运行的 ComfyUI（默认本机 8188 端口）。启动 ComfyUI 后，把 Stable Diffusion 模型放到其 checkpoints 目录，再回到本页刷新。</p>
+          <button class="secondary" id="image-retry" data-i18n="image.retry">重新检测</button>
         </div>
 
         <div class="asr-form card" id="image-form">
@@ -921,49 +939,50 @@
       <section id="pane-3d" class="pane" aria-label="3D 生成">
         <div class="pane-head">
           <h2 data-i18n="threed.title">3D 生成</h2>
-          <p class="muted" id="3d-engine-status" data-i18n="threed.engineMissing">未检测到 3D 运行时</p>
+          <p class="muted" id="threed-engine-status" data-i18n="threed.engineMissing">未检测到 3D 运行时</p>
         </div>
 
-        <div class="asr-engine-missing" id="3d-missing-card">
+        <div class="asr-engine-missing" id="threed-missing-card">
           <p class="muted" data-i18n="threed.missingHint">需要本机安装 torch / diffusers / pillow / trimesh，并具备 NVIDIA 显存。</p>
-          <p class="muted mono" id="3d-install-hint"></p>
+          <p class="muted mono" id="threed-install-hint"></p>
+          <button class="secondary" id="threed-retry" data-i18n="threed.retry">重新检测</button>
         </div>
 
-        <div class="asr-form card" id="3d-form">
+        <div class="asr-form card" id="threed-form">
           <div class="form-row">
-            <label for="3d-model" data-i18n="threed.model">模型</label>
-            <select id="3d-model"></select>
+            <label for="threed-model" data-i18n="threed.model">模型</label>
+            <select id="threed-model"></select>
           </div>
-          <div id="3d-fit-bar" class="fit-bar"></div>
+          <div id="threed-fit-bar" class="fit-bar"></div>
           <div class="form-row">
             <label data-i18n="threed.mode">模式</label>
             <div class="form-row-inline">
-              <label><input type="radio" name="3d-mode" id="3d-mode-i23d" checked /> <span data-i18n="threed.i23d">图生 3D</span></label>
-              <label><input type="radio" name="3d-mode" id="3d-mode-t23d" /> <span data-i18n="threed.t23d">文生 3D</span></label>
+              <label><input type="radio" name="threed-mode" id="threed-mode-i23d" checked /> <span data-i18n="threed.i23d">图生 3D</span></label>
+              <label><input type="radio" name="threed-mode" id="threed-mode-t23d" /> <span data-i18n="threed.t23d">文生 3D</span></label>
             </div>
           </div>
           <div class="form-row">
-            <label for="3d-image-path" data-i18n="threed.imagePath">输入图片路径（图生 3D）</label>
-            <input id="3d-image-path" type="text" placeholder="/path/to/object.png" />
+            <label for="threed-image-path" data-i18n="threed.imagePath">输入图片路径（图生 3D）</label>
+            <input id="threed-image-path" type="text" placeholder="/path/to/object.png" />
           </div>
           <div class="form-row">
-            <label for="3d-prompt" data-i18n="threed.prompt">提示词（文生 3D）</label>
-            <textarea id="3d-prompt" rows="2" placeholder="a red ceramic teapot"></textarea>
+            <label for="threed-prompt" data-i18n="threed.prompt">提示词（文生 3D）</label>
+            <textarea id="threed-prompt" rows="2" placeholder="a red ceramic teapot"></textarea>
           </div>
           <div class="form-row">
-            <label for="3d-preset" data-i18n="threed.preset">档位</label>
-            <select id="3d-preset">
+            <label for="threed-preset" data-i18n="threed.preset">档位</label>
+            <select id="threed-preset">
               <option value="fast" selected data-i18n="threed.presetFast">快速 (6GB)</option>
               <option value="balanced" data-i18n="threed.presetBalanced">均衡 (8–12GB)</option>
               <option value="high" data-i18n="threed.presetHigh">高质量 (16GB+)</option>
             </select>
           </div>
           <div class="form-actions">
-            <button class="primary" id="3d-run" data-i18n="threed.run">生成 3D</button>
+            <button class="primary" id="threed-run" data-i18n="threed.run">生成 3D</button>
           </div>
         </div>
 
-        <div class="asr-result card" id="3d-result"></div>
+        <div class="asr-result card" id="threed-result"></div>
       </section>
 
       <!-- On-device translation pane (dual-column) -->

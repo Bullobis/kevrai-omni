@@ -46,14 +46,16 @@ const PLUGIN_TEMPLATE = (p) => {
 
 const MARKET_EMPTY = `
   <div class="empty-state">
-    <svg class="ic lg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-      <path d="M3.3 7 12 12l8.7-5"/>
-      <path d="M12 22V12"/>
-    </svg>
-    <h3>暂无插件</h3>
-    <p class="muted">在上方输入 Git 仓库地址，或从 DSH 插件市场粘贴链接。</p>
+    <div class="empty-state-iconwrap">
+      <svg class="ic empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        <path d="M3.3 7 12 12l8.7-5"/>
+        <path d="M12 22V12"/>
+      </svg>
+    </div>
+    <h3 class="empty-state-title">暂无插件</h3>
+    <p class="empty-state-hint">在上方粘贴 Git 仓库地址或 DSH 插件市场链接。</p>
   </div>`;
 
 export async function refreshPlugins() {

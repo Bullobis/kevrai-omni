@@ -275,7 +275,9 @@
     "ttsPrompt": "Text to synthesize with the local TTS model:",
     "ttsRunning": "Synthesizing speech…",
     "ttsDone": "Speech written: {path}",
-    "ttsEmpty": "TTS returned no audio file"
+    "ttsEmpty": "TTS returned no audio file",
+    "importTitle": "Import a local model",
+    "dropHint": "Drop a GGUF / safetensors file into the window, or pick one from disk."
   },
   "gguf": {
     "title": "GGUF Repos",
@@ -293,11 +295,11 @@
     "hint": "Reserved for models whose weights are not yet open. They will appear in the market once officially released."
   },
   "ltx": {
-    "title": "🎥 LTX-2.5 Video Generation",
+    "title": "LTX-2.5 Video Generation",
     "hint": "Lightricks LTX-2.5 world model: text-to-video / image-to-video, near-realtime on 12GB VRAM.",
     "outputsDir": "Output directory:",
     "engineDetecting": "Detecting…",
-    "engineMissing": "⚠ Inference engine not found. Install one under Environments, or run manually:",
+    "engineMissing": "Inference engine not found. Install one under Environments, or run manually:",
     "engineReadyCuda": "Engine ready · CUDA",
     "engineReadyCpu": "Engine ready · CPU",
     "engineNotInstalled": "Engine not installed",
@@ -334,7 +336,7 @@
     "recentTasks": "Recent tasks",
     "results": "Results",
     "refresh": "↻ Refresh",
-    "openFolder": "📁 Open folder",
+    "openFolder": "Open folder",
     "noTasksTitle": "No tasks yet",
     "noTasksHint": "Generated tasks will appear here chronologically.",
     "noResultsTitle": "No results yet",
@@ -675,11 +677,11 @@
     "gitPlaceholder": "git repo URL, e.g. https://github.com/owner/skills",
     "importGit": "Import from repo",
     "skillsEmpty": "Not loaded",
-    "inputPlaceholder": "Ask me anything about models, e.g.:\n• What models can my hardware run?\n• Search music generation models\n• Recommend image models for 8GB VRAM\n• Help me write “Star Courier” into a micro-film drama (drama_studio skill)",
+    "inputPlaceholder": "Ask about a model, or describe the task you want to finish…",
     "send": "Send",
     "thinking": "Thinking…",
     "approvalTooltip": "When enabled, the Agent pauses before each tool call to let you confirm/edit/deny",
-    "approvalToggle": "🛡️ Confirm each tool call",
+    "approvalToggle": "Confirm each tool call",
     "approvalOn": "Enabled: confirmation required before each tool call",
     "approvalOff": "Disabled: tools run automatically",
     "approvalFailed": "Failed to set policy: {err}",
@@ -769,11 +771,15 @@
     "callingTool": "Calling tool",
     "reasoningTrace": "Reasoning & tools ({n} steps)",
     "openFailed": "Cannot open: {err}",
-    "quickPhrases": "⚡ Quick phrases",
-    "quickPhrasesTitle": "Common questions; click a chip to fill the input (edit before sending)"
+    "quickPhrases": "Quick phrases",
+    "quickPhrasesTitle": "Common questions; click a chip to fill the input (edit before sending)",
+    "kicker": "Assistant",
+    "title": "AI Agent",
+    "welcomeTitle": "Start with a task",
+    "welcomeHint": "Ask it to download, compare, or run a model. It will ask before doing anything that needs your approval."
   },
   "mnn": {
-    "title": "⬢ MNN inference engine (Alibaba open-source)",
+    "title": "MNN inference engine (Alibaba open-source)",
     "hint": "On-device speed demon: CPU asm-level optimization + GPU backends, often faster than llama.cpp for Qwen families. Installed via pip (bundles the full LLM runtime); models are official pre-converted MNN format (taobao-mnn), download and run.",
     "refresh": "Refresh",
     "downloadedTitle": "Downloaded MNN models",
@@ -898,7 +904,7 @@
     "installFailed": "{engine} failed: {err}"
   },
   "hardware": {
-    "title": "⚡ Hardware check & model picks",
+    "title": "Hardware check & model picks",
     "hint": "Auto-reads CPU / RAM / GPU / disk / bandwidth, then recommends models your machine can actually run against each model's official requirements.",
     "catLabel": "Category filter",
     "allCategories": "All categories",
@@ -943,8 +949,8 @@
     "adviceLarge": "Large models OK",
     "scoreTitle": "Overall score (LLM inference-oriented)",
     "scoreAria": "Overall score {n} points",
-    "noMatch": "No recommendations for the current filter. Try switching back to all categories, or upgrade your hardware and come back 😄",
-    "newHot": "🔥 Hot",
+    "noMatch": "No recommendations for the current filter. Try switching back to all categories, or upgrade your hardware and come back",
+    "newHot": "New",
     "officialNeed": "Official req: VRAM {vram}GB · RAM {ram}GB · Disk {disk}GB",
     "noEngine": "This model has no engine specified yet",
     "installingEngine": "Installing engine {engine}",
@@ -965,7 +971,11 @@
     "memStorage": "Memory & storage",
     "ram": "RAM",
     "diskFree": "Disk free",
-    "noDgpu": "No discrete GPU detected"
+    "noDgpu": "No discrete GPU detected",
+    "fitPerfect": "Perfect match",
+    "fitGood": "Runnable",
+    "fitTight": "Barely runnable",
+    "fitNo": "Not feasible"
   },
   "envs": {
     "title": "Environments",
@@ -1304,7 +1314,8 @@
     "promptFirst": "Please enter a prompt first",
     "ckptFirst": "Please select or type a Stable Diffusion model filename",
     "failed": "Image generation failed: {err}",
-    "seedHint": "Leave blank or -1 for a random seed each run; a fixed number reproduces the same image"
+    "seedHint": "Leave blank or -1 for a random seed each run; a fixed number reproduces the same image",
+    "retry": "Check again"
   },
   "threed": {
     "title": "3D Generation",
@@ -1338,7 +1349,9 @@
     "fitShort": "{gb}GB VRAM, far below the {need}GB requirement",
     "fitShortHint": "Likely OOM; switch to TripoSR.",
     "licenseOk": "Commercial use OK",
-    "licenseCond": "Commercial use has conditions (see below)"
+    "licenseCond": "Commercial use has conditions (see below)",
+    "notReady": "3D runtime not ready",
+    "retry": "Check again"
   },
   "knowledge": {
     "title": "Knowledge Base (RAG)",
@@ -1376,7 +1389,7 @@
     "enterQuery": "Please enter something",
     "empty": "(no knowledge bases yet)",
     "failed": "Knowledge base page failed to load",
-    "pin": "📌 Pin (inject full text, skip retrieval)",
+    "pin": "Pin (inject full text, skip retrieval)",
     "pinned": "Pinned",
     "pinnedDoc": "Pinned document",
     "unpin": "Unpin",

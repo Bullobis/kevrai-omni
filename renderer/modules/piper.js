@@ -58,9 +58,11 @@ function refreshVoices() {
   const hint = $("#piper-engine-hint");
   if (hint) {
     const name = ENGINES.find((e) => e.id === engine)?.label || engine;
-    hint.textContent = isInstalled(engine)
-      ? t("piper.engineReadyShort", { name })
-      : t("piper.engineMissingShort", { name });
+    // The page header already states the engine status. Repeating a second
+    // "Piper is ready" line below the form reads like a stray debug message.
+    const ready = isInstalled(engine);
+    hint.textContent = ready ? "" : t("piper.engineMissingShort", { name });
+    hint.hidden = ready;
   }
   const status = $("#piper-engine-status");
   if (status) {
