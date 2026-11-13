@@ -1,4 +1,5 @@
 """Validation-level checks for specialized adapters (no model weights)."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -16,12 +17,11 @@ def test_tts_requires_text():
 
 def test_tts_writes_a_wav_with_a_stubbed_pipeline(tmp_path, monkeypatch):
     monkeypatch.setattr(
-        special_runtime, "_pipeline_tts",
+        special_runtime,
+        "_pipeline_tts",
         lambda source, text: (np.zeros(1600, dtype=np.float32), 16000),
     )
-    out = special_runtime.synthesize(
-        "canopylabs/orpheus-3b-0.1-ft", "hello", output_dir=tmp_path
-    )
+    out = special_runtime.synthesize("canopylabs/orpheus-3b-0.1-ft", "hello", output_dir=tmp_path)
     assert out["sampling_rate"] == 16000
     assert Path(out["output_path"]).exists()
 

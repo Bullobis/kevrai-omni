@@ -103,7 +103,7 @@ def _keys_file(rec_dir: Path) -> Path:
     """Extract PP-OCR's character dict from ``inference.yml`` for RapidOCR."""
     import tempfile
 
-    import yaml
+    import yaml  # type: ignore[import-untyped]
 
     cfg = rec_dir / "inference.yml"
     if not cfg.is_file():

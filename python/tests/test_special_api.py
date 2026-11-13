@@ -1,4 +1,5 @@
 """End-to-end checks for the specialized model routes."""
+
 from __future__ import annotations
 
 import os
@@ -39,9 +40,13 @@ async def test_special_routes_are_registered(_isolated):
         r = await c.get("/openapi.json")
     paths = r.json()["paths"]
     for path in (
-        "/api/local/tts", "/api/local/superres", "/api/local/vision/faces",
-        "/api/local/vision/detect", "/api/local/audio/chat",
-        "/api/local/audio/diarize", "/api/local/decide",
+        "/api/local/tts",
+        "/api/local/superres",
+        "/api/local/vision/faces",
+        "/api/local/vision/detect",
+        "/api/local/audio/chat",
+        "/api/local/audio/diarize",
+        "/api/local/decide",
     ):
         assert path in paths, path
 
