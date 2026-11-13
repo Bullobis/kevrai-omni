@@ -160,6 +160,13 @@ def resolve_engine(
             )
         elif key == "onnxruntime":
             note = "ONNX 路由当前覆盖 OCR；超分/检测模型需各自的预处理与后处理"
+        elif runtime == "diffusers":
+            note = (
+                "Diffusers 通用管线：图像 / 视频 / 音频分别调用 "
+                "/api/multimodal/generate-image、/api/local/video、/api/local/audio"
+            )
+        elif runtime == "transformers":
+            note = "Transformers 本地对话调用 /api/local/transformers/chat"
 
     return _result(chosen, source, cand, runtime=runtime, route=route, note=note)
 
