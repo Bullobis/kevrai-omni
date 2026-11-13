@@ -39,6 +39,7 @@ async function refresh() {
     const r = await api.asrCapabilities();
     cap = (r && r.body) ? r.body : r;
   } catch (_) { /* bridge error already toasted */ }
+  root.classList.remove("engine-loading");
   root.classList.toggle("engine-missing", !cap.installed);
   const status = $("#asr-engine-status", root);
   if (status) {

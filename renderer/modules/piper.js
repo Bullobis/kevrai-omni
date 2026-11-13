@@ -97,6 +97,7 @@ async function refresh() {
     const body = (r && r.body) ? r.body : r;
     if (body && typeof body === "object") cap = body;
   } catch (_) { /* bridge error toasted */ }
+  root.classList.remove("engine-loading");
   root.classList.toggle("engine-missing", !cap.installed);
   const sel = $("#piper-engine");
   if (sel) {

@@ -48,6 +48,23 @@ import { createEmptyState } from "./modules/empty-state.js";
 import { whenIdle } from "./modules/idle.js";
 import { scheduler } from "./modules/scheduler.js";
 
+// Chromium's native file input is an English OS control; use a real button
+// label instead and keep the selected filename visible.
+function initFilePickers() {
+  document.querySelectorAll(".file-picker").forEach((wrap) => {
+    const input = wrap.querySelector('input[type="file"]');
+    if (!input || input.dataset.pickerWired) return;
+    input.dataset.pickerWired = "1";
+    const name = wrap.querySelector(".file-picker-name");
+    if (name) name.textContent = t("local.noFile");
+    input.addEventListener("change", () => {
+      if (!name) return;
+      const file = input.files && input.files[0];
+      name.textContent = file ? file.name : t("local.noFile");
+    });
+  });
+}
+
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
 
@@ -702,6 +719,7 @@ async function bootstrap() {
   i18nReady.then(() => {
     initCommandPalette();
     initNotificationCenter();
+    initFilePickers();
     registerAction("openCompare", () => t("compare.title"),
       () => { try { openCompare(); } catch (_) {} },
       ["compare", "对比", "比较", "models"], "columns", "操作");
@@ -788,6 +806,7 @@ async function bootstrap() {
       btn.setAttribute("aria-label", isPwd ? "隐藏 Token" : "显示 Token");
     });
   });
+
 
   // First render
   loadAll().catch((e) => toast(t("toast.loadFailed", { err: e?.message || e }), { kind: "err" }));

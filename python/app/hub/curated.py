@@ -14,6 +14,7 @@ No network, so this source is *never* degraded (§2.6).
 """
 from __future__ import annotations
 
+import os
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -31,9 +32,15 @@ from .base import (
 )
 from .taxonomy import curated_category
 
-#: ``<repo>/catalog`` — same resolution as ``main.CATALOG_DIR`` (no import of
-#: ``main`` to avoid the circular dependency).
-CATALOG_DIR = Path(__file__).resolve().parents[3] / "catalog"
+#: The Electron main process passes the catalog directory explicitly in a
+#: frozen PyInstaller bundle (``__file__`` then points inside ``_internal``).
+#: Falling back to the source-relative path keeps dev runs working. Skipping
+#: this env lookup made the curated source silently disappear in packaged
+#: builds: ``models.json not found`` and the market degraded to online-only.
+CATALOG_DIR = Path(
+    os.environ.get("KEVRAI_CATALOG_DIR")
+    or (Path(__file__).resolve().parents[3] / "catalog")
+)
 
 
 def _dict_field(entry: Mapping[str, Any], key: str) -> dict[str, Any]:

@@ -20,6 +20,7 @@ async function refresh() {
     const r = await api.multimodalCapabilities();
     cap = (r && r.body) ? r.body : r;
   } catch (_) { /* bridge error toasted */ }
+  root.classList.remove("engine-loading");
   root.classList.toggle("engine-missing", !cap.installed);
   const status = $("#mm-engine-status", root);
   if (status) {

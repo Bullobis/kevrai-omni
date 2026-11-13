@@ -1471,3 +1471,40 @@ html[data-theme="dark"] .agent-actions #agent-new-btn { color: #0b1020; }
 .plugins-install-row .input { min-height: 38px; }
 .plugins-grid { padding: 0 0 24px; }
 .plugins-grid .empty-state { padding: 56px 20px; }
+
+/* Engine capability probes are async. Until they resolve, show only the
+   status line — not a fully usable form next to "engine not installed". */
+#pane-asr.engine-loading .asr-form, #pane-asr.engine-loading .asr-result,
+#pane-embeddings.engine-loading .asr-form, #pane-embeddings.engine-loading .asr-result,
+#pane-separation.engine-loading .asr-form, #pane-separation.engine-loading .asr-result,
+#pane-piper.engine-loading .asr-form, #pane-piper.engine-loading .asr-result,
+#pane-multimodal.engine-loading .asr-form, #pane-multimodal.engine-loading .asr-result,
+#pane-music.engine-loading .asr-form, #pane-music.engine-loading .asr-result,
+#pane-knowledge.engine-loading .asr-form,
+#pane-asr.engine-loading .asr-engine-missing,
+#pane-embeddings.engine-loading .asr-engine-missing,
+#pane-separation.engine-loading .asr-engine-missing,
+#pane-piper.engine-loading .asr-engine-missing,
+#pane-multimodal.engine-loading .asr-engine-missing,
+#pane-music.engine-loading .asr-engine-missing { display: none; }
+
+/* Native Chromium file inputs render as an English "Choose File" control and
+   break the otherwise consistent workbench language. Hide the native control
+   and expose a real label/button plus the selected filename. */
+.file-picker { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.file-native-hidden {
+  position: fixed !important; left: -10000px; top: 0;
+  width: 1px !important; height: 1px !important; max-width: 1px !important;
+  padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0;
+}
+.file-picker-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 34px; padding: 7px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--line); background: var(--bg-1); color: var(--fg);
+  font-size: var(--fs-sm); font-weight: 500; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.file-picker-btn:hover { background: var(--bg-2); border-color: var(--acc); }
+.file-picker-btn:focus-visible { outline: none; box-shadow: var(--focus); border-color: var(--acc); }
+.file-picker-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

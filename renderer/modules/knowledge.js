@@ -115,6 +115,7 @@ async function refreshCapabilities() {
     const r = await api.knowledgeCapabilities();
     cap = (r && r.body) ? r.body : r;
   } catch (_) { /* bridge error already toasted */ }
+  root.classList.remove("engine-loading");
   root.classList.toggle("engine-missing", !cap.engine_installed);
   const status = $("#kb-engine-status");
   if (status) {

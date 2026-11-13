@@ -2,6 +2,12 @@
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+# Only the real app package. The tree also contains empty local artifacts
+# (abc/, C:\Windows/) from path-safety tests; setuptools auto-discovery
+# treats them as top-level packages and refuses to build.
+include = ["app*"]
+
 [project]
 name = "kevrai-studio-sidecar"
 version = "4.17.9"

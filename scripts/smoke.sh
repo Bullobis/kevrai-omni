@@ -136,6 +136,10 @@ for p in root.rglob("*"):
     rel = str(p).replace("\\", "/")
     if any(part in p.parts for part in ("__pycache__", ".git", "node_modules")):
         continue
+    # Local build artifacts are not shipped source. The PyInstaller venv
+    # contains cryptography's test fixtures with literal PEM headers.
+    if rel.startswith(("python/.venv-sidecar/", "python/build/", "python/dist/")):
+        continue
     if rel in EXCLUDE: continue
     if p.suffix not in {".py",".js",".json",".yml",".yaml",".toml",".md",".sh",".txt"}:
         continue
@@ -177,11 +181,16 @@ section "Step 6/9 · pytest (full suite)"
 # ----------------------------------------------------------------------
 (
   cd python
-  # NOTE: 不能只看管道最后一段的退出码 —— `pytest ... | tail -20` 的退出码是
-  # tail 的（恒为 0），pytest 失败也会被判为通过（假绿）。用 PIPESTATUS[0]
-  # 取 pytest 自己的状态，再显式 exit，让外层 fail() 能捕获。
-  python3 -m pytest -ra tests/ "$@" 2>&1 | tail -20
-  exit "${PIPESTATUS[0]}"
+  # Capture pytest output to a file so the exit status is pytest's own, not
+  # tail's (a pipeline's last command is always 0, which used to mask failures).
+  _pytest_log="$(mktemp -t kevrai-pytest.XXXXXX)"
+  set +e
+  python3 -m pytest -ra tests/ "$@" >"${_pytest_log}" 2>&1
+  _pytest_rc=$?
+  set -e
+  tail -20 "${_pytest_log}"
+  rm -f "${_pytest_log}"
+  exit "${_pytest_rc}"
 ) || fail "pytest"
 pass "pytest"
 

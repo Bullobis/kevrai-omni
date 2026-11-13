@@ -2,6 +2,7 @@
   "app": {
     "title": "Kevrai Omni",
     "subtitle": "本地 AI 工作站 · LLM · TTS · 图像 · 视频 · 3D · 音频 · 超分 · MNN",
+    "detecting": "正在检测…",
     "skipToContent": "跳到正文",
     "toggleSidebar": "切换侧边栏",
     "expandSidebar": "展开侧边栏",
@@ -237,6 +238,7 @@
     "hint": "从你的硬盘一键导入本地模型文件（GGUF / safetensors）。也可以把文件直接拖入窗口。",
     "pickFolder": "选择文件夹",
     "pickFile": "选择文件",
+    "noFile": "未选择文件",
     "importedTitle": "已导入的本地模型",
     "empty": "还没有本地模型，拖拽文件到窗口或使用下方按钮导入。",
     "emptyTitle": "还没有本地模型",

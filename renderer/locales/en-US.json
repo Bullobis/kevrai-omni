@@ -2,6 +2,7 @@
   "app": {
     "title": "Kevrai Omni",
     "subtitle": "Local AI workstation · LLM · TTS · Image · Video · 3D · Audio · SR · MNN",
+    "detecting": "Detecting…",
     "skipToContent": "Skip to content",
     "toggleSidebar": "Toggle sidebar",
     "expandSidebar": "Expand sidebar",
@@ -237,6 +238,7 @@
     "hint": "One-click import local model files (GGUF / safetensors) from your disk. You can also drag files straight into the window.",
     "pickFolder": "Choose folder",
     "pickFile": "Choose file",
+    "noFile": "No file selected",
     "importedTitle": "Imported local models",
     "empty": "No local models yet. Drag files onto the window or use the buttons below.",
     "emptyTitle": "No local models yet",

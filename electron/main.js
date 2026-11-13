@@ -1164,10 +1164,10 @@ function registerIpc() {
     });
   });
   ipcMain.handle("api:embeddings:capabilities", async () =>
-    sidecarFetch("/api/embeddings/capabilities"));
+    sidecarFetch("/api/embeddings/capabilities", { timeoutMs: 120_000 }));
   // Local knowledge base / RAG (JSON CRUD + retrieval).
   ipcMain.handle("api:knowledge:capabilities", async () =>
-    sidecarFetch("/api/knowledge/capabilities"));
+    sidecarFetch("/api/knowledge/capabilities", { timeoutMs: 120_000 }));
   ipcMain.handle("api:knowledge:list", async () =>
     sidecarFetch("/api/knowledge/kbs"));
   ipcMain.handle("api:knowledge:create", async (_e, payload) => {

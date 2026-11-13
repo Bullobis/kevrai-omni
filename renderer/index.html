@@ -432,10 +432,10 @@
       </section>
 
       <!-- ASR (Faster Whisper) pane -->
-      <section id="pane-asr" class="pane" aria-label="语音转写">
+      <section id="pane-asr" class="pane engine-loading" aria-label="语音转写">
         <div class="pane-head">
           <h2 data-i18n="asr.title">语音转写</h2>
-          <p class="muted" id="asr-engine-status" data-i18n="asr.engineMissing">引擎未安装</p>
+          <p class="muted" id="asr-engine-status" data-i18n="app.detecting">正在检测…</p>
         </div>
 
         <div class="asr-engine-missing" id="asr-missing-card">
@@ -446,8 +446,11 @@
         <div class="asr-form card">
           <div class="form-row">
             <label for="asr-file" data-i18n="asr.audioFile">音频文件</label>
-            <input type="file" id="asr-file" accept="audio/*,video/*" />
-            <span class="muted" id="asr-file-name"></span>
+            <div class="file-picker">
+              <label class="file-picker-btn" for="asr-file" data-i18n="local.pickFile">选择文件</label>
+              <input type="file" id="asr-file" class="file-native-hidden" accept="audio/*,video/*" />
+              <span class="muted file-picker-name" id="asr-file-name"></span>
+            </div>
           </div>
           <div class="form-grid">
             <div class="form-row">
@@ -488,10 +491,10 @@
       </section>
 
       <!-- Embeddings pane -->
-      <section id="pane-embeddings" class="pane" aria-label="向量嵌入">
+      <section id="pane-embeddings" class="pane engine-loading" aria-label="向量嵌入">
         <div class="pane-head">
           <h2 data-i18n="embeddings.title">向量嵌入</h2>
-          <p class="muted" id="emb-engine-status" data-i18n="embeddings.engineMissing">引擎未安装</p>
+          <p class="muted" id="emb-engine-status" data-i18n="app.detecting">正在检测…</p>
         </div>
 
         <div class="asr-engine-missing" id="emb-missing-card">
@@ -523,10 +526,10 @@
       </section>
 
       <!-- Knowledge base / RAG pane -->
-      <section id="pane-knowledge" class="pane" aria-label="知识库">
+      <section id="pane-knowledge" class="pane engine-loading" aria-label="知识库">
         <div class="pane-head">
           <h2 data-i18n="knowledge.title">知识库（RAG）</h2>
-          <p class="muted" id="kb-engine-status" data-i18n="knowledge.engineMissing">嵌入引擎未安装</p>
+          <p class="muted" id="kb-engine-status" data-i18n="app.detecting">正在检测…</p>
         </div>
 
         <div class="asr-form card">
@@ -567,7 +570,11 @@
           </div>
           <div class="form-row">
             <label for="kb-doc-file" data-i18n="knowledge.addDoc">添加文档（.txt/.md/.json/.csv/.pdf/.docx/.pptx/图片）</label>
-            <input type="file" id="kb-doc-file" accept=".txt,.md,.markdown,.json,.csv,.pdf,.docx,.pptx,.png,.jpg,.jpeg,.bmp" />
+            <div class="file-picker">
+              <label class="file-picker-btn" for="kb-doc-file" data-i18n="local.pickFile">选择文件</label>
+              <input type="file" id="kb-doc-file" class="file-native-hidden" accept=".txt,.md,.markdown,.json,.csv,.pdf,.docx,.pptx,.png,.jpg,.jpeg,.bmp" />
+              <span class="muted file-picker-name"></span>
+            </div>
             <p class="muted tiny" data-i18n="knowledge.addDocHint">.docx / .pptx 中的内嵌图片（截图、扫描件、图表）会在已安装 OCR 引擎时自动识别文字并纳入检索。</p>
           </div>
           <div class="form-row kb-pin-row">
@@ -612,10 +619,10 @@
       </section>
 
       <!-- Source separation pane -->
-      <section id="pane-separation" class="pane" aria-label="音源分离">
+      <section id="pane-separation" class="pane engine-loading" aria-label="音源分离">
         <div class="pane-head">
           <h2 data-i18n="separation.title">音源分离</h2>
-          <p class="muted" id="sep-engine-status" data-i18n="separation.engineMissing">引擎未安装</p>
+          <p class="muted" id="sep-engine-status" data-i18n="app.detecting">正在检测…</p>
         </div>
 
         <div class="asr-engine-missing" id="sep-missing-card">
@@ -626,8 +633,11 @@
         <div class="asr-form card">
           <div class="form-row">
             <label for="sep-file" data-i18n="separation.audioFile">音频文件</label>
-            <input type="file" id="sep-file" accept="audio/*" />
-            <span class="muted" id="sep-file-name"></span>
+            <div class="file-picker">
+              <label class="file-picker-btn" for="sep-file" data-i18n="local.pickFile">选择文件</label>
+              <input type="file" id="sep-file" class="file-native-hidden" accept="audio/*" />
+              <span class="muted file-picker-name" id="sep-file-name"></span>
+            </div>
           </div>
           <div class="form-grid">
             <div class="form-row">
@@ -652,10 +662,10 @@
       </section>
 
       <!-- Piper local TTS pane -->
-      <section id="pane-piper" class="pane" aria-label="本地语音合成">
+      <section id="pane-piper" class="pane engine-loading" aria-label="本地语音合成">
         <div class="pane-head">
           <h2 data-i18n="piper.title">本地语音合成</h2>
-          <p class="muted" id="piper-engine-status" data-i18n="piper.engineMissing">引擎未安装</p>
+          <p class="muted" id="piper-engine-status" data-i18n="app.detecting">正在检测…</p>
         </div>
 
         <div class="asr-engine-missing" id="piper-missing-card">
@@ -709,7 +719,11 @@
             </div>
           </div>
           <div class="form-actions">
-            <input id="chatterbox-ref" type="file" accept="audio/*" />
+            <div class="file-picker">
+              <label class="file-picker-btn" for="chatterbox-ref" data-i18n="local.pickFile">选择文件</label>
+              <input id="chatterbox-ref" type="file" class="file-native-hidden" accept="audio/*" />
+              <span class="muted file-picker-name"></span>
+            </div>
             <button type="button" id="chatterbox-upload" data-i18n="piper.cloneUpload">上传参考音频</button>
             <button type="button" id="chatterbox-delete" class="danger" data-i18n="piper.cloneDelete">删除档案</button>
           </div>
@@ -719,10 +733,10 @@
       </section>
 
       <!-- Multimodal (image + text) chat pane -->
-      <section id="pane-multimodal" class="pane" aria-label="多模态对话">
+      <section id="pane-multimodal" class="pane engine-loading" aria-label="多模态对话">
         <div class="pane-head">
           <h2 data-i18n="multimodal.title">多模态对话</h2>
-          <p class="muted" id="mm-engine-status" data-i18n="multimodal.engineMissing">引擎未安装</p>
+          <p class="muted" id="mm-engine-status" data-i18n="app.detecting">正在检测…</p>
         </div>
 
         <div class="asr-engine-missing" id="mm-missing-card">
@@ -808,10 +822,10 @@
       </section>
 
       <!-- Music generation pane -->
-      <section id="pane-music" class="pane" aria-label="音乐生成">
+      <section id="pane-music" class="pane engine-loading" aria-label="音乐生成">
         <div class="pane-head">
           <h2 data-i18n="music.title">音乐生成</h2>
-          <p class="muted" id="music-engine-status" data-i18n="music.engineMissing">引擎未安装</p>
+          <p class="muted" id="music-engine-status" data-i18n="app.detecting">正在检测…</p>
         </div>
 
         <div class="asr-engine-missing" id="music-missing-card">

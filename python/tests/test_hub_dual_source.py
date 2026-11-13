@@ -91,6 +91,26 @@ def _registry(fake: FakeHubServer, settings=None) -> HubRegistry:
 # ===========================================================================
 
 
+def test_S00_curated_catalog_honors_env_override(monkeypatch, tmp_path):
+    """A frozen bundle must read the catalog directory passed by Electron.
+
+    Regression: ``curated.CATALOG_DIR`` was frozen at import time from
+    ``__file__``. Inside PyInstaller that path is ``_internal/...``, so the
+    curated source disappeared and the market silently fell back to online
+    results only.
+    """
+    import importlib
+    import app.hub.curated as curated
+
+    monkeypatch.setenv("KEVRAI_CATALOG_DIR", str(tmp_path))
+    importlib.reload(curated)
+    assert curated.CATALOG_DIR == tmp_path
+
+    monkeypatch.delenv("KEVRAI_CATALOG_DIR", raising=False)
+    importlib.reload(curated)
+    assert curated.CATALOG_DIR.name == "catalog"
+
+
 async def test_S01_curated_single_source():
     reg = build_registry(None)
     page = await reg.search(SearchSpec(q="", sources=[HUB_CURATED], page_size=5))

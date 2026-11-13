@@ -59,3 +59,6 @@ remotion/out/
 
 # catalog 备份：地址修正脚本产生的临时快照，不随仓库提交
 catalog/models.bak-*.json
+
+# PyInstaller build venv (created by scripts/build_sidecar.sh)
+python/.venv-sidecar/

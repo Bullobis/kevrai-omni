@@ -1697,7 +1697,7 @@ html[data-theme="light"] .skeleton-card::after {
   outline: none; border-color: var(--acc); box-shadow: var(--focus);
 }
 #pane-translate .translate-actions {
-  display: flex; gap: 10px; justify-content: flex-start; margin-top: 12px;
+  display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px;
 }
 
 /* Token estimate counters (composer boxes) */

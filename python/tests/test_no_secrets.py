@@ -74,6 +74,10 @@ def _all_files() -> list[Path]:
                 continue
             if "node_modules" in p.parts:
                 continue
+            # Local build outputs are not shipped source. The PyInstaller venv
+            # contains cryptography's test fixtures with literal PEM headers.
+            if any(part in p.parts for part in (".venv-sidecar", "build", "dist")):
+                continue
             if p.suffix in {
                 ".py", ".js", ".ts", ".jsx", ".tsx", ".json",
                 ".yml", ".yaml", ".toml", ".md", ".sh", ".bash",

@@ -212,24 +212,33 @@ def render_openai(result: dict[str, Any]) -> dict[str, Any]:
 
 
 def capabilities(data_root: Path | None = None) -> dict[str, Any]:
-    """Report engine/device availability for the UI."""
+    """Report engine availability without importing torch/sentence-transformers.
+
+    The old probe imported both libraries just to answer a UI status question.
+    On a cold PyInstaller sidecar that could take longer than the IPC timeout and
+    produced bogus ``sidecar timeout`` notifications (the engine was actually
+    installed). Installation is a directory check; the version comes from
+    package metadata, and CUDA is intentionally left False here because the UI
+    does not use it for this engine (the real device is resolved on first encode).
+    """
     target = engine_target_dir(data_root)
     installed = target.is_dir()
-    cuda = False
     st_version: str | None = None
     if installed:
         try:
-            st = import_sentence_transformers(data_root)
-            st_version = getattr(st, "__version__", None)
-            import torch  # type: ignore
+            from importlib.metadata import distributions
 
-            cuda = bool(torch.cuda.is_available())
-        except Exception:  # noqa: BLE001 — capability probe must stay non-fatal
-            log.debug("sentence-transformers capability probe failed", exc_info=True)
+            for dist in distributions(path=[str(target)]):
+                name = (dist.metadata["Name"] or "").lower()
+                if name.replace("_", "-") == "sentence-transformers":
+                    st_version = dist.version
+                    break
+        except Exception:  # noqa: BLE001 — metadata is optional; never fail status
+            log.debug("sentence-transformers metadata unavailable", exc_info=True)
     return {
         "engine": ENGINE_ID,
         "installed": installed,
         "engine_dir": str(target),
-        "cuda_available": cuda,
+        "cuda_available": False,
         "version": st_version,
     }

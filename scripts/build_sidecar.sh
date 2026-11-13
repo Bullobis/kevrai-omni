@@ -43,7 +43,7 @@ if [ ! -x "${VENV}/bin/python" ]; then
   echo "  creating venv at ${VENV}"
   "${PY}" -m venv "${VENV}"
 fi
-VPY="${VENV}/bin/python"
+VPY="$(pwd)/${VENV}/bin/python"
 echo "  venv python: ${VPY}"
 "${VPY}" -m pip install --quiet --upgrade pip \
   -i "${INDEX}" || fail "pip upgrade failed (offline? set KEVRAI_SIDECAR_OPTIONAL=1)"
