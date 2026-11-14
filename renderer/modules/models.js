@@ -633,22 +633,9 @@ export async function showDetail(item) {
       fill();
     })
   );
-  host.querySelectorAll("[data-action=open-comfyui]").forEach((b) =>
+  host.querySelectorAll("[data-action=open-comfyui-status]").forEach((b) =>
     b.addEventListener("click", () => {
-      const target = b.dataset.target || "image";
-      document.querySelector(`.sidebar [data-tab="${CSS.escape(target)}"]`)?.click();
-      const fill = (tries = 12) => {
-        if (target !== "image") return; // music/3d pages have their own pickers
-        const input = document.querySelector("#image-ckpt-text");
-        if (input) {
-          input.value = b.dataset.model || "";
-          input.dispatchEvent(new Event("input", { bubbles: true }));
-        } else if (tries > 0) {
-          setTimeout(() => fill(tries - 1), 120);
-        }
-      };
-      fill();
-      toast(t("market.openComfyuiHint"), { kind: "info" });
+      document.querySelector('.sidebar [data-tab="engines"]')?.click();
     })
   );
   host.querySelectorAll("[data-action=open-external]").forEach((b) =>
@@ -756,13 +743,14 @@ function renderExternalBridge(m, a) {
     </p>`;
   }
   if (services.includes("ComfyUI")) {
-    const target = (m.category === "music" || m.category === "audio") ? "music"
-                 : m.category === "3d" ? "3d" : "image";
+    // ComfyUI needs a model-specific workflow. The image page only speaks
+    // Stable Diffusion checkpoints; browsing a MiniMax music/3D model there
+    // would be a false affordance. Point at the service status instead and
+    // say plainly that a one-click workflow is not wired for this model yet.
     return `<p class="external-bridge">
-      <button class="secondary small" data-action="open-comfyui"
-              data-target="${target}" data-model="${escapeHtml(model)}"
-              data-category="${escapeHtml(m.category || "")}">${t("market.openComfyui")}</button>
-      <span class="hint">${t("market.openComfyuiHint")}</span>
+      <button class="secondary small" data-action="open-comfyui-status"
+              data-model="${escapeHtml(model)}">${t("market.comfyuiStatus")}</button>
+      <span class="hint">${t("market.comfyuiStatusHint")}</span>
     </p>`;
   }
   return "";

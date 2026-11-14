@@ -212,8 +212,8 @@
     "availabilityUnsupported": "暂未接入运行时",
     "configureExternal": "配置外部服务",
     "configureExternalHint": "在 AI 引擎页填入服务地址与模型名；应用不负责拉起 vLLM / SGLang / Ollama。",
-    "openComfyui": "打开 ComfyUI 工作页",
-    "openComfyuiHint": "先启动 ComfyUI；在该页选择 checkpoint / 模板后即可生成。应用不会替你拉起 ComfyUI。"
+    "comfyuiStatus": "查看 ComfyUI 服务状态",
+    "comfyuiStatusHint": "ComfyUI 的生成需要模型专属工作流；本版本尚未提供该模型的一键生成页，先确认服务已启动。"
   },
   "engines": {
     "title": "AI 引擎",

@@ -212,8 +212,8 @@
     "availabilityUnsupported": "No runtime adapter yet",
     "configureExternal": "Configure external service",
     "configureExternalHint": "Fill in the URL and model on the AI Engines page; the app does not launch vLLM / SGLang / Ollama.",
-    "openComfyui": "Open ComfyUI workspace",
-    "openComfyuiHint": "Start ComfyUI first; then pick a checkpoint/template on that page. The app does not launch ComfyUI for you."
+    "comfyuiStatus": "Check ComfyUI status",
+    "comfyuiStatusHint": "ComfyUI generation needs a model-specific workflow. This build does not yet provide a one-click page for this model; verify the service is running first."
   },
   "engines": {
     "title": "AI Engines",
