@@ -18,7 +18,7 @@
       <stop offset="1" stop-color="#00D8E4"/>
     </linearGradient>
   </defs>
-  <rect x="56" y="56" width="912" height="912" rx="208" fill="url(#bg)"/>
+  <rect x="44" y="44" width="936" height="936" rx="320" fill="url(#bg)"/>
   <path d="M511 237 L756 375 L756 619 L515 781 L270 651 L270 369 Z"
         fill="none" stroke="#2E5A78" stroke-width="1.6" stroke-linejoin="round" opacity="0.85"/>
   <g fill="url(#accent)" fill-rule="evenodd">
