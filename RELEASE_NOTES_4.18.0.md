@@ -24,6 +24,8 @@
 - 空态 starter 点击后正确填入 composer，并聚焦输入框，不自动发送。
 - 规则模式的 5 个确定性工具分支只把 step 放进结果、没有触发 step 回调，WebSocket UI 收不到过程事件；现在统一发出 step，过程组可见，并补了回归测试。
 - 过程组展开后仍显示“点击展开”，以及过程组下面重复出现同一份“工具: …”列表；现在展开态显示“收起”，有过程组时不再重复工具列表。
+- 侧栏导航的 `title` / `data-i18n-title` 会触发 Electron 原生黑色 tooltip；导航行已移除原生 title，保留可见标签与 aria 名称。
+- Kokoro 与 Chatterbox 实际走应用内 Piper/TTS 适配器，却被 availability / engine_router 标成外部服务；现在改为本地 TTS 路径。
 
 ## 参考文档
 
