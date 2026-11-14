@@ -750,6 +750,7 @@ function renderDetail(m, gguf) {
       ? `<p class="card-desc">${escapeHtml(m.description || chineseNameOf(m))}</p>` : ""}
     ${m.gated ? `<p class="hint">${t("market.gatedHint")}</p>` : ""}
     ${m.availability ? renderAvailability(m.availability) : ""}
+    <div id="engine-route-slot" class="engine-route-slot"></div>
 
     ${isRemote ? `
     <h3 class="section">${t("market.basicInfo")}</h3>
