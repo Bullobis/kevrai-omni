@@ -379,3 +379,23 @@ def test_failure_without_cancel_still_reports_failed(tmp_path, monkeypatch):
     snap = mgr.get(task.id).snapshot()
     assert snap["state"] == TaskState.FAILED
     assert "LtxEngineMissing" in snap["error"]
+
+def test_svd_does_not_require_prompt(tmp_path):
+    img = tmp_path / "first.png"
+    img.write_bytes(b"not-a-real-png-but-the-file-exists")
+    p = LtxParams(
+        model_id="stabilityai/stable-video-diffusion-img2vid-xt",
+        mode="i2v", prompt="", image_path=str(img),
+    )
+    p.validate()  # SVD is image-only; no prompt may be supplied.
+
+
+def test_video_models_declare_capabilities():
+    cap = capabilities()
+    for m in cap["models"]:
+        c = m.get("capability")
+        assert c, m["id"]
+        assert c["prompt"] in ("required", "optional", "none"), m["id"]
+        assert isinstance(c["negative"], bool), m["id"]
+        if "i2v" in m["modes"]:
+            assert c.get("image"), m["id"]

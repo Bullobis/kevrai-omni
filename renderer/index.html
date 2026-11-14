@@ -348,6 +348,7 @@
               <span>视频模型</span>
               <select id="ltx-model"></select>
             </label>
+            <p id="ltx-model-capability" class="hint ltx-model-capability" hidden></p>
             <label class="field">
               <span data-i18n="ltx.mode">生成模式</span>
               <select id="ltx-mode">
@@ -359,18 +360,18 @@
               <span data-i18n="ltx.preset">质量预设</span>
               <select id="ltx-preset"></select>
             </label>
-            <label class="field">
+            <label class="field" id="ltx-prompt-field">
               <span data-i18n="ltx.prompt">提示词 Prompt</span>
               <textarea id="ltx-prompt" rows="3" placeholder="一只猫在月球上弹钢琴，电影感，4K" data-i18n-placeholder="ltx.promptPlaceholder"></textarea>
             </label>
-            <label class="field">
+            <label class="field" id="ltx-negative-field">
               <span data-i18n="ltx.negative">反向提示词 Negative prompt</span>
               <textarea id="ltx-negative" rows="2" placeholder="可选，一般留空" data-i18n-placeholder="ltx.negativePlaceholder"></textarea>
             </label>
 
             <div class="ltx-row" id="ltx-image-row" hidden>
               <label class="field grow">
-                <span data-i18n="ltx.imagePath">参考图片路径</span>
+                <span id="ltx-image-label" data-i18n="ltx.imagePath">参考图片路径</span>
                 <input id="ltx-image" type="text" placeholder="选择或粘贴图片路径" />
               </label>
               <button class="secondary" id="ltx-pick-image" type="button" data-i18n="ltx.pickImage">选择…</button>
@@ -981,11 +982,11 @@
               <label><input type="radio" name="threed-mode" id="threed-mode-t23d" /> <span data-i18n="threed.t23d">文生 3D</span></label>
             </div>
           </div>
-          <div class="form-row">
+          <div class="form-row" id="threed-image-field">
             <label for="threed-image-path" data-i18n="threed.imagePath">输入图片路径（图生 3D）</label>
             <input id="threed-image-path" type="text" placeholder="/path/to/object.png" />
           </div>
-          <div class="form-row">
+          <div class="form-row" id="threed-prompt-field">
             <label for="threed-prompt" data-i18n="threed.prompt">提示词（文生 3D）</label>
             <textarea id="threed-prompt" rows="2" placeholder="a red ceramic teapot"></textarea>
           </div>

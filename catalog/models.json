@@ -132,7 +132,25 @@
           "vram_gb": 70.2,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3-32B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3-235b-a22b",
@@ -231,7 +249,25 @@
           "vram_gb": 503.7,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3-235B-A22B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3-vl-32b",
@@ -331,7 +367,36 @@
           "vram_gb": 72.7,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "video"
+        ],
+        "source": "huggingface:Qwen/Qwen3-VL-32B-Instruct (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3-omni",
@@ -384,7 +449,41 @@
         "对话",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "audio",
+          "video"
+        ],
+        "source": "huggingface:Qwen/Qwen3-Omni-30B-A3B-Instruct (pipeline_tag=any-to-any)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "deepseek-r1",
@@ -481,7 +580,25 @@
           "vram_gb": 1437.6,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-R1 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "glm-4.5",
@@ -528,7 +645,25 @@
         "对话",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:zai-org/GLM-4.5 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "mistral-small-24b",
@@ -609,7 +744,25 @@
           "vram_gb": 41.8,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "gemma-3-27b",
@@ -708,7 +861,31 @@
           "vram_gb": 59.7,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:google/gemma-3-27b-it (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3-30b-a3b",
@@ -805,7 +982,25 @@
           "vram_gb": 65.4,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3-30B-A3B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen-image",
@@ -843,7 +1038,34 @@
         "文生图",
         "热门",
         "绘图"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:Qwen/Qwen-Image (pipeline_tag=text-to-image)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "cosyvoice2",
@@ -879,7 +1101,36 @@
         "语音克隆",
         "语音合成",
         "配音"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:FunAudioLLM/CosyVoice2-0.5B (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "cosyvoice3",
@@ -915,7 +1166,36 @@
         "语音克隆",
         "语音合成",
         "配音"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:FunAudioLLM/CosyVoice-300M (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "fish-speech-1.5",
@@ -952,7 +1232,36 @@
         "语音克隆",
         "语音合成",
         "配音"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:fishaudio/fish-speech-1.5 (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "f5-tts",
@@ -988,7 +1297,36 @@
         "语音克隆",
         "语音合成",
         "配音"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:SWivid/F5-TTS (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "spark-tts",
@@ -1025,7 +1363,36 @@
         "语音克隆",
         "语音合成",
         "配音"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:SparkAudio/Spark-TTS-0.5B (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "kokoro-82m",
@@ -1062,7 +1429,30 @@
         "语音克隆",
         "语音合成",
         "配音"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:hexgrad/Kokoro-82M (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "chatterbox",
@@ -1099,7 +1489,36 @@
         "语音克隆",
         "语音合成",
         "配音"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:ResembleAI/chatterbox (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "indextts",
@@ -1136,7 +1555,36 @@
         "语音克隆",
         "语音合成",
         "配音"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:IndexTeam/IndexTTS-2 (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "gpt-sovits",
@@ -1170,7 +1618,36 @@
         "语音克隆",
         "语音合成",
         "配音"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:lj1995/GPT-SoVITS (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "moss-tts-1.5",
@@ -1219,7 +1696,36 @@
         "热门",
         "语音合成",
         "配音"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:OpenMOSS-Team/MOSS-TTS-v1.5 (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "dots-tts-soar",
@@ -1268,7 +1774,36 @@
         "热门",
         "语音合成",
         "配音"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:dots-studio/dots.tts-soar (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "wan2.2-t2v",
@@ -1314,7 +1849,36 @@
         "热门",
         "视频",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:Wan-AI/Wan2.2-T2V-A14B-Diffusers (pipeline_tag=text-to-video)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "wan2.2-i2v",
@@ -1360,7 +1924,42 @@
         "热门",
         "视频",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "first_frame",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:Wan-AI/Wan2.2-I2V-A14B-Diffusers (pipeline_tag=image-to-video)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "hunyuanvideo",
@@ -1406,7 +2005,43 @@
         "热门",
         "视频",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-video",
+          "image-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "first_frame",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:tencent/HunyuanVideo (pipeline_tag=text-to-video)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "ltx-video",
@@ -1452,7 +2087,43 @@
         "热门",
         "视频",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-video",
+          "text-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:Lightricks/LTX-Video (pipeline_tag=image-to-video)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "opensora-2.0",
@@ -1498,7 +2169,43 @@
         "热门",
         "视频",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-video",
+          "image-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "catalog-tags",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "flux1-dev",
@@ -1565,7 +2272,33 @@
           "vram_gb": 25.5,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:black-forest-labs/FLUX.1-dev (pipeline_tag=text-to-image)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "flux1-schnell",
@@ -1632,7 +2365,33 @@
           "vram_gb": 25.5,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:black-forest-labs/FLUX.1-schnell (pipeline_tag=text-to-image)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "sd3.5-large",
@@ -1670,7 +2429,34 @@
         "文生图",
         "热门",
         "绘图"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:stabilityai/stable-diffusion-3.5-large (pipeline_tag=text-to-image)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "kolors",
@@ -1708,7 +2494,34 @@
         "文生图",
         "热门",
         "绘图"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:Kwai-Kolors/Kolors (pipeline_tag=text-to-image)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "hunyuanimage-3.0",
@@ -1745,7 +2558,41 @@
         "文生图",
         "热门",
         "绘图"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-image",
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:tencent/HunyuanImage-3.0-Instruct (pipeline_tag=image-to-image)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "controlnet-canny",
@@ -1781,7 +2628,40 @@
         "图片",
         "文生图",
         "绘图"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": true,
+            "role": "control",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:lllyasviel/control_v11p_sd15_canny (pipeline_tag=image-to-image)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "real-esrgan",
@@ -1820,7 +2700,32 @@
         "热门",
         "超分",
         "超分辨率"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "upscale"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "image",
+          "resolution",
+          "format",
+          "batch"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "apisr",
@@ -1857,7 +2762,32 @@
         "热门",
         "超分",
         "超分辨率"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "upscale"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "image",
+          "resolution",
+          "format",
+          "batch"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "supir",
@@ -1895,7 +2825,32 @@
         "超分",
         "超分辨率"
       ],
-      "source_note": "HF 仓库 camenduru/SUPIR 为社区非官方转存；官方发布渠道为 GitHub Fanghua-Yu/SUPIR。"
+      "source_note": "HF 仓库 camenduru/SUPIR 为社区非官方转存；官方发布渠道为 GitHub Fanghua-Yu/SUPIR。",
+      "capability": {
+        "tasks": [
+          "upscale"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "image",
+          "resolution",
+          "format",
+          "batch"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "4x-ultrasharp",
@@ -1932,7 +2887,32 @@
         "热门",
         "超分",
         "超分辨率"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "upscale"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "image",
+          "resolution",
+          "format",
+          "batch"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "seedvr2",
@@ -1969,7 +2949,48 @@
         "热门",
         "超分",
         "超分辨率"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "video-to-video",
+          "upscale"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          },
+          "video": {
+            "required": true,
+            "role": "source"
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          },
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "video",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "batch"
+        ],
+        "source": "huggingface:ByteDance-Seed/SeedVR2-3B (pipeline_tag=video-to-video)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "stable-audio-open",
@@ -2007,7 +3028,33 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "music-generation",
+          "text-to-audio"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "duration",
+          "steps",
+          "cfg",
+          "seed",
+          "format"
+        ],
+        "source": "huggingface:stabilityai/stable-audio-open-1.0 (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "musicgen-small",
@@ -2045,7 +3092,29 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "duration",
+          "format"
+        ],
+        "source": "huggingface:facebook/musicgen-small (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "musicgen-medium",
@@ -2081,7 +3150,29 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "duration",
+          "format"
+        ],
+        "source": "huggingface:facebook/musicgen-medium (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "musicgen-large",
@@ -2119,7 +3210,29 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "duration",
+          "format"
+        ],
+        "source": "huggingface:facebook/musicgen-large (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "musicgen-stereo",
@@ -2155,7 +3268,29 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "duration",
+          "format"
+        ],
+        "source": "huggingface:facebook/musicgen-stereo-large (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "audioldm2",
@@ -2190,7 +3325,31 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-audio"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "duration",
+          "steps",
+          "seed",
+          "format"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
+      }
     },
     {
       "id": "diffrhythm",
@@ -2228,7 +3387,31 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "lyrics",
+          "duration",
+          "seed",
+          "format"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
+      }
     },
     {
       "id": "hunyuan3d-2",
@@ -2264,7 +3447,38 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d",
+          "text-to-3d"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:tencent/Hunyuan3D-2 (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "trellis-image",
@@ -2301,7 +3515,33 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:microsoft/TRELLIS-image-large (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "triposr",
@@ -2338,7 +3578,33 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:stabilityai/TripoSR (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "direct3d-s2",
@@ -2374,7 +3640,33 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:wushuang98/Direct3D-S2 (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "partcrafter",
@@ -2410,7 +3702,33 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:wgsxm/PartCrafter (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "trellis2",
@@ -2447,7 +3765,37 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:microsoft/TRELLIS.2-4B (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "triposg",
@@ -2483,7 +3831,33 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:VAST-AI/TripoSG (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "clip-vit-l",
@@ -2520,7 +3894,33 @@
         "检测",
         "视觉",
         "识别"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-classification"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "labels": {},
+          "embedding": {}
+        },
+        "controls": [
+          "image",
+          "labels",
+          "format"
+        ],
+        "source": "huggingface:openai/clip-vit-large-patch14 (pipeline_tag=zero-shot-image-classification)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "insightface",
@@ -2555,7 +3955,33 @@
         "检测",
         "视觉",
         "识别"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "detection",
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "labels": {},
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "yolov10",
@@ -2591,7 +4017,28 @@
         "检测",
         "视觉",
         "识别"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "detection"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "source",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "labels": {}
+        },
+        "controls": [
+          "image",
+          "format"
+        ],
+        "source": "huggingface:onnx-community/YOLOv10 (pipeline_tag=object-detection)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3.8-27b",
@@ -2658,7 +4105,36 @@
           "vram_gb": 1.0,
           "recommended": true
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "video"
+        ],
+        "source": "huggingface:Qwen/Qwen3.8-27B (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3.5-27b",
@@ -2759,7 +4235,25 @@
           "vram_gb": 59.6,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3.5-27B (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3.5-9b",
@@ -2858,7 +4352,25 @@
           "vram_gb": 21.2,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3.5-9B (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3.5-397b-a17b",
@@ -2958,7 +4470,25 @@
           "vram_gb": 792.96,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3.5-397B-A17B (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3.6-27b",
@@ -3057,7 +4587,25 @@
           "vram_gb": 59.6,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3.6-27B (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3.6-35b-a3b",
@@ -3156,7 +4704,25 @@
           "vram_gb": 76.2,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3.6-35B-A3B (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "deepseek-v4-flash",
@@ -3240,7 +4806,25 @@
           "vram_gb": 161.87,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-V4-Flash (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "deepseek-v4-pro",
@@ -3287,7 +4871,25 @@
         "对话",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-V4-Pro (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "glm-5",
@@ -3386,7 +4988,25 @@
           "vram_gb": 1615.1,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:zai-org/GLM-5 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "kimi-k2.6",
@@ -3473,7 +5093,36 @@
           "vram_gb": 2053.16,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "video"
+        ],
+        "source": "huggingface:moonshotai/Kimi-K2.6 (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "minimax-m2.7",
@@ -3570,7 +5219,25 @@
           "vram_gb": 490.0,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:MiniMaxAI/MiniMax-M2.7 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "gpt-oss-120b",
@@ -3637,7 +5304,25 @@
           "vram_gb": 1.7,
           "recommended": true
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:openai/gpt-oss-120b (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "gpt-oss-20b",
@@ -3704,7 +5389,25 @@
           "vram_gb": 1.8,
           "recommended": true
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:openai/gpt-oss-20b (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "lfm2.5-8b-a1b",
@@ -3803,7 +5506,25 @@
           "vram_gb": 18.1,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:LiquidAI/LFM2.5-8B-A1B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "ltx-2.3",
@@ -3854,7 +5575,54 @@
         "视频",
         "视频生成",
         "音画同步"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-video",
+          "image-to-video",
+          "video-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "first_frame",
+            "max": 1
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          },
+          "video": {
+            "required": false,
+            "role": "source"
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": true
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "audio",
+          "video",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:Lightricks/LTX-2.3 (pipeline_tag=image-to-video)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "ltx-2.5",
@@ -3919,7 +5687,43 @@
         "config.json",
         "vae/"
       ],
-      "gated": true
+      "gated": true,
+      "capability": {
+        "tasks": [
+          "text-to-video",
+          "image-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "first_frame",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": true
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:Lightricks/LTX-2.5 (pipeline_tag=image-to-video)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "flux.2-dev",
@@ -3959,7 +5763,40 @@
         "文生图",
         "热门",
         "绘图"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-image",
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:black-forest-labs/FLUX.2-dev (pipeline_tag=image-to-image)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "krea-2-turbo",
@@ -4014,7 +5851,39 @@
         "热门",
         "绘图"
       ],
-      "gated": true
+      "gated": true,
+      "capability": {
+        "tasks": [
+          "image-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:krea/Krea-2-Turbo (pipeline_tag=text-to-image)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "kimi-k3",
@@ -4064,7 +5933,31 @@
         "对话",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:moonshotai/Kimi-K3 (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3.8-max",
@@ -4112,7 +6005,25 @@
         "对话",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3.8-2.4T-A95B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "dots3-note-preview",
@@ -4159,7 +6070,36 @@
         "大语言模型",
         "对话",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "audio"
+        ],
+        "source": "huggingface:dots-studio/dots3-note-prev (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "minimax-h3",
@@ -4214,7 +6154,42 @@
         "热门",
         "视频",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-video",
+          "image-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "first_frame",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
+      }
     },
     {
       "id": "magi2-preview",
@@ -4258,7 +6233,42 @@
         "文生视频",
         "视频",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-video",
+          "text-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": true
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:sand-ai/MAGI-2-preview (pipeline_tag=image-text-to-video)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "lingbot-video",
@@ -4304,7 +6314,43 @@
         "文生视频",
         "视频",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-video",
+          "image-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "catalog-tags",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "minimax-music3",
@@ -4356,6 +6402,31 @@
           "audio"
         ],
         "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      },
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "lyrics",
+          "duration",
+          "steps",
+          "seed",
+          "format"
+        ],
+        "source": "huggingface:MiniMaxAI/MiniMax-Music3 (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
       }
     },
     {
@@ -4404,6 +6475,32 @@
           "audio"
         ],
         "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      },
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "lyrics",
+          "duration",
+          "steps",
+          "cfg",
+          "seed",
+          "format"
+        ],
+        "source": "huggingface:ACE-Step/Ace-Step1.5 (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
       }
     },
     {
@@ -4452,6 +6549,31 @@
           "audio"
         ],
         "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      },
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "lyrics",
+          "duration",
+          "steps",
+          "seed",
+          "format"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
       }
     },
     {
@@ -4499,6 +6621,31 @@
           "audio"
         ],
         "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      },
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "lyrics",
+          "duration",
+          "steps",
+          "seed",
+          "format"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
       }
     },
     {
@@ -4546,6 +6693,31 @@
           "audio"
         ],
         "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      },
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "lyrics",
+          "duration",
+          "steps",
+          "seed",
+          "format"
+        ],
+        "source": "huggingface:guillaume127/MiniMax-Music-3-Turbo-FP8 (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
       }
     },
     {
@@ -4594,7 +6766,32 @@
         ],
         "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
       },
-      "notes": "W4A8 量化 DiT 约 1.3GB；全精度 MiniMax-Music3 体积更大。"
+      "notes": "W4A8 量化 DiT 约 1.3GB；全精度 MiniMax-Music3 体积更大。",
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "lyrics",
+          "duration",
+          "steps",
+          "seed",
+          "format"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
+      }
     },
     {
       "id": "minimax-music3-lora-fiona-crapple",
@@ -4641,6 +6838,31 @@
           "audio"
         ],
         "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      },
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "lyrics",
+          "duration",
+          "steps",
+          "seed",
+          "format"
+        ],
+        "source": "huggingface:terminusresearch/minimax-music3-lm-lora-fiona-crapple (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
       }
     },
     {
@@ -4688,6 +6910,31 @@
           "audio"
         ],
         "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      },
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "lyrics",
+          "duration",
+          "steps",
+          "seed",
+          "format"
+        ],
+        "source": "huggingface:terminusresearch/minimax-music3-latent-refiner-v0.10 (pipeline_tag=audio-to-audio)",
+        "confidence": "official-pipeline"
       }
     },
     {
@@ -4736,6 +6983,31 @@
           "audio"
         ],
         "notes": "歌词+结构化音乐描述 → 32kHz/16bit 立体声 WAV，单首最长 5 分钟，需 CUDA"
+      },
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "lyrics",
+          "duration",
+          "steps",
+          "seed",
+          "format"
+        ],
+        "source": "huggingface:mlx-community/MiniMax-Music3-mxfp8 (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
       }
     },
     {
@@ -4788,7 +7060,33 @@
         "音效",
         "音频生成"
       ],
-      "gated": true
+      "gated": true,
+      "capability": {
+        "tasks": [
+          "music-generation",
+          "text-to-audio"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "duration",
+          "steps",
+          "cfg",
+          "seed",
+          "format"
+        ],
+        "source": "huggingface:stabilityai/stable-audio-3-medium (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "magenta-realtime-2",
@@ -4840,7 +7138,34 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "duration",
+          "format"
+        ],
+        "source": "huggingface:google/magenta-realtime-2 (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "moss-soundeffect-2",
@@ -4892,7 +7217,31 @@
         "音乐生成",
         "音效",
         "音频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "sound-effects"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "duration",
+          "steps",
+          "seed",
+          "format"
+        ],
+        "source": "huggingface:OpenMOSS-Team/MOSS-SoundEffect-v2.0 (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "hunyuanworld-1",
@@ -4928,7 +7277,37 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:tencent/HunyuanWorld-1 (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "hunyuanworld-voyager",
@@ -4964,7 +7343,45 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-video",
+          "image-to-3d"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          },
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:tencent/HunyuanWorld-Voyager (pipeline_tag=image-to-video)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "hunyuanworld-mirror",
@@ -5000,7 +7417,37 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:tencent/HunyuanWorld-Mirror (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "hy-world-2",
@@ -5036,7 +7483,37 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:tencent/HY-World-2.0 (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "hy-worldplay",
@@ -5072,7 +7549,45 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-video",
+          "text-to-3d"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          },
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:tencent/HY-WorldPlay (pipeline_tag=image-to-video)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "trellis-text-xlarge",
@@ -5109,7 +7624,31 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-3d"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "prompt",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:microsoft/TRELLIS-text-xlarge (pipeline_tag=text-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "sam-3d",
@@ -5146,7 +7685,33 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
+      }
     },
     {
       "id": "sam-3d-body",
@@ -5183,7 +7748,33 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
+      }
     },
     {
       "id": "pixal3d",
@@ -5220,7 +7811,33 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:TencentARC/Pixal3D-T (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "4danyone",
@@ -5257,7 +7874,46 @@
         "三维",
         "三维重建",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d",
+          "video-to-video"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          },
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "image",
+          "video",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:AntResearch/4DAnyone (pipeline_tag=video-to-video)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "hy3",
@@ -5306,7 +7962,25 @@
         "对话",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:tencent/Hy3 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "glm-5.2",
@@ -5406,7 +8080,25 @@
           "vram_gb": 1615.1,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:zai-org/GLM-5.2 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "inkling",
@@ -5457,7 +8149,36 @@
         "对话",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "audio"
+        ],
+        "source": "huggingface:thinkingmachines/Inkling (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "bonsai-27b",
@@ -5513,7 +8234,25 @@
           "vram_gb": 66.4,
           "recommended": true
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:prism-ml/Bonsai-27B-gguf (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "deepseek-v4-flash-0731",
@@ -5598,7 +8337,25 @@
           "vram_gb": 161.87,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-V4-Flash-0731 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "deepseek-v4-pro-0813",
@@ -5646,7 +8403,25 @@
         "对话",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-V4-Pro-0813 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "keye-vl-2.0",
@@ -5710,7 +8485,36 @@
           "vram_gb": 133.4,
           "recommended": true
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "video"
+        ],
+        "source": "huggingface:Kwai-Keye/Keye-VL-2.0-30B-A3B (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "visionpsy-nano-460m",
@@ -5783,7 +8587,31 @@
           "vram_gb": 1,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:qvac/VisionPsy-Nano-460M (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "zamba2-vl-7b",
@@ -5829,7 +8657,31 @@
         "大语言模型",
         "对话",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "zamba2-vl-2.7b",
@@ -5875,7 +8727,31 @@
         "大语言模型",
         "对话",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "zamba2-vl-1.2b",
@@ -5921,7 +8797,31 @@
         "大语言模型",
         "对话",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "granite-4.2-8b",
@@ -5972,7 +8872,25 @@
         "推理",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:ibm-granite/granite-4.2-8b (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "granite-4.2-30b",
@@ -6023,7 +8941,25 @@
         "推理",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:ibm-granite/granite-4.2-30b (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "minimax-m3",
@@ -6076,7 +9012,31 @@
         "热门",
         "稀疏注意力",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:MiniMaxAI/MiniMax-M3 (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "muse-glimmer-30b",
@@ -6131,7 +9091,31 @@
         "智能体",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:meta-models/Muse-Glimmer-30B (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "deepseek-v4-flash-vision",
@@ -6186,7 +9170,31 @@
         "热门",
         "视觉理解",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-V4-Flash-Vision-Exp (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "glm-5.3",
@@ -6239,7 +9247,25 @@
         "热门",
         "稀疏注意力",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:zai-org/GLM-5.3 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "lfm2.5-vl-3b",
@@ -6296,7 +9322,31 @@
         "端侧",
         "视觉理解",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:LiquidAI/LFM2.5-VL-3B (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "minimax-h3-omni",
@@ -6352,7 +9402,52 @@
         "热门",
         "视频",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-video",
+          "image-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 1
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": true
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "audio",
+          "video",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:MiniMaxAI/MiniMax-H3 (pipeline_tag=image-text-to-video)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "mimo-v2.6-pro",
@@ -6404,7 +9499,41 @@
         "对话",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "audio",
+          "video"
+        ],
+        "source": "huggingface:XiaomiMiMo/MiMo-V2.6-Pro-MOPD (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "mimo-v2.6-flash",
@@ -6456,7 +9585,41 @@
         "对话",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "audio",
+          "video"
+        ],
+        "source": "huggingface:XiaomiMiMo/MiMo-V2.6-Flash-MOPD (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "gemma-4-31b",
@@ -6547,7 +9710,31 @@
           "vram_gb": 34.9,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:google/gemma-4-31B-it (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "gemma-4-26b-a4b",
@@ -6634,7 +9821,31 @@
           "vram_gb": 28.8,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:google/gemma-4-26B-A4B-it (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "gemma-4-12b",
@@ -6727,7 +9938,25 @@
           "vram_gb": 25.5,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:google/gemma-4-12B-it (pipeline_tag=any-to-any)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "hunyuanvideo-1.5",
@@ -6773,7 +10002,43 @@
         "热门",
         "视频",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-video",
+          "image-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "first_frame",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:tencent/HunyuanVideo-1.5 (pipeline_tag=text-to-video)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "mistral-medium-3.5-128b",
@@ -6863,7 +10128,25 @@
           "vram_gb": 279.3,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "spark-x2.5-4b",
@@ -6929,7 +10212,25 @@
           "vram_gb": 4.7,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:XHToken/Spark-X2.5-4B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "nemotron-labs-diffusion-3b",
@@ -6975,7 +10276,25 @@
         "NVIDIA",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:nvidia/Nemotron-Labs-Diffusion-3B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "startlux-decision-4b",
@@ -7031,7 +10350,25 @@
           "vram_gb": 4.8,
           "recommended": true
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "deepseek-v4.1-flash",
@@ -7096,7 +10433,31 @@
           "recommended": true
         }
       ],
-      "notes": "GGUF 含 Q2 主权重(340.6GB)与独立 Vision 编码器(0.9GB)，需一并下载。"
+      "notes": "GGUF 含 Q2 主权重(340.6GB)与独立 Vision 编码器(0.9GB)，需一并下载。",
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-V4.1-Flash (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "glm-5.3-flash",
@@ -7208,7 +10569,31 @@
           "vram_gb": 641.64,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:zai-org/GLM-5.3-Flash (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "nemotron-3-super-120b-a12b",
@@ -7257,7 +10642,25 @@
         "Agent",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "hy4-preview",
@@ -7307,7 +10710,25 @@
         "Agent",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:tencent/Hy4-preview (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "ling-3.0-flash-vl",
@@ -7359,7 +10780,36 @@
         "视觉",
         "热门",
         "语言模型"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "video"
+        ],
+        "source": "huggingface:inclusionAI/Ling-3.0-flash-VL (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "minicpm5-2b",
@@ -7433,7 +10883,25 @@
           "vram_gb": 5.4,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:openbmb/MiniCPM5-2B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "edge0-35b-a3b-preview",
@@ -7491,7 +10959,25 @@
           "vram_gb": 21.0,
           "recommended": true
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Edge0/Edge0-35B-A3B-preview (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "xing4.0-29b-a4b",
@@ -7550,7 +11036,25 @@
           "vram_gb": 21.5,
           "recommended": true
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:XingChen-AGI/Xing4.0-29B-A4B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen-image-2.1",
@@ -7601,7 +11105,34 @@
         "文生图",
         "热门",
         "绘图"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:Qwen/Qwen-Image-2.1 (pipeline_tag=text-to-image)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "auk",
@@ -7648,7 +11179,36 @@
         "语音合成",
         "语音编辑",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:tencent/AuK (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "yue2-3b",
@@ -7714,7 +11274,30 @@
           "vram_gb": 8.1,
           "recommended": true
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "lyrics",
+          "duration",
+          "format"
+        ],
+        "source": "huggingface:m-a-p/YuE2-3B (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "deepseek-v3",
@@ -7816,7 +11399,25 @@
           "vram_gb": 713.29,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-V3 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "deepseek-v3.1",
@@ -7925,7 +11526,25 @@
           "vram_gb": 1342.27,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-V3.1 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwq-32b",
@@ -8024,7 +11643,25 @@
           "vram_gb": 70.2,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/QwQ-32B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3-coder-30b-a3b",
@@ -8076,7 +11713,25 @@
         "Qwen",
         "llama.cpp",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3-Coder-30B-A3B-Instruct (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen2.5-coder-32b",
@@ -8125,7 +11780,25 @@
         "Qwen",
         "llama.cpp",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen2.5-Coder-32B-Instruct (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3-8b",
@@ -8227,7 +11900,25 @@
           "vram_gb": 17.5,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3-8B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "llama-3.1-8b",
@@ -8275,7 +11966,25 @@
         "Llama",
         "ollama",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:meta-llama/Llama-3.1-8B-Instruct (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen2.5-7b",
@@ -8325,7 +12034,25 @@
         "Qwen",
         "ollama",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen2.5-7B-Instruct (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3-4b",
@@ -8429,7 +12156,25 @@
           "vram_gb": 8.6,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3-4B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "llama-3.2-3b",
@@ -8478,7 +12223,25 @@
         "Llama",
         "on-device",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:meta-llama/Llama-3.2-3B-Instruct (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "phi-4",
@@ -8529,7 +12292,25 @@
         "MIT",
         "small",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:microsoft/phi-4 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "smollm2-1.7b",
@@ -8580,7 +12361,25 @@
         "onnxruntime",
         "on-device",
         "small"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:HuggingFaceTB/SmolLM2-1.7B-Instruct (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3-0.6b",
@@ -8683,7 +12482,25 @@
           "vram_gb": 1.3,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3-0.6B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "cloudflare-clef",
@@ -8734,7 +12551,36 @@
         "qwen3.8",
         "视觉理解",
         "多模态"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "video"
+        ],
+        "source": "huggingface:Cloudflare/clef (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "cloudflare-clef-flash",
@@ -8785,7 +12631,36 @@
         "视觉理解",
         "多模态",
         "轻量"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "video"
+        ],
+        "source": "huggingface:Cloudflare/clef-flash (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3.8-flash-next",
@@ -8836,7 +12711,31 @@
         "视觉理解",
         "多模态",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:Qwen/Qwen3.8-Flash-Next (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "jev-27b-vl",
@@ -8886,7 +12785,31 @@
         "qwen3.8",
         "视觉理解",
         "多模态"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:autotrust/JEV-27B-VL (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "zdtaichu5.0-9b",
@@ -8937,7 +12860,36 @@
         "Taichu",
         "视觉理解",
         "多模态"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "video"
+        ],
+        "source": "huggingface:TaichuAI/ZDTaichu5.0-9B (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "sam3",
@@ -8984,7 +12936,37 @@
         "图像分割",
         "目标检测",
         "跟踪"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "segmentation"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          },
+          "video": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "mask": {}
+        },
+        "controls": [
+          "image",
+          "video",
+          "text_prompt",
+          "format"
+        ],
+        "source": "huggingface:facebook/sam3 (pipeline_tag=mask-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "pp-ocrv6-det",
@@ -9029,7 +13011,29 @@
         "PP-OCRv6",
         "文字识别",
         "目标检测"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "ocr",
+          "text-detection"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "source",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "labels": {}
+        },
+        "controls": [
+          "image",
+          "format"
+        ],
+        "source": "huggingface:PaddlePaddle/PP-OCRv6_medium_det_onnx (pipeline_tag=image-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "pp-ocrv6-rec",
@@ -9076,7 +13080,29 @@
         "PP-OCRv6",
         "文字识别",
         "多语言"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "ocr",
+          "text-recognition"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "source",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "image",
+          "format"
+        ],
+        "source": "huggingface:PaddlePaddle/PP-OCRv6_medium_rec_onnx (pipeline_tag=image-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "paddleocr-vl",
@@ -9123,7 +13149,33 @@
         "ERNIE",
         "文档理解",
         "文字识别"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "ocr",
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "source",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "image",
+          "prompt",
+          "format"
+        ],
+        "source": "huggingface:PaddlePaddle/PaddleOCR-VL (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "z-image-turbo",
@@ -9172,7 +13224,34 @@
         "热门",
         "阿里",
         "Apache-2.0"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:Tongyi-MAI/Z-Image-Turbo (pipeline_tag=text-to-image)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "flux1-kontext-dev",
@@ -9224,7 +13303,39 @@
         "热门",
         "FLUX"
       ],
-      "gated": true
+      "gated": true,
+      "capability": {
+        "tasks": [
+          "image-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:black-forest-labs/FLUX.1-Kontext-dev (pipeline_tag=image-to-image)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen-image-2.1-viggle-turbo",
@@ -9277,7 +13388,34 @@
         "文生图",
         "热门",
         "Qwen"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch",
+          "negative_prompt"
+        ],
+        "source": "huggingface:Viggle/Qwen-Image-2.1-viggle-turbo (pipeline_tag=text-to-image)",
+        "confidence": "official-readme"
+      }
     },
     {
       "id": "qwen-image-edit-2511",
@@ -9329,7 +13467,40 @@
         "热门",
         "Qwen",
         "Apache-2.0"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:Qwen/Qwen-Image-Edit-2511 (pipeline_tag=image-to-image)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "aurasr-v2",
@@ -9376,7 +13547,37 @@
         "超分辨率",
         "GAN",
         "Apache-2.0"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-image",
+          "upscale"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "resolution",
+          "format",
+          "batch"
+        ],
+        "source": "huggingface:fal/AuraSR-v2 (pipeline_tag=image-to-image)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "indextts-2.5",
@@ -9424,7 +13625,36 @@
         "情感控制",
         "多语种",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:IndexTeam/IndexTTS-2.5 (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "fish-speech-s2-pro",
@@ -9472,7 +13702,36 @@
         "高保真",
         "多语种",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:fishaudio/s2-pro (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "voxcpm2",
@@ -9520,7 +13779,36 @@
         "多语种",
         "openbmb",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:openbmb/VoxCPM2 (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3-tts-1.7b-customvoice",
@@ -9567,7 +13855,36 @@
         "声音设计",
         "通义",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "acestep-v15-base",
@@ -9613,7 +13930,33 @@
         "音乐生成",
         "歌曲生成",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "lyrics",
+          "duration",
+          "steps",
+          "cfg",
+          "seed",
+          "format"
+        ],
+        "source": "huggingface:ACE-Step/acestep-v15-base (pipeline_tag=text-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "phonon-2",
@@ -9659,7 +14002,27 @@
         "端侧",
         "apple-silicon",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "asr"
+        ],
+        "inputs": {
+          "audio": {
+            "required": true,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "audio",
+          "language"
+        ],
+        "source": "huggingface:FermionResearch/Phonon-2 (pipeline_tag=automatic-speech-recognition)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "orpheus-3b",
@@ -9704,7 +14067,36 @@
         "情感语音",
         "英文",
         "语音合成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:canopylabs/orpheus-3b-0.1-ft (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "wan2.2-animate",
@@ -9754,7 +14146,47 @@
         "热门",
         "视频生成",
         "wan"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-video",
+          "video-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "character",
+            "max": 1
+          },
+          "video": {
+            "required": true,
+            "role": "driving"
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "video",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
+      }
     },
     {
       "id": "wan2.2-animate2",
@@ -9804,7 +14236,43 @@
         "视频生成",
         "wan",
         "2026"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-video",
+          "video-to-video"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "character",
+            "max": 1
+          },
+          "video": {
+            "required": true,
+            "role": "driving"
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "image",
+          "video",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
+      }
     },
     {
       "id": "wan2.2-s2v",
@@ -9856,7 +14324,47 @@
         "图生视频",
         "热门",
         "wan"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-video",
+          "audio-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "character",
+            "max": 1
+          },
+          "audio": {
+            "required": true,
+            "role": "driving"
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": true
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "audio",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:Wan-AI/Wan2.2-S2V-14B (pipeline_tag=image-to-video)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "mochi-1",
@@ -9900,7 +14408,36 @@
         "video",
         "国际旗舰",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:genmo/mochi-1-preview (pipeline_tag=text-to-video)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "framepack-i2v",
@@ -9950,7 +14487,42 @@
         "video",
         "热门",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": true,
+            "role": "first_frame",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "catalog-tags",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "pyramid-flow",
@@ -9996,7 +14568,47 @@
         "pyramid-flow",
         "video",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-video",
+          "image-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": false,
+            "role": "first_frame",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:rain1011/pyramid-flow-sd3 (pipeline_tag=text-to-video)",
+        "confidence": "official-pipeline+standard-cfg",
+        "requires_one_of": [
+          "text",
+          "image"
+        ]
+      }
     },
     {
       "id": "cogvideox-5b",
@@ -10038,7 +14650,36 @@
         "智谱",
         "video",
         "视频生成"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:zai-org/CogVideoX-5b (pipeline_tag=text-to-video)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "stable-fast-3d",
@@ -10085,7 +14726,33 @@
         "三维",
         "图生3d",
         "快速重建"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:stabilityai/stable-fast-3d (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "apple-sharp",
@@ -10131,7 +14798,33 @@
         "trending",
         "三维",
         "图生3d"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:apple/Sharp (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "instant-mesh",
@@ -10178,7 +14871,33 @@
         "三维",
         "图生3d",
         "前馈"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:TencentARC/InstantMesh (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "stable-spa3d",
@@ -10225,7 +14944,35 @@
         "comfyui",
         "三维",
         "图生3d"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": [
+              "ply"
+            ]
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:stabilityai/stable-point-aware-3d (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "triposplat",
@@ -10271,7 +15018,36 @@
         "三维",
         "图生3d",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": [
+              "ply",
+              "splat"
+            ]
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
+      }
     },
     {
       "id": "shap-e",
@@ -10318,7 +15094,42 @@
         "三维",
         "文生3d",
         "图生3d"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-3d",
+          "image-to-3d"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:openai/shap-e (pipeline_tag=text-to-3d)",
+        "confidence": "official-pipeline",
+        "requires_one_of": [
+          "text",
+          "image"
+        ]
+      }
     },
     {
       "id": "midi-3d",
@@ -10364,7 +15175,33 @@
         "三维",
         "多视图",
         "图生3d"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-3d"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "3d": {
+            "format": "glb"
+          }
+        },
+        "controls": [
+          "image",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:VAST-AI/MIDI-3D (pipeline_tag=image-to-3d)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3-1.7b",
@@ -10459,7 +15296,25 @@
           "vram_gb": 3.7,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3-1.7B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen3-14b",
@@ -10552,7 +15407,25 @@
           "vram_gb": 31.6,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen3-14B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "nex-n2.5-mini",
@@ -10639,7 +15512,25 @@
           "vram_gb": 76.2,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:nex-agi/Nex-N2.5-mini (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "nex-n2.5-pro",
@@ -10726,7 +15617,25 @@
           "vram_gb": 484.8,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:nex-agi/Nex-N2.5-Pro (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "kolibri-1",
@@ -10805,7 +15714,25 @@
           "vram_gb": 89.0,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Aleph-Alpha/Kolibri-1 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "hemmingway-1",
@@ -10891,7 +15818,25 @@
           "vram_gb": 58.5,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Altworld/Hemmingway-1 (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "flux.2-klein-4b",
@@ -10989,7 +15934,40 @@
           "vram_gb": 8.3,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-image",
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": true,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:black-forest-labs/FLUX.2-klein-4B (pipeline_tag=image-to-image)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "breeze-tts-2",
@@ -11059,7 +16037,36 @@
           "vram_gb": 6.1,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech",
+          "voice-clone"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "huggingface:BreezeBlue/Breeze-TTS-2 (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "pyannote-diarization-community-1",
@@ -11102,7 +16109,28 @@
         "diarization",
         "pyannote",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "asr",
+          "diarization"
+        ],
+        "inputs": {
+          "audio": {
+            "required": true,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "audio",
+          "language"
+        ],
+        "source": "huggingface:pyannote/speaker-diarization-community-1 (pipeline_tag=automatic-speech-recognition)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "gliner2.5",
@@ -11143,7 +16171,25 @@
         "GLiNER",
         "信息抽取",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-classification"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:fastino/GLiNER2.5-Decide (pipeline_tag=text-classification)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "clm-v0.1-8b",
@@ -11184,7 +16230,25 @@
         "verifier",
         "对比学习",
         "Agent"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "embedding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "embedding": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Contrastive-LM/CLM-v0.1-8B (pipeline_tag=text-ranking)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "frognano-4b",
@@ -11226,7 +16290,25 @@
         "MIT",
         "本地部署"
       ],
-      "gguf_repo": "bartowski/FrogNano-4B-2609-GGUF"
+      "gguf_repo": "bartowski/FrogNano-4B-2609-GGUF",
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "gemma-4-e2b",
@@ -11324,7 +16406,36 @@
           "vram_gb": 10.0,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "audio"
+        ],
+        "source": "huggingface:google/gemma-4-E2B-it (pipeline_tag=any-to-any)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "gemma-4-e4b",
@@ -11421,7 +16532,36 @@
           "vram_gb": 16.1,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "audio"
+        ],
+        "source": "huggingface:google/gemma-4-E4B-it (pipeline_tag=any-to-any)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "laya-decision",
@@ -11465,7 +16605,25 @@
         "文本分类",
         "System One",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-classification"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:convaiinnovations/laya (pipeline_tag=text-classification)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "ternary-bonsai-2-27b",
@@ -11538,7 +16696,31 @@
         "Qwen3.6",
         "视觉",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:prism-ml/Ternary-Bonsai-2-27B-gguf (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "auk-flash",
@@ -11584,7 +16766,37 @@
         "人声分离",
         "腾讯",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "duration",
+          "format",
+          "seed",
+          "voice",
+          "speed"
+        ],
+        "source": "huggingface:tencent/AuK-Flash (pipeline_tag=text-to-speech)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "nemotron-3-diarization",
@@ -11626,7 +16838,26 @@
         "NeMo",
         "SortFormer",
         "NVIDIA"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "voice-activity-detection"
+        ],
+        "inputs": {
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "audio"
+        ],
+        "source": "huggingface:nvidia/Nemotron-3-Diarization (pipeline_tag=voice-activity-detection)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "llama-4-scout",
@@ -11721,7 +16952,31 @@
         "旗舰",
         "Meta",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:meta-llama/Llama-4-Scout-17B-16E-Instruct (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "llama-4-maverick",
@@ -11816,7 +17071,31 @@
         "旗舰",
         "Meta",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:meta-llama/Llama-4-Maverick-17B-128E-Instruct (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "phi-4-mini",
@@ -11902,7 +17181,25 @@
           "vram_gb": 7.68,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:microsoft/Phi-4-mini-instruct (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "llama-3.3-70b",
@@ -11994,7 +17291,25 @@
           "vram_gb": 141.12,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:meta-llama/Llama-3.3-70B-Instruct (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "mistral-nemo-12b",
@@ -12071,7 +17386,25 @@
           "vram_gb": 13.02,
           "recommended": false
         }
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "qwen2.5-vl-7b",
@@ -12166,7 +17499,31 @@
         "多模态",
         "文档解析",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:Qwen/Qwen2.5-VL-7B-Instruct (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "llama-3.2-11b-vision",
@@ -12228,7 +17585,31 @@
         "视觉理解",
         "多模态",
         "Meta"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:meta-llama/Llama-3.2-11B-Vision-Instruct (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "phi-4-reasoning",
@@ -12322,7 +17703,25 @@
         "思考链",
         "微软",
         "MIT"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:microsoft/Phi-4-reasoning (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "devstral-small-2-24b",
@@ -12416,7 +17815,25 @@
         "Agent",
         "编程",
         "Apache"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "phi-4-multimodal",
@@ -12461,7 +17878,37 @@
         "微软",
         "MIT",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "asr"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "audio": {
+            "required": true,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "audio",
+          "language"
+        ],
+        "source": "huggingface:microsoft/Phi-4-multimodal-instruct (pipeline_tag=automatic-speech-recognition)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "mistral-small-3.2-24b",
@@ -12557,7 +18004,31 @@
         "多模态",
         "Apache",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "gemma-3n-e4b",
@@ -12645,7 +18116,36 @@
         "MatFormer",
         "移动",
         "低资源"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          },
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "audio"
+        ],
+        "source": "huggingface:google/gemma-3n-E4B-it (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen2.5-vl-72b",
@@ -12732,7 +18232,31 @@
         "视觉理解",
         "大模型",
         "多模态"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:Qwen/Qwen2.5-VL-72B-Instruct (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "codestral-22b",
@@ -12810,7 +18334,25 @@
         "代码",
         "编程",
         "补全"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "r1-distill-qwen-14b",
@@ -12889,7 +18431,25 @@
         "思考链",
         "MIT",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-R1-Distill-Qwen-14B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "ovis2-16b",
@@ -12932,7 +18492,31 @@
         "多模态",
         "文档解析",
         "Apache"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:ATH-MaaS/Ovis2-16B (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "r1-distill-llama-8b",
@@ -13026,7 +18610,25 @@
         "推理",
         "思考链",
         "MIT"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-R1-Distill-Llama-8B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "r1-distill-qwen-7b",
@@ -13104,7 +18706,25 @@
         "推理",
         "思考链",
         "MIT"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-R1-Distill-Qwen-7B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "r1-distill-qwen-1.5b",
@@ -13190,7 +18810,25 @@
         "推理",
         "思考链",
         "MIT"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "r1-distill-llama-70b",
@@ -13284,7 +18922,25 @@
         "推理",
         "思考链",
         "MIT"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:deepseek-ai/DeepSeek-R1-Distill-Llama-70B (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "glm-4-9b",
@@ -13368,7 +19024,25 @@
         "工具调用",
         "对话",
         "9B"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "qwen2.5-coder-7b",
@@ -13446,7 +19120,25 @@
         "编程",
         "Apache",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen2.5-Coder-7B-Instruct (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "aya-expanse-8b",
@@ -13524,7 +19216,25 @@
         "多语言",
         "cc-by-nc",
         "非商业"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:CohereForAI/aya-expanse-8b (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen2.5-32b",
@@ -13602,7 +19312,25 @@
         "Apache",
         "长文本",
         "热门"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Qwen/Qwen2.5-32B-Instruct (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "internlm3-8b",
@@ -13686,7 +19414,25 @@
         "工具调用",
         "Apache",
         "8B"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:internlm/internlm3-8b-instruct (pipeline_tag=text-generation)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "qwen2-audio-7b",
@@ -13728,7 +19474,26 @@
         "语音理解",
         "音频问答",
         "Apache"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "audio-understanding"
+        ],
+        "inputs": {
+          "audio": {
+            "required": false,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "audio"
+        ],
+        "source": "huggingface:Qwen/Qwen2-Audio-7B-Instruct (pipeline_tag=audio-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "sdxl-base",
@@ -13769,7 +19534,34 @@
         "文生图",
         "经典",
         "LoRA生态"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:stabilityai/stable-diffusion-xl-base-1.0 (pipeline_tag=text-to-image)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "hidream-i1-fast",
@@ -13811,7 +19603,34 @@
         "MoE",
         "MIT",
         "快速"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:HiDream-ai/HiDream-I1-Fast (pipeline_tag=text-to-image)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "sd15-base",
@@ -13851,7 +19670,34 @@
         "文生图",
         "经典",
         "LoRA生态"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:stable-diffusion-v1-5/stable-diffusion-v1-5 (pipeline_tag=text-to-image)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     },
     {
       "id": "svd-xt",
@@ -13893,7 +19739,34 @@
         "StableVideo",
         "图生视频",
         "经典"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-to-video"
+        ],
+        "inputs": {
+          "image": {
+            "required": true,
+            "role": "first_frame",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "image",
+          "duration",
+          "fps",
+          "motion",
+          "format"
+        ],
+        "source": "huggingface:stabilityai/stable-video-diffusion-img2vid-xt (pipeline_tag=image-to-video)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "whisper-large-v3",
@@ -13934,7 +19807,27 @@
         "ASR",
         "多语言",
         "CTranslate2"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "asr"
+        ],
+        "inputs": {
+          "audio": {
+            "required": true,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "audio",
+          "language"
+        ],
+        "source": "huggingface:Systran/faster-whisper-large-v3 (pipeline_tag=automatic-speech-recognition)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "whisper-large-v3-turbo",
@@ -13976,7 +19869,27 @@
         "CTranslate2",
         "快速"
       ],
-      "notes": "该仓为 Dropbox 发布的 OpenAI turbo CTranslate2 转制（非 OpenAI/Systran 官方 CT2 仓），权重与许可经核验。"
+      "notes": "该仓为 Dropbox 发布的 OpenAI turbo CTranslate2 转制（非 OpenAI/Systran 官方 CT2 仓），权重与许可经核验。",
+      "capability": {
+        "tasks": [
+          "asr"
+        ],
+        "inputs": {
+          "audio": {
+            "required": true,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "audio",
+          "language"
+        ],
+        "source": "catalog-tags",
+        "confidence": "inferred"
+      }
     },
     {
       "id": "bge-m3",
@@ -14017,7 +19930,25 @@
         "多语言",
         "RAG",
         "检索"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "embedding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "embedding": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:BAAI/bge-m3 (pipeline_tag=sentence-similarity)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "bge-large-en",
@@ -14057,7 +19988,25 @@
         "Embedding",
         "英文",
         "检索"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "embedding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "embedding": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:BAAI/bge-large-en-v1.5 (pipeline_tag=feature-extraction)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "bge-large-zh",
@@ -14097,7 +20046,25 @@
         "Embedding",
         "中文",
         "检索"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "embedding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "embedding": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:BAAI/bge-large-zh-v1.5 (pipeline_tag=feature-extraction)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "gte-large",
@@ -14136,7 +20103,25 @@
         "Embedding",
         "通用",
         "轻量"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "embedding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "embedding": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:thenlper/gte-large (pipeline_tag=sentence-similarity)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "multilingual-e5-large",
@@ -14176,7 +20161,25 @@
         "Embedding",
         "多语言",
         "检索"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "embedding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "embedding": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:intfloat/multilingual-e5-large (pipeline_tag=feature-extraction)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "gte-qwen2-7b-instruct",
@@ -14215,7 +20218,25 @@
         "Embedding",
         "Qwen",
         "指令式"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "embedding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "embedding": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:Alibaba-NLP/gte-Qwen2-7B-instruct (pipeline_tag=sentence-similarity)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "htdemucs",
@@ -14260,7 +20281,31 @@
       "files": [
         "955717e8-8726e21a.th",
         "htdemucs.yaml"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "audio-to-audio"
+        ],
+        "inputs": {
+          "audio": {
+            "required": true,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "audio",
+          "duration",
+          "format",
+          "seed"
+        ],
+        "source": "huggingface:iBoostAI/Demucs-v4 (pipeline_tag=audio-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "htdemucs-ft",
@@ -14308,7 +20353,31 @@
         "92cfc3b6-ef3bcb9c.th",
         "04573f0d-f3cf25b2.th",
         "htdemucs_ft.yaml"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "audio-to-audio"
+        ],
+        "inputs": {
+          "audio": {
+            "required": true,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "audio",
+          "duration",
+          "format",
+          "seed"
+        ],
+        "source": "huggingface:iBoostAI/Demucs-v4 (pipeline_tag=audio-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "htdemucs-6s",
@@ -14353,7 +20422,31 @@
       "files": [
         "5c90dfd2-34c22ccb.th",
         "htdemucs_6s.yaml"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "audio-to-audio"
+        ],
+        "inputs": {
+          "audio": {
+            "required": true,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "audio",
+          "duration",
+          "format",
+          "seed"
+        ],
+        "source": "huggingface:iBoostAI/Demucs-v4 (pipeline_tag=audio-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "piper-en-lessac",
@@ -14398,7 +20491,30 @@
       "files": [
         "en/en_US/lessac/medium/en_US-lessac-medium.onnx",
         "en/en_US/lessac/medium/en_US-lessac-medium.onnx.json"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
+      }
     },
     {
       "id": "piper-en-amy",
@@ -14443,7 +20559,30 @@
       "files": [
         "en/en_US/amy/medium/en_US-amy-medium.onnx",
         "en/en_US/amy/medium/en_US-amy-medium.onnx.json"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
+      }
     },
     {
       "id": "piper-zh-huayan",
@@ -14488,7 +20627,30 @@
       "files": [
         "zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx",
         "zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx.json"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-to-speech"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "voice",
+          "speed",
+          "format"
+        ],
+        "source": "catalog-tags",
+        "confidence": "curated-override"
+      }
     },
     {
       "id": "smolvlm-256",
@@ -14531,7 +20693,31 @@
         "多模态",
         "轻量",
         "Apache"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:HuggingFaceTB/SmolVLM-256M-Instruct (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "janus-pro-7b",
@@ -14575,7 +20761,38 @@
         "多模态",
         "统一模型",
         "MIT"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation",
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {},
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "resolution",
+          "format",
+          "batch"
+        ],
+        "source": "huggingface:deepseek-ai/Janus-Pro-7B (pipeline_tag=any-to-any)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "janus-pro-1b",
@@ -14620,7 +20837,38 @@
         "多模态",
         "统一模型",
         "MIT"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "text-generation",
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {},
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "image",
+          "resolution",
+          "format",
+          "batch"
+        ],
+        "source": "huggingface:deepseek-ai/Janus-Pro-1B (pipeline_tag=any-to-any)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "minicpm-v-4.6",
@@ -14663,7 +20911,31 @@
         "多模态",
         "高效",
         "Apache"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "image-understanding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 4
+          }
+        },
+        "outputs": {
+          "text": {}
+        },
+        "controls": [
+          "prompt",
+          "image"
+        ],
+        "source": "huggingface:openbmb/MiniCPM-V-4.6 (pipeline_tag=image-text-to-text)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "embeddinggemma-2",
@@ -14704,7 +20976,25 @@
         "RAG",
         "检索",
         "Google"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "embedding"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          }
+        },
+        "outputs": {
+          "embedding": {}
+        },
+        "controls": [
+          "prompt"
+        ],
+        "source": "huggingface:google/embeddinggemma-2 (pipeline_tag=feature-extraction)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "bs-roformer-vocals",
@@ -14745,7 +21035,37 @@
       "files": [
         "bs_roformer/vocals_viperx/model.safetensors",
         "bs_roformer/vocals_viperx/config.yaml"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "audio-to-audio",
+          "source-separation",
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": true,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "duration",
+          "format",
+          "seed"
+        ],
+        "source": "huggingface:AEmotionStudio/roformer-models (pipeline_tag=audio-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "melband-roformer-vocals",
@@ -14785,7 +21105,37 @@
       "files": [
         "mel_band_roformer/vocals_viperx/model.safetensors",
         "mel_band_roformer/vocals_viperx/config.yaml"
-      ]
+      ],
+      "capability": {
+        "tasks": [
+          "audio-to-audio",
+          "source-separation",
+          "music-generation"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "audio": {
+            "required": true,
+            "role": "reference"
+          }
+        },
+        "outputs": {
+          "audio": {
+            "format": "wav"
+          }
+        },
+        "controls": [
+          "prompt",
+          "audio",
+          "duration",
+          "format",
+          "seed"
+        ],
+        "source": "huggingface:AEmotionStudio/roformer-models (pipeline_tag=audio-to-audio)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "open-h3-regenerate-2k",
@@ -14833,7 +21183,40 @@
         "open-weights",
         "trending"
       ],
-      "note": "非 MiniMax 官方模块；官方 H3-Regenerate-2K 仍仅 API。"
+      "note": "非 MiniMax 官方模块；官方 H3-Regenerate-2K 仍仅 API。",
+      "capability": {
+        "tasks": [
+          "video-to-video"
+        ],
+        "inputs": {
+          "text": {
+            "required": false
+          },
+          "video": {
+            "required": true,
+            "role": "source"
+          }
+        },
+        "outputs": {
+          "video": {
+            "format": "mp4",
+            "audio": false
+          }
+        },
+        "controls": [
+          "prompt",
+          "video",
+          "duration",
+          "resolution",
+          "fps",
+          "format",
+          "steps",
+          "cfg",
+          "seed"
+        ],
+        "source": "huggingface:Efficient-Large-Model/Open-H3-Regenerate-2K (pipeline_tag=video-to-video)",
+        "confidence": "official-pipeline"
+      }
     },
     {
       "id": "minimax-h3-image",
@@ -14881,7 +21264,40 @@
         "open-weights",
         "trending"
       ],
-      "note": "官方开放权重，非 API-only；整仓包含重复的 transformer/ 与 transformer_diffusers/ 目录，按需下载可减半。"
+      "note": "官方开放权重，非 API-only；整仓包含重复的 transformer/ 与 transformer_diffusers/ 目录，按需下载可减半。",
+      "capability": {
+        "tasks": [
+          "text-to-image"
+        ],
+        "inputs": {
+          "text": {
+            "required": true
+          },
+          "image": {
+            "required": false,
+            "role": "reference",
+            "max": 1
+          }
+        },
+        "outputs": {
+          "image": {
+            "format": "png"
+          }
+        },
+        "controls": [
+          "prompt",
+          "negative_prompt",
+          "image",
+          "resolution",
+          "format",
+          "steps",
+          "cfg",
+          "seed",
+          "batch"
+        ],
+        "source": "huggingface:MiniMaxAI/MiniMax-H3-Image (pipeline_tag=text-to-image)",
+        "confidence": "official-pipeline+standard-cfg"
+      }
     }
   ],
   "gguf_repos": [
@@ -14925,5 +21341,10 @@
       "[标注] happyshrimp-1.0: 补上「暂无可下载权重」说明",
       "[标注] minimax-2k-pending: 补上「暂无可下载权重」说明"
     ]
+  },
+  "capability_schema": {
+    "version": 1,
+    "updated": "2026-11-14",
+    "description": "每个模型独立声明任务、输入、输出和支持的控制项；前端按此渲染表单，不再按类目共用一套字段。"
   }
 }

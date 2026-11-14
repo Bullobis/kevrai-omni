@@ -5,6 +5,7 @@ import { toast } from "./toast.js";
 import { createEmptyState } from "./empty-state.js";
 import { isViewVisible, onViewState } from "./view-visibility.js";
 import { t } from "./i18n.js";
+import { escapeHtml } from "./net.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -32,6 +33,8 @@ export async function initLtx() {
   });
   document.getElementById("ltx-preset").addEventListener("change", applyPreset);
   document.getElementById("ltx-mode").addEventListener("change", toggleMode);
+  const modelSelect = document.getElementById("ltx-model");
+  if (modelSelect) modelSelect.addEventListener("change", applyModelCapability);
   document.getElementById("ltx-refresh-outputs").addEventListener("click", loadOutputs);
   document.getElementById("ltx-open-folder").addEventListener("click", openOutputsFolder);
 
@@ -66,6 +69,7 @@ function renderCapabilities() {
     modelSel.innerHTML = models.map((m) =>
       `<option value="${m.id}">${m.label || m.id}</option>`).join("");
     modelSel.value = "Lightricks/LTX-2.5";
+    applyModelCapability();
   }
   // Populate presets
   const sel = document.getElementById("ltx-preset");
@@ -112,12 +116,62 @@ function applyPreset() {
   }
 }
 
+function currentVideoCapability() {
+  const id = document.getElementById("ltx-model")?.value || "";
+  const model = (cap?.models || []).find((m) => m.id === id);
+  return model?.capability || null;
+}
+
+// Make the form follow the selected model, not a category-wide assumption.
+function applyModelCapability() {
+  const model = (cap?.models || []).find((m) => m.id === (document.getElementById("ltx-model")?.value || ""));
+  const modelCap = model?.capability || null;
+  const modeSel = document.getElementById("ltx-mode");
+  if (!modelCap || !modeSel) return;
+  const modes = model.modes || [];
+  const current = modeSel.value;
+  modeSel.innerHTML = modes.map((m) => {
+    const key = m === "i2v" ? "ltx.modeI2V" : "ltx.modeT2V";
+    return `<option value="${m}">${escapeHtml(t(key))}</option>`;
+  }).join("");
+  modeSel.value = modes.includes(current) ? current : (modes[0] || "t2v");
+
+  const promptField = document.getElementById("ltx-prompt-field");
+  const negativeField = document.getElementById("ltx-negative-field");
+  const imageHint = document.getElementById("ltx-model-capability");
+  const imageLabel = document.getElementById("ltx-image-label");
+  const imageCap = modelCap.image;
+  const prompts = modelCap.prompt !== "none";
+  if (promptField) promptField.hidden = !prompts;
+  if (negativeField) negativeField.hidden = !prompts || !modelCap.negative;
+  if (imageLabel) {
+    const role = imageCap?.role;
+    const roleKey = role === "first_frame" ? "ltx.imageFirstFrame"
+      : role === "character" ? "ltx.imageCharacter"
+      : role === "control" ? "ltx.imageControl"
+      : "ltx.imageReference";
+    imageLabel.textContent = t(roleKey);
+  }
+  if (imageHint) {
+    const bits = [];
+    if (!prompts) bits.push(t("ltx.modelImageOnly"));
+    if (imageCap && imageCap.required) bits.push(t("ltx.modelNeedsImage"));
+    else if (imageCap) bits.push(t("ltx.modelImageOptional"));
+    if (prompts && modelCap.prompt === "optional") bits.push(t("ltx.modelPromptOptional"));
+    imageHint.textContent = bits.join(" ");
+    imageHint.hidden = bits.length === 0;
+  }
+  toggleMode();
+}
+
 function toggleMode() {
   const mode = document.getElementById("ltx-mode").value;
   const imgRow = document.getElementById("ltx-image-row");
   const strengthRow = document.getElementById("ltx-strength-row");
-  imgRow.hidden = mode !== "i2v";
-  strengthRow.hidden = mode !== "i2v";
+  const imageCap = currentVideoCapability()?.image;
+  const canImage = mode === "i2v" && !!imageCap;
+  imgRow.hidden = !canImage;
+  strengthRow.hidden = !canImage;
 }
 
 function collectParams() {
@@ -149,9 +203,15 @@ async function generate() {
   }
   const params = collectParams();
   params.model_id = document.getElementById("ltx-model")?.value || "Lightricks/LTX-2.5";
-  if (!params.prompt) {
+  const modelCap = currentVideoCapability();
+  if (modelCap?.prompt !== "none" && !params.prompt) {
     toast(t("ltx.needPrompt"), { kind: "error" });
     document.getElementById("ltx-prompt").focus();
+    return;
+  }
+  if (params.mode === "i2v" && modelCap?.image?.required && !params.image_path) {
+    toast(t("ltx.needImage"), { kind: "error" });
+    document.getElementById("ltx-image").focus();
     return;
   }
   const btn = document.getElementById("ltx-generate");

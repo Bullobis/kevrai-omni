@@ -126,6 +126,12 @@ def _as_strict_int(v: Any, name: str) -> int:
         raise LtxParamError(f"{name} must be an integer, got {v!r}") from None
 
 
+PROMPT_NONE_MODELS = {
+    "stabilityai/stable-video-diffusion-img2vid-xt",
+    "Jingya/tiny-stable-video-diffusion-img2vid",
+}
+
+
 @dataclass
 class LtxParams:
     mode: str = "t2v"                  # t2v | i2v
@@ -149,7 +155,7 @@ class LtxParams:
     def validate(self) -> None:
         if self.mode not in ("t2v", "i2v"):
             raise LtxParamError(f"mode must be t2v or i2v, got {self.mode!r}")
-        if not self.prompt or not self.prompt.strip():
+        if self.model_id not in PROMPT_NONE_MODELS and (not self.prompt or not self.prompt.strip()):
             raise LtxParamError("prompt must not be empty")
         if len(self.prompt) > 2000:
             raise LtxParamError("prompt too long (max 2000 chars)")
@@ -634,16 +640,26 @@ def capabilities() -> dict[str, Any]:
     return {
         "model": "Lightricks/LTX-2.5",
         "models": [
-            {"id": "Lightricks/LTX-2.5", "label": "LTX-2.5（官方，质量最高）", "modes": ["t2v", "i2v"]},
-            {"id": "Lightricks/LTX-Video", "label": "LTX-Video 0.9（更省显存）", "modes": ["t2v", "i2v"]},
-            {"id": "Wan-AI/Wan2.2-T2V-A14B-Diffusers", "label": "Wan 2.2 T2V（阿里）", "modes": ["t2v"]},
-            {"id": "Wan-AI/Wan2.2-I2V-A14B-Diffusers", "label": "Wan 2.2 I2V（阿里）", "modes": ["i2v"]},
-            {"id": "tencent/HunyuanVideo", "label": "HunyuanVideo（腾讯）", "modes": ["t2v"]},
-            {"id": "zai-org/CogVideoX-5b", "label": "CogVideoX 5B（智谱）", "modes": ["t2v"]},
-            {"id": "genmo/mochi-1-preview", "label": "Mochi 1（Genmo）", "modes": ["t2v"]},
-            {"id": "stabilityai/stable-video-diffusion-img2vid-xt", "label": "SVD XT（Stability）", "modes": ["i2v"]},
-            {"id": "Jingya/tiny-stable-video-diffusion-img2vid", "label": "Tiny SVD（CPU 验证用小模型）", "modes": ["i2v"]},
-            {"id": "kevrai/preview-video", "label": "轻量预览（离线，非 AI）", "modes": ["t2v", "i2v"]},
+            {"id": "Lightricks/LTX-2.5", "label": "LTX-2.5（官方，质量最高）", "modes": ["t2v", "i2v"],
+             "capability": {"prompt": "required", "negative": True, "image": {"required": False, "role": "first_frame"}}},
+            {"id": "Lightricks/LTX-Video", "label": "LTX-Video 0.9（更省显存）", "modes": ["t2v", "i2v"],
+             "capability": {"prompt": "required", "negative": True, "image": {"required": False, "role": "first_frame"}}},
+            {"id": "Wan-AI/Wan2.2-T2V-A14B-Diffusers", "label": "Wan 2.2 T2V（阿里）", "modes": ["t2v"],
+             "capability": {"prompt": "required", "negative": True, "image": None}},
+            {"id": "Wan-AI/Wan2.2-I2V-A14B-Diffusers", "label": "Wan 2.2 I2V（阿里）", "modes": ["i2v"],
+             "capability": {"prompt": "optional", "negative": True, "image": {"required": True, "role": "first_frame"}}},
+            {"id": "tencent/HunyuanVideo", "label": "HunyuanVideo（腾讯）", "modes": ["t2v"],
+             "capability": {"prompt": "required", "negative": True, "image": None}},
+            {"id": "zai-org/CogVideoX-5b", "label": "CogVideoX 5B（智谱）", "modes": ["t2v"],
+             "capability": {"prompt": "required", "negative": True, "image": None}},
+            {"id": "genmo/mochi-1-preview", "label": "Mochi 1（Genmo）", "modes": ["t2v"],
+             "capability": {"prompt": "required", "negative": True, "image": None}},
+            {"id": "stabilityai/stable-video-diffusion-img2vid-xt", "label": "SVD XT（Stability）", "modes": ["i2v"],
+             "capability": {"prompt": "none", "negative": False, "image": {"required": True, "role": "first_frame"}}},
+            {"id": "Jingya/tiny-stable-video-diffusion-img2vid", "label": "Tiny SVD（CPU 验证用小模型）", "modes": ["i2v"],
+             "capability": {"prompt": "none", "negative": False, "image": {"required": True, "role": "first_frame"}}},
+            {"id": "kevrai/preview-video", "label": "轻量预览（离线，非 AI）", "modes": ["t2v", "i2v"],
+             "capability": {"prompt": "required", "negative": False, "image": {"required": False, "role": "first_frame"}}},
         ],
         "engine_ready": engine_ready,
         "engine_error": engine_error,

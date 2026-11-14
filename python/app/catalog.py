@@ -122,6 +122,10 @@ class ModelEntry(BaseModel):
     #   {"multimodal": bool, "understand": ["image","audio","video",...],
     #    "generate": ["text","image",...], "notes": str}
     modality: dict[str, Any] = Field(default_factory=dict)
+    # v4.18.0 — per-model capability manifest.  The market UI and the
+    # generation forms read this instead of assuming every model in a
+    # category shares the same inputs/controls.
+    capability: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("id")
     @classmethod

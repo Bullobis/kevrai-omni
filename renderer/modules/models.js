@@ -243,6 +243,8 @@ function renderCard(m) {
   const sizePill = m.size_gb ? `<span class="pill">${(+m.size_gb).toFixed(1)} GB</span>` : "";
   const typePill = m.category
     ? `<span class="pill" title="${t("market.typeLabel")}">${escapeHtml(categoryLabel(m.category))}</span>` : "";
+  const capTask = (m.capability && m.capability.tasks && m.capability.tasks[0])
+    ? `<span class="pill cap-task" title="${t("market.capabilityTitle")}">${escapeHtml(capTaskName(m.capability.tasks[0]))}</span>` : "";
   const licensePill = m.license
     ? `<span class="pill license" title="${escapeHtml(m.license)}">${escapeHtml(m.license)}</span>` : "";
   const trendBadge = m.trending
@@ -271,6 +273,7 @@ function renderCard(m) {
           ${sizePill}
           ${hubBadge}
           ${typePill}
+          ${capTask}
           ${licensePill}
         </div>
       </div>
@@ -308,6 +311,90 @@ const CATEGORY_LABELS = {
   "3d": "category_3d", vision: "category_vision",
   pending: "category_pending", other: "category_other",
 };
+
+const CAP_TASK_LABELS = {
+  "text-to-image": "capTaskTextToImage", "image-to-image": "capTaskImageToImage",
+  "text-to-video": "capTaskTextToVideo", "image-to-video": "capTaskImageToVideo",
+  "video-to-video": "capTaskVideoToVideo", "audio-to-video": "capTaskAudioToVideo",
+  "text-to-audio": "capTaskTextToAudio", "audio-to-audio": "capTaskAudioToAudio",
+  "music-generation": "capTaskMusic", "sound-effects": "capTaskSoundEffects",
+  "text-to-speech": "capTaskTts", "voice-clone": "capTaskVoiceClone",
+  "asr": "capTaskAsr", "source-separation": "capTaskSeparation",
+  "diarization": "capTaskDiarization", "text-to-3d": "capTaskTextTo3d",
+  "image-to-3d": "capTaskImageTo3d", "upscale": "capTaskUpscale",
+  "segmentation": "capTaskSegmentation", "detection": "capTaskDetection",
+  "ocr": "capTaskOcr", "image-classification": "capTaskImageClassification",
+  "embedding": "capTaskEmbedding", "text-generation": "capTaskTextGeneration",
+  "image-understanding": "capTaskImageUnderstanding", "audio-understanding": "capTaskAudioUnderstanding",
+  "video-understanding": "capTaskVideoUnderstanding", "image-captioning": "capTaskImageCaptioning",
+  "text-detection": "capTaskTextDetection", "text-recognition": "capTaskTextRecognition",
+  "controlnet": "capTaskControlnet", "voice-activity-detection": "capTaskVad",
+};
+const CAP_INPUT_LABELS = { text: "capInText", image: "capInImage", audio: "capInAudio", video: "capInVideo" };
+const CAP_ROLE_LABELS = { first_frame: "capRoleFirstFrame", character: "capRoleCharacter",
+  reference: "capRoleReference", control: "capRoleControl", source: "capRoleSource", driving: "capRoleDriving" };
+const CAP_OUTPUT_LABELS = { image: "capOutImage", video: "capOutVideo", audio: "capOutAudio",
+  "3d": "capOut3d", text: "capOutText", mask: "capOutMask", labels: "capOutLabels", embedding: "capOutEmbedding" };
+const CAP_CONTROL_LABELS = { negative_prompt: "capCtrlNegative", duration: "capCtrlDuration",
+  resolution: "capCtrlResolution", fps: "capCtrlFps", steps: "capCtrlSteps", cfg: "capCtrlCfg",
+  seed: "capCtrlSeed", batch: "capCtrlBatch", format: "capCtrlFormat", lyrics: "capCtrlLyrics",
+  voice: "capCtrlVoice", speed: "capCtrlSpeed", language: "capCtrlLanguage", motion: "capCtrlMotion",
+  audio: "capCtrlAudio", video: "capCtrlVideo", image: "capCtrlImage", text_prompt: "capCtrlTextPrompt",
+  labels: "capCtrlLabels" };
+
+function capTaskName(id) {
+  const key = CAP_TASK_LABELS[id];
+  return key ? t(`market.${key}`) : String(id || "").replace(/-/g, " ");
+}
+
+function capInputName(type, info) {
+  let name = t(`market.${CAP_INPUT_LABELS[type] || "capInText"}`);
+  if (info && info.role && CAP_ROLE_LABELS[info.role]) {
+    name += ` · ${t(`market.${CAP_ROLE_LABELS[info.role]}`)}`;
+  }
+  if (info && info.required === false) name += ` (${t("market.capOptional")})`;
+  return name;
+}
+
+function capOutputName(type, info) {
+  let name = t(`market.${CAP_OUTPUT_LABELS[type] || "capOutText"}`);
+  if (info && info.audio) name += ` + ${t("market.capOutAudio")}`;
+  if (info && Array.isArray(info.format)) name += ` · ${info.format.join(" / ")}`;
+  else if (info && info.format) name += ` · ${info.format}`;
+  return name;
+}
+
+function renderCapability(m) {
+  const cap = m && m.capability;
+  if (!cap || !Array.isArray(cap.tasks) || cap.tasks.length === 0) return "";
+  const tasks = cap.tasks.map((id) => `<span class="pill cap-task">${escapeHtml(capTaskName(id))}</span>`).join("");
+  const inputs = Object.entries(cap.inputs || {}).map(([type, info]) =>
+    `<span class="pill">${escapeHtml(capInputName(type, info))}</span>`).join("");
+  const outputs = Object.entries(cap.outputs || {}).map(([type, info]) =>
+    `<span class="pill">${escapeHtml(capOutputName(type, info))}</span>`).join("");
+  const controls = (cap.controls || []).filter((c) => CAP_CONTROL_LABELS[c])
+    .map((c) => `<span class="pill quiet">${escapeHtml(t(`market.${CAP_CONTROL_LABELS[c]}`))}</span>`).join("");
+  const confidenceKey = cap.confidence === "inferred" ? "capConfidenceInferred" : "capConfidenceVerified";
+  const rawSource = String(cap.source || "");
+  let sourceText;
+  if (rawSource.startsWith("huggingface:")) {
+    const repo = rawSource.slice("huggingface:".length).split(" ")[0];
+    sourceText = t("market.capSourceHuggingFace", { repo: escapeHtml(repo) });
+  } else if (rawSource === "catalog-tags") {
+    sourceText = t("market.capSourceCatalog");
+  } else {
+    sourceText = t("market.capSourceCurated");
+  }
+  return `
+    <h3 class="section">${t("market.capabilityTitle")}</h3>
+    <div class="capability-block">
+      <div class="capability-row"><span class="capability-key">${t("market.capTasks")}</span><div class="capability-pills">${tasks}</div></div>
+      <div class="capability-row"><span class="capability-key">${t("market.capInputs")}</span><div class="capability-pills">${inputs || `<span class="muted">${t("market.capNone")}</span>`}</div></div>
+      <div class="capability-row"><span class="capability-key">${t("market.capOutputs")}</span><div class="capability-pills">${outputs}</div></div>
+      ${controls ? `<div class="capability-row"><span class="capability-key">${t("market.capControls")}</span><div class="capability-pills">${controls}</div></div>` : ""}
+      <p class="hint" title="${escapeHtml(rawSource)}">${t("market.capSource", { source: sourceText, level: t(`market.${confidenceKey}`) })}</p>
+    </div>`;
+}
 
 export function categoryLabel(id) {
   const key = CATEGORY_LABELS[id];
@@ -811,6 +898,7 @@ function renderDetail(m, gguf) {
     ${m.gated ? `<p class="hint">${t("market.gatedHint")}</p>` : ""}
     ${m.availability ? renderAvailability(m.availability) : ""}
     ${renderExternalBridge(m, m.availability)}
+    ${renderCapability(m)}
     <div id="engine-route-slot" class="engine-route-slot"></div>
 
     ${isRemote ? `

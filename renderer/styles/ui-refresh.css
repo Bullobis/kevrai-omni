@@ -1553,3 +1553,38 @@ html[data-theme="dark"] .agent-actions #agent-new-btn { color: #0b1020; }
 }
 #image-missing-card .inline-config label { color: var(--mut); font-size: 12.5px; }
 #image-missing-card .inline-config input { min-width: 0; }
+
+/* v4.18.0 — per-model capability manifest: the market must show what each
+   model actually accepts, not just its category. */
+.capability-block {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-1) 78%, transparent);
+}
+.capability-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+.capability-row:last-of-type { margin-bottom: 0; }
+.capability-key {
+  flex: 0 0 78px;
+  padding-top: 3px;
+  color: var(--fg-2);
+  font-size: 12px;
+}
+.capability-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.capability-block .pill { white-space: normal; line-height: 1.45; }
+.capability-block .hint { margin: 10px 0 0; }
+.pill.cap-task { border-color: color-mix(in srgb, var(--accent) 38%, var(--line)); }
+.pill.quiet { opacity: .78; }
+#ltx-prompt-field[hidden], #ltx-negative-field[hidden],
+#threed-image-field[hidden], #threed-prompt-field[hidden] { display: none !important; }

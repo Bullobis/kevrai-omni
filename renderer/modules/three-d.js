@@ -50,7 +50,16 @@ function syncModeAvailability() {
   if (t2.disabled && t2.checked) {
     $("#threed-mode-i23d").checked = true;
   }
+  syncModeFields();
   updateFit();
+}
+
+function syncModeFields() {
+  const mode = currentMode();
+  const imageField = $("#threed-image-field");
+  const promptField = $("#threed-prompt-field");
+  if (imageField) imageField.hidden = mode !== "i23d";
+  if (promptField) promptField.hidden = mode !== "t23d";
 }
 
 // 本机显存 vs 模型需求：显示「跑得动哪档」与许可/商用提示。
@@ -227,6 +236,10 @@ export async function initThreeD() {
   updateFit();
 
   $("#threed-model").addEventListener("change", () => { syncModeAvailability(); });
+  ["threed-mode-i23d", "threed-mode-t23d"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("change", syncModeFields);
+  });
   $("#threed-run").addEventListener("click", generate);
   const retry = $("#threed-retry");
   if (retry) retry.addEventListener("click", () => refreshCaps().catch(() => {}));
