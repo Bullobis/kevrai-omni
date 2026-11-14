@@ -53,12 +53,10 @@ EXTERNAL_ENGINES: dict[str, dict[str, str]] = {
     "comfyui": {"service": "ComfyUI", "label": "ComfyUI 工作流"},
     "ollama": {"service": "Ollama", "label": "Ollama 服务"},
     "mlx": {"service": "MLX", "label": "Apple MLX（仅 macOS）"},
-    "kokoro-engine": {"service": "Kokoro", "label": "Kokoro TTS"},
     "fish-speech": {"service": "Fish Speech", "label": "Fish Speech"},
     "f5-tts": {"service": "F5-TTS", "label": "F5-TTS"},
     "cosyvoice": {"service": "CosyVoice", "label": "CosyVoice"},
     "spark-tts": {"service": "Spark-TTS", "label": "Spark-TTS"},
-    "chatterbox": {"service": "Chatterbox", "label": "Chatterbox"},
     "indextts": {"service": "IndexTTS", "label": "IndexTTS"},
     "gpt-sovits": {"service": "GPT-SoVITS", "label": "GPT-SoVITS"},
     "comfyui-fl-minimaxmusic3": {"service": "ComfyUI", "label": "ComfyUI-FL-MiniMaxMusic3"},
@@ -83,6 +81,10 @@ SPECIAL_NATIVE: dict[str, dict[str, str]] = {
     "qwen2-audio-7b": {"engine": "qwen2-audio", "action": "audio-chat", "label": "Qwen2-Audio 对话"},
     "gliner2.5": {"engine": "gliner2", "action": "decide", "label": "GLiNER2.5 决策"},
     "laya-decision": {"engine": "laya", "action": "decide", "label": "Laya 决策"},
+    # These are real in-process PiperManager voices (pip engines), not
+    # external services; availability.py previously contradicted the runtime.
+    "kokoro-82m": {"engine": "kokoro-engine", "action": "tts", "label": "Kokoro 本地语音"},
+    "chatterbox": {"engine": "chatterbox", "action": "tts", "label": "Chatterbox 本地语音"},
 }
 
 SPECIAL_EXTERNAL: dict[str, dict[str, str]] = {

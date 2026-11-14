@@ -75,6 +75,17 @@ def test_missing_engine_moves_to_external_not_unsupported():
     assert any(x["engine"] == "sglang-omni" for x in v["external"])
 
 
+def test_kokoro_and_chatterbox_use_in_process_tts_not_external_service():
+    # piper_runtime has real Kokoro / Chatterbox adapters; calling them
+    # "external" made the UI tell users to start a service that does not exist.
+    for model_id in ("kokoro-82m", "chatterbox"):
+        m = next(x for x in MODELS if x["id"] == model_id)
+        v = availability.describe(m)
+        assert v["status"] == "native", model_id
+        assert not v["external"], model_id
+        assert any(x["action"] == "tts" for x in v["native"]), model_id
+
+
 def test_summary_counts_add_up():
     s = availability.summary(MODELS)
     assert s["total"] == len(MODELS)
