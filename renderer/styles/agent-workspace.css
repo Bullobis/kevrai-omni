@@ -482,6 +482,9 @@ html[data-theme="light"] .agent-msg-user .agent-msg-content { color: var(--fg); 
   font-size: 10px;
   opacity: .72;
 }
+.agent-trace .trace-hint-open { display: none; }
+.agent-trace[open] .trace-hint-open { display: inline; }
+.agent-trace[open] .trace-hint-closed { display: none; }
 .agent-trace-body {
   display: flex;
   flex-direction: column;

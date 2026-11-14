@@ -187,6 +187,30 @@ function _renderQpGroup(g) {
 // 事件绑定
 // ---------------------------------------------------------------------------
 function _wireEvents(root) {
+  // Native <details> keeps its own open state; keep the small summary hint in
+  // sync so an expanded trace never still says "点击展开".
+  const syncTraceHint = (details) => {
+    const hint = details.querySelector(".agent-trace-summary-hint");
+    if (hint) hint.textContent = t(details.open ? "agent.traceHintOpen" : "agent.traceHint");
+  };
+  root.addEventListener("toggle", (e) => {
+    if (!e.target.matches?.("details.agent-trace")) return;
+    syncTraceHint(e.target);
+  }, true);
+  // The native toggle event is not delivered reliably for every synthetic
+  // click in embedded Chromium; update the hint from the summary click too.
+  root.addEventListener("click", (e) => {
+    const summary = e.target instanceof Element ? e.target.closest("summary") : null;
+    const details = summary?.closest("details.agent-trace");
+    if (!details) return;
+    // <summary>'s native toggle happens after this click event; compute the
+    // intended state now instead of racing the default action.
+    const willOpen = !details.open;
+    setTimeout(() => {
+      const hint = details.querySelector(".agent-trace-summary-hint");
+      if (hint) hint.textContent = t(willOpen ? "agent.traceHintOpen" : "agent.traceHint");
+    }, 0);
+  });
   const input = $("#agent-input", root);
   const sendBtn = $("#agent-send-btn", root);
   attachTokenCounter(input);
@@ -798,7 +822,7 @@ function _renderTrace(steps) {
       </div>`;
   }).join("");
   return `<details class="agent-trace">
-    <summary><span>${t("agent.reasoningTrace", { n: toolSteps.length })}</span><span class="agent-trace-summary-hint">${t("agent.traceHint")}</span></summary>
+    <summary><span>${t("agent.reasoningTrace", { n: toolSteps.length })}</span><span class="agent-trace-summary-hint trace-hint-closed">${t("agent.traceHint")}</span><span class="agent-trace-summary-hint trace-hint-open">${t("agent.traceHintOpen")}</span></summary>
     <div class="agent-trace-body">${blocks}</div>
   </details>`;
 }

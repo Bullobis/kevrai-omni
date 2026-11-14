@@ -791,7 +791,8 @@
     "starterModelsPrompt": "根据这台电脑的配置，推荐几个真正能下载、能本地运行的模型，并说明适合做什么。",
     "starterLocalPrompt": "列出我当前已安装的本地模型，并说明每个适合做什么任务。",
     "traceStepDone": "完成",
-    "traceStepFailed": "未完成"
+    "traceStepFailed": "未完成",
+    "traceHintOpen": "收起"
   },
   "mnn": {
     "title": "MNN 推理引擎（阿里巴巴开源）",
