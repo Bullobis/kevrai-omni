@@ -150,6 +150,24 @@ MODEL_LICENSES: dict[str, dict[str, Any]] = {
         "vram_gb": "低",
         "note": "轻量单图重建，速度快，保真度低于上述三者。",
     },
+    "shap-e": {
+        "license": "MIT",
+        "commercial": "true",
+        "vram_gb": "6GB 起",
+        "note": "OpenAI 经典隐式 3D 基线；速度较快、质量中等，适合作为文生 3D 的轻量对照。",
+    },
+    "instant-mesh": {
+        "license": "Apache-2.0",
+        "commercial": "true",
+        "vram_gb": "8GB 起",
+        "note": "腾讯 ARC 单图前馈重建，需按官方仓库安装 InstantMesh 代码与权重。",
+    },
+    "midi-3d": {
+        "license": "Apache-2.0",
+        "commercial": "true",
+        "vram_gb": "8GB 起",
+        "note": "多视图条件 3D 扩散；单图输入不是官方主路径，建议准备多张参考图。",
+    },
 }
 
 
@@ -175,7 +193,7 @@ MODES = ("i23d", "t23d")
 
 #: 已知不支持文生 3D 的模型（纯重建类）——写在这里是为了给出**明确**报错，
 #: 而不是让用户等到 pipeline 加载失败才发现问题。
-_T23D_UNSUPPORTED = ("triposr", "stable-fast-3d", "sf3d")
+_T23D_UNSUPPORTED = ("triposr", "stable-fast-3d", "sf3d", "instant-mesh", "midi-3d")
 
 
 def _as_strict_int(value: Any, name: str) -> int:
@@ -701,6 +719,11 @@ def _load_pipeline(model_id: str, mode: str) -> Any:
         "Hunyuan3DDiTPipeline",
         "StableFast3DPipeline",
         "TRELLISImageTo3DPipeline",
+        # Diffusers-native 3D families: Shap-E, InstantMesh and MIDI-3D have
+        # model_index.json + pipeline classes, unlike the vendor repos above.
+        "ShapEPipeline",
+        "InstantMeshPipeline",
+        "MIDIPipeline",
     ]
     try:
         return DiffusionPipeline.from_pretrained(model_id, trust_remote_code=True)

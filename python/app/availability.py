@@ -144,8 +144,8 @@ def _compatible_native(model: Any, engine: str) -> tuple[bool, str]:
         # One generic DiffusionPipeline adapter now covers images, video and
         # audio. It is still model-specific at load time, but there is a real
         # endpoint rather than a dead label.
-        if category not in ("image", "superres", "video", "audio"):
-            return False, "Diffusers 通用管线仅覆盖图像/超分/视频/音频"
+        if category not in ("image", "superres", "video", "audio", "3d"):
+            return False, "Diffusers 通用管线仅覆盖图像/超分/视频/音频/三维"
     elif engine in ("sentence-transformers",):
         if category != "embedding":
             return False, "仅嵌入模型"
@@ -173,6 +173,8 @@ def _native_label(engine: str, category: str) -> tuple[str, str]:
             return "video", "Diffusers 本地视频"
         if category == "audio":
             return "audio", "Diffusers 本地音频"
+        if category == "3d":
+            return "3d", "Diffusers 本地三维"
         return "image", "Diffusers 本地出图"
     if engine == "transformers" and category == "tts":
         return "tts", "Transformers 本地语音"

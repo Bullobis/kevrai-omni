@@ -86,6 +86,16 @@ def test_kokoro_and_chatterbox_use_in_process_tts_not_external_service():
         assert any(x["action"] == "tts" for x in v["native"]), model_id
 
 
+def test_diffusers_3d_models_use_the_local_three_d_runtime():
+    # Shap-E / InstantMesh / MIDI-3D are diffusers-native; they must not be
+    # reported as external-only just because they also list ComfyUI.
+    for model_id in ("shap-e", "instant-mesh", "midi-3d"):
+        m = next(x for x in MODELS if x["id"] == model_id)
+        v = availability.describe(m)
+        assert v["status"] == "native", model_id
+        assert any(x["action"] == "3d" for x in v["native"]), model_id
+
+
 def test_summary_counts_add_up():
     s = availability.summary(MODELS)
     assert s["total"] == len(MODELS)

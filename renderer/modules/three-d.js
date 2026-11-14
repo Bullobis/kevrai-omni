@@ -25,6 +25,9 @@ const MODELS = [
   { id: "JeffreyXiang/TRELLIS-image-large", label: "TRELLIS（MIT，PBR 网格，仅图生）", t23d: false, vramMin: 16, license: "MIT", commercial: true, note: "MIT；只支持单图输入，不支持文生 3D。" },
   { id: "tencent/Hunyuan3D-2", label: "Hunyuan3D 2（腾讯社区许可，质量高）", t23d: true, vramMin: 10, license: "腾讯社区许可", commercial: "conditional", note: "非 MIT：有月活上限，且商用排除欧盟/英国/韩国；文生 3D 实为串联文生图。" },
   { id: "kevrai/preview-3d", label: "轻量预览（离线，非 AI，秒出 GLB）", t23d: true, vramMin: 0, license: "built-in", commercial: true, note: "无需显卡/权重，确定性生成可打开的网格预览。" },
+  { id: "openai/shap-e", label: "Shap-E（MIT，文生 3D 轻量基线）", t23d: true, vramMin: 6, license: "MIT", commercial: true, note: "Diffusers 原生 ShapEPipeline；速度快，质量中等。" },
+  { id: "TencentARC/InstantMesh", label: "InstantMesh（Apache-2.0，单图前馈）", t23d: false, vramMin: 8, license: "Apache-2.0", commercial: true, note: "需按官方仓库安装 InstantMesh 代码；单图重建。" },
+  { id: "VAST-AI/MIDI-3D", label: "MIDI-3D（Apache-2.0，多视图）", t23d: false, vramMin: 8, license: "Apache-2.0", commercial: true, note: "官方主路径是多张参考图；单图仅作粗略预览。" },
 ];
 
 // 本机最佳显存（GB），init 时探测一次。
