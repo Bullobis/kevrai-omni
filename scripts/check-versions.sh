@@ -80,9 +80,9 @@ for f in website/index.html website/downloads/index.html; do
   fi
 done
 
-notes="$root/RELEASE_NOTES.md"
+notes="$root/RELEASE_NOTES_$pkg.md"
 if [ ! -f "$notes" ]; then
-  echo "::error::missing current release notes: $notes" >&2
+  echo "::error::missing release notes for v$pkg: $notes" >&2
   exit 1
 fi
 
