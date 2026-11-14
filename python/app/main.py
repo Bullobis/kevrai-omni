@@ -2339,6 +2339,7 @@ def engine_route(
     request: Request,
     engine: str = "",
     model_id: str = "",
+    category: str = "",
 ) -> dict[str, Any]:
     """解析"这个模型该用哪个引擎、走哪个端点"。
 
@@ -2357,6 +2358,7 @@ def engine_route(
             candidates,
             explicit=None,  # 显式选择走下面的 engine_explicit
             default_engine_id=getattr(settings, "default_engine_id", None),
+            category=category or None,
         )
     except EngineResolveError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e

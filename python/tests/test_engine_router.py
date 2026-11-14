@@ -163,6 +163,14 @@ def _isolated(tmp_path, monkeypatch):
     yield s
 
 
+def test_diffusers_3d_route_uses_the_three_d_endpoint():
+    from app.engine_router import resolve_engine
+
+    r = resolve_engine(["diffusers"], category="3d")
+    assert r["runtime"] == "diffusers"
+    assert r["route"] == "/api/3d/generate"
+
+
 def test_kokoro_and_chatterbox_route_to_local_tts():
     from app.engine_router import resolve_engine
 

@@ -122,6 +122,7 @@ def resolve_engine(
     *,
     explicit: str | None = None,
     default_engine_id: str | None = None,
+    category: str | None = None,
 ) -> dict[str, Any]:
     """决定用哪个引擎，并说清这个决定是怎么来的。
 
@@ -181,10 +182,14 @@ def resolve_engine(
         elif key == "onnxruntime":
             note = "ONNX 路由当前覆盖 OCR；超分/检测模型需各自的预处理与后处理"
         elif runtime == "diffusers":
-            note = (
-                "Diffusers 通用管线：图像 / 视频 / 音频分别调用 "
-                "/api/multimodal/generate-image、/api/local/video、/api/local/audio"
-            )
+            if category == "3d":
+                route = "/api/3d/generate"
+                note = "Diffusers 三维模型调用 /api/3d/generate"
+            else:
+                note = (
+                    "Diffusers 通用管线：图像 / 视频 / 音频分别调用 "
+                    "/api/multimodal/generate-image、/api/local/video、/api/local/audio"
+                )
         elif runtime == "transformers":
             note = "Transformers 本地对话调用 /api/local/transformers/chat"
 
