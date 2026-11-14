@@ -1469,7 +1469,22 @@
     "runtimeMusic": "Local music runtime (/api/music/generate)",
     "runtimeTts": "Local speech runtime (/api/local/tts)",
     "runtimeExternal": "External service required (app does not launch it)",
-    "runtimeRoute": "via {route}"
+    "runtimeRoute": "via {route}",
+    "runtimeEmbeddings": "Embeddings",
+    "runtimeAsr": "Speech-to-text",
+    "runtimeSeparation": "Audio separation",
+    "runtimePiper": "Piper TTS",
+    "runtimeLtx": "LTX video",
+    "runtimeVideo": "Local video",
+    "runtimeAudio": "Local audio",
+    "runtimeOnnx": "ONNX inference",
+    "runtimeSuperres": "Super-resolution",
+    "runtimeFaces": "Face processing",
+    "runtimeDetect": "Object detection",
+    "runtimeDiarize": "Speaker diarization",
+    "runtimeAudioChat": "Audio chat",
+    "runtimeDecide": "Decision model",
+    "runtimeOcr": "OCR"
   },
   "notification": {
     "justNow": "just now",

@@ -17,6 +17,21 @@ export function describeRuntime(runtime, route, t = (k) => k) {
     case "music": return t("engineRoute.runtimeMusic");
     case "tts": return t("engineRoute.runtimeTts");
     case "external": return t("engineRoute.runtimeExternal");
+    case "embeddings": return t("engineRoute.runtimeEmbeddings");
+    case "asr": return t("engineRoute.runtimeAsr");
+    case "separation": return t("engineRoute.runtimeSeparation");
+    case "piper": return t("engineRoute.runtimePiper");
+    case "ltx": return t("engineRoute.runtimeLtx");
+    case "video": return t("engineRoute.runtimeVideo");
+    case "audio": return t("engineRoute.runtimeAudio");
+    case "onnx": return t("engineRoute.runtimeOnnx");
+    case "superres": return t("engineRoute.runtimeSuperres");
+    case "faces": return t("engineRoute.runtimeFaces");
+    case "detect": return t("engineRoute.runtimeDetect");
+    case "diarize": return t("engineRoute.runtimeDiarize");
+    case "audio-chat": return t("engineRoute.runtimeAudioChat");
+    case "decide": return t("engineRoute.runtimeDecide");
+    case "ocr": return t("engineRoute.runtimeOcr");
     case "other": return route ? t("engineRoute.runtimeOther") : t("engineRoute.noEndpoint");
     default: return route ? t("engineRoute.runtimeRoute", { route }) : t("engineRoute.unknown");
   }

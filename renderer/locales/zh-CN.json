@@ -1469,7 +1469,22 @@
     "runtimeMusic": "走本机音乐运行时（/api/music/generate）",
     "runtimeTts": "走本机语音运行时（/api/local/tts）",
     "runtimeExternal": "需要外部服务（应用内不拉起）",
-    "runtimeRoute": "走 {route}"
+    "runtimeRoute": "走 {route}",
+    "runtimeEmbeddings": "向量嵌入",
+    "runtimeAsr": "语音转写",
+    "runtimeSeparation": "音频分离",
+    "runtimePiper": "Piper 语音合成",
+    "runtimeLtx": "LTX 视频生成",
+    "runtimeVideo": "本地视频",
+    "runtimeAudio": "本地音频",
+    "runtimeOnnx": "ONNX 推理",
+    "runtimeSuperres": "超分辨率",
+    "runtimeFaces": "人脸处理",
+    "runtimeDetect": "目标检测",
+    "runtimeDiarize": "说话人分轨",
+    "runtimeAudioChat": "音频对话",
+    "runtimeDecide": "决策模型",
+    "runtimeOcr": "OCR 识别"
   },
   "notification": {
     "justNow": "刚刚",
