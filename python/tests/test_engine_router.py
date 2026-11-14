@@ -290,3 +290,23 @@ async def test_post_route_endpoint_carries_category(_isolated):
         r = await c.post("/api/engine/route", json={"candidates": ["diffusers"], "category": "video"})
     assert r.status_code == 200, r.text
     assert r.json()["route"] == "/api/local/video"
+
+def test_every_native_model_routes_to_a_local_runtime():
+    """The catalog order must never make a native model claim an external service."""
+    import json
+    from pathlib import Path
+
+    from app import availability
+
+    root = Path(__file__).resolve().parents[2]
+    models = json.loads((root / "catalog" / "models.json").read_text(encoding="utf-8"))["models"]
+    for m in models:
+        a = availability.describe(m)
+        if a["status"] != "native":
+            continue
+        native = [x["engine"] for x in a["native"]]
+        raw = m.get("engine")
+        catalog = [raw] if isinstance(raw, str) else (raw or [])
+        candidates = list(dict.fromkeys(native + catalog))
+        r = resolve_engine(candidates, category=m.get("category"))
+        assert r["runtime"] not in ("external", "other"), (m["id"], r)
