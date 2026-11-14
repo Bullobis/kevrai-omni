@@ -198,9 +198,9 @@ step "7. Generate release notes"
 # ----------------------------------------------------------------------
 NOTES_FILE="build/output/RELEASE_NOTES.md"
 mkdir -p "$(dirname "${NOTES_FILE}")"
-# Prefer the project's curated release notes for this version; fall back to a
-# generic generated note so the script never ships empty release text.
-PROJECT_NOTES="RELEASE_NOTES_${VERSION}.md"
+# There is one current release-notes file in the tree; history is kept in git.
+# Fall back to a generic generated note so the script never ships empty text.
+PROJECT_NOTES="RELEASE_NOTES.md"
 if [ -f "${PROJECT_NOTES}" ]; then
   cp "${PROJECT_NOTES}" "${NOTES_FILE}"
   info "using ${PROJECT_NOTES} as release notes"

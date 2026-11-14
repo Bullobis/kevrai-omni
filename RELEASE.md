@@ -32,8 +32,8 @@ export REPO=Bullobis/kevrai-omni     # 或你有权限的 fork
 - `gh` CLI 已安装并可通过 `gh auth status`。
 - 工作树干净（或已接受脚本的未提交变更警告）。
 - 目标 tag（默认 `<VERSION>`）在远端**尚不存在**。
-- 本次发布的说明写在 `RELEASE_NOTES_<VERSION>.md`（脚本会自动复制为
-  release notes；不存在时才回退到自动生成的模板）。
+- 当前版本的说明写在 `RELEASE_NOTES.md`（脚本会自动复制为 release
+  notes；不存在时才回退到自动生成的模板）。历史版本说明在 git 历史里。
 
 ## 发布步骤
 
@@ -49,7 +49,7 @@ bash scripts/build_windows.sh
 # 2. 打 Linux 包（AppImage + deb）
 npx electron-builder --linux --publish never
 
-# 3. 一键发布（预检 → 收集 build/output/* → 复制 RELEASE_NOTES_<VERSION>.md → gh release create）
+# 3. 一键发布（预检 → 收集 build/output/* → 复制 RELEASE_NOTES.md → gh release create）
 bash scripts/release.sh
 ```
 
@@ -87,5 +87,5 @@ gh release view <VERSION> --repo "$REPO"
 
 1. 改 `package.json`（以及 `python/pyproject.toml`、`python/app/__init__.py`）的
    `version` 到新版本。
-2. 新建对应的 `RELEASE_NOTES_<新版本>.md`。
+2. 用当前版本内容更新 `RELEASE_NOTES.md`；历史版本留在 git 历史里。
 3. 重新执行上面「发布步骤」三步，脚本会自动用新 tag。

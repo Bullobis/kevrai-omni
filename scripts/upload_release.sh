@@ -100,7 +100,7 @@ ASSETS=(
 )
 [ "${#ASSETS[@]}" -gt 0 ] || fail "build/output/ 里没有产物，请先构建"
 
-NOTES="RELEASE_NOTES_${VERSION}.md"
+NOTES="RELEASE_NOTES.md"
 [ -f "${NOTES}" ] || fail "缺少 ${NOTES} —— 发布页会退回通用文案，请先补齐"
 
 info "产物清单："
