@@ -68,3 +68,19 @@
   服务”入口并预填模型名。
 - **桌面图标**：圆角从 208 加到 320，保持与应用内 Logo 分离；不是把两套
   identity 混成一个。
+
+## 4.18.0 追加修复（路由与外部服务入口）
+
+- **本机引擎优先**：模型同时列出 `comfyui` 和 `diffusers` 时，详情页不再按
+  catalog 顺序误报 ComfyUI；现在优先选择应用能进程内加载的引擎。MiniMax H3
+  实测从“需要 ComfyUI”改回 `diffusers / /api/local/video`。
+- **Diffusers 按类目分端点**：视频、音频、三维分别路由到
+  `/api/local/video`、`/api/local/audio`、`/api/3d/generate`，不再一律返回图像端点。
+- **MusicGen 路由**：详情实测 `music-runtime / /api/music/generate`，不再显示
+  Transformers 对话端点。
+- **POST 路由透传 category**：此前只有 GET 带 `category`，显式/默认引擎的 POST
+  路径会把音频/视频送错端点。
+- **图片页可配置 ComfyUI 地址**：不再只能靠环境变量；地址会持久化，并用于状态、
+  checkpoint 列表与实际生成请求。
+- **不再假装 ComfyUI 音乐/3D 有一键页**：这两个类目需要模型专属工作流，详情页
+  现在只给“查看 ComfyUI 服务状态”和明确说明，不把用户带到一个跑不了该模型的页面。
