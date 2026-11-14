@@ -789,7 +789,9 @@
     "starterLocal": "View local models",
     "starterHardwarePrompt": "Check this machine's hardware and tell me what size of local model it can run comfortably.",
     "starterModelsPrompt": "Based on this machine, recommend models that can actually be downloaded and run locally, and explain what each is good for.",
-    "starterLocalPrompt": "List the local models I already have and explain what each is good for."
+    "starterLocalPrompt": "List the local models I already have and explain what each is good for.",
+    "traceStepDone": "done",
+    "traceStepFailed": "failed"
   },
   "mnn": {
     "title": "MNN inference engine (Alibaba open-source)",

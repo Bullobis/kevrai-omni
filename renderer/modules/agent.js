@@ -777,6 +777,12 @@ function _renderTrace(steps) {
       `<button type="button" class="agent-artifact" data-open="${esc(p)}"
          title="${esc(p)}"><span class="agent-artifact-ext">${_artifactKind(p)}</span><span class="agent-artifact-name">${esc(_basename(p))}</span></button>`
     ).join("");
+    // The stream protocol carries observation_ok but intentionally does not
+    // ship the whole observation payload. Do not render an empty "undefined"
+    // line when a step has no detail; show its success state instead.
+    const obsText = s.observation != null
+      ? _summarizeObservation(s.observation)
+      : (s.observation_ok === false ? t("agent.traceStepFailed") : t("agent.traceStepDone"));
     return `
       <div class="agent-trace-step">
         <div class="agent-trace-rail"><span class="agent-trace-dot"></span></div>
@@ -786,7 +792,7 @@ function _renderTrace(steps) {
             <span class="agent-trace-index">${i + 1}</span>
           </div>
           ${params ? `<div class="agent-trace-params">${esc(params)}</div>` : ""}
-          <div class="agent-trace-obs">${esc(_summarizeObservation(s.observation))}</div>
+          <div class="agent-trace-obs">${esc(obsText)}</div>
           ${chips ? `<div class="agent-trace-artifacts">${chips}</div>` : ""}
         </div>
       </div>`;

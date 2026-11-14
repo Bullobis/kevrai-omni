@@ -375,6 +375,17 @@ class Agent:
         """Set a callback invoked after each ReAct step (for streaming UI)."""
         self._step_callback = cb
 
+    def _notify_step(self, step: AgentStep) -> None:
+        """Emit a step for the streaming UI without letting a broken callback
+        abort the rule-based tool path. The ReAct loop has its own guarded
+        emission path; this helper is for deterministic fallback branches."""
+        if self._step_callback is None:
+            return
+        try:
+            self._step_callback(step)
+        except Exception:
+            log.warning("agent step callback failed", exc_info=True)
+
     def set_answer_callback(self, cb: Callable[[str], None] | None) -> None:
         """Set a callback invoked with each final-answer text delta as it
         streams from the brain (for a live answer bubble). Pass None to stop."""
@@ -619,6 +630,7 @@ class Agent:
             obs = self._rule_tool_call(session_id, "drama_storycraft", {"mode": mode})
             step.observation = obs
             steps.append(step)
+            self._notify_step(step)
             if obs.get("ok") is not False:
                 ref = obs.get("reference", {})
                 modes = ref.get("modes", {})
@@ -666,6 +678,7 @@ class Agent:
             obs = self._rule_tool_call(session_id, tool, params)
             step.observation = obs
             steps.append(step)
+            self._notify_step(step)
             if obs.get("ok") is not False and "error" not in obs:
                 constraints = "\n".join(f"  - {c}" for c in obs.get("theme_constraints", []))
                 result.answer = (
@@ -684,6 +697,7 @@ class Agent:
             obs = self._rule_tool_call(session_id, "writing_outline", params)
             step.observation = obs
             steps.append(step)
+            self._notify_step(step)
             if obs.get("ok") is not False and obs.get("outline"):
                 lines = ["【写作大纲骨架】"]
                 for sec in obs["outline"]:
@@ -702,6 +716,7 @@ class Agent:
             obs = self._rule_tool_call(session_id, "check_hardware", {})
             step.observation = obs
             steps.append(step)
+            self._notify_step(step)
             if obs.get("ok") is not False and "summary" in obs:
                 result.answer = (
                     f"你的硬件：{obs['summary']}\n\n"
@@ -727,6 +742,7 @@ class Agent:
             obs = self._rule_tool_call(session_id, "search_models", {"query": message, "category": category, "limit": 8})
             step.observation = obs
             steps.append(step)
+            self._notify_step(step)
             results = obs.get("results", [])
             if results:
                 lines = [f"找到 {len(results)} 个相关模型：\n"]

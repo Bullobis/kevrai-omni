@@ -517,6 +517,20 @@ class TestAgentReAct:
         assert obs.get("error"), f"未返回 error 字段: {obs}"
 
     @pytest.mark.asyncio
+    async def test_rule_mode_step_callback_called(self, agent):
+        """Rule-mode deterministic branches must emit the same step event as
+        the ReAct loop; otherwise the WebSocket UI gets only a tool tag and
+        never renders the collapsible trace."""
+        agent.router.is_ready = lambda: (False, "")
+        steps_received = []
+        agent.set_step_callback(lambda s: steps_received.append(s))
+        result = await agent.run("我的硬件能跑什么模型？", session_id="rule-callback")
+        assert result.tools_used == ["check_hardware"]
+        assert len(result.steps) >= 1
+        assert [s.action_tool for s in steps_received] == ["check_hardware"]
+        agent.set_step_callback(None)
+
+    @pytest.mark.asyncio
     async def test_step_callback_called(self, agent):
         agent.router = MockModelRouter([
             "Final Answer: 回调测试",
