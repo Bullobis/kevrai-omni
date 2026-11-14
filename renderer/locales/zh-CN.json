@@ -211,7 +211,9 @@
     "availabilityExternal": "需外置引擎：{list}",
     "availabilityUnsupported": "暂未接入运行时",
     "configureExternal": "配置外部服务",
-    "configureExternalHint": "在 AI 引擎页填入服务地址与模型名；应用不负责拉起 vLLM / SGLang / Ollama。"
+    "configureExternalHint": "在 AI 引擎页填入服务地址与模型名；应用不负责拉起 vLLM / SGLang / Ollama。",
+    "openComfyui": "打开 ComfyUI 工作页",
+    "openComfyuiHint": "先启动 ComfyUI；在该页选择 checkpoint / 模板后即可生成。应用不会替你拉起 ComfyUI。"
   },
   "engines": {
     "title": "AI 引擎",

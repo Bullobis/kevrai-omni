@@ -626,6 +626,24 @@ export async function showDetail(item) {
       fill();
     })
   );
+  host.querySelectorAll("[data-action=open-comfyui]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const target = b.dataset.target || "image";
+      document.querySelector(`.sidebar [data-tab="${CSS.escape(target)}"]`)?.click();
+      const fill = (tries = 12) => {
+        if (target !== "image") return; // music/3d pages have their own pickers
+        const input = document.querySelector("#image-ckpt-text");
+        if (input) {
+          input.value = b.dataset.model || "";
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+        } else if (tries > 0) {
+          setTimeout(() => fill(tries - 1), 120);
+        }
+      };
+      fill();
+      toast(t("market.openComfyuiHint"), { kind: "info" });
+    })
+  );
   host.querySelectorAll("[data-action=open-external]").forEach((b) =>
     b.addEventListener("click", async () => {
       try { await api.openExternal(b.dataset.url); }
@@ -717,14 +735,30 @@ function fmtDate(iso) {
 // v4.18.0 — 外部 OpenAI 兼容服务模型（vLLM / SGLang / Ollama）给出
 // 一个真正可点的入口：跳到引擎页并预填模型名，而不是只显示一句“需要外部”。
 function renderExternalBridge(m, a) {
-  const services = ((a && a.external) || []).map((x) => x.service);
-  if (!services.some((x) => x === "vLLM" || x === "SGLang" || x === "Ollama")) return "";
+  // Only models whose best available path is external need this bridge.
+  // A Diffusers-native model may also list vLLM/SGLang as alternates; offering
+  // "configure external service" there would contradict “本地可运行”.
+  if (!a || a.status !== "external") return "";
+  const services = (a.external || []).map((x) => x.service);
   const model = m.repo || m.id || "";
-  return `<p class="external-bridge">
-    <button class="secondary small" data-action="configure-external"
-            data-model="${escapeHtml(model)}">${t("market.configureExternal")}</button>
-    <span class="hint">${t("market.configureExternalHint")}</span>
-  </p>`;
+  if (services.some((x) => x === "vLLM" || x === "SGLang" || x === "Ollama")) {
+    return `<p class="external-bridge">
+      <button class="secondary small" data-action="configure-external"
+              data-model="${escapeHtml(model)}">${t("market.configureExternal")}</button>
+      <span class="hint">${t("market.configureExternalHint")}</span>
+    </p>`;
+  }
+  if (services.includes("ComfyUI")) {
+    const target = (m.category === "music" || m.category === "audio") ? "music"
+                 : m.category === "3d" ? "3d" : "image";
+    return `<p class="external-bridge">
+      <button class="secondary small" data-action="open-comfyui"
+              data-target="${target}" data-model="${escapeHtml(model)}"
+              data-category="${escapeHtml(m.category || "")}">${t("market.openComfyui")}</button>
+      <span class="hint">${t("market.openComfyuiHint")}</span>
+    </p>`;
+  }
+  return "";
 }
 
 function renderAvailability(a) {
