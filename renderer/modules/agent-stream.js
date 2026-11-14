@@ -60,7 +60,7 @@ export class StreamBubble {
     const text = answer != null ? String(answer) : this.raw;
     this.raw = text;
     if (msgId != null) this.div.dataset.msgId = String(msgId);
-    const toolsHtml = tools && tools.length
+    const toolsHtml = tools && tools.length && !traceHtml
       ? `<div class="agent-tools-used">${t("agent.toolsUsedLabel")} ${
         tools.map((x) => `<span class="agent-tool-tag">${this.esc(x)}</span>`).join("")
       }</div>`

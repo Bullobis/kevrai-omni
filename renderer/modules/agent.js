@@ -1103,7 +1103,9 @@ function _appendMessage(role, content, animate = false, tools = [], msgId = null
   div.className = `agent-msg agent-msg-${role}`;
   if (msgId != null) div.dataset.msgId = String(msgId);
   const label = role === "user" ? t("agent.you") : t("agent.agentName");
-  const toolsHtml = tools && tools.length
+  // A rendered process trace already names every tool; avoid printing the
+  // same tool list twice under the answer.
+  const toolsHtml = tools && tools.length && !traceHtml
     ? `<div class="agent-tools-used">${t("agent.toolsUsedLabel")} ${tools.map((t) => `<span class="agent-tool-tag">${esc(t)}</span>`).join("")}</div>`
     : "";
   const regenBtn = role === "assistant"
