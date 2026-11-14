@@ -203,7 +203,11 @@ function mountExternalRuntimeCard() {
     <p class="mut tiny" id="external-runtime-detail" aria-live="polite"></p>
   `;
   const grid = pane.querySelector(".engine-grid");
-  (grid || pane).appendChild(card);
+  // Keep the service card OUT of the engine grid: as a grid child it stretches
+  // the whole row (and all engine cards) to its height, leaving large blank
+  // areas in short cards.
+  if (grid) grid.insertAdjacentElement("afterend", card);
+  else pane.appendChild(card);
 
   const url = card.querySelector("#external-runtime-url");
   const model = card.querySelector("#external-runtime-model");
