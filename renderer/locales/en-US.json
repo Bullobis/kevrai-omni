@@ -1444,7 +1444,14 @@
     "srcDefault": "from your default engine setting",
     "srcCatalog": "from catalog order",
     "srcNone": "no engine declared",
-    "unknown": "unknown"
+    "unknown": "unknown",
+    "runtimeTransformers": "Transformers local chat",
+    "runtimeDiffusers": "Diffusers generic pipeline",
+    "runtimeThreeD": "Local 3D runtime (/api/3d/generate)",
+    "runtimeMusic": "Local music runtime (/api/music/generate)",
+    "runtimeTts": "Local speech runtime (/api/local/tts)",
+    "runtimeExternal": "External service required (app does not launch it)",
+    "runtimeRoute": "via {route}"
   },
   "notification": {
     "justNow": "just now",

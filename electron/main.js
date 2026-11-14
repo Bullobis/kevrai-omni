@@ -1584,9 +1584,11 @@ function registerIpc() {
     const engine = Array.isArray(p.engine) ? p.engine : [];
     assert(engine.every((x) => isString(x, 128)), "engine: invalid");
     const modelId = isString(p.model_id, 256) ? p.model_id : "";
+    const category = isString(p.category, 32) ? p.category : "";
     const q = new URLSearchParams();
     if (engine.length) q.set("engine", engine.join(","));
     if (modelId) q.set("model_id", modelId);
+    if (category) q.set("category", category);
     const suffix = q.toString() ? `?${q.toString()}` : "";
     return sidecarFetch(`/api/engine/route${suffix}`);
   });

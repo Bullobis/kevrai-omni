@@ -11,8 +11,14 @@ export function describeRuntime(runtime, route, t = (k) => k) {
   switch (runtime) {
     case "mnn": return t("engineRoute.runtimeMnn");
     case "llamacpp": return t("engineRoute.runtimeLlamacpp");
+    case "transformers": return t("engineRoute.runtimeTransformers");
+    case "diffusers": return t("engineRoute.runtimeDiffusers");
+    case "three-d": return t("engineRoute.runtimeThreeD");
+    case "music": return t("engineRoute.runtimeMusic");
+    case "tts": return t("engineRoute.runtimeTts");
+    case "external": return t("engineRoute.runtimeExternal");
     case "other": return route ? t("engineRoute.runtimeOther") : t("engineRoute.noEndpoint");
-    default: return t("engineRoute.unknown");
+    default: return route ? t("engineRoute.runtimeRoute", { route }) : t("engineRoute.unknown");
   }
 }
 
@@ -32,14 +38,14 @@ export function describeSource(source, t = (k) => k) {
  * @returns {Promise<{ok:boolean, data?:object, error?:string}>}
  *   网络失败返回 {ok:false} —— 调用方据此显示"未知"，不能猜一个引擎出来。
  */
-export async function fetchEngineRoute(api, candidates, { modelId = "" } = {}) {
+export async function fetchEngineRoute(api, candidates, { modelId = "", category = "" } = {}) {
   const list = (Array.isArray(candidates) ? candidates : [candidates])
     .filter((x) => typeof x === "string" && x.trim());
   try {
     // 走正式通道：api.engineRoute -> preload -> api:engine:route -> 后端。
     // 此前这里写的是 api.get(...)，而 api.js 从无 get 方法，必然抛
     // "api.get is not a function"，使模型页的引擎信息永远显示"未知"。
-    const res = await api.engineRoute({ engine: list, model_id: modelId });
+    const res = await api.engineRoute({ engine: list, model_id: modelId, category });
     const body = (res && res.body) || res || {};
     if (!body || typeof body !== "object") return { ok: false, error: "bad_response" };
     return { ok: true, data: body };
@@ -65,13 +71,15 @@ export function renderRouteRow(result, t = (k) => k) {
     </div>`;
   }
   const d = result.data;
-  const cls = d.runtime === "other" ? "warn" : "ok";
+  const cls = (d.runtime === "other" || d.runtime === "external") ? "warn" : "ok";
   const note = d.note ? `<span class="er-note">${esc(d.note)}</span>` : "";
+  const route = d.route ? `<span class="er-route">${esc(d.route)}</span>` : "";
   return `<div class="engine-route-row ${cls}">
     <span class="er-label">${esc(t("engineRoute.title"))}</span>
     <span class="er-value">${esc(d.engine || t("engineRoute.unknown"))}</span>
     <span class="er-src">${esc(describeSource(d.source, t))}</span>
     <span class="er-rt">${esc(describeRuntime(d.runtime, d.route, t))}</span>
+    ${route}
     ${note}
   </div>`;
 }

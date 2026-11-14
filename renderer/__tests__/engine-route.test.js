@@ -36,6 +36,26 @@ test("无端点的引擎如实说明，不假装能跑", async () => {
   window.close();
 });
 
+test("diffusers / 3D / 外部服务都能翻译，不再显示未知", async () => {
+  const { mod, window } = await load();
+  assert.equal(mod.describeRuntime("diffusers", "/api/3d/generate", T),
+    "engineRoute.runtimeDiffusers");
+  assert.equal(mod.describeRuntime("three-d", "/api/3d/generate", T),
+    "engineRoute.runtimeThreeD");
+  assert.equal(mod.describeRuntime("external", null, T),
+    "engineRoute.runtimeExternal");
+  window.close();
+});
+
+test("fetchEngineRoute 把 category 传给后端", async () => {
+  const { mod, window } = await load();
+  let seen = null;
+  const api = { engineRoute: async (p) => { seen = p; return { body: {} }; } };
+  await mod.fetchEngineRoute(api, ["diffusers"], { modelId: "shap-e", category: "3d" });
+  assert.equal(seen.category, "3d");
+  window.close();
+});
+
 test("未知 runtime 说未知，不编造", async () => {
   const { mod, window } = await load();
   assert.equal(mod.describeRuntime("???", null, T), "engineRoute.unknown");

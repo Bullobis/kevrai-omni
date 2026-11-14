@@ -1840,7 +1840,8 @@ html[data-theme="light"] .skeleton-card::after {
 .engine-route-row.warn { border-color: var(--warn, #b45309); }
 .engine-route-row .er-label { color: var(--mut); }
 .engine-route-row .er-value { font-weight: 650; font-family: var(--mono, monospace); }
-.engine-route-row .er-src, .engine-route-row .er-rt { color: var(--mut); }
+.engine-route-row .er-src, .engine-route-row .er-rt, .engine-route-row .er-route { color: var(--mut); }
+.engine-route-row .er-route { font-family: var(--mono, monospace); font-size: 11px; }
 .engine-route-row .er-note { flex-basis: 100%; color: var(--mut); }
 
 /* ---- ComfyUI 图片生成面板（v4.15.0）---- */

@@ -1444,7 +1444,14 @@
     "srcDefault": "来自设置里的默认引擎",
     "srcCatalog": "来自目录顺序",
     "srcNone": "未声明引擎",
-    "unknown": "未知"
+    "unknown": "未知",
+    "runtimeTransformers": "走 Transformers 本地对话",
+    "runtimeDiffusers": "走 Diffusers 通用管线",
+    "runtimeThreeD": "走本机 3D 运行时（/api/3d/generate）",
+    "runtimeMusic": "走本机音乐运行时（/api/music/generate）",
+    "runtimeTts": "走本机语音运行时（/api/local/tts）",
+    "runtimeExternal": "需要外部服务（应用内不拉起）",
+    "runtimeRoute": "走 {route}"
   },
   "notification": {
     "justNow": "刚刚",

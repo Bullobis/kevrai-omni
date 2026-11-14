@@ -371,7 +371,9 @@ async function _renderEngineRoute(host, detail) {
                 : (detail.engine ? [detail.engine] : []);
   try {
     const { fetchEngineRoute, renderRouteRow } = await import("./engine-route.js");
-    const res = await fetchEngineRoute(api, engines, { modelId: detail.id || "" });
+    const res = await fetchEngineRoute(api, engines, {
+      modelId: detail.id || "", category: detail.category || "",
+    });
     slot.innerHTML = renderRouteRow(res, t);
   } catch (_) {
     slot.innerHTML = `<div class="engine-route-row warn">${t("engineRoute.unknown")}</div>`;
