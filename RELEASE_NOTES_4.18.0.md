@@ -51,3 +51,20 @@
 - `npm run test:js`：72 个 JS 文件语法检查通过。
 - 实机复核：新侧车 `4.18.0`，21 个可见页面无 `undefined` / 原始 i18n key，导航行不再触发原生黑色 tooltip。
 
+## 4.18.0 追加修复（本地三维与外部服务）
+
+- **3D 不再被误判为外部服务**：`shap-e`、`instant-mesh`、`midi-3d` 同时带
+  `comfyui`，此前被 availability 判成 external。现在 `diffusers` 可以覆盖
+  `3d`，三条模型改由本地三维运行时执行；3D 页新增对应选项。
+- **3D 路由端点**：`resolve_engine` 接受 `category`，三维模型路由到
+  `/api/3d/generate`，不再错误返回图像端点；IPC 同步透传。
+- **模型详情显示运行引擎**：详情页补上 `#engine-route-slot`，此前异步查询
+  成功却没有任何节点可显示；现在会显示引擎、来源、实际端点和“应用内不拉起”
+  的原因。
+- **表单页宽度**：ASR、Embeddings、Compare、Translate、Local 等页不再被
+  锁死在 940px；1440 窗口下按 `min(1180px, 100%)` 铺开。
+- **外部推理服务入口**：AI 引擎页新增 vLLM / SGLang / Ollama 配置卡，可填
+  地址、模型名和 API Key，检测连接并保存；模型详情对外部模型给出“配置外部
+  服务”入口并预填模型名。
+- **桌面图标**：圆角从 208 加到 320，保持与应用内 Logo 分离；不是把两套
+  identity 混成一个。
