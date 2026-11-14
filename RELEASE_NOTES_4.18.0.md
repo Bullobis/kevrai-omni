@@ -43,3 +43,11 @@
 
 - 没有生成安装包、没有发布、没有 GitHub Release。
 - 模型市场目录与 20 条应用适配器没有在本版本逐条重跑；不把“目录存在”写成“本机已能跑”。
+
+## 测试
+
+- `npm run smoke`：2766 passed，9/9 步通过。
+- `npm run test:renderer`：441/441。
+- `npm run test:js`：72 个 JS 文件语法检查通过。
+- 实机复核：新侧车 `4.18.0`，21 个可见页面无 `undefined` / 原始 i18n key，导航行不再触发原生黑色 tooltip。
+
