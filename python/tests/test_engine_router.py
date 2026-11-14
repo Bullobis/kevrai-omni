@@ -163,6 +163,15 @@ def _isolated(tmp_path, monkeypatch):
     yield s
 
 
+def test_kokoro_and_chatterbox_route_to_local_tts():
+    from app.engine_router import resolve_engine
+
+    for engine in ("kokoro-engine", "chatterbox"):
+        r = resolve_engine([engine])
+        assert r["runtime"] == "tts", engine
+        assert r["route"] == "/api/local/tts", engine
+
+
 async def test_route_endpoint_returns_runtime(_isolated):
     """只给 mnn 一个候选：默认设置是 llama.cpp，不在候选里，故按 catalog 第一个走。
 
