@@ -879,6 +879,11 @@
 
         <div class="asr-engine-missing" id="image-missing-card">
           <p class="muted" data-i18n="image.missingHint">需要一个正在运行的 ComfyUI（默认本机 8188 端口）。启动 ComfyUI 后，把 Stable Diffusion 模型放到其 checkpoints 目录，再回到本页刷新。</p>
+          <div class="inline-config">
+            <label for="image-comfy-url" data-i18n="image.comfyUrl">ComfyUI 地址</label>
+            <input id="image-comfy-url" type="text" placeholder="http://127.0.0.1:8188">
+            <button class="secondary" id="image-comfy-save" data-i18n="image.comfySave">保存并检测</button>
+          </div>
           <button class="secondary" id="image-retry" data-i18n="image.retry">重新检测</button>
         </div>
 

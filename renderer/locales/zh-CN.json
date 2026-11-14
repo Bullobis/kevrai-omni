@@ -1347,7 +1347,9 @@
     "promptFirst": "请先填写提示词",
     "ckptFirst": "请先选择或填写 Stable Diffusion 模型文件名",
     "failed": "图片生成失败：{err}",
-    "retry": "重新检测"
+    "retry": "重新检测",
+    "comfyUrl": "ComfyUI 地址",
+    "comfySave": "保存并检测"
   },
   "threed": {
     "title": "3D 生成",

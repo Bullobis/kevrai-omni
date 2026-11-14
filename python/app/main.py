@@ -2377,6 +2377,9 @@ def engine_route_resolve(req: dict[str, Any], request: Request) -> dict[str, Any
             req.get("candidates"),
             explicit=req.get("explicit") or None,
             default_engine_id=getattr(settings, "default_engine_id", None),
+            # The POST form must carry the same category as the GET form;
+            # otherwise Diffusers video/audio is routed to the image endpoint.
+            category=str(req.get("category") or "").strip() or None,
         )
     except EngineResolveError as e:
         raise HTTPException(

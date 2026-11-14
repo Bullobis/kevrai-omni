@@ -1541,3 +1541,15 @@ html[data-theme="dark"] .agent-actions #agent-new-btn { color: #0b1020; }
 
 .external-bridge { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 8px 0 0; }
 .external-bridge .hint { margin: 0; }
+
+/* Image page: an explicit ComfyUI address beats a hidden env var. */
+#image-missing-card .inline-config {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  margin: 12px 0 10px;
+  max-width: 720px;
+}
+#image-missing-card .inline-config label { color: var(--mut); font-size: 12.5px; }
+#image-missing-card .inline-config input { min-width: 0; }

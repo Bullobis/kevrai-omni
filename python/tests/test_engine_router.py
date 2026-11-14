@@ -283,3 +283,10 @@ async def test_mnn_load_accepts_mnn_engine(_isolated, tmp_path, monkeypatch):
     body = r.json()
     if isinstance(body.get("detail"), dict):
         assert body["detail"]["error"] != "engine_mismatch"
+
+async def test_post_route_endpoint_carries_category(_isolated):
+    """POST 与 GET 必须共享 category；否则 diffusers 音频/视频会被送去图像端点。"""
+    async with _client() as c:
+        r = await c.post("/api/engine/route", json={"candidates": ["diffusers"], "category": "video"})
+    assert r.status_code == 200, r.text
+    assert r.json()["route"] == "/api/local/video"

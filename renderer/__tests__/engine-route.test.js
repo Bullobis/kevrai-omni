@@ -176,3 +176,13 @@ test("模型详情保留引擎路由挂载点（此前查询成功但页面没�
   assert.ok(src.includes('id="engine-route-slot"'), "详情模板必须有 #engine-route-slot");
   assert.ok(src.includes("_renderEngineRoute"), "必须调用路由查询");
 });
+
+test("模型详情优先用 availability.native，而不是 catalog 的引擎顺序", async () => {
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+  const url = await import("node:url");
+  const here = path.dirname(url.fileURLToPath(import.meta.url));
+  const src = fs.readFileSync(path.resolve(here, "..", "modules", "models.js"), "utf8");
+  assert.ok(src.includes("detail.availability"));
+  assert.ok(src.includes(".map((n) => n.engine)"), "必须取 availability.native 的 engine");
+});

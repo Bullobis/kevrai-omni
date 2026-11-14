@@ -1347,7 +1347,9 @@
     "ckptFirst": "Please select or type a Stable Diffusion model filename",
     "failed": "Image generation failed: {err}",
     "seedHint": "Leave blank or -1 for a random seed each run; a fixed number reproduces the same image",
-    "retry": "Check again"
+    "retry": "Check again",
+    "comfyUrl": "ComfyUI URL",
+    "comfySave": "Save & test"
   },
   "threed": {
     "title": "3D Generation",

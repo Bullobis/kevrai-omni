@@ -26,6 +26,17 @@ function body(res) {
   return (res && res.body) ? res.body : res;
 }
 
+// ComfyUI is an external service; the default URL is only a convenience.
+// Persist an explicit URL so remote/LAN ComfyUI works without editing env vars.
+const COMFY_URL_KEY = "kevrai:comfyui-url";
+function comfyBase() {
+  try { return localStorage.getItem(COMFY_URL_KEY) || ""; } catch (_) { return ""; }
+}
+function currentComfy() {
+  const input = $("#image-comfy-url");
+  return (input && input.value.trim()) || comfyBase();
+}
+
 /** 根据当前模板 id 取模板元数据。 */
 function currentTemplate() {
   const sel = $("#image-template");
@@ -72,7 +83,7 @@ async function refreshStatus() {
   const missingCard = $("#image-missing-card");
   const form = $("#image-form");
   try {
-    const s = body(await api.comfyuiStatus());
+    const s = body(await api.comfyuiStatus(currentComfy()));
     const ok = !!(s && s.available);
     if (status) {
       status.textContent = ok
@@ -109,7 +120,7 @@ async function populateCheckpoints() {
   if (!sel) return;
   let names = [];
   try {
-    const r = body(await api.comfyuiCheckpoints());
+    const r = body(await api.comfyuiCheckpoints(currentComfy()));
     names = (r && r.checkpoints) || [];
   } catch (_) { names = []; }
   if (names.length) {
@@ -193,6 +204,7 @@ async function generate() {
       batch_size: Number($("#image-batch").value),
       seed: Number($("#image-seed").value.trim() === "" ? -1 : $("#image-seed").value),
       filename_prefix: "kevrai",
+      base_url: currentComfy() || null,
     };
     // 优先走流式 WS（实时采样进度）；连不上时回退同步等待。
     try {
@@ -286,6 +298,14 @@ export async function initImage() {
   $("#image-steps").addEventListener("input", () => { $("#image-steps").dataset.userTouched = "1"; });
   $("#image-cfg").addEventListener("input", () => { $("#image-cfg").dataset.userTouched = "1"; });
   $("#image-run").addEventListener("click", generate);
+  const comfyUrl = $("#image-comfy-url");
+  if (comfyUrl) comfyUrl.value = comfyBase();
+  const comfySave = $("#image-comfy-save");
+  if (comfySave) comfySave.addEventListener("click", () => {
+    const value = (comfyUrl && comfyUrl.value.trim()) || "";
+    try { localStorage.setItem(COMFY_URL_KEY, value); } catch (_) {}
+    refreshStatus().then((ok) => { if (ok) populateCheckpoints(); }).catch(() => {});
+  });
   const retry = $("#image-retry");
   if (retry) retry.addEventListener("click", () => {
     refreshStatus().then((ok) => { if (ok) populateCheckpoints(); }).catch(() => {});
