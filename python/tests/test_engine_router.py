@@ -56,6 +56,18 @@ def test_catalog_order_is_last_resort():
     assert r["source"] == "catalog"
 
 
+def test_local_runtime_preferred_over_external_workflow():
+    """MiniMax H3 lists comfyui first but is Diffusers-native.
+
+    Picking catalog[0] made the detail page claim “需要 ComfyUI” for a model
+    that this app can run locally. External workflows are only the last resort.
+    """
+    r = resolve_engine(["comfyui", "diffusers", "vllm", "sglang"])
+    assert r["engine"] == "diffusers"
+    assert r["runtime"] == "diffusers"
+    assert r["source"] == "catalog"
+
+
 # ---------------------------------------------------------------------------
 # 显式选择不可用 → 必须报错，不静默回退
 # ---------------------------------------------------------------------------
@@ -101,6 +113,13 @@ def test_diffusers_maps_to_generic_image_endpoint():
     r = resolve_engine(["diffusers"])
     assert r["runtime"] == "diffusers"
     assert r["route"] == "/api/multimodal/generate-image"
+
+
+def test_diffusers_routes_video_and_audio_to_their_endpoints():
+    rv = resolve_engine(["diffusers"], category="video")
+    ra = resolve_engine(["diffusers"], category="audio")
+    assert rv["route"] == "/api/local/video"
+    assert ra["route"] == "/api/local/audio"
 
 
 def test_external_engine_is_not_claimed_as_local():

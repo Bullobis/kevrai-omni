@@ -367,8 +367,15 @@ function syncSelectedCards() {
 async function _renderEngineRoute(host, detail) {
   const slot = host.querySelector("#engine-route-slot");
   if (!slot) return;
-  const engines = Array.isArray(detail.engine) ? detail.engine
+  // The catalog `engine` list is upstream capability order. Availability has
+  // already resolved which engines this build can actually run in-process;
+  // those must come first or MusicGen/MiniMax H3 details say "chat"/"ComfyUI"
+  // while the model is really using the local music/Diffusers runtime.
+  const nativeEngines = ((detail.availability && detail.availability.native) || [])
+    .map((n) => n.engine).filter(Boolean);
+  const catalogEngines = Array.isArray(detail.engine) ? detail.engine
                 : (detail.engine ? [detail.engine] : []);
+  const engines = [...new Set([...nativeEngines, ...catalogEngines])];
   try {
     const { fetchEngineRoute, renderRouteRow } = await import("./engine-route.js");
     const res = await fetchEngineRoute(api, engines, {

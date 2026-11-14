@@ -162,7 +162,13 @@ def resolve_engine(
         # 这一行就是让 default_engine_id 真正生效的地方（原先是死设置）。
         chosen, source = default_engine_id, "default"
     else:
-        chosen = cand[0]
+        # A model can list both a local runtime and an external workflow
+        # (e.g. MiniMax H3: comfyui, diffusers, vllm). Catalog order is not a
+        # runtime decision: silently routing to ComfyUI makes a model that is
+        # actually local look external. Prefer the first candidate this app can
+        # load in-process; keep external only when nothing local exists.
+        local = [c for c in cand if c.lower() in RUNTIME_BY_ENGINE]
+        chosen = local[0] if local else cand[0]
 
     key = str(chosen).lower()
     service = EXTERNAL_ENGINE_SERVICES.get(key)
@@ -182,14 +188,17 @@ def resolve_engine(
         elif key == "onnxruntime":
             note = "ONNX 路由当前覆盖 OCR；超分/检测模型需各自的预处理与后处理"
         elif runtime == "diffusers":
-            if category == "3d":
-                route = "/api/3d/generate"
-                note = "Diffusers 三维模型调用 /api/3d/generate"
-            else:
-                note = (
-                    "Diffusers 通用管线：图像 / 视频 / 音频分别调用 "
-                    "/api/multimodal/generate-image、/api/local/video、/api/local/audio"
-                )
+            # Diffusers is one engine id but four different endpoints. Without
+            # the category a video/audio pipeline gets sent to the image route.
+            route = {
+                "3d": "/api/3d/generate",
+                "video": "/api/local/video",
+                "audio": "/api/local/audio",
+            }.get((category or "").lower(), "/api/multimodal/generate-image")
+            note = (
+                "Diffusers 通用管线：图像 / 视频 / 音频分别调用 "
+                "/api/multimodal/generate-image、/api/local/video、/api/local/audio"
+            )
         elif runtime == "transformers":
             note = "Transformers 本地对话调用 /api/local/transformers/chat"
 
