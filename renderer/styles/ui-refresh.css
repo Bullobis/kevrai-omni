@@ -1526,3 +1526,15 @@ html[data-theme="dark"] .agent-actions #agent-new-btn { color: #0b1020; }
     max-width: min(1180px, 100%);
   }
 }
+
+/* External OpenAI-compatible services: configuration lives on the engine page
+   instead of pretending the app can silently launch vLLM/SGLang/Ollama. */
+#external-runtime-card {
+  margin-top: 18px;
+  max-width: 100%;
+}
+#external-runtime-card .form-grid { margin-top: 10px; }
+#external-runtime-card .form-actions { justify-content: flex-end; }
+
+.external-bridge { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 8px 0 0; }
+.external-bridge .hint { margin: 0; }

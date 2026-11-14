@@ -1674,6 +1674,15 @@ function registerIpc() {
       { method: "DELETE" });
   });
 
+  // 外部 OpenAI 兼容推理服务（vLLM / SGLang / Ollama 共用）
+  ipcMain.handle("api:vllm:status", async () => sidecarFetch("/api/vllm/status"));
+  ipcMain.handle("api:vllm:config", async (_e, payload) =>
+    sidecarFetch("/api/vllm/config", { method: "POST", body: payload || {} }));
+  ipcMain.handle("api:vllm:models", async (_e, baseUrl) => {
+    const qs = isString(baseUrl, 512) ? `?base_url=${encodeURIComponent(baseUrl)}` : "";
+    return sidecarFetch(`/api/vllm/models${qs}`);
+  });
+
   // 3D 生成
   ipcMain.handle("api:3d:capabilities", async () =>
     sidecarFetch("/api/3d/capabilities"));

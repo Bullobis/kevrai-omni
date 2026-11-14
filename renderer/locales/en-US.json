@@ -209,7 +209,9 @@
     "availabilityTitle": "Run status",
     "availabilityNative": "Runs locally: {list}",
     "availabilityExternal": "Requires external engine: {list}",
-    "availabilityUnsupported": "No runtime adapter yet"
+    "availabilityUnsupported": "No runtime adapter yet",
+    "configureExternal": "Configure external service",
+    "configureExternalHint": "Fill in the URL and model on the AI Engines page; the app does not launch vLLM / SGLang / Ollama."
   },
   "engines": {
     "title": "AI Engines",
@@ -231,7 +233,19 @@
     "uninstallDone": "{id} uninstalled",
     "uninstallFailed": "Failed to uninstall {id}",
     "updateDone": "{id} updated to {v}",
-    "updateDoneNoVer": "{id} updated"
+    "updateDoneNoVer": "{id} updated",
+    "externalTitle": "External inference service (vLLM / SGLang / Ollama)",
+    "externalHint": "The app does not launch these services. Start an OpenAI-compatible server locally or on your network, then enter its URL, model and key. Save to test connectivity.",
+    "externalUrl": "Service URL",
+    "externalModel": "Model name",
+    "externalKey": "API key (optional)",
+    "externalTest": "Test connection",
+    "externalSave": "Save config",
+    "externalOnline": "Connected",
+    "externalOffline": "Not connected",
+    "externalModels": "Found {n} models: {list}",
+    "externalSaved": "External service config saved",
+    "externalSaveFailed": "Could not save external service config"
   },
   "local": {
     "title": "Local Models",

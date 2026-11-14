@@ -86,6 +86,7 @@ export function renderEngines() {
       b.textContent = t("market.reinstall");
     })
   );
+  mountExternalRuntimeCard();
   el.querySelectorAll("button[data-action=uninstall]").forEach((b) =>
     b.addEventListener("click", async () => {
       const id = b.dataset.id;
@@ -158,6 +159,100 @@ export function wireEngineUpdates() {
     }
     btn.disabled = false;
   });
+}
+
+// v4.18.0 — 外部 OpenAI 兼容服务（vLLM / SGLang / Ollama）。
+// 这些模型在目录里标 external 是正确的：应用不负责拉起服务，但至少要给
+// 用户一个配置和连通性检测入口，否则“有适配器”只停留在后端代码里。
+let externalRuntimeMounted = false;
+function mountExternalRuntimeCard() {
+  if (externalRuntimeMounted) return;
+  const pane = document.querySelector("#pane-engines");
+  if (!pane) return;
+  externalRuntimeMounted = true;
+
+  const card = document.createElement("section");
+  card.className = "card external-runtime-card";
+  card.id = "external-runtime-card";
+  card.innerHTML = `
+    <div class="card-head">
+      <div>
+        <div class="card-title">${t("engines.externalTitle")}</div>
+        <p class="hint">${t("engines.externalHint")}</p>
+      </div>
+      <span class="pill" id="external-runtime-state">${t("app.detecting")}</span>
+    </div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="external-runtime-url">${t("engines.externalUrl")}</label>
+        <input id="external-runtime-url" type="text" placeholder="http://127.0.0.1:8000">
+      </div>
+      <div class="form-row">
+        <label for="external-runtime-model">${t("engines.externalModel")}</label>
+        <input id="external-runtime-model" type="text" placeholder="Qwen/Qwen3-32B">
+      </div>
+      <div class="form-row">
+        <label for="external-runtime-key">${t("engines.externalKey")}</label>
+        <input id="external-runtime-key" type="password" autocomplete="off" placeholder="sk-...">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="secondary" id="external-runtime-test" type="button">${t("engines.externalTest")}</button>
+      <button class="primary" id="external-runtime-save" type="button">${t("engines.externalSave")}</button>
+    </div>
+    <p class="mut tiny" id="external-runtime-detail" aria-live="polite"></p>
+  `;
+  const grid = pane.querySelector(".engine-grid");
+  (grid || pane).appendChild(card);
+
+  const url = card.querySelector("#external-runtime-url");
+  const model = card.querySelector("#external-runtime-model");
+  const key = card.querySelector("#external-runtime-key");
+  const statePill = card.querySelector("#external-runtime-state");
+  const detail = card.querySelector("#external-runtime-detail");
+
+  function paint(status) {
+    if (!status) return;
+    if (!url.value) url.value = status.base_url || "";
+    if (!model.value) model.value = status.model || "";
+    const ok = !!status.reachable;
+    statePill.textContent = ok ? t("engines.externalOnline") : t("engines.externalOffline");
+    statePill.className = "pill " + (ok ? "ok" : "warn");
+    const items = Array.isArray(status.models) ? status.models : [];
+    detail.textContent = items.length
+      ? t("engines.externalModels", { n: items.length, list: items.slice(0, 4).join(" / ") })
+      : (status.error || status.note || "");
+  }
+
+  async function save() {
+    const payload = {
+      base_url: url.value.trim(),
+      model: model.value.trim(),
+      api_key: key.value,
+    };
+    try {
+      const r = await api.vllmConfig(payload);
+      const body = (r && r.body) || r || {};
+      paint(body);
+      toast(t("engines.externalSaved"), { kind: "ok" });
+    } catch (e) {
+      detail.textContent = String((e && e.message) || e);
+      toast(t("engines.externalSaveFailed"), { kind: "err" });
+    }
+  }
+
+  card.querySelector("#external-runtime-save").addEventListener("click", save);
+  card.querySelector("#external-runtime-test").addEventListener("click", async () => {
+    try {
+      const r = await api.vllmModels(url.value.trim());
+      const body = (r && r.body) || r || {};
+      paint({ base_url: url.value.trim(), model: model.value.trim(), ...body });
+    } catch (e) {
+      detail.textContent = String((e && e.message) || e);
+    }
+  });
+
+  api.vllmStatus().then((r) => paint((r && r.body) || r)).catch(() => {});
 }
 
 function engineRow(e) {

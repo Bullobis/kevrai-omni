@@ -94,6 +94,9 @@ export const api = {
   localTTS:                wrap("localTTS",                (payload) => k().localTTS(payload)),
   // 引擎路由：后端 /api/engine/route 是"该用哪个引擎"的唯一决策点。
   engineRoute: wrap("engineRoute", (params) => k().engineRoute(params)),
+  vllmStatus:  wrap("vllmStatus",  () => k().vllmStatus()),
+  vllmConfig:  wrap("vllmConfig",  (p) => k().vllmConfig(p)),
+  vllmModels:  wrap("vllmModels",  (u) => k().vllmModels(u)),
   // ----- 通道补全：与 preload 一一对应 -----
   roles:              wrap("roles", (opts) => k().roles(opts)),
   rolesCapabilities:  wrap("rolesCapabilities", () => k().rolesCapabilities()),

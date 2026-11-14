@@ -608,6 +608,24 @@ export async function showDetail(item) {
       b.disabled = false;
     })
   );
+  host.querySelectorAll("[data-action=configure-external]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const model = b.dataset.model || "";
+      document.querySelector('.sidebar [data-tab="engines"]')?.click();
+      // Card is mounted asynchronously on the engines page; fill once it exists.
+      const fill = (tries = 12) => {
+        const input = document.querySelector("#external-runtime-model");
+        if (input) {
+          input.value = model;
+          input.focus();
+          input.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        } else if (tries > 0) {
+          setTimeout(() => fill(tries - 1), 120);
+        }
+      };
+      fill();
+    })
+  );
   host.querySelectorAll("[data-action=open-external]").forEach((b) =>
     b.addEventListener("click", async () => {
       try { await api.openExternal(b.dataset.url); }
@@ -696,6 +714,19 @@ function fmtDate(iso) {
   return s.replace("T", " ").replace("Z", " UTC").slice(0, 23);
 }
 
+// v4.18.0 — 外部 OpenAI 兼容服务模型（vLLM / SGLang / Ollama）给出
+// 一个真正可点的入口：跳到引擎页并预填模型名，而不是只显示一句“需要外部”。
+function renderExternalBridge(m, a) {
+  const services = ((a && a.external) || []).map((x) => x.service);
+  if (!services.some((x) => x === "vLLM" || x === "SGLang" || x === "Ollama")) return "";
+  const model = m.repo || m.id || "";
+  return `<p class="external-bridge">
+    <button class="secondary small" data-action="configure-external"
+            data-model="${escapeHtml(model)}">${t("market.configureExternal")}</button>
+    <span class="hint">${t("market.configureExternalHint")}</span>
+  </p>`;
+}
+
 function renderAvailability(a) {
   const nativeLabels = (a.native || []).map((x) => x.label).join(" / ");
   const externalLabels = (a.external || []).map((x) => x.service).join(" / ");
@@ -750,6 +781,7 @@ function renderDetail(m, gguf) {
       ? `<p class="card-desc">${escapeHtml(m.description || chineseNameOf(m))}</p>` : ""}
     ${m.gated ? `<p class="hint">${t("market.gatedHint")}</p>` : ""}
     ${m.availability ? renderAvailability(m.availability) : ""}
+    ${renderExternalBridge(m, m.availability)}
     <div id="engine-route-slot" class="engine-route-slot"></div>
 
     ${isRemote ? `

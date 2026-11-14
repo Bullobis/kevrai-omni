@@ -209,7 +209,9 @@
     "availabilityTitle": "运行状态",
     "availabilityNative": "本地可运行：{list}",
     "availabilityExternal": "需外置引擎：{list}",
-    "availabilityUnsupported": "暂未接入运行时"
+    "availabilityUnsupported": "暂未接入运行时",
+    "configureExternal": "配置外部服务",
+    "configureExternalHint": "在 AI 引擎页填入服务地址与模型名；应用不负责拉起 vLLM / SGLang / Ollama。"
   },
   "engines": {
     "title": "AI 引擎",
@@ -231,7 +233,19 @@
     "uninstallDone": "{id} 已卸载",
     "uninstallFailed": "{id} 卸载失败",
     "updateDone": "{id} 已更新到 {v}",
-    "updateDoneNoVer": "{id} 已更新"
+    "updateDoneNoVer": "{id} 已更新",
+    "externalTitle": "外部推理服务（vLLM / SGLang / Ollama）",
+    "externalHint": "应用不负责启动这些服务。先在本机或局域网启动 OpenAI 兼容服务，再填入地址、模型名与密钥；保存后可检测连接。",
+    "externalUrl": "服务地址",
+    "externalModel": "模型名",
+    "externalKey": "API Key（可空）",
+    "externalTest": "检测连接",
+    "externalSave": "保存配置",
+    "externalOnline": "已连接",
+    "externalOffline": "未连接",
+    "externalModels": "发现 {n} 个模型：{list}",
+    "externalSaved": "外部服务配置已保存",
+    "externalSaveFailed": "保存外部服务配置失败"
   },
   "local": {
     "title": "本地模型",

@@ -219,6 +219,10 @@ const api = {
 
   // ----- Engines -----
   engineRoute:   (params) => invoke("api:engine:route", params || {}),
+  // 外部 OpenAI 兼容服务（vLLM / SGLang / Ollama）
+  vllmStatus:    () => invoke("api:vllm:status"),
+  vllmConfig:    (payload) => invoke("api:vllm:config", payload || {}),
+  vllmModels:    (baseUrl) => invoke("api:vllm:models", baseUrl || ""),
 
   // ----- 通道补全：后端早已实现、此前无桥接的能力 -----
   // 用途槽位
