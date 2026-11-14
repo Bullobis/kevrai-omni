@@ -1508,3 +1508,21 @@ html[data-theme="dark"] .agent-actions #agent-new-btn { color: #0b1020; }
 .file-picker-btn:hover { background: var(--bg-2); border-color: var(--acc); }
 .file-picker-btn:focus-visible { outline: none; box-shadow: var(--focus); border-color: var(--acc); }
 .file-picker-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* v4.18.0 — form pages used to stop at 940px regardless of window width,
+   leaving a dead right column that made every page except the market feel
+   unfinished. Let the working surface use the available width, capped so the
+   line length stays readable on very wide monitors. */
+@media (min-width: 1100px) {
+  .pane .asr-form.card,
+  .pane .asr-form,
+  .pane .asr-result.card,
+  .pane .asr-engine-missing,
+  .pane .compare-models-card,
+  .pane .compare-question-card,
+  .pane .import-card,
+  #pane-compare-answers .card,
+  #pane-translate .translate-toolbar {
+    max-width: min(1180px, 100%);
+  }
+}
