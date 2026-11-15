@@ -653,7 +653,7 @@ def _write_video(frames: Any, out: Path, *, fps: int, fmt: str) -> Path:
 # Per-model duration guidance.  Soft limits only: the UI shows a warning and
 # asks for confirmation, but never prevents a deliberate longer generation.
 # ---------------------------------------------------------------------------
-DURATION_HINTS: dict[str, dict] = {
+DURATION_HINTS: dict[str, dict[str, Any]] = {
     "Lightricks/LTX-2.5": {"recommended_max": 20, "source": "LTX 官方文档：单次生成最长 20 秒"},
     "Lightricks/LTX-Video": {"recommended_max": 6, "source": "LTX-Video 官方示例：161 帧 @24fps"},
     "Wan-AI/Wan2.2-T2V-A14B-Diffusers": {"recommended_max": 5, "source": "Wan 2.2 官方 API：固定 5 秒"},
@@ -681,7 +681,7 @@ def capabilities() -> dict[str, Any]:
         cuda = bool(torch.cuda.is_available())
     except ImportError as e:
         engine_error = str(e)
-    models = [
+    models: list[dict[str, Any]] = [
             {"id": "Lightricks/LTX-2.5", "label": "LTX-2.5（官方，质量最高）", "modes": ["t2v", "i2v"],
              "capability": {"prompt": "required", "negative": True, "image": {"required": False, "role": "first_frame"}}},
             {"id": "Lightricks/LTX-Video", "label": "LTX-Video 0.9（更省显存）", "modes": ["t2v", "i2v"],

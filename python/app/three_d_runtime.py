@@ -616,7 +616,7 @@ class ThreeDManager:
             tmp = Path(self.output_root) / f"triposg_{task.id}.glb"
             out_file = _vendor_cli_generate(
                 "TripoSG", p, task, data_root,
-                "-m", ["scripts.inference_triposg"],
+                "scripts.inference_triposg",
                 ["--image-input", p.image_path, "--output-path", str(tmp)],
                 module=True, expected=tmp,
             )

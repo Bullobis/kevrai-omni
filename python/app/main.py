@@ -5774,8 +5774,7 @@ async def multimodal_generate_image_route(
     try:
         res = await asyncio.to_thread(
             mgr.generate_image, req.model, req.prompt,
-            image_path=req.image_path, audio_path=req.audio_path,
-        video_path=req.video_path, strength=req.strength,
+            image_path=req.image_path, strength=req.strength,
             guidance_scale=req.guidance_scale, seed=req.seed,
             num_images=req.num_images, do_sample=req.do_sample,
             width=req.width, height=req.height,

@@ -155,8 +155,10 @@ def test_ltx_capabilities(client):
 
 
 def test_ltx_generate_empty_prompt_rejected(client):
+    # Empty prompt is valid for prompt-optional/audio-driven models; a generic
+    # text-only request is rejected by runtime validation (400), not Pydantic.
     r = client.post("/api/ltx/generate", json={"prompt": ""})
-    assert r.status_code == 422  # Pydantic min_length
+    assert r.status_code == 400
 
 
 def test_ltx_generate_invalid_mode(client):

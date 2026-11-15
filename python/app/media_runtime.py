@@ -176,7 +176,7 @@ def _write_video(frames: Any, out: Path, *, fps: int) -> Path:
         raise MediaEngineMissing("写出视频需要 imageio：pip install imageio imageio-ffmpeg") from e
     imgs = _frames_to_array(frames)
     out.parent.mkdir(parents=True, exist_ok=True)
-    arr = [np.asarray(x.convert("RGB")) for x in imgs]
+    arr: Any = [np.asarray(x.convert("RGB")) for x in imgs]
     try:
         imageio.mimsave(str(out), arr, fps=max(1, int(fps)), codec="libx264", quality=8)
     except Exception:  # noqa: BLE001 - codec wheel may be absent
