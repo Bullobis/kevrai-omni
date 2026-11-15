@@ -1085,6 +1085,11 @@ def capabilities() -> dict[str, Any]:
     diffusers_ok = _has("diffusers")
     trimesh_ok = _has("trimesh")
     pil_ok = _has("PIL")
+    vendor_ok = {
+        "hunyuan3d": _has("hy3dgen"),
+        "trellis": _has("trellis"),
+        "direct3d_s2": _has("direct3d_s2"),
+    }
 
     gpu_ok = False
     with contextlib.suppress(Exception):
@@ -1092,14 +1097,16 @@ def capabilities() -> dict[str, Any]:
 
         gpu_ok = bool(torch.cuda.is_available())
 
-    ready = torch_ok and diffusers_ok and pil_ok
+    # 3D 不只有 Diffusers 一条路：Hunyuan3D / TRELLIS / Direct3D-S2
+    # 都有自己的官方包，不能因为没装 diffusers 就把整个 3D 页判死。
+    ready = torch_ok and pil_ok and (diffusers_ok or any(vendor_ok.values()))
     missing: list[str] = []
     if not torch_ok:
         missing.append("torch")
-    if not diffusers_ok:
-        missing.append("diffusers")
     if not pil_ok:
         missing.append("pillow")
+    if not diffusers_ok and not any(vendor_ok.values()):
+        missing.append("diffusers 或 hy3dgen/trellis/direct3d_s2")
     if not trimesh_ok:
         missing.append("trimesh (仅 GLB 导出需要)")
 
@@ -1107,13 +1114,15 @@ def capabilities() -> dict[str, Any]:
         "available": ready,
         "torch": torch_ok,
         "diffusers": diffusers_ok,
+        "vendor_backends": vendor_ok,
         "trimesh": trimesh_ok,
         "pil": pil_ok,
         "cuda": gpu_ok,
         "missing": missing,
         "install_hint": (
             "" if ready else
-            "pip install torch diffusers transformers accelerate trimesh pillow"
+            "pip install torch diffusers transformers accelerate trimesh pillow；"
+            "或安装官方 3D 包（hy3dgen / trellis / direct3d_s2）"
         ),
         "presets": {k: {"label": v["label"], "note": v["note"]} for k, v in PRESETS.items()},
         "modes": list(MODES),

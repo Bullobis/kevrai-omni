@@ -163,3 +163,9 @@
   现在按官方 README 的入口调用，缺少官方代码时给出明确的安装命令。
 - 3D 测试中用于 stub 的模型 ID 改为非厂商 ID，避免把真实 TRELLIS
   适配路径绕回通用管线。
+
+## 4.18.0 追加修复（3D 可用性判定）
+
+- 3D `capabilities()` 不再要求必须安装 diffusers：只要 torch + pillow 加任意
+  一个官方 3D 包（hy3dgen / trellis / direct3d_s2）就认为可运行，并返回
+  `vendor_backends` 详情；避免装好 Hunyuan3D 却仍被页面判成“引擎未就绪”。
