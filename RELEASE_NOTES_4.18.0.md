@@ -128,3 +128,11 @@
   不再把市场里不存在的模型伪装成已适配。
 - 3D 运行时和通用媒体运行时补上应用内 `pip-diffusers` / `pip-transformers`
   的 `sys.path` 加载，修复“引擎页已安装、生成时 ImportError”的路径问题。
+
+## 4.18.0 追加修复（视频页接模型市场）
+
+- 视频页除运行时已有模型外，读取 `category=video` 的市场 capability，新增
+  Open-Sora、LTX-2.3、MiniMax H3、MAGI-2、LingBot、HunyuanVideo 1.5、FramePack、
+  Pyramid Flow 等文本/图片驱动模型；当前共 19 个视频选项。
+- 市场模型的模式、提示词、负向提示词、首帧图片和时长提示由 capability 生成；
+  音频/视频必填的模型暂不伪装成已适配，避免表单给出假字段。

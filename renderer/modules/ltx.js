@@ -12,6 +12,7 @@ const $ = (s) => document.querySelector(s);
 
 let cap = null;
 let pollTimer = null;
+let catalogVideoModels = [];
 // R4 — initLtx 由 switchView 的 dataset.rendered 守门只调一次，但再加一层
 // 模块内 guard，防止未来误调用导致按钮事件监听器重复绑定。
 let ltxInited = false;
@@ -58,10 +59,50 @@ export async function initLtx() {
   startPolling();
 }
 
+async function mergeCatalogVideoModels() {
+  catalogVideoModels = [];
+  try {
+    const res = await api.models({ category: "video" });
+    const rows = (res && (res.models || res.items)) || (res?.body?.models || []);
+    rows.forEach((m) => {
+      const c = m.capability || {};
+      const tasks = c.tasks || [];
+      if (!tasks.includes("text-to-video") && !tasks.includes("image-to-video")) return;
+      const inputs = c.inputs || {};
+      // 表单目前只覆盖文本 + 图片；音频/视频必填的模型不能假装能跑。
+      if (inputs.audio?.required || inputs.video?.required) return;
+      const repo = m.repo || m.id;
+      if ((cap.models || []).some((x) => x.id === repo)) return;
+      const modes = [];
+      if (tasks.includes("text-to-video")) modes.push("t2v");
+      if (tasks.includes("image-to-video")) modes.push("i2v");
+      if (!modes.length) return;
+      const prompt = (c.controls || []).includes("prompt")
+        ? (inputs.text?.required ? "required" : "optional") : "none";
+      catalogVideoModels.push({
+        id: repo,
+        label: `${m.name || m.id} · 市场`,
+        modes,
+        fromMarket: true,
+        capability: {
+          prompt,
+          negative: (c.controls || []).includes("negative_prompt"),
+          image: inputs.image || null,
+          duration: c.duration || null,
+        },
+      });
+    });
+  } catch (_) { catalogVideoModels = []; }
+  if (catalogVideoModels.length && cap && Array.isArray(cap.models)) {
+    cap.models = cap.models.concat(catalogVideoModels);
+  }
+}
+
 async function loadCapabilities() {
   try {
     const r = await api.ltxCapabilities();
     cap = r?.body || r;
+    await mergeCatalogVideoModels();
     renderCapabilities();
   } catch (e) {
     setStatus(t("ltx.loadCapsFailed", { err: e.message || e }), "error");
