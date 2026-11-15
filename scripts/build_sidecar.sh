@@ -40,7 +40,7 @@ echo "  python: ${PY}"
 # owns the frozen sidecar, Linux leaves FUSE-backed files behind and COLLECT
 # fails with "Directory not empty" halfway through. Fail with a clear message
 # instead of leaving a half-replaced bundle.
-if pgrep -f "$(pwd)/python/dist/sidecar/sidecar" >/dev/null 2>&1; then
+if pgrep -x sidecar >/dev/null 2>&1; then
   fail "frozen sidecar is still running; quit Kevrai Omni before rebuilding"
 fi
 
