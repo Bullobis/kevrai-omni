@@ -1503,7 +1503,8 @@
     "notReady": "3D 运行时未就绪",
     "retry": "重新检测",
     "marketModelNote": "模型市场条目，首次使用需下载权重",
-    "curatedModelNote": "已适配的本地 3D 模型"
+    "curatedModelNote": "已适配的本地 3D 模型",
+    "install": "安装 3D 运行时"
   },
   "knowledge": {
     "title": "知识库（RAG）",

@@ -1503,7 +1503,8 @@
     "notReady": "3D runtime not ready",
     "retry": "Check again",
     "marketModelNote": "catalog entry; first use downloads weights",
-    "curatedModelNote": "curated local 3D model"
+    "curatedModelNote": "curated local 3D model",
+    "install": "Install 3D runtime"
   },
   "knowledge": {
     "title": "Knowledge Base (RAG)",

@@ -991,7 +991,10 @@
         <div class="asr-engine-missing" id="threed-missing-card">
           <p class="muted" data-i18n="threed.missingHint">需要本机安装 torch / diffusers / pillow / trimesh，并具备 NVIDIA 显存。</p>
           <p class="muted mono" id="threed-install-hint"></p>
-          <button class="secondary" id="threed-retry" data-i18n="threed.retry">重新检测</button>
+          <div class="form-actions">
+            <button class="secondary" id="threed-install" data-i18n="threed.install">安装 3D 运行时</button>
+            <button class="secondary" id="threed-retry" data-i18n="threed.retry">重新检测</button>
+          </div>
         </div>
 
         <div class="asr-form card" id="threed-form">

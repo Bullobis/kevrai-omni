@@ -299,6 +299,19 @@ export async function initThreeD() {
   $("#threed-run").addEventListener("click", generate);
   const retry = $("#threed-retry");
   if (retry) retry.addEventListener("click", () => refreshCaps().catch(() => {}));
+  const install = $("#threed-install");
+  if (install) install.addEventListener("click", async () => {
+    install.disabled = true;
+    try {
+      await api.installEngine("diffusers");
+      try { await api.installEngine("transformers"); } catch (_) {}
+      await refreshCaps();
+    } catch (e) {
+      toast(e.message, { kind: "err" });
+    } finally {
+      install.disabled = false;
+    }
+  });
 
   window.addEventListener("kevrai:view-change", (e) => {
     if (e.detail && e.detail.view === "3d") {
