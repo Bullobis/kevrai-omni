@@ -150,7 +150,7 @@ function syncModeFields() {
   const promptField = $("#threed-prompt-field");
   if (imageField) imageField.hidden = !(mode === "i23d" || mode === "i2wv");
   if (videoField) videoField.hidden = mode !== "v24d";
-  if (promptField) promptField.hidden = !(mode === "t23d" || mode === "i2wv");
+  if (promptField) promptField.hidden = mode !== "t23d";
 }
 
 // 本机显存 vs 模型需求：显示「跑得动哪档」与许可/商用提示。
