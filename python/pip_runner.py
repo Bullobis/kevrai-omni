@@ -11,7 +11,32 @@ from __future__ import annotations
 import sys
 
 
+def _patch_distlib_for_frozen() -> None:
+    """Make pip's vendored distlib understand PyInstaller's loader.
+
+    ``pip._vendor.distlib.scripts`` calls ``distlib.resources.finder`` at import
+    time.  The finder registry only knows the standard importlib loaders; under
+    a frozen Windows build the package is loaded by PyInstaller's frozen loader,
+    so distlib raises ``Unable to locate finder for 'pip._vendor.distlib'`` and
+    every ``installEngine`` fails with a 400.  Registering ResourceFinder for
+    that loader fixes it; the package is extracted to a real directory under
+    ``sys._MEIPASS``, which ResourceFinder can scan.
+    """
+    if not getattr(sys, "frozen", False):
+        return
+    try:
+        import pip._vendor.distlib as distlib
+        import pip._vendor.distlib.resources as resources
+
+        loader_type = type(distlib.__loader__)
+        resources._finder_registry.setdefault(loader_type, resources.ResourceFinder)
+    except Exception:
+        # Never let the compatibility shim prevent pip from starting.
+        return
+
+
 def main() -> int:
+    _patch_distlib_for_frozen()
     from pip._internal.cli.main import main as pip_main
 
     return int(pip_main(sys.argv[1:]) or 0)
