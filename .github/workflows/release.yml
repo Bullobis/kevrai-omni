@@ -257,34 +257,27 @@ jobs:
           # electron-builder 的 artifactName 不含前导 v：v4.18.0 -> 4.18.0
           echo "ver=${tag#v}" >> "$GITHUB_OUTPUT"
 
+      - name: Select release notes
+        id: notes
+        shell: bash
+        run: |
+          ver="${{ steps.rtag.outputs.ver }}"
+          if [ -f "RELEASE_NOTES_${ver}.md" ]; then
+            cp "RELEASE_NOTES_${ver}.md" release-files/RELEASE_NOTES.md
+          else
+            cat > release-files/RELEASE_NOTES.md <<'EOF'
+          # Kevrai Omni ${ver}
+
+          本次发布未找到 RELEASE_NOTES_${ver}.md，使用通用说明。
+          EOF
+          fi
+          echo "path=release-files/RELEASE_NOTES.md" >> "$GITHUB_OUTPUT"
+
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.rtag.outputs.tag }}
           name: Kevrai Omni ${{ steps.rtag.outputs.tag }}
           generate_release_notes: false
-          body: |
-            ## Kevrai Omni ${{ steps.rtag.outputs.tag }}
-
-            ### 🎯 更新亮点
-
-            - **跨平台构建**: Linux AppImage/deb、Windows NSIS 安装器+zip、macOS dmg（均由 GitHub Actions CI 原生构建）
-            - **PyInstaller sidecar**: 已内置到所有平台安装包，首次启动无需单独安装 Python
-            - **版本统一**: `package.json` + `python/app/__init__.py` 一致
-
-            ### 📦 下载安装
-
-            | 平台 | 文件 | 安装方式 |
-            |------|------|----------|
-            | Linux | `Kevrai-Omni-${{ steps.rtag.outputs.ver }}-x86_64.AppImage` | `chmod +x` 后直接运行 |
-            | Linux | `Kevrai-Omni-${{ steps.rtag.outputs.ver }}-amd64.deb` | `sudo dpkg -i` |
-            | Windows | `Kevrai-Omni-${{ steps.rtag.outputs.ver }}-x64.exe` | 双击 NSIS 安装器 |
-            | Windows | `Kevrai-Omni-${{ steps.rtag.outputs.ver }}-x64.zip` | 解压便携版运行 `Kevrai Omni.exe` |
-            | macOS | `Kevrai-Omni-${{ steps.rtag.outputs.ver }}-x64.dmg` / `arm64.dmg` | 拖入 Applications |
-
-            ### 🏗️ 技术栈
-
-            - Electron 33 / electron-builder 25 / Node 22
-            - Python sidecar: FastAPI + uvicorn（PyInstaller frozen）
-            - GitHub Actions: ubuntu-latest + windows-latest + macos-latest
+          body_path: ${{ steps.notes.outputs.path }}
           files: release-files/*
