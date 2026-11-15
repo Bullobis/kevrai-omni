@@ -119,3 +119,12 @@
 - **音频生成 API**：`MusicGenReq` 增加 `lyrics`，路由把它透传到 ACE-Step 的
   `synthesize`。
 - 测试：图片 / 音乐 / LTX 定向 90 passed；全量 renderer 450/450 通过。
+
+## 4.18.0 追加修复（3D 模型市场与运行时路径）
+
+- 3D 页不再只列 7 个硬编码模型：启动时读取 `category=3d` 的模型市场 capability，
+  合并已适配模型与市场条目，当前可见 26 个 3D 选项。
+- 3D 选项会标出“图生 3D / 文生 3D”和“市场条目，首次使用需下载权重”；
+  不再把市场里不存在的模型伪装成已适配。
+- 3D 运行时和通用媒体运行时补上应用内 `pip-diffusers` / `pip-transformers`
+  的 `sys.path` 加载，修复“引擎页已安装、生成时 ImportError”的路径问题。

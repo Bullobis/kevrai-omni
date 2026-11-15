@@ -16,6 +16,7 @@ const $ = (s, r = document) => r.querySelector(s);
 
 let inited = false;
 let pollTimer = null;
+let marketModels = [];
 
 // 常用模型预设（id 即 HuggingFace repo id；后端 from_pretrained 直接加载）。
 // 全部选公开可下（非 gated）的仓库，避免用户卡在 HF 登录。
@@ -39,7 +40,59 @@ import { escapeHtml } from "./net.js";
 function currentModel() {
   const sel = $("#threed-model");
   const id = sel ? sel.value : MODELS[0].id;
-  return MODELS.find((m) => m.id === id) || MODELS[0];
+  return marketModels.find((m) => m.id === id) ||
+    MODELS.find((m) => m.id === id) || marketModels[0] || MODELS[0];
+}
+
+function entryFromCatalog(m) {
+  const cap = m.capability || {};
+  const tasks = cap.tasks || [];
+  const known = MODELS.find((x) => x.id === (m.repo || m.id));
+  if (known) return known;
+  return {
+    id: m.repo || m.id,
+    label: m.name || m.id,
+    t23d: tasks.includes("text-to-3d"),
+    vramMin: 8,
+    license: m.license || "unknown",
+    commercial: m.commercial === true ? true : false,
+    note: t("threed.marketModelNote"),
+    fromMarket: true,
+  };
+}
+
+async function loadMarketModels() {
+  try {
+    const res = body(await api.models({ category: "3d" }));
+    const rows = (res && (res.models || res.items)) || [];
+    const catalog = rows
+      .filter((m) => {
+        const tasks = (m.capability || {}).tasks || [];
+        return tasks.includes("image-to-3d") || tasks.includes("text-to-3d");
+      })
+      .map(entryFromCatalog);
+    // keep curated order first, then catalog-only entries
+    const seen = new Set(MODELS.map((m) => m.id));
+    marketModels = MODELS.slice();
+    catalog.forEach((m) => {
+      if (!seen.has(m.id)) { seen.add(m.id); marketModels.push(m); }
+    });
+  } catch (_) {
+    marketModels = MODELS.slice();
+  }
+}
+
+function applyThreeDCapability() {
+  const m = currentModel();
+  const hint = $("#threed-model-capability");
+  if (!hint) return;
+  if (!m) { hint.hidden = true; return; }
+  const bits = [];
+  if (m.t23d) bits.push(t("threed.t23d"));
+  bits.push(t("threed.i23d"));
+  bits.push(m.fromMarket ? t("threed.marketModelNote") : t("threed.curatedModelNote"));
+  hint.textContent = bits.join(" · ");
+  hint.hidden = false;
 }
 
 function syncModeAvailability() {
@@ -51,6 +104,7 @@ function syncModeAvailability() {
     $("#threed-mode-i23d").checked = true;
   }
   syncModeFields();
+  applyThreeDCapability();
   updateFit();
 }
 
@@ -135,8 +189,8 @@ async function refreshCaps() {
 function populateModels() {
   const sel = $("#threed-model");
   if (!sel) return;
-  sel.innerHTML = MODELS.map((m) =>
-    `<option value="${escapeHtml(m.id)}">${escapeHtml(m.label)}</option>`).join("");
+  sel.innerHTML = marketModels.map((m) =>
+    `<option value="${escapeHtml(m.id)}">${escapeHtml(m.label)}${m.fromMarket ? " · 市场" : ""}</option>`).join("");
   syncModeAvailability();
 }
 
@@ -230,6 +284,7 @@ function stopPolling() {
 export async function initThreeD() {
   if (inited) return;
   inited = true;
+  await loadMarketModels();
   populateModels();
   await refreshCaps();
   await detectLocalVram();

@@ -1501,7 +1501,9 @@
     "licenseOk": "Commercial use OK",
     "licenseCond": "Commercial use has conditions (see below)",
     "notReady": "3D runtime not ready",
-    "retry": "Check again"
+    "retry": "Check again",
+    "marketModelNote": "catalog entry; first use downloads weights",
+    "curatedModelNote": "curated local 3D model"
   },
   "knowledge": {
     "title": "Knowledge Base (RAG)",

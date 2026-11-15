@@ -1501,7 +1501,9 @@
     "licenseOk": "可商用",
     "licenseCond": "商用有条件限制（见下）",
     "notReady": "3D 运行时未就绪",
-    "retry": "重新检测"
+    "retry": "重新检测",
+    "marketModelNote": "模型市场条目，首次使用需下载权重",
+    "curatedModelNote": "已适配的本地 3D 模型"
   },
   "knowledge": {
     "title": "知识库（RAG）",
