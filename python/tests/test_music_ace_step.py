@@ -36,7 +36,7 @@ def test_ace_step_recognised(src):
 @pytest.mark.parametrize("src", [
     "facebook/musicgen-small",
     "musicgen-large",
-    "MiniMax/MiniMax-Music3",
+    "MiniMaxAI/MiniMax-Music3",
     "",
     "some/other-model",
 ])

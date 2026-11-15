@@ -151,3 +151,15 @@
 
 - 3D 引擎缺失卡片新增“安装 3D 运行时”按钮，安装应用内 Diffusers/Transformers
   引擎后自动重新检测；不再只给一条 `pip install` 命令让用户自己复制。
+
+## 4.18.0 追加修复（MiniMax 音乐与 3D 专用运行时）
+
+- MiniMax Music 3 不再被误当成 MusicGen。按官方模型卡改用 Diffusers
+  `ModularPipeline`，支持 `lyrics + prompt + audio_duration`，最长 300 秒；
+  修正了错误的仓库名（`MiniMaxAI/MiniMax-Music3`）。
+- 3D 运行时新增官方适配：Hunyuan3D-2（`hy3dgen.shapegen`）、TRELLIS
+  （`trellis.pipelines`）、Direct3D-S2（`direct3d_s2.pipeline`）。
+  这些仓库没有 `model_index.json`，原先用通用 Diffusers 加载会失败；
+  现在按官方 README 的入口调用，缺少官方代码时给出明确的安装命令。
+- 3D 测试中用于 stub 的模型 ID 改为非厂商 ID，避免把真实 TRELLIS
+  适配路径绕回通用管线。

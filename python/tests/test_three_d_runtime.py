@@ -28,7 +28,7 @@ class _FakeMesh:
 
 
 def _params(**kw):
-    base = dict(mode="t23d", prompt="a red mug", model_id="microsoft/TRELLIS-image-large")
+    base = dict(mode="t23d", prompt="a red mug", model_id="kevrai/test-3d")
     base.update(kw)
     return td.ThreeDParams(**base)
 
@@ -202,7 +202,7 @@ def test_t23d_rejected_for_reconstruction_only_models(model_id):
 
 
 def test_t23d_allowed_for_generative_model():
-    _params(mode="t23d", model_id="microsoft/TRELLIS-image-large").validate()
+    _params(mode="t23d", model_id="kevrai/test-3d").validate()
 
 
 # ---------------------------------------------------------------------------

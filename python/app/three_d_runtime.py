@@ -514,13 +514,51 @@ class ThreeDManager:
             task.elapsed_s = max(0.0, task.finished_at - task.started_at)
             return
 
+        data_root = Path(os.environ.get("KEVRAI_DATA_ROOT", "")
+                         or self.output_root.parent.parent)
         if _is_triposr(p.model_id):
             task.state = TaskState.RUNNING
             task.progress = 0.05
-            mesh = _triposr_generate(
-                p, task,
-                Path(os.environ.get("KEVRAI_DATA_ROOT", "")
-                     or self.output_root.parent.parent))
+            mesh = _triposr_generate(p, task, data_root)
+            task._check_cancel()
+            task.state = TaskState.SAVING
+            out = self._write_output(task, mesh)
+            task.output_path = str(out)
+            _fill_mesh_metrics(task, out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+
+        if _is_hunyuan3d(p.model_id):
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            mesh = _hunyuan3d_generate(p, task)
+            task._check_cancel()
+            task.state = TaskState.SAVING
+            out = self._write_output(task, mesh)
+            task.output_path = str(out)
+            _fill_mesh_metrics(task, out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+
+        if _is_trellis(p.model_id):
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            mesh = _trellis_generate(p, task)
+            task._check_cancel()
+            task.state = TaskState.SAVING
+            out = self._write_output(task, mesh)
+            task.output_path = str(out)
+            _fill_mesh_metrics(task, out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+
+        if _is_direct3d(p.model_id):
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            mesh = _direct3d_generate(p, task)
             task._check_cancel()
             task.state = TaskState.SAVING
             out = self._write_output(task, mesh)
@@ -594,6 +632,104 @@ def _fill_mesh_metrics(task: ThreeDTask, path: Path) -> None:
 def _is_triposr(model_id: str) -> bool:
     """TripoSR is not a diffusers pipeline; it ships its own ``tsr`` code."""
     return "triposr" in (model_id or "").lower()
+
+
+def _is_hunyuan3d(model_id: str) -> bool:
+    return "hunyuan3d" in (model_id or "").lower() and "hunyuanworld" not in (model_id or "").lower()
+
+
+def _is_trellis(model_id: str) -> bool:
+    return "trellis" in (model_id or "").lower()
+
+
+def _is_direct3d(model_id: str) -> bool:
+    return "direct3d" in (model_id or "").lower()
+
+
+def _hunyuan3d_generate(p: ThreeDParams, task: ThreeDTask) -> Any:
+    """Official Hunyuan3D-2 shape-generation pipeline.
+
+    README: ``from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline``
+    and ``pipe(image=...)[0]``. The model repo has no ``model_index.json``;
+    the generic Diffusers loader cannot load it.
+    """
+    if p.mode != "i23d":
+        raise ThreeDParamError("Hunyuan3D-2 当前只支持图生 3D")
+    try:
+        from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline  # type: ignore
+    except ImportError as e:
+        raise ThreeDEngineMissing(
+            "Hunyuan3D-2 需要官方 hy3dgen 代码："
+            "git clone https://github.com/Tencent-Hunyuan/Hunyuan3D-2 && "
+            "cd Hunyuan3D-2 && pip install -e ."
+        ) from e
+    try:
+        pipe = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(p.model_id)
+        out = pipe(image=p.image_path)
+        mesh = out[0] if isinstance(out, (list, tuple)) else out
+    except Exception as e:  # noqa: BLE001
+        raise ThreeDEngineMissing(f"Hunyuan3D-2 推理失败：{e}") from e
+    task.progress = 0.9
+    return mesh
+
+
+def _trellis_generate(p: ThreeDParams, task: ThreeDTask) -> Any:
+    """Official TRELLIS image/text pipeline from ``trellis.pipelines``.
+
+    Model repo is a folder of checkpoints, not a Diffusers ``model_index``.
+    Official README requires ``pip install -e .`` from microsoft/TRELLIS.
+    """
+    try:
+        from trellis.pipelines import TrellisImageTo3DPipeline  # type: ignore
+    except ImportError as e:
+        raise ThreeDEngineMissing(
+            "TRELLIS 需要官方代码：git clone https://github.com/microsoft/TRELLIS "
+            "&& cd TRELLIS && . ./setup.sh --new-env && pip install -e ."
+        ) from e
+    try:
+        pipe = TrellisImageTo3DPipeline.from_pretrained(p.model_id)
+        try:
+            pipe.cuda()
+        except Exception:  # noqa: BLE001 — CPU fallback is allowed but slow
+            pass
+        if p.mode == "i23d":
+            from PIL import Image  # noqa: PLC0415
+            image = Image.open(p.image_path).convert("RGB")
+            out = pipe.run(image, seed=p.seed if p.seed >= 0 else 0)
+        else:
+            out = pipe.run(p.prompt, seed=p.seed if p.seed >= 0 else 0)
+        mesh_list = out.get("mesh") if isinstance(out, dict) else None
+        if not mesh_list:
+            raise ThreeDModelError("TRELLIS 没有返回 mesh")
+        mesh = mesh_list[0]
+    except ThreeDError:
+        raise
+    except Exception as e:  # noqa: BLE001
+        raise ThreeDEngineMissing(f"TRELLIS 推理失败：{e}") from e
+    task.progress = 0.9
+    return mesh
+
+
+def _direct3d_generate(p: ThreeDParams, task: ThreeDTask) -> Any:
+    """Official Direct3D-S2 pipeline from ``direct3d_s2.pipeline``."""
+    if p.mode != "i23d":
+        raise ThreeDParamError("Direct3D-S2 当前只支持图生 3D")
+    try:
+        from direct3d_s2.pipeline import Direct3DS2Pipeline  # type: ignore
+    except ImportError as e:
+        raise ThreeDEngineMissing(
+            "Direct3D-S2 需要官方代码：git clone "
+            "https://github.com/DreamTechAI/Direct3D-S2 && pip install -e ."
+        ) from e
+    try:
+        pipe = Direct3DS2Pipeline.from_pretrained(
+            p.model_id, subfolder="direct3d-s2-v-1-1")
+        out = pipe(p.image_path, sdf_resolution=512, remesh=False)
+        mesh = out.get("mesh") if isinstance(out, dict) else out
+    except Exception as e:  # noqa: BLE001
+        raise ThreeDEngineMissing(f"Direct3D-S2 推理失败：{e}") from e
+    task.progress = 0.9
+    return mesh
 
 
 def _triposr_generate(p: ThreeDParams, task: ThreeDTask,

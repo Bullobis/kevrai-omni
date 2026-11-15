@@ -37,6 +37,8 @@ MIN_DURATION_S = 1
 MAX_DURATION_MUSICGEN_S = 60
 #: ACE-Step 1.5 官方支持 10 秒到 10 分钟，上限远高于 MusicGen。
 MAX_DURATION_ACE_STEP_S = 600
+#: MiniMax Music 3 官方支持最长 5 分钟；模型卡明确给出 300 秒上限。
+MAX_DURATION_MINIMAX_S = 300
 
 #: Catalog id -> HF repo (verified against the HuggingFace Hub; see ADR).
 KNOWN_MODELS: dict[str, str] = {
@@ -51,7 +53,7 @@ KNOWN_MODELS: dict[str, str] = {
     "ace-step-1.5": "ACE-Step/Ace-Step1.5",
     # MiniMax Music 3 —— 能力最强但**非商用**，且门槛极高。登记在此仅为
     # 完整性，UI 必须按 LICENSE_WARNINGS 如实标注，不得当作默认推荐。
-    "minimax-music3": "MiniMax/MiniMax-Music3",
+    "minimax-music3": "MiniMaxAI/MiniMax-Music3",
 }
 
 #: 每个模型的许可与门槛。UI 展示模型时必须连带展示这些事实 ——
@@ -102,6 +104,10 @@ LICENSE_WARNINGS: dict[str, dict[str, str]] = {
 #: ACE-Step 与 MusicGen 是两套完全不同的架构，不能共用加载路径。
 #: ACE-Step 是 DiT + LM 两阶段（先规划后合成），MusicGen 是单阶段自回归。
 ACE_STEP_PREFIXES = ("ace-step", "ACE-Step", "ace_step")
+
+
+def _is_minimax_music3(source: str | Path) -> bool:
+    return "minimax-music3" in str(source).replace("_", "-").lower()
 
 
 def _is_ace_step(source: str | Path) -> bool:
@@ -256,6 +262,8 @@ class MusicManager:
     def _load(self, source: str | Path) -> tuple[Any, Any]:
         if _is_ace_step(source):
             return self._load_ace_step(source)
+        if _is_minimax_music3(source):
+            return self._load_minimax_music3(source)
         tf = import_transformers(self.data_root)
         try:
             processor = tf.AutoProcessor.from_pretrained(source)
@@ -264,6 +272,32 @@ class MusicManager:
             raise MusicModelError(f"音乐模型加载失败：{e}") from e
         model.eval()
         return model, processor
+
+    def _load_minimax_music3(self, source: str | Path) -> tuple[Any, Any]:
+        """Load the official MiniMax Music 3 Diffusers modular pipeline.
+
+        官方模型卡（MiniMaxAI/MiniMax-Music3）给出的入口是
+        ``ModularPipeline.from_pretrained(...).load_components(dtype=...)``；
+        它**不是** MusicGen 的 AutoProcessor 模型，绝不能用同一套加载逻辑。
+        """
+        try:
+            import torch  # noqa: F401
+            from diffusers import ModularPipeline  # type: ignore
+        except ImportError as e:
+            raise MusicModelError(
+                "MiniMax Music 3 需要带 ModularPipeline 的 diffusers 版本："
+                "pip install git+https://github.com/huggingface/diffusers"
+                "@dafe3733fcfdbf3c48915fe77be3aef65b5d6a2d"
+            ) from e
+        try:
+            pipe = ModularPipeline.from_pretrained(str(source))
+            dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
+            pipe.load_components(dtype=dtype)
+            if torch.cuda.is_available():
+                pipe.to("cuda")
+            return pipe, None
+        except Exception as e:  # noqa: BLE001
+            raise MusicModelError(f"MiniMax Music 3 加载失败：{e}") from e
 
     def _load_ace_step(self, source: str | Path) -> tuple[Any, Any]:
         """加载 ACE-Step 1.5。
@@ -337,8 +371,13 @@ class MusicManager:
             duration_s = float(duration_s)
         except (TypeError, ValueError) as e:
             raise MusicParamError("duration_s 必须是数字") from e
-        is_ace = _is_ace_step(self.resolve_repo(model_id_or_repo))
-        max_s = MAX_DURATION_ACE_STEP_S if is_ace else MAX_DURATION_MUSICGEN_S
+        repo_name = self.resolve_repo(model_id_or_repo)
+        is_ace = _is_ace_step(repo_name)
+        is_minimax = _is_minimax_music3(repo_name)
+        if is_minimax:
+            max_s = MAX_DURATION_MINIMAX_S
+        else:
+            max_s = MAX_DURATION_ACE_STEP_S if is_ace else MAX_DURATION_MUSICGEN_S
         if not (MIN_DURATION_S <= duration_s <= max_s):
             raise MusicParamError(
                 f"duration_s 必须在 {MIN_DURATION_S}-{max_s} 秒之间"
@@ -353,6 +392,12 @@ class MusicManager:
 
         started = time.monotonic()
         model, processor, repo = self.load(model_id_or_repo)
+        if _is_minimax_music3(repo):
+            return self._synthesize_minimax_music3(
+                model, repo, prompt, duration_s=duration_s,
+                seed=seed, started=started,
+                lyrics=kwargs.pop("lyrics", None),
+            )
         if _is_ace_step(repo):
             return self._synthesize_ace_step(
                 model, repo, prompt, duration_s=duration_s,
@@ -381,6 +426,51 @@ class MusicManager:
         audio = audio_values[0].detach().cpu().float().numpy()
         sr = int(getattr(model.config.audio_encoder, "sampling_rate",
                          DEFAULT_SAMPLING_RATE))
+        return {
+            "audio": audio,
+            "sampling_rate": sr,
+            "repo": repo,
+            "requested_s": duration_s,
+            "elapsed_s": round(time.monotonic() - started, 3),
+        }
+
+    def _synthesize_minimax_music3(
+        self,
+        pipe: Any,
+        repo: str,
+        prompt: str,
+        *,
+        duration_s: float,
+        seed: int | None,
+        started: float,
+        lyrics: str | None,
+    ) -> dict[str, Any]:
+        """MiniMax Music 3 official modular-pipeline call shape."""
+        import torch  # noqa: PLC0415
+
+        kwargs: dict[str, Any] = {
+            "prompt": prompt,
+            "lyrics": lyrics or "",
+            "audio_duration": float(duration_s),
+            "output": "audios",
+        }
+        if seed is not None:
+            kwargs["generator"] = torch.Generator(
+                "cuda" if torch.cuda.is_available() else "cpu"
+            ).manual_seed(int(seed))
+        try:
+            out = pipe(**kwargs)
+        except Exception as e:  # noqa: BLE001
+            raise MusicModelError(f"MiniMax Music 3 合成失败：{e}") from e
+        audios = getattr(out, "audios", None)
+        if audios is None and isinstance(out, (list, tuple)):
+            audios = out
+        if not audios:
+            raise MusicModelError("MiniMax Music 3 没有返回音频")
+        audio = audios[0]
+        if hasattr(audio, "detach"):
+            audio = audio.detach().cpu().float().numpy()
+        sr = int(getattr(pipe, "sampling_rate", None) or 32000)
         return {
             "audio": audio,
             "sampling_rate": sr,
@@ -549,10 +639,11 @@ def capabilities(data_root: Path | None = None) -> dict[str, Any]:
                 # 许可随模型一起返回：UI 展示模型时不可能不展示许可。
                 **license_info(mid),
                 "duration_max_s": (
-                    MAX_DURATION_ACE_STEP_S if _is_ace_step(repo)
-                    else MAX_DURATION_MUSICGEN_S
+                    MAX_DURATION_MINIMAX_S if _is_minimax_music3(repo)
+                    else (MAX_DURATION_ACE_STEP_S if _is_ace_step(repo)
+                          else MAX_DURATION_MUSICGEN_S)
                 ),
-                "supports_lyrics": _is_ace_step(repo),
+                "supports_lyrics": _is_ace_step(repo) or _is_minimax_music3(repo),
             }
             for mid, repo in KNOWN_MODELS.items()
         ],
