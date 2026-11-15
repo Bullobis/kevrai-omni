@@ -79,7 +79,11 @@ def test_frames_bounds():
     with pytest.raises(LtxParamError):
         _make_params(num_frames=1).validate()
     with pytest.raises(LtxParamError):
-        _make_params(num_frames=999).validate()
+        _make_params(num_frames=2000).validate()
+    # 1025 frames is the 20s ceiling at 50fps; it must be accepted.
+    p = _make_params(num_frames=1025)
+    p.validate()
+    assert p.num_frames == 1025
 
 
 def test_frames_normalized_to_8k_plus_1():
@@ -399,3 +403,24 @@ def test_video_models_declare_capabilities():
         assert isinstance(c["negative"], bool), m["id"]
         if "i2v" in m["modes"]:
             assert c.get("image"), m["id"]
+
+
+def test_video_models_declare_duration_guidance():
+    cap = capabilities()
+    by_id = {m["id"]: m for m in cap["models"]}
+    for model_id, seconds in {
+        "Lightricks/LTX-2.5": 20,
+        "Lightricks/LTX-Video": 6,
+        "Wan-AI/Wan2.2-T2V-A14B-Diffusers": 5,
+        "Wan-AI/Wan2.2-I2V-A14B-Diffusers": 5,
+        "tencent/HunyuanVideo": 5,
+        "zai-org/CogVideoX-5b": 6,
+        "genmo/mochi-1-preview": 3,
+        "stabilityai/stable-video-diffusion-img2vid-xt": 4,
+    }.items():
+        dur = by_id[model_id]["capability"]["duration"]
+        assert dur["recommended_max"] == seconds, model_id
+        assert dur["enforced"] is False, model_id
+        assert dur["source"], model_id
+    # 20 seconds at 24fps needs 481 frames before normalization.
+    assert cap["limits"]["num_frames"][1] >= 481

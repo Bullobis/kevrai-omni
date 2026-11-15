@@ -93,3 +93,24 @@ def test_catalog_model_dump_keeps_capability():
     dumped = catalog.models[0].model_dump()
     assert dumped.get("capability"), "capability was dropped by the API model schema"
     assert dumped["capability"]["tasks"]
+
+def test_video_duration_guidance_is_official_and_soft():
+    m = _by_id()
+    expected = {
+        "wan2.2-t2v": 5,
+        "wan2.2-i2v": 5,
+        "ltx-2.5": 20,
+        "ltx-2.3": 20,
+        "minimax-h3": 15,
+        "cogvideox-5b": 6,
+        "svd-xt": 4,
+        "magi2-preview": 10,
+    }
+    for model_id, seconds in expected.items():
+        dur = m[model_id]["capability"].get("duration")
+        assert dur, model_id
+        assert dur["recommended_max"] == seconds, model_id
+        assert dur["unit"] == "seconds", model_id
+        assert dur["confidence"] == "official", model_id
+        assert dur["enforced"] is False, model_id
+        assert dur["source"], model_id

@@ -380,9 +380,10 @@
             <div class="ltx-row">
               <label class="field"><span data-i18n="ltx.width">宽</span><input id="ltx-width" type="number" min="256" max="1920" step="32" value="768"></label>
               <label class="field"><span data-i18n="ltx.height">高</span><input id="ltx-height" type="number" min="256" max="1080" step="32" value="432"></label>
-              <label class="field"><span data-i18n="ltx.frames">帧数</span><input id="ltx-frames" type="number" min="9" max="257" step="8" value="97"></label>
+              <label class="field"><span data-i18n="ltx.frames">帧数</span><input id="ltx-frames" type="number" min="9" max="1025" step="8" value="97"></label>
               <label class="field"><span data-i18n="ltx.fps">FPS</span><input id="ltx-fps" type="number" min="1" max="60" value="24"></label>
             </div>
+            <p class="ltx-duration-hint" id="ltx-duration-hint" hidden></p>
             <div class="ltx-row">
               <label class="field"><span data-i18n="ltx.steps">步数</span><input id="ltx-steps" type="number" min="1" max="100" value="25"></label>
               <label class="field"><span data-i18n="ltx.cfg">CFG</span><input id="ltx-cfg" type="number" min="0.1" max="20" step="0.1" value="3.0"></label>
@@ -1436,6 +1437,26 @@
         <button class="secondary" data-action="close-update" data-i18n="update.close">关闭</button>
         <button class="primary" id="btn-update-download" hidden data-i18n="update.download">下载更新</button>
         <button class="primary" id="btn-update-install" hidden data-i18n="update.install">重启并安装</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- LTX duration advice overlay -->
+  <div id="ltx-duration-overlay" class="overlay" role="dialog" aria-modal="true"
+       aria-labelledby="ltx-duration-title" hidden aria-hidden="true">
+    <div class="overlay-card ltx-duration-card" role="document">
+      <header>
+        <h2 id="ltx-duration-title" data-i18n="ltx.durationDialogTitle">时长超过模型建议</h2>
+        <button class="ghost icon" id="ltx-duration-close" type="button" aria-label="关闭" data-i18n-aria-label="app.close">×</button>
+      </header>
+      <div class="ltx-duration-body">
+        <p id="ltx-duration-message"></p>
+        <p class="hint" id="ltx-duration-source"></p>
+      </div>
+      <footer class="overlay-foot">
+        <span class="spacer"></span>
+        <button class="secondary" id="ltx-duration-cancel" type="button" data-i18n="app.cancel">取消</button>
+        <button class="primary" id="ltx-duration-continue" type="button" data-i18n="ltx.durationContinue">仍要生成</button>
       </footer>
     </div>
   </div>

@@ -295,7 +295,9 @@
     "capCtrlLabels": "Labels",
     "capSourceHuggingFace": "Hugging Face official repository {repo}",
     "capSourceCatalog": "inferred from catalog tags",
-    "capSourceCurated": "manually reviewed"
+    "capSourceCurated": "manually reviewed",
+    "capDuration": "Duration guidance",
+    "capDurationValue": "recommended up to {max}s"
   },
   "engines": {
     "title": "AI Engines",
@@ -470,7 +472,13 @@
     "imageFirstFrame": "First frame",
     "imageCharacter": "Character image",
     "imageReference": "Reference image",
-    "imageControl": "Control image"
+    "imageControl": "Control image",
+    "durationUnder": "About {current}s · recommended up to {max}s",
+    "durationOver": "About {current}s · beyond the recommended {max}s; generation is still allowed",
+    "durationDialogTitle": "Longer than recommended",
+    "durationDialogBody": "This clip is about {current}s; the model recommends up to {max}s. Longer clips may be slower or lower quality. Generate anyway?",
+    "durationSource": "Source: {source}",
+    "durationContinue": "Generate anyway"
   },
   "settings": {
     "title": "Settings",

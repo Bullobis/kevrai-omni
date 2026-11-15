@@ -37,3 +37,17 @@ test("market detail renders capability manifest", () => {
   assert.match(js, /capabilityTitle/);
   assert.match(js, /cap-task/); 
 });
+
+test("duration guidance is per-model, advisory, and confirmable", () => {
+  const js = read("renderer/modules/ltx.js");
+  const html = read("renderer/index.html");
+  const py = fs.readFileSync(path.join(root, "python/app/ltx_runtime.py"), "utf8");
+  assert.match(js, /function updateDurationHint\(/);
+  assert.match(js, /function openDurationDialog\(/);
+  assert.match(js, /forceOverDuration/);
+  assert.match(html, /id="ltx-duration-overlay"/);
+  assert.match(html, /id="ltx-duration-continue"/);
+  assert.match(py, /DURATION_HINTS/);
+  assert.match(py, /recommended_max/);
+  assert.match(py, /MAX_FRAMES = 1025/);
+});

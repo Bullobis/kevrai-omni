@@ -24,7 +24,7 @@ export function getVgrid() { return vgrid; }
 
 export function initModels() {
   vgrid = new VirtualGrid($("#models-grid"), {
-    itemHeight: 220,
+    itemHeight: 240,
     renderItem: renderCard,
     onItemClick: onCardClick,
   });
@@ -374,6 +374,9 @@ function renderCapability(m) {
     `<span class="pill">${escapeHtml(capOutputName(type, info))}</span>`).join("");
   const controls = (cap.controls || []).filter((c) => CAP_CONTROL_LABELS[c])
     .map((c) => `<span class="pill quiet">${escapeHtml(t(`market.${CAP_CONTROL_LABELS[c]}`))}</span>`).join("");
+  const durationRow = cap.duration?.recommended_max
+    ? `<div class="capability-row" title="${escapeHtml(cap.duration.source || "")}"><span class="capability-key">${t("market.capDuration")}</span><div class="capability-pills"><span class="pill quiet">${escapeHtml(t("market.capDurationValue", { max: cap.duration.recommended_max }))}</span></div></div>`
+    : "";
   const confidenceKey = cap.confidence === "inferred" ? "capConfidenceInferred" : "capConfidenceVerified";
   const rawSource = String(cap.source || "");
   let sourceText;
@@ -391,6 +394,7 @@ function renderCapability(m) {
       <div class="capability-row"><span class="capability-key">${t("market.capTasks")}</span><div class="capability-pills">${tasks}</div></div>
       <div class="capability-row"><span class="capability-key">${t("market.capInputs")}</span><div class="capability-pills">${inputs || `<span class="muted">${t("market.capNone")}</span>`}</div></div>
       <div class="capability-row"><span class="capability-key">${t("market.capOutputs")}</span><div class="capability-pills">${outputs}</div></div>
+      ${durationRow}
       ${controls ? `<div class="capability-row"><span class="capability-key">${t("market.capControls")}</span><div class="capability-pills">${controls}</div></div>` : ""}
       <p class="hint" title="${escapeHtml(rawSource)}">${t("market.capSource", { source: sourceText, level: t(`market.${confidenceKey}`) })}</p>
     </div>`;

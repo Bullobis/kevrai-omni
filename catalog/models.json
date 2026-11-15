@@ -1877,7 +1877,14 @@
           "seed"
         ],
         "source": "huggingface:Wan-AI/Wan2.2-T2V-A14B-Diffusers (pipeline_tag=text-to-video)",
-        "confidence": "official-pipeline+standard-cfg"
+        "confidence": "official-pipeline+standard-cfg",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 5,
+          "source": "Wan 2.2 官方模型卡/API：固定 5 秒",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -1958,7 +1965,14 @@
           "seed"
         ],
         "source": "huggingface:Wan-AI/Wan2.2-I2V-A14B-Diffusers (pipeline_tag=image-to-video)",
-        "confidence": "official-pipeline+standard-cfg"
+        "confidence": "official-pipeline+standard-cfg",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 5,
+          "source": "Wan 2.2 官方模型卡/API：固定 5 秒",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -2040,7 +2054,14 @@
           "seed"
         ],
         "source": "huggingface:tencent/HunyuanVideo (pipeline_tag=text-to-video)",
-        "confidence": "official-pipeline+standard-cfg"
+        "confidence": "official-pipeline+standard-cfg",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 5,
+          "source": "HunyuanVideo 官方模型卡：5s",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -2122,7 +2143,14 @@
           "seed"
         ],
         "source": "huggingface:Lightricks/LTX-Video (pipeline_tag=image-to-video)",
-        "confidence": "official-pipeline+standard-cfg"
+        "confidence": "official-pipeline+standard-cfg",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 6,
+          "source": "LTX-Video 官方示例：161 帧 @24fps",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -5621,7 +5649,14 @@
           "seed"
         ],
         "source": "huggingface:Lightricks/LTX-2.3 (pipeline_tag=image-to-video)",
-        "confidence": "official-pipeline+standard-cfg"
+        "confidence": "official-pipeline+standard-cfg",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 20,
+          "source": "LTX 官方文档：单次生成最长 20 秒",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -5722,7 +5757,14 @@
           "seed"
         ],
         "source": "huggingface:Lightricks/LTX-2.5 (pipeline_tag=image-to-video)",
-        "confidence": "official-pipeline+standard-cfg"
+        "confidence": "official-pipeline+standard-cfg",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 20,
+          "source": "LTX 官方文档：单次生成最长 20 秒",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -6188,7 +6230,14 @@
           "seed"
         ],
         "source": "catalog-tags",
-        "confidence": "curated-override"
+        "confidence": "curated-override",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 15,
+          "source": "MiniMax 官方 API：4–15 秒",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -6267,7 +6316,14 @@
           "seed"
         ],
         "source": "huggingface:sand-ai/MAGI-2-preview (pipeline_tag=image-text-to-video)",
-        "confidence": "official-pipeline"
+        "confidence": "official-pipeline",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 10,
+          "source": "MAGI-2 官方模型卡：仅支持 10 秒",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -9446,7 +9502,14 @@
           "seed"
         ],
         "source": "huggingface:MiniMaxAI/MiniMax-H3 (pipeline_tag=image-text-to-video)",
-        "confidence": "official-pipeline"
+        "confidence": "official-pipeline",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 15,
+          "source": "MiniMax 官方模型卡：4–15 秒",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -10037,7 +10100,14 @@
           "seed"
         ],
         "source": "huggingface:tencent/HunyuanVideo-1.5 (pipeline_tag=text-to-video)",
-        "confidence": "official-pipeline+standard-cfg"
+        "confidence": "official-pipeline+standard-cfg",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 5,
+          "source": "HunyuanVideo 1.5 官方示例：121 帧 @24fps",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -14436,7 +14506,14 @@
           "seed"
         ],
         "source": "huggingface:genmo/mochi-1-preview (pipeline_tag=text-to-video)",
-        "confidence": "official-pipeline+standard-cfg"
+        "confidence": "official-pipeline+standard-cfg",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 3,
+          "source": "Mochi 1 官方示例：84 帧 @30fps",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -14607,7 +14684,14 @@
         "requires_one_of": [
           "text",
           "image"
-        ]
+        ],
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 10,
+          "source": "Pyramid Flow 官方模型卡：支持 10 秒",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -14678,7 +14762,14 @@
           "seed"
         ],
         "source": "huggingface:zai-org/CogVideoX-5b (pipeline_tag=text-to-video)",
-        "confidence": "official-pipeline+standard-cfg"
+        "confidence": "official-pipeline+standard-cfg",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 6,
+          "source": "CogVideoX 官方模型卡：6 秒",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -19765,7 +19856,14 @@
           "format"
         ],
         "source": "huggingface:stabilityai/stable-video-diffusion-img2vid-xt (pipeline_tag=image-to-video)",
-        "confidence": "official-pipeline"
+        "confidence": "official-pipeline",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 4,
+          "source": "SVD 官方模型卡：生成视频不超过 4 秒",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -21215,7 +21313,14 @@
           "seed"
         ],
         "source": "huggingface:Efficient-Large-Model/Open-H3-Regenerate-2K (pipeline_tag=video-to-video)",
-        "confidence": "official-pipeline"
+        "confidence": "official-pipeline",
+        "duration": {
+          "unit": "seconds",
+          "recommended_max": 5,
+          "source": "Open-H3 官方模型卡：以 5 秒 H3 片段为输入",
+          "confidence": "official",
+          "enforced": false
+        }
       }
     },
     {
@@ -21344,7 +21449,7 @@
   },
   "capability_schema": {
     "version": 1,
-    "updated": "2026-11-14",
+    "updated": "2026-11-15",
     "description": "每个模型独立声明任务、输入、输出和支持的控制项；前端按此渲染表单，不再按类目共用一套字段。"
   }
 }

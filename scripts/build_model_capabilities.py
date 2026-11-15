@@ -53,6 +53,28 @@ PIPELINE_TASKS = {
 
 # Models whose standard Diffusers pipeline and/or model card demonstrates a
 # negative prompt.  Audio/TTS/ASR models are intentionally absent.
+# Official model-card / API duration guidance.  These are soft recommendations:
+# the UI warns when a request exceeds them but never hard-blocks the user.
+# Only models with an explicit official statement are listed here; absence
+# means "not enough evidence", not "no limit".
+DURATION_HINTS: dict[str, dict] = {
+    "wan2.2-t2v": {"recommended_max": 5, "source": "Wan 2.2 官方模型卡/API：固定 5 秒"},
+    "wan2.2-i2v": {"recommended_max": 5, "source": "Wan 2.2 官方模型卡/API：固定 5 秒"},
+    "hunyuanvideo": {"recommended_max": 5, "source": "HunyuanVideo 官方模型卡：5s"},
+    "hunyuanvideo-1.5": {"recommended_max": 5, "source": "HunyuanVideo 1.5 官方示例：121 帧 @24fps"},
+    "ltx-video": {"recommended_max": 6, "source": "LTX-Video 官方示例：161 帧 @24fps"},
+    "ltx-2.3": {"recommended_max": 20, "source": "LTX 官方文档：单次生成最长 20 秒"},
+    "ltx-2.5": {"recommended_max": 20, "source": "LTX 官方文档：单次生成最长 20 秒"},
+    "minimax-h3": {"recommended_max": 15, "source": "MiniMax 官方 API：4–15 秒"},
+    "minimax-h3-omni": {"recommended_max": 15, "source": "MiniMax 官方模型卡：4–15 秒"},
+    "open-h3-regenerate-2k": {"recommended_max": 5, "source": "Open-H3 官方模型卡：以 5 秒 H3 片段为输入"},
+    "cogvideox-5b": {"recommended_max": 6, "source": "CogVideoX 官方模型卡：6 秒"},
+    "magi2-preview": {"recommended_max": 10, "source": "MAGI-2 官方模型卡：仅支持 10 秒"},
+    "pyramid-flow": {"recommended_max": 10, "source": "Pyramid Flow 官方模型卡：支持 10 秒"},
+    "svd-xt": {"recommended_max": 4, "source": "SVD 官方模型卡：生成视频不超过 4 秒"},
+    "mochi-1": {"recommended_max": 3, "source": "Mochi 1 官方示例：84 帧 @30fps"},
+}
+
 NEGATIVE_PROMPT = {
     "sd15-base", "sdxl-base", "sd3.5-large", "kolors", "hunyuanimage-3.0",
     "hidream-i1-fast", "controlnet-canny", "qwen-image", "qwen-image-2.1",
@@ -703,6 +725,15 @@ def build_one(m: dict, hf: dict | None) -> dict:
         "source": source,
         "confidence": confidence,
     }
+    duration = DURATION_HINTS.get(m["id"])
+    if duration and "video" in outputs:
+        cap["duration"] = {
+            "unit": "seconds",
+            "recommended_max": duration["recommended_max"],
+            "source": duration["source"],
+            "confidence": "official",
+            "enforced": False,
+        }
     if override.get("requires_one_of"):
         cap["requires_one_of"] = override["requires_one_of"]
     # Sort input keys deterministically.

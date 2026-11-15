@@ -6,6 +6,7 @@ import { createEmptyState } from "./empty-state.js";
 import { isViewVisible, onViewState } from "./view-visibility.js";
 import { t } from "./i18n.js";
 import { escapeHtml } from "./net.js";
+import { overlayOpen, overlayClose } from "./overlay-fx.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -19,7 +20,7 @@ export async function initLtx() {
   if (ltxInited) return;
   ltxInited = true;
 
-  document.getElementById("ltx-generate").addEventListener("click", generate);
+  document.getElementById("ltx-generate").addEventListener("click", () => generate());
   document.getElementById("ltx-cancel").addEventListener("click", cancelActive);
   document.getElementById("ltx-seed-random").addEventListener("click", () => {
     document.getElementById("ltx-seed").value = -1;
@@ -36,6 +37,20 @@ export async function initLtx() {
   const modelSelect = document.getElementById("ltx-model");
   if (modelSelect) modelSelect.addEventListener("change", applyModelCapability);
   document.getElementById("ltx-refresh-outputs").addEventListener("click", loadOutputs);
+  document.getElementById("ltx-frames")?.addEventListener("input", updateDurationHint);
+  document.getElementById("ltx-fps")?.addEventListener("input", updateDurationHint);
+  const durationOverlay = document.getElementById("ltx-duration-overlay");
+  if (durationOverlay) {
+    document.getElementById("ltx-duration-cancel")?.addEventListener("click", closeDurationDialog);
+    document.getElementById("ltx-duration-close")?.addEventListener("click", closeDurationDialog);
+    document.getElementById("ltx-duration-continue")?.addEventListener("click", () => {
+      closeDurationDialog();
+      generate(true);
+    });
+    durationOverlay.addEventListener("click", (e) => {
+      if (e.target === durationOverlay) closeDurationDialog();
+    });
+  }
   document.getElementById("ltx-open-folder").addEventListener("click", openOutputsFolder);
 
   await loadCapabilities();
@@ -114,6 +129,7 @@ function applyPreset() {
     note.textContent = p.note || "";
     note.style.color = (p.vram_gb < 16) ? "var(--warn, #b98200)" : "";
   }
+  updateDurationHint();
 }
 
 function currentVideoCapability() {
@@ -161,7 +177,56 @@ function applyModelCapability() {
     imageHint.textContent = bits.join(" ");
     imageHint.hidden = bits.length === 0;
   }
+  updateDurationHint();
   toggleMode();
+}
+
+function currentDurationSeconds() {
+  const frames = parseInt(document.getElementById("ltx-frames")?.value, 10);
+  const fps = parseInt(document.getElementById("ltx-fps")?.value, 10);
+  if (!Number.isFinite(frames) || !Number.isFinite(fps) || fps <= 0) return null;
+  return frames / fps;
+}
+
+function updateDurationHint() {
+  const hint = document.getElementById("ltx-duration-hint");
+  if (!hint) return;
+  const cap = currentVideoCapability()?.duration;
+  const seconds = currentDurationSeconds();
+  if (!cap?.recommended_max || seconds === null) {
+    hint.hidden = true;
+    hint.textContent = "";
+    return;
+  }
+  const over = seconds > cap.recommended_max + 0.05;
+  hint.hidden = false;
+  hint.classList.toggle("warn", over);
+  hint.textContent = over
+    ? t("ltx.durationOver", { current: seconds.toFixed(1), max: cap.recommended_max })
+    : t("ltx.durationUnder", { current: seconds.toFixed(1), max: cap.recommended_max });
+  hint.title = cap.source || "";
+}
+
+function closeDurationDialog() {
+  const overlay = document.getElementById("ltx-duration-overlay");
+  if (overlay) overlayClose(overlay);
+}
+
+function openDurationDialog(seconds, cap) {
+  const overlay = document.getElementById("ltx-duration-overlay");
+  const message = document.getElementById("ltx-duration-message");
+  const source = document.getElementById("ltx-duration-source");
+  if (!overlay || !message) return;
+  if (source) {
+    source.textContent = cap.source ? t("ltx.durationSource", { source: cap.source }) : "";
+    source.hidden = !cap.source;
+  }
+  message.textContent = t("ltx.durationDialogBody", {
+    current: seconds.toFixed(1),
+    max: cap.recommended_max,
+  });
+  overlayOpen(overlay);
+  document.getElementById("ltx-duration-cancel")?.focus();
 }
 
 function toggleMode() {
@@ -195,7 +260,7 @@ function collectParams() {
   };
 }
 
-async function generate() {
+async function generate(forceOverDuration = false) {
   const chosenModel = document.getElementById("ltx-model")?.value || "";
   if (cap && !cap.engine_ready && chosenModel !== "kevrai/preview-video") {
     toast(t("ltx.needEngine"), { kind: "error" });
@@ -212,6 +277,12 @@ async function generate() {
   if (params.mode === "i2v" && modelCap?.image?.required && !params.image_path) {
     toast(t("ltx.needImage"), { kind: "error" });
     document.getElementById("ltx-image").focus();
+    return;
+  }
+  const durationCap = modelCap?.duration;
+  const seconds = params.fps > 0 ? params.num_frames / params.fps : 0;
+  if (!forceOverDuration && durationCap?.recommended_max && seconds > durationCap.recommended_max + 0.05) {
+    openDurationDialog(seconds, durationCap);
     return;
   }
   const btn = document.getElementById("ltx-generate");

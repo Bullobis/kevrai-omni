@@ -295,7 +295,9 @@
     "capCtrlLabels": "标签",
     "capSourceHuggingFace": "Hugging Face 官方仓库 {repo}",
     "capSourceCatalog": "目录标签推断",
-    "capSourceCurated": "人工核对"
+    "capSourceCurated": "人工核对",
+    "capDuration": "建议时长",
+    "capDurationValue": "建议最长 {max} 秒"
   },
   "engines": {
     "title": "AI 引擎",
@@ -470,7 +472,13 @@
     "imageFirstFrame": "首帧图片",
     "imageCharacter": "角色图片",
     "imageReference": "参考图片",
-    "imageControl": "控制图片"
+    "imageControl": "控制图片",
+    "durationUnder": "当前约 {current} 秒 · 建议最长 {max} 秒",
+    "durationOver": "当前约 {current} 秒 · 超过建议最长 {max} 秒，仍可生成",
+    "durationDialogTitle": "时长超过模型建议",
+    "durationDialogBody": "当前约 {current} 秒，这个模型官方建议最长 {max} 秒。超过后可能变慢或画面质量下降，是否仍要生成？",
+    "durationSource": "依据：{source}",
+    "durationContinue": "仍要生成"
   },
   "settings": {
     "title": "设置",

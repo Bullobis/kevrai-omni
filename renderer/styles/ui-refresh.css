@@ -622,6 +622,8 @@ html[data-theme="light"] .install-btn { color: #fff; }
 .onboarding-card header h2 { font-size: 22px; letter-spacing: -.01em; }
 .onboarding-steps li { line-height: 1.7; }
 
+#models-grid { --grid-item-h: 240px; }
+
 /* -------------------------------------------------------------------------- */
 /* Detail content                                                             */
 /* -------------------------------------------------------------------------- */
@@ -1588,3 +1590,8 @@ html[data-theme="dark"] .agent-actions #agent-new-btn { color: #0b1020; }
 .pill.quiet { opacity: .78; }
 #ltx-prompt-field[hidden], #ltx-negative-field[hidden],
 #threed-image-field[hidden], #threed-prompt-field[hidden] { display: none !important; }
+.ltx-duration-hint { margin: -6px 0 2px; color: var(--mut); font-size: 12px; line-height: 1.5; }
+.ltx-duration-hint.warn { color: var(--warn, #b45309); }
+.ltx-duration-card { width: min(460px, 92vw); }
+.ltx-duration-body { padding: 4px 0 8px; }
+.ltx-duration-body p { margin: 0 0 8px; line-height: 1.65; }

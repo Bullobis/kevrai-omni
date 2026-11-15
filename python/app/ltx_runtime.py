@@ -90,12 +90,17 @@ PRESETS: dict[str, dict[str, Any]] = {
 }
 
 # LTX requires (frames - 1) divisible by 8 (temporal VAE compression).
+# 1025 frames covers LTX-2.5's 20s ceiling at 50fps while keeping the
+# existing 8k+1 rule.  Per-model duration guidance is advisory, not a hard
+# rejection, so users may deliberately run longer/out-of-spec clips.
+MAX_FRAMES = 1025
+
 def _normalize_frames(n: Any) -> int:
     n = _as_strict_int(n, "num_frames")
     if n < 9:
         raise LtxParamError("num_frames must be >= 9")
-    if n > 257:
-        raise LtxParamError("num_frames must be <= 257")
+    if n > MAX_FRAMES:
+        raise LtxParamError(f"num_frames must be <= {MAX_FRAMES}")
     # Round to 8k+1
     return ((n - 1) // 8) * 8 + 1
 
@@ -622,6 +627,22 @@ def _write_video(frames: Any, out: Path, *, fps: int, fmt: str) -> Path:
 
 
 # ---------------------------------------------------------------------------
+# Per-model duration guidance.  Soft limits only: the UI shows a warning and
+# asks for confirmation, but never prevents a deliberate longer generation.
+# ---------------------------------------------------------------------------
+DURATION_HINTS: dict[str, dict] = {
+    "Lightricks/LTX-2.5": {"recommended_max": 20, "source": "LTX 官方文档：单次生成最长 20 秒"},
+    "Lightricks/LTX-Video": {"recommended_max": 6, "source": "LTX-Video 官方示例：161 帧 @24fps"},
+    "Wan-AI/Wan2.2-T2V-A14B-Diffusers": {"recommended_max": 5, "source": "Wan 2.2 官方 API：固定 5 秒"},
+    "Wan-AI/Wan2.2-I2V-A14B-Diffusers": {"recommended_max": 5, "source": "Wan 2.2 官方 API：固定 5 秒"},
+    "tencent/HunyuanVideo": {"recommended_max": 5, "source": "HunyuanVideo 官方模型卡：5s"},
+    "zai-org/CogVideoX-5b": {"recommended_max": 6, "source": "CogVideoX 官方模型卡：6 秒"},
+    "genmo/mochi-1-preview": {"recommended_max": 3, "source": "Mochi 1 官方示例：84 帧 @30fps"},
+    "stabilityai/stable-video-diffusion-img2vid-xt": {"recommended_max": 4, "source": "SVD 官方模型卡：生成视频不超过 4 秒"},
+    "Jingya/tiny-stable-video-diffusion-img2vid": {"recommended_max": 4, "source": "SVD 官方模型卡：生成视频不超过 4 秒"},
+}
+
+# ---------------------------------------------------------------------------
 # Capabilities descriptor (served to the UI)
 # ---------------------------------------------------------------------------
 
@@ -637,9 +658,7 @@ def capabilities() -> dict[str, Any]:
         cuda = bool(torch.cuda.is_available())
     except ImportError as e:
         engine_error = str(e)
-    return {
-        "model": "Lightricks/LTX-2.5",
-        "models": [
+    models = [
             {"id": "Lightricks/LTX-2.5", "label": "LTX-2.5（官方，质量最高）", "modes": ["t2v", "i2v"],
              "capability": {"prompt": "required", "negative": True, "image": {"required": False, "role": "first_frame"}}},
             {"id": "Lightricks/LTX-Video", "label": "LTX-Video 0.9（更省显存）", "modes": ["t2v", "i2v"],
@@ -660,7 +679,20 @@ def capabilities() -> dict[str, Any]:
              "capability": {"prompt": "none", "negative": False, "image": {"required": True, "role": "first_frame"}}},
             {"id": "kevrai/preview-video", "label": "轻量预览（离线，非 AI）", "modes": ["t2v", "i2v"],
              "capability": {"prompt": "required", "negative": False, "image": {"required": False, "role": "first_frame"}}},
-        ],
+        ]
+    for item in models:
+        hint = DURATION_HINTS.get(item["id"])
+        if hint:
+            item["capability"]["duration"] = {
+                "unit": "seconds",
+                "recommended_max": hint["recommended_max"],
+                "source": hint["source"],
+                "confidence": "official",
+                "enforced": False,
+            }
+    return {
+        "model": "Lightricks/LTX-2.5",
+        "models": models,
         "engine_ready": engine_ready,
         "engine_error": engine_error,
         "cuda_available": cuda,
@@ -673,7 +705,7 @@ def capabilities() -> dict[str, Any]:
         ],
         "limits": {
             "width": [256, 1920], "height": [256, 1080],
-            "num_frames": [9, 257], "num_inference_steps": [1, 100],
+            "num_frames": [9, 1025], "num_inference_steps": [1, 100],
             "guidance_scale": [0.1, 20.0], "fps": [1, 60],
             "strength": [0.1, 1.0],
         },
