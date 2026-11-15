@@ -568,6 +568,70 @@ class ThreeDManager:
             self._finish(task, TaskState.DONE)
             return
 
+        if _is_partcrafter(p.model_id):
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            out_file = _vendor_cli_generate(
+                "PartCrafter", p, task, data_root,
+                "scripts/inference_partcrafter.py",
+                ["--image_path", p.image_path, "--num_parts", "3",
+                 "--tag", f"kevrai_{task.id}", "--rmbg"],
+            )
+            task._check_cancel()
+            task.output_path = str(out_file)
+            _fill_mesh_metrics(task, out_file)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+
+        if _is_triposg(p.model_id):
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            tmp = Path(self.output_root) / f"triposg_{task.id}.glb"
+            out_file = _vendor_cli_generate(
+                "TripoSG", p, task, data_root,
+                "-m", ["scripts.inference_triposg"],
+                ["--image-input", p.image_path, "--output-path", str(tmp)],
+                module=True, expected=tmp,
+            )
+            task._check_cancel()
+            task.output_path = str(out_file)
+            _fill_mesh_metrics(task, out_file)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+
+        if _is_pixal3d(p.model_id):
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            tmp = Path(self.output_root) / f"pixal3d_{task.id}.glb"
+            out_file = _vendor_cli_generate(
+                "Pixal3D", p, task, data_root, "inference.py",
+                ["--image", p.image_path, "--output", str(tmp), "--low_vram"],
+                expected=tmp,
+            )
+            task._check_cancel()
+            task.output_path = str(out_file)
+            _fill_mesh_metrics(task, out_file)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+
+        if _is_stable_fast_3d(p.model_id):
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            out_file = _vendor_cli_generate(
+                "stable-fast-3d", p, task, data_root,
+                "run.py", [p.image_path, "--output-dir", str(self.output_root)],
+                expected_pattern=str(self.output_root / "*.glb"),
+            )
+            task._check_cancel()
+            task.output_path = str(out_file)
+            _fill_mesh_metrics(task, out_file)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+
         pipe = _load_pipeline(p.model_id, p.mode)
         task._check_cancel()
 
@@ -632,6 +696,82 @@ def _fill_mesh_metrics(task: ThreeDTask, path: Path) -> None:
 def _is_triposr(model_id: str) -> bool:
     """TripoSR is not a diffusers pipeline; it ships its own ``tsr`` code."""
     return "triposr" in (model_id or "").lower()
+
+
+def _is_partcrafter(model_id: str) -> bool:
+    return "partcrafter" in (model_id or "").lower()
+
+
+def _is_triposg(model_id: str) -> bool:
+    return "triposg" in (model_id or "").lower()
+
+
+def _is_pixal3d(model_id: str) -> bool:
+    return "pixal3d" in (model_id or "").lower()
+
+
+def _is_stable_fast_3d(model_id: str) -> bool:
+    text = (model_id or "").lower()
+    return "stable-fast-3d" in text or "stable_fast_3d" in text
+
+
+def _vendor_cli_generate(
+    source_dir: str,
+    p: ThreeDParams,
+    task: ThreeDTask,
+    data_root: Path,
+    entry: str,
+    args: list[str],
+    *,
+    module: bool = False,
+    expected: Path | None = None,
+    expected_pattern: str | None = None,
+) -> Path:
+    """Run an official 3D repo's inference script in a subprocess.
+
+    These repos (PartCrafter / TripoSG / stable-fast-3d) do not expose a
+    Diffusers pipeline and their CLIs write multi-file output directories.
+    We require the official source tree under ``third_party/<source_dir>``;
+    no guessed entrypoint or fake fallback.
+    """
+    import shutil
+    import subprocess
+
+    if p.mode != "i23d":
+        raise ThreeDParamError(f"{source_dir} 当前只支持图生 3D")
+    repo = Path(data_root) / "third_party" / source_dir
+    if not repo.is_dir():
+        raise ThreeDEngineMissing(
+            f"{source_dir} 官方源码缺失：{repo}\n"
+            f"请按官方 README 克隆仓库并安装依赖后重试。"
+        )
+    if expected is not None:
+        expected.parent.mkdir(parents=True, exist_ok=True)
+    cmd = [sys.executable]
+    if module:
+        cmd.extend(["-m", entry, *args])
+    else:
+        cmd.extend([str(repo / entry), *args])
+    proc = subprocess.run(  # noqa: S603 — argv list is internal
+        cmd, cwd=str(repo), capture_output=True, text=True, timeout=1800,
+        env={**os.environ, "PYTHONUNBUFFERED": "1"},
+    )
+    if proc.returncode != 0:
+        tail = (proc.stderr or proc.stdout or "")[-800:]
+        raise ThreeDEngineMissing(
+            f"{source_dir} 推理失败（退出码 {proc.returncode}）：\n{tail}"
+        )
+    if expected is not None and expected.is_file():
+        out = Path(task.output_path) if task.output_path else expected
+        # Caller writes the requested format; copy only when same suffix.
+        return expected
+    pattern = expected_pattern or "*.glb"
+    search_root = Path(pattern).parent if Path(pattern).is_absolute() else repo
+    glob_pat = Path(pattern).name if Path(pattern).is_absolute() else pattern
+    matches = sorted(search_root.rglob(glob_pat), key=lambda x: x.stat().st_mtime)
+    if not matches:
+        raise ThreeDEngineMissing(f"{source_dir} 没有产出 {pattern} 文件")
+    return matches[-1]
 
 
 def _is_hunyuan3d(model_id: str) -> bool:
