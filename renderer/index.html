@@ -369,6 +369,20 @@
               <textarea id="ltx-negative" rows="2" placeholder="可选，一般留空" data-i18n-placeholder="ltx.negativePlaceholder"></textarea>
             </label>
 
+            <div class="ltx-row" id="ltx-audio-row" hidden>
+              <label class="field grow">
+                <span data-i18n="ltx.audioPath">音频输入路径</span>
+                <input id="ltx-audio" type="text" placeholder="选择音频文件" />
+              </label>
+              <button class="secondary" id="ltx-pick-audio" type="button" data-i18n="ltx.pickAudio">选择…</button>
+            </div>
+            <div class="ltx-row" id="ltx-video-row" hidden>
+              <label class="field grow">
+                <span data-i18n="ltx.videoPath">视频输入路径</span>
+                <input id="ltx-video" type="text" placeholder="选择视频文件" />
+              </label>
+              <button class="secondary" id="ltx-pick-video" type="button" data-i18n="ltx.pickVideo">选择…</button>
+            </div>
             <div class="ltx-row" id="ltx-image-row" hidden>
               <label class="field grow">
                 <span id="ltx-image-label" data-i18n="ltx.imagePath">参考图片路径</span>

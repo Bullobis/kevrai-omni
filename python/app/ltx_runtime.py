@@ -131,6 +131,12 @@ def _as_strict_int(v: Any, name: str) -> int:
         raise LtxParamError(f"{name} must be an integer, got {v!r}") from None
 
 
+PROMPT_OPTIONAL_MODELS = {
+    "Wan-AI/Wan2.2-S2V-14B",
+    "Wan-AI/Wan2.2-Animate-14B-Diffusers",
+    "Wan-AI/Wan2.2-Animate-2-14B",
+}
+
 PROMPT_NONE_MODELS = {
     "stabilityai/stable-video-diffusion-img2vid-xt",
     "Jingya/tiny-stable-video-diffusion-img2vid",
@@ -151,6 +157,8 @@ class LtxParams:
     guidance_scale: float = 3.0
     seed: int = -1                     # -1 = random
     image_path: str = ""               # required for i2v
+    audio_path: str = ""               # required by audio-driven models
+    video_path: str = ""               # required by video-driven models
     strength: float = 0.85             # i2v only
     fps: int = 24
     output_format: str = "mp4"         # mp4 | gif
@@ -160,7 +168,12 @@ class LtxParams:
     def validate(self) -> None:
         if self.mode not in ("t2v", "i2v"):
             raise LtxParamError(f"mode must be t2v or i2v, got {self.mode!r}")
-        if self.model_id not in PROMPT_NONE_MODELS and (not self.prompt or not self.prompt.strip()):
+        prompt_optional = (
+            self.model_id in PROMPT_OPTIONAL_MODELS
+            or self.model_id in PROMPT_NONE_MODELS
+            or bool(self.audio_path)
+        )
+        if not prompt_optional and (not self.prompt or not self.prompt.strip()):
             raise LtxParamError("prompt must not be empty")
         if len(self.prompt) > 2000:
             raise LtxParamError("prompt too long (max 2000 chars)")
@@ -191,6 +204,10 @@ class LtxParams:
                 raise LtxParamError("image_path is required for i2v mode")
             if not Path(self.image_path).expanduser().is_file():
                 raise LtxParamError(f"image not found: {self.image_path}")
+        if self.audio_path and not Path(self.audio_path).expanduser().is_file():
+            raise LtxParamError(f"audio not found: {self.audio_path}")
+        if self.video_path and not Path(self.video_path).expanduser().is_file():
+            raise LtxParamError(f"video not found: {self.video_path}")
 
 
 # ---------------------------------------------------------------------------
@@ -543,6 +560,12 @@ def _generate(pipe: Any, p: LtxParams, task: LtxTask) -> Any:
         image = load_image(p.image_path).resize((p.width, p.height))
         call_kwargs["image"] = image
         call_kwargs["strength"] = p.strength
+    if p.audio_path:
+        call_kwargs["audio"] = p.audio_path
+        call_kwargs["audio_path"] = p.audio_path
+    if p.video_path:
+        call_kwargs["video"] = p.video_path
+        call_kwargs["video_path"] = p.video_path
 
     # 不同视频管线参数名不一致（SVD 没有 prompt/guidance，AnimateDiff 用
     # video_length，部分管线不支持 callback）。按 __call__ 签名过滤，避免

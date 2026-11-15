@@ -478,7 +478,15 @@
     "durationDialogTitle": "Longer than recommended",
     "durationDialogBody": "This clip is about {current}s; the model recommends up to {max}s. Longer clips may be slower or lower quality. Generate anyway?",
     "durationSource": "Source: {source}",
-    "durationContinue": "Generate anyway"
+    "durationContinue": "Generate anyway",
+    "audioPath": "Audio input",
+    "videoPath": "Video input",
+    "pickAudio": "Pick audio…",
+    "pickVideo": "Pick video…",
+    "modelNeedsAudio": "requires audio input",
+    "modelNeedsVideo": "requires video input",
+    "needAudio": "Choose an audio file",
+    "needVideo": "Choose a video file"
   },
   "settings": {
     "title": "Settings",

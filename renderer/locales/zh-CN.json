@@ -478,7 +478,15 @@
     "durationDialogTitle": "时长超过模型建议",
     "durationDialogBody": "当前约 {current} 秒，这个模型官方建议最长 {max} 秒。超过后可能变慢或画面质量下降，是否仍要生成？",
     "durationSource": "依据：{source}",
-    "durationContinue": "仍要生成"
+    "durationContinue": "仍要生成",
+    "audioPath": "音频输入路径",
+    "videoPath": "视频输入路径",
+    "pickAudio": "选择音频…",
+    "pickVideo": "选择视频…",
+    "modelNeedsAudio": "需要音频输入",
+    "modelNeedsVideo": "需要视频输入",
+    "needAudio": "请选择音频",
+    "needVideo": "请选择视频"
   },
   "settings": {
     "title": "设置",

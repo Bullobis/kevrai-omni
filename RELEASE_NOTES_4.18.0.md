@@ -174,3 +174,11 @@
 
 - Pixal3D 按官方 README 使用 `inference.py --image ... --output ... --low_vram`，
   不再走通用 Diffusers（该仓库没有 model_index.json）。
+
+## 4.18.0 追加修复（视频音频/视频输入）
+
+- 视频页不再把音频/视频必填的模型直接删除；当前 22 个视频选项。
+- 选中 `Wan2.2-S2V` 等模型时显示音频输入行，选中 Animate 类模型时显示视频输入行；
+  提示词可选时不再被后端 `min_length=1` 硬拦。
+- `LtxGenerateReq` / `LtxParams` 新增 `audio_path`、`video_path`；运行时按管线
+  签名传入 `audio` / `audio_path` 或 `video` / `video_path`，不接受就明确报错。

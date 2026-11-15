@@ -33,6 +33,20 @@ export async function initLtx() {
       if (p) document.getElementById("ltx-image").value = p;
     } catch (_) {}
   });
+  const pickAudio = document.getElementById("ltx-pick-audio");
+  if (pickAudio) pickAudio.addEventListener("click", async () => {
+    try {
+      const p = await api.pickFile();
+      if (p) document.getElementById("ltx-audio").value = p;
+    } catch (_) {}
+  });
+  const pickVideo = document.getElementById("ltx-pick-video");
+  if (pickVideo) pickVideo.addEventListener("click", async () => {
+    try {
+      const p = await api.pickFile();
+      if (p) document.getElementById("ltx-video").value = p;
+    } catch (_) {}
+  });
   document.getElementById("ltx-preset").addEventListener("change", applyPreset);
   document.getElementById("ltx-mode").addEventListener("change", toggleMode);
   const modelSelect = document.getElementById("ltx-model");
@@ -70,7 +84,6 @@ async function mergeCatalogVideoModels() {
       if (!tasks.includes("text-to-video") && !tasks.includes("image-to-video")) return;
       const inputs = c.inputs || {};
       // 表单目前只覆盖文本 + 图片；音频/视频必填的模型不能假装能跑。
-      if (inputs.audio?.required || inputs.video?.required) return;
       const repo = m.repo || m.id;
       if ((cap.models || []).some((x) => x.id === repo)) return;
       const modes = [];
@@ -88,6 +101,8 @@ async function mergeCatalogVideoModels() {
           prompt,
           negative: (c.controls || []).includes("negative_prompt"),
           image: inputs.image || null,
+          audio: inputs.audio || null,
+          video: inputs.video || null,
           duration: c.duration || null,
         },
       });
@@ -198,7 +213,13 @@ function applyModelCapability() {
   const imageHint = document.getElementById("ltx-model-capability");
   const imageLabel = document.getElementById("ltx-image-label");
   const imageCap = modelCap.image;
+  const audioCap = modelCap.audio;
+  const videoCap = modelCap.video;
   const prompts = modelCap.prompt !== "none";
+  const audioRow = document.getElementById("ltx-audio-row");
+  const videoRow = document.getElementById("ltx-video-row");
+  if (audioRow) audioRow.hidden = !audioCap;
+  if (videoRow) videoRow.hidden = !videoCap;
   if (promptField) promptField.hidden = !prompts;
   if (negativeField) negativeField.hidden = !prompts || !modelCap.negative;
   if (imageLabel) {
@@ -215,6 +236,8 @@ function applyModelCapability() {
     if (imageCap && imageCap.required) bits.push(t("ltx.modelNeedsImage"));
     else if (imageCap) bits.push(t("ltx.modelImageOptional"));
     if (prompts && modelCap.prompt === "optional") bits.push(t("ltx.modelPromptOptional"));
+    if (audioCap) bits.push(t("ltx.modelNeedsAudio"));
+    if (videoCap) bits.push(t("ltx.modelNeedsVideo"));
     imageHint.textContent = bits.join(" ");
     imageHint.hidden = bits.length === 0;
   }
@@ -318,6 +341,16 @@ async function generate(forceOverDuration = false) {
   if (params.mode === "i2v" && modelCap?.image?.required && !params.image_path) {
     toast(t("ltx.needImage"), { kind: "error" });
     document.getElementById("ltx-image").focus();
+    return;
+  }
+  if (modelCap?.audio?.required && !params.audio_path) {
+    toast(t("ltx.needAudio"), { kind: "error" });
+    document.getElementById("ltx-audio").focus();
+    return;
+  }
+  if (modelCap?.video?.required && !params.video_path) {
+    toast(t("ltx.needVideo"), { kind: "error" });
+    document.getElementById("ltx-video").focus();
     return;
   }
   const durationCap = modelCap?.duration;

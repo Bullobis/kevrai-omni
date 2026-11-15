@@ -3393,7 +3393,7 @@ def ltx_capabilities(request: Request) -> dict[str, Any]:
 class LtxGenerateReq(BaseModel):
     model_config = {"protected_namespaces": ()}  # model_id 字段合法
     mode: str = "t2v"
-    prompt: str = Field(min_length=1, max_length=2000)
+    prompt: str = Field(default="", max_length=2000)
     negative_prompt: str = ""  # 默认无负面提示词（用户偏好：不内置）
     model_id: str = "Lightricks/LTX-2.5"
     preset: str = "balanced"
@@ -3404,6 +3404,8 @@ class LtxGenerateReq(BaseModel):
     guidance_scale: float = 3.0
     seed: int = -1
     image_path: str = ""
+    audio_path: str = ""
+    video_path: str = ""
     strength: float = 0.85
     fps: int = 24
     output_format: str = "mp4"
@@ -5770,7 +5772,8 @@ async def multimodal_generate_image_route(
     try:
         res = await asyncio.to_thread(
             mgr.generate_image, req.model, req.prompt,
-            image_path=req.image_path, strength=req.strength,
+            image_path=req.image_path, audio_path=req.audio_path,
+        video_path=req.video_path, strength=req.strength,
             guidance_scale=req.guidance_scale, seed=req.seed,
             num_images=req.num_images, do_sample=req.do_sample,
             width=req.width, height=req.height,
