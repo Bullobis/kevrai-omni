@@ -115,10 +115,14 @@ jobs:
           echo "--- pip runner ---"
           ls -lh dist/sidecar/pip-runner* || true
           if [ -f dist/sidecar/pip-runner.exe ]; then
-            dist/sidecar/pip-runner.exe --version
+            PIP_RUNNER=dist/sidecar/pip-runner.exe
           else
-            dist/sidecar/pip-runner --version
+            PIP_RUNNER=dist/sidecar/pip-runner
           fi
+          "$PIP_RUNNER" --version
+          # --version 不会触发 pip 的 distlib.scripts；真正安装一个轻量包才能
+          # 覆盖 Windows 冻结版的 distlib finder 回归。
+          "$PIP_RUNNER" install --no-input --dry-run --no-deps six
           # Quick smoke — start for 3s then kill.
           # Log shows "kevrai-sidecar started" confirms uvicorn boots.
           timeout 6 dist/sidecar/sidecar 2>&1 | head -5 || true
