@@ -95,6 +95,8 @@ function applyThreeDCapability() {
   if (m.availability?.status === "unsupported") bits.push(t("threed.unsupported"));
   hint.textContent = bits.join(" · ");
   hint.hidden = false;
+  const run = $("#threed-run");
+  if (run) run.disabled = m.availability?.status === "unsupported";
 }
 
 function syncModeAvailability() {
