@@ -760,7 +760,6 @@ def _vendor_cli_generate(
     We require the official source tree under ``third_party/<source_dir>``;
     no guessed entrypoint or fake fallback.
     """
-    import shutil
     import subprocess
 
     if p.mode != "i23d":
@@ -788,8 +787,6 @@ def _vendor_cli_generate(
             f"{source_dir} 推理失败（退出码 {proc.returncode}）：\n{tail}"
         )
     if expected is not None and expected.is_file():
-        out = Path(task.output_path) if task.output_path else expected
-        # Caller writes the requested format; copy only when same suffix.
         return expected
     pattern = expected_pattern or "*.glb"
     search_root = Path(pattern).parent if Path(pattern).is_absolute() else repo
@@ -901,10 +898,8 @@ def _trellis_generate(p: ThreeDParams, task: ThreeDTask) -> Any:
         ) from e
     try:
         pipe = TrellisImageTo3DPipeline.from_pretrained(p.model_id)
-        try:
+        with contextlib.suppress(Exception):  # CPU fallback is allowed but slow
             pipe.cuda()
-        except Exception:  # noqa: BLE001 — CPU fallback is allowed but slow
-            pass
         if p.mode == "i23d":
             from PIL import Image  # noqa: PLC0415
             image = Image.open(p.image_path).convert("RGB")
@@ -913,7 +908,7 @@ def _trellis_generate(p: ThreeDParams, task: ThreeDTask) -> Any:
             out = pipe.run(p.prompt, seed=p.seed if p.seed >= 0 else 0)
         mesh_list = out.get("mesh") if isinstance(out, dict) else None
         if not mesh_list:
-            raise ThreeDModelError("TRELLIS 没有返回 mesh")
+            raise ThreeDEngineMissing("TRELLIS 没有返回 mesh")
         mesh = mesh_list[0]
     except ThreeDError:
         raise

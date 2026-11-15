@@ -47,6 +47,7 @@ def _bootstrap_engine_paths() -> None:
     不 bootstrap 就会出现“引擎显示已安装，运行时仍 ImportError”。
     """
     import sys
+
     from .settings import default_data_root
 
     root = default_data_root()

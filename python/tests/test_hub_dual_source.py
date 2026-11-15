@@ -100,11 +100,12 @@ def test_S00_curated_catalog_honors_env_override(monkeypatch, tmp_path):
     results only.
     """
     import importlib
+
     import app.hub.curated as curated
 
     monkeypatch.setenv("KEVRAI_CATALOG_DIR", str(tmp_path))
     importlib.reload(curated)
-    assert curated.CATALOG_DIR == tmp_path
+    assert tmp_path == curated.CATALOG_DIR
 
     monkeypatch.delenv("KEVRAI_CATALOG_DIR", raising=False)
     importlib.reload(curated)
