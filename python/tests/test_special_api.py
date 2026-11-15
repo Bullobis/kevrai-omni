@@ -51,13 +51,13 @@ async def test_special_routes_are_registered(_isolated):
         assert path in paths, path
 
 
-async def test_availability_summary_has_no_unsupported(_isolated):
+async def test_availability_summary_counts_are_consistent(_isolated):
     async with _client() as c:
         r = await c.get("/api/availability/summary")
     assert r.status_code == 200, r.text
     body = r.json()
-    assert body["counts"]["unsupported"] == 0
-    assert body["counts"]["native"] + body["counts"]["external"] == body["total"]
+    counts = body["counts"]
+    assert counts["native"] + counts["external"] + counts["unsupported"] == body["total"]
 
 
 async def test_tts_blank_text_is_a_400(_isolated):

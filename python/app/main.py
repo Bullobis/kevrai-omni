@@ -910,7 +910,9 @@ def list_models(category: str | None = None, q: str | None = None,
             + " " + " ".join(m.engine or [])
         ).lower():
             continue
-        out.append(m.model_dump())
+        data = m.model_dump()
+        data["availability"] = availability.describe(m)
+        out.append(data)
     if sort == "name":
         out.sort(key=lambda x: str(x.get("name", "")).lower())
     elif sort == "size_desc":

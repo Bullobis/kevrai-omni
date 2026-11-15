@@ -48,7 +48,7 @@ function entryFromCatalog(m) {
   const cap = m.capability || {};
   const tasks = cap.tasks || [];
   const known = MODELS.find((x) => x.id === (m.repo || m.id));
-  if (known) return known;
+  if (known) return { ...known, availability: m.availability, capability: cap };
   return {
     id: m.repo || m.id,
     label: m.name || m.id,
@@ -57,6 +57,7 @@ function entryFromCatalog(m) {
     license: m.license || "unknown",
     commercial: m.commercial === true ? true : false,
     note: t("threed.marketModelNote"),
+    availability: m.availability,
     fromMarket: true,
   };
 }
@@ -91,6 +92,7 @@ function applyThreeDCapability() {
   if (m.t23d) bits.push(t("threed.t23d"));
   bits.push(t("threed.i23d"));
   bits.push(m.fromMarket ? t("threed.marketModelNote") : t("threed.curatedModelNote"));
+  if (m.availability?.status === "unsupported") bits.push(t("threed.unsupported"));
   hint.textContent = bits.join(" · ");
   hint.hidden = false;
 }
@@ -200,8 +202,12 @@ function currentMode() {
 }
 
 async function generate() {
-  const mode = currentMode();
   const model = currentModel();
+  if (model?.availability?.status === "unsupported") {
+    toast(t("threed.unsupported"), { kind: "error" });
+    return;
+  }
+  const mode = currentMode();
   const prompt = ($("#threed-prompt").value || "").trim();
   const imagePath = ($("#threed-image-path").value || "").trim();
 

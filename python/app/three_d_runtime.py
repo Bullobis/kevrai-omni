@@ -542,6 +542,32 @@ class ThreeDManager:
             self._finish(task, TaskState.DONE)
             return
 
+        if _is_trellis2(p.model_id):
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            mesh = _trellis2_generate(p, task)
+            task._check_cancel()
+            task.state = TaskState.SAVING
+            out = self._write_output(task, mesh)
+            task.output_path = str(out)
+            _fill_mesh_metrics(task, out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+
+        if _is_trellis_text(p.model_id):
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            mesh = _trellis_text_generate(p, task)
+            task._check_cancel()
+            task.state = TaskState.SAVING
+            out = self._write_output(task, mesh)
+            task.output_path = str(out)
+            _fill_mesh_metrics(task, out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+
         if _is_trellis(p.model_id):
             task.state = TaskState.RUNNING
             task.progress = 0.05
@@ -776,6 +802,51 @@ def _vendor_cli_generate(
 
 def _is_hunyuan3d(model_id: str) -> bool:
     return "hunyuan3d" in (model_id or "").lower() and "hunyuanworld" not in (model_id or "").lower()
+
+
+def _is_trellis2(model_id: str) -> bool:
+    text = (model_id or "").lower()
+    return "trellis.2" in text or "trellis2" in text or "trellis-2" in text
+
+
+def _is_trellis_text(model_id: str) -> bool:
+    return "trellis-text" in (model_id or "").lower()
+
+
+def _trellis2_generate(p: ThreeDParams, task: ThreeDTask):
+    if p.mode != "i23d":
+        raise ThreeDParamError("TRELLIS.2 当前只支持图生 3D")
+    try:
+        from trellis2.pipelines import Trellis2ImageTo3DPipeline  # type: ignore
+    except Exception as e:
+        raise ThreeDEngineMissing(
+            "TRELLIS.2 官方包 `trellis2` 未安装；请按 "
+            "https://github.com/microsoft/TRELLIS.2 的 README 安装。"
+        ) from e
+    from PIL import Image
+    img = Image.open(p.image_path).convert("RGB")
+    pipe = Trellis2ImageTo3DPipeline.from_pretrained(p.model_id)
+    pipe.cuda()
+    task.progress = 0.2
+    result = pipe.run(img)
+    return result[0]
+
+
+def _trellis_text_generate(p: ThreeDParams, task: ThreeDTask):
+    if p.mode != "t23d":
+        raise ThreeDParamError("TRELLIS-text 只支持文生 3D")
+    try:
+        from trellis.pipelines import TrellisTextTo3DPipeline  # type: ignore
+    except Exception as e:
+        raise ThreeDEngineMissing(
+            "TRELLIS-text 官方包 `trellis` 未安装；请按 "
+            "https://github.com/JeffreyXiang/TRELLIS 的 README 安装。"
+        ) from e
+    pipe = TrellisTextTo3DPipeline.from_pretrained(p.model_id)
+    pipe.cuda()
+    task.progress = 0.2
+    result = pipe.run(p.prompt)
+    return result[0]
 
 
 def _is_trellis(model_id: str) -> bool:

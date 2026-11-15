@@ -39,10 +39,7 @@ NATIVE_ENGINES: dict[str, dict[str, str]] = {
     "direct3d-s2": {"action": "3d", "label": "Direct3D-S2"},
     "partcrafter": {"action": "3d", "label": "PartCrafter"},
     "triposg": {"action": "3d", "label": "TripoSG"},
-    "hunyuanworld": {"action": "3d", "label": "HunyuanWorld"},
-    "sam3d": {"action": "3d", "label": "SAM 3D"},
     "pixal3d": {"action": "3d", "label": "Pixal3D"},
-    "4danyone": {"action": "3d", "label": "4DAnyone"},
 }
 
 #: Engines that need a separately started service.
@@ -85,6 +82,7 @@ SPECIAL_NATIVE: dict[str, dict[str, str]] = {
     # external services; availability.py previously contradicted the runtime.
     "kokoro-82m": {"engine": "kokoro-engine", "action": "tts", "label": "Kokoro 本地语音"},
     "chatterbox": {"engine": "chatterbox", "action": "tts", "label": "Chatterbox 本地语音"},
+    "stable-fast-3d": {"engine": "stable-fast-3d", "action": "3d", "label": "Stable Fast 3D 官方 CLI"},
 }
 
 SPECIAL_EXTERNAL: dict[str, dict[str, str]] = {

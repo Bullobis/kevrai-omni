@@ -182,3 +182,14 @@
   提示词可选时不再被后端 `min_length=1` 硬拦。
 - `LtxGenerateReq` / `LtxParams` 新增 `audio_path`、`video_path`；运行时按管线
   签名传入 `audio` / `audio_path` 或 `video` / `video_path`，不接受就明确报错。
+
+## 4.18.0 追加修复（3D 官方入口与不可用声明）
+
+- 新增 TRELLIS.2（`trellis2.pipelines.Trellis2ImageTo3DPipeline`）与
+  TRELLIS-text（`TrellisTextTo3DPipeline`）专用调用。
+- 新增 PartCrafter / TripoSG / Stable Fast 3D / Pixal3D 官方 CLI 适配；
+  源码目录统一放在 `<data_root>/third_party/<官方仓库名>`，缺失时给出明确目录，
+  不再用通用 Diffusers 猜。
+- `/api/models` 返回每个模型的 availability；3D 页对没有本地适配的条目显示
+  “本地暂无适配，仅收录展示”，并阻止直接提交，避免“有按钮但跑不了”。
+- `HunyuanWorld` / SAM-3D / 4DAnyone 尚未接官方推理，已从 native 声明中移除。

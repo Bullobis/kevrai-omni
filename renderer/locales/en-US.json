@@ -1512,7 +1512,8 @@
     "retry": "Check again",
     "marketModelNote": "catalog entry; first use downloads weights",
     "curatedModelNote": "curated local 3D model",
-    "install": "Install 3D runtime"
+    "install": "Install 3D runtime",
+    "unsupported": "No local adapter yet; catalog entry only"
   },
   "knowledge": {
     "title": "Knowledge Base (RAG)",

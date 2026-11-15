@@ -48,10 +48,12 @@ def test_video_and_audio_models_have_a_generic_diffusers_path():
         ), m["id"]
 
 
-def test_all_catalog_entries_have_a_runtime_or_external_path():
+def test_all_catalog_entries_have_an_explicit_availability_verdict():
+    # Catalog can include models whose official code is not wired yet. The
+    # UI must say "unsupported"; it must not pretend every entry is runnable.
     for m in MODELS:
         v = availability.describe(m)
-        assert v["status"] in {"native", "external"}, m["id"]
+        assert v["status"] in {"native", "external", "unsupported"}, m["id"]
 
 
 def test_conversion_is_offered_for_a_model_without_runtime():

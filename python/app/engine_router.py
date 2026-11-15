@@ -52,6 +52,8 @@ RUNTIME_BY_ENGINE: dict[str, str] = {
     "hunyuanworld": "three-d",
     "sam3d": "three-d",
     "pixal3d": "three-d",
+    "stable-fast-3d": "three-d",
+    "trellis2": "three-d",
     "4danyone": "three-d",
     "onnxruntime": "onnx",
     "tts-runtime": "tts",
