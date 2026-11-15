@@ -795,8 +795,10 @@ def _vendor_cli_generate(
     search_root = Path(pattern).parent if Path(pattern).is_absolute() else repo
     glob_pat = Path(pattern).name if Path(pattern).is_absolute() else pattern
     matches = sorted(search_root.rglob(glob_pat), key=lambda x: x.stat().st_mtime)
+    if not matches and glob_pat == "*.glb":
+        matches = sorted(search_root.rglob("*.ply"), key=lambda x: x.stat().st_mtime)
     if not matches:
-        raise ThreeDEngineMissing(f"{source_dir} 没有产出 {pattern} 文件")
+        raise ThreeDEngineMissing(f"{source_dir} 没有产出 {pattern} 或 .ply 文件")
     return matches[-1]
 
 
