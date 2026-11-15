@@ -320,8 +320,14 @@ def generate_audio(
     root = Path(output_dir or Path.cwd() / "outputs" / "media")
     path = root / f"audio-{int(time.time())}.wav"
     saved = _write_audio(samples, rate, path)
+    import base64
+
+    wav_bytes = Path(saved).read_bytes()
     return {
         "ok": True, "engine": "diffusers", "kind": "audio",
         "output_path": str(saved), "sampling_rate": rate,
+        "file": Path(saved).name, "duration_s": duration,
+        "data_url": "data:audio/wav;base64,"
+        + base64.b64encode(wav_bytes).decode("ascii"),
         "elapsed_s": round(time.monotonic() - started, 2),
     }

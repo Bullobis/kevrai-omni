@@ -177,11 +177,12 @@ async function refreshCaps() {
       const hint = $("#threed-install-hint");
       if (hint && cap && cap.install_hint) hint.textContent = cap.install_hint;
     }
-    if (form) form.style.display = ok ? "" : "none";
+    // 引擎缺失也要保留表单：用户需要看到模型、模式和字段，再决定安装。
+    if (form) form.style.display = "";
     return ok;
   } catch (e) {
     if (missingCard) missingCard.style.display = "";
-    if (form) form.style.display = "none";
+    if (form) form.style.display = "";
     return false;
   }
 }

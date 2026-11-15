@@ -31,6 +31,34 @@ async function refresh() {
   return cap;
 }
 
+async function loadCatalogMusicModels(known) {
+  const existing = new Set((known || []).map((m) => m.id));
+  const extra = [];
+  try {
+    const r = await api.models({ category: "audio" });
+    const all = (r && r.body) ? r.body : r;
+    const rows = Array.isArray(all) ? all : (all.models || all.items || []);
+    rows.forEach((m) => {
+      const c = m.capability || {};
+      if (!(c.tasks || []).includes("music-generation")) return;
+      if (c.inputs && c.inputs.audio && c.inputs.audio.required) return;
+      if (!(m.engine || []).includes("diffusers")) return;
+      const repo = m.repo || m.id;
+      if (existing.has(repo)) return;
+      existing.add(repo);
+      extra.push({
+        id: repo,
+        label: `${m.name || m.id} · 市场`,
+        license: m.license || "unknown",
+        duration_max_s: 120,
+        supports_lyrics: false,
+        runtime: "media",
+      });
+    });
+  } catch (_) { /* keep static */ }
+  return extra;
+}
+
 async function populateModels() {
   const sel = $("#music-model");
   if (!sel) return;
@@ -42,9 +70,11 @@ async function populateModels() {
     items = (cap && cap.models) || [];
   } catch (_) { /* ignore */ }
   if (items.length) {
+    items = items.map((m) => ({ ...m, runtime: m.runtime || "music" }));
+    items = items.concat(await loadCatalogMusicModels(items));
     musicModels = items;
     sel.innerHTML = items.map(
-      (m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.id)} · ${escapeHtml(m.license || "unknown")}</option>`
+      (m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.label || m.id)} · ${escapeHtml(m.license || "unknown")}</option>`
     ).join("");
     applyMusicModelCapability();
     return;
@@ -52,7 +82,7 @@ async function populateModels() {
   try {
     const r = await api.models({ category: "audio" });
     const all = (r && r.body) ? r.body : r;
-    const rows = (all && all.items) ? all.items : (all || []);
+    const rows = Array.isArray(all) ? all : (all.models || all.items || []);
     const music = rows.filter(
       (m) => (m.engine || []).includes("transformers") &&
              m.id.toLowerCase().includes("musicgen")
@@ -153,9 +183,18 @@ async function generate() {
   btn.disabled = true;
   btn.textContent = t("music.generating");
   try {
-    const res = await api.musicGenerate({
-      model, prompt, lyrics, duration_s, guidance_scale, do_sample: true,
-    });
+    let res;
+    if (modelInfo && modelInfo.runtime === "media") {
+      // 市场音频模型走通用 Diffusers 音频管线，不冒充 MusicGen。
+      res = await api.localAudio({
+        model, prompt, duration_s,
+        num_inference_steps: 50, guidance_scale, seed: -1,
+      });
+    } else {
+      res = await api.musicGenerate({
+        model, prompt, lyrics, duration_s, guidance_scale, do_sample: true,
+      });
+    }
     renderResult(res);
   } catch (e) {
     toast(e.message, { kind: "err" });
@@ -170,6 +209,7 @@ async function installEngine() {
   btn.disabled = true;
   try {
     await api.installEngine("transformers");
+    try { await api.installEngine("diffusers"); } catch (_) { /* optional */ }
     toast(t("music.engineInstalled"), { kind: "ok" });
     await refresh();
     await populateModels();
