@@ -40,7 +40,26 @@ class MediaParamError(MediaError):
     """Invalid request values."""
 
 
+def _bootstrap_engine_paths() -> None:
+    """把应用内安装的 transformers / diffusers 目标目录加入 sys.path。
+
+    引擎页安装的是 ``<data_root>/engines/pip-*``，不是全局 site-packages；
+    不 bootstrap 就会出现“引擎显示已安装，运行时仍 ImportError”。
+    """
+    import sys
+    from .settings import default_data_root
+
+    root = default_data_root()
+    for name in ("pip-diffusers", "pip-transformers"):
+        target = root / "engines" / name
+        if target.is_dir():
+            path = str(target)
+            if path not in sys.path:
+                sys.path.insert(0, path)
+
+
 def _imports() -> tuple[Any, Any]:
+    _bootstrap_engine_paths()
     try:
         import torch  # type: ignore
         from diffusers import DiffusionPipeline  # type: ignore

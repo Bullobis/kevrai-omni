@@ -81,15 +81,20 @@ def engine_target_dir(data_root: Path | None = None) -> Path:
 
 
 def _bootstrap_sys_path(data_root: Path | None = None) -> Path:
-    """Add the engine target to ``sys.path`` if it exists; return its path."""
-    target = engine_target_dir(data_root)
-    if target.is_dir():
-        import sys
+    """Add the engine targets to ``sys.path`` if they exist; return the first."""
+    root = Path(data_root) if data_root is not None else default_data_root()
+    primary = engine_target_dir(root)
+    # diffusers 是独立安装到 ``engines/pip-diffusers`` 的；只 bootstrap
+    # pip-transformers 会让用户装完 diffusers 仍然 import 失败。
+    for name in ("pip-diffusers", _PIP_DIR):
+        target = root / "engines" / name
+        if target.is_dir():
+            import sys
 
-        s = str(target)
-        if s not in sys.path:
-            sys.path.insert(0, s)
-    return target
+            s = str(target)
+            if s not in sys.path:
+                sys.path.insert(0, s)
+    return primary
 
 
 def import_transformers(data_root: Path | None = None) -> Any:
@@ -404,6 +409,8 @@ class MultimodalManager:
         model_id_or_repo: str,
         prompt: str,
         *,
+        image_path: str = "",
+        strength: float = 0.75,
         guidance_scale: float = 5.0,
         seed: int | None = None,
         num_images: int = 1,
@@ -425,8 +432,8 @@ class MultimodalManager:
         import time
 
         prompt = (prompt or "").strip()
-        if not prompt:
-            raise MultimodalParamError("prompt 不能为空")
+        if not prompt and not (image_path or "").strip():
+            raise MultimodalParamError("prompt 不能为空（图生图可只给图片）")
         mid = (model_id_or_repo or "").strip()
         if not mid:
             raise MultimodalParamError("model 不能为空")
@@ -439,9 +446,10 @@ class MultimodalManager:
         catalog_id: str | None = (
             mid if mid in KNOWN_MODELS else (_matches[0] if _matches else None)
         )
-        if catalog_id is not None and catalog_id not in IMAGE_GEN_CAPABLE:
+        if (catalog_id is not None and catalog_id not in IMAGE_GEN_CAPABLE
+                and not allow_any_diffusers):
             raise MultimodalParamError(
-                f"模型 {mid} 不支持文生图（当前仅 Janus 系列支持）"
+                f"模型 {mid} 不支持当前图片生成路径；请用 allow_any_diffusers 走标准 Diffusers 管线"
             )
 
         # 离线预览：无需任何权重，必然可出图。
@@ -473,8 +481,10 @@ class MultimodalManager:
         )
         if is_diffusers:
             started = time.monotonic()
+            _bootstrap_sys_path(self.data_root)
             import torch
             from diffusers import DiffusionPipeline
+            from PIL import Image
 
             width = max(256, min(int(width), 2048))
             height = max(256, min(int(height), 2048))
@@ -489,13 +499,22 @@ class MultimodalManager:
             }
             if local_dir.is_dir():
                 kwargs_load["local_files_only"] = True
-            try:
-                pipe = DiffusionPipeline.from_pretrained(repo, **kwargs_load)
-            except TypeError:
-                # 有些管线没有 safety_checker 参数；不要因为一个可选参数
-                # 把整个模型判死。
-                kwargs_load.pop("safety_checker", None)
-                pipe = DiffusionPipeline.from_pretrained(repo, **kwargs_load)
+            img_path = Path(image_path).expanduser() if image_path else None
+            if img_path and not img_path.is_file():
+                raise MultimodalParamError(f"输入图片不存在：{img_path}")
+            if img_path:
+                from diffusers import AutoPipelineForImage2Image
+                try:
+                    pipe = AutoPipelineForImage2Image.from_pretrained(repo, **kwargs_load)
+                except TypeError:
+                    kwargs_load.pop("safety_checker", None)
+                    pipe = AutoPipelineForImage2Image.from_pretrained(repo, **kwargs_load)
+            else:
+                try:
+                    pipe = DiffusionPipeline.from_pretrained(repo, **kwargs_load)
+                except TypeError:
+                    kwargs_load.pop("safety_checker", None)
+                    pipe = DiffusionPipeline.from_pretrained(repo, **kwargs_load)
             pipe = pipe.to("cuda" if cuda else "cpu")
             gen = torch.Generator(device="cuda" if cuda else "cpu")
             if seed is not None:
@@ -507,6 +526,9 @@ class MultimodalManager:
                 "width": width, "height": height,
                 "generator": gen,
             }
+            if img_path:
+                kwargs["image"] = Image.open(img_path).convert("RGB")
+                kwargs["strength"] = max(0.1, min(float(strength), 1.0))
             if int(num_images) > 1:
                 kwargs["num_images_per_prompt"] = max(1, min(int(num_images), 4))
             out = pipe(**kwargs)
@@ -514,6 +536,7 @@ class MultimodalManager:
             return {"images": imgs, "repo": repo,
                     "count": len(imgs), "engine": "diffusers",
                     "width": width, "height": height, "steps": steps,
+                    "image_path": str(img_path) if img_path else "",
                     "elapsed_s": round(time.monotonic() - started, 3)}
 
         if local_dir.is_dir() and not is_local_diffusers:

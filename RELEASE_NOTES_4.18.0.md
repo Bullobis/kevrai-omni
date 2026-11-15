@@ -101,3 +101,21 @@
 - **时长是软的**：超过建议时长时，视频页显示黄色提示；点击生成会弹出确认框，用户点“仍要生成”后继续提交，不硬拦。
 - **帧数上限从 257 扩到 1025**：20 秒 @24fps 需要 481 帧、@50fps 需要 1000 帧；原来 257 帧会在提交前直接失败。
 - **未查到的模型不编数字**：没有官方时长依据的视频模型不写建议时长，不拿类目平均值冒充事实。
+
+## 4.18.0 追加修复（按模型能力的图片与音乐）
+
+- **图片页接入模型市场模型**：`#image-model` 读取 `category=image` 的 capability，
+  只列出输出图片且任务为文生图 / 图生图的模型；选模型后隐藏 ComfyUI 模板字段，
+  走 `/api/multimodal/generate-image` 的标准 Diffusers 管线。ComfyUI 仍是可选后台，
+  不再是唯一入口。
+- **图生图输入**：capability 声明图片输入时显示输入图片行，支持文件选择；后端
+  `generate_image` 增加 `image_path` / `strength`，用 `AutoPipelineForImage2Image`
+  加载本地或 Hub 的 Diffusers 管线。图生图模型可以没有提示词。
+- **负向提示词按模型显隐**：capability 没有 `negative_prompt` 的模型不再显示负向字段；
+  没有 `prompt` 的图生图模型不再强制提示词。
+- **音乐页按模型能力**：音乐模型返回每个模型的 `duration_max_s` 与 `supports_lyrics`；
+  MusicGen 最长 60 秒、ACE-Step 最长 600 秒，时长选项随模型收敛；歌词只对
+  ACE-Step 显示并传给后端。
+- **音频生成 API**：`MusicGenReq` 增加 `lyrics`，路由把它透传到 ACE-Step 的
+  `synthesize`。
+- 测试：图片 / 音乐 / LTX 定向 90 passed；全量 renderer 450/450 通过。

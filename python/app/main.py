@@ -5270,6 +5270,8 @@ class MultimodalChatReq(BaseModel):
 class MultimodalImageReq(BaseModel):
     model: str = "janus-pro-7b"
     prompt: str = ""
+    image_path: str = ""
+    strength: float = 0.75
     guidance_scale: float = 5.0
     seed: int | None = None
     num_images: int = 1
@@ -5762,12 +5764,13 @@ async def local_decide(req: LocalDecideReq) -> JSONResponse:
 async def multimodal_generate_image_route(
     request: Request, req: MultimodalImageReq
 ) -> JSONResponse:
-    if not (req.prompt or "").strip():
-        raise HTTPException(status_code=400, detail="prompt 不能为空")
+    if not (req.prompt or "").strip() and not (req.image_path or "").strip():
+        raise HTTPException(status_code=400, detail="prompt 不能为空（图生图可只给图片）")
     mgr = _multimodal_manager(request)
     try:
         res = await asyncio.to_thread(
             mgr.generate_image, req.model, req.prompt,
+            image_path=req.image_path, strength=req.strength,
             guidance_scale=req.guidance_scale, seed=req.seed,
             num_images=req.num_images, do_sample=req.do_sample,
             width=req.width, height=req.height,
@@ -5819,6 +5822,7 @@ def _music_manager(request: Request) -> music_runtime.MusicManager:
 class MusicGenReq(BaseModel):
     model: str = "musicgen-small"
     prompt: str = ""
+    lyrics: str = ""
     duration_s: float = 15.0
     guidance_scale: float = 3.0
     seed: int | None = None
@@ -5851,6 +5855,7 @@ async def music_generate_route(
             guidance_scale=req.guidance_scale,
             seed=req.seed,
             do_sample=req.do_sample,
+            lyrics=req.lyrics,
         )
     except music_runtime.MusicEngineMissing as e:
         raise HTTPException(status_code=503, detail=str(e)) from e

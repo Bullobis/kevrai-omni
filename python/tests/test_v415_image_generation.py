@@ -178,3 +178,13 @@ def test_janus1b_catalog():
 
 def test_janus7b_generates_image():
     assert "image" in _BY["janus-pro-7b"]["modality"]["generate"]
+
+
+def test_generate_image_allows_image_only_request(mgr, tmp_path):
+    """图生图模型可以没有提示词，但必须真的收到输入图片。"""
+    src = tmp_path / "source.png"
+    src.write_bytes(b"\x89PNG\r\n\x1a\n")
+    res = mgr.generate_image(
+        "preview-image", "", image_path=str(src), width=256, height=256)
+    assert res["count"] == 1
+    assert res["engine"] == "preview"

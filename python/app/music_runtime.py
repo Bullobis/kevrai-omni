@@ -548,6 +548,11 @@ def capabilities(data_root: Path | None = None) -> dict[str, Any]:
                 "repo": repo,
                 # 许可随模型一起返回：UI 展示模型时不可能不展示许可。
                 **license_info(mid),
+                "duration_max_s": (
+                    MAX_DURATION_ACE_STEP_S if _is_ace_step(repo)
+                    else MAX_DURATION_MUSICGEN_S
+                ),
+                "supports_lyrics": _is_ace_step(repo),
             }
             for mid, repo in KNOWN_MODELS.items()
         ],

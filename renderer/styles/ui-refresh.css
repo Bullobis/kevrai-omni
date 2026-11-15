@@ -1595,3 +1595,9 @@ html[data-theme="dark"] .agent-actions #agent-new-btn { color: #0b1020; }
 .ltx-duration-card { width: min(460px, 92vw); }
 .ltx-duration-body { padding: 4px 0 8px; }
 .ltx-duration-body p { margin: 0 0 8px; line-height: 1.65; }
+#image-source-row[hidden], #image-template-row[hidden], #image-ckpt-row[hidden],
+#image-prompt-row[hidden], #image-negative-row[hidden], #image-sampler-row[hidden], #image-scheduler-row[hidden] { display: none !important; }
+#image-model-capability[hidden] { display: none !important; }
+#music-lyrics-row[hidden], #music-model-capability[hidden] { display: none !important; }
+/* 引擎未安装时仍展示表单与模型能力，用户可以先看字段/模型，再安装引擎。 */
+#pane-music.engine-missing .asr-form { display: flex; }

@@ -1,4 +1,4 @@
-// renderer/modules/image.js — ComfyUI 图片生成（SD1.5 / SDXL 文生图）面板。
+// renderer/modules/image.js — 图片生成面板：模型市场 Diffusers 模型 + 可选 ComfyUI 模板。
 //
 // 交互参考 Local Dream（手机端本地 SD）：先选模型家族（SD1.5 快 / SDXL 细节好），
 // 自动带出合适的默认步数、CFG 与分辨率预设；小白只填提示词即可出图，
@@ -15,6 +15,7 @@ const $ = (s, r = document) => r.querySelector(s);
 
 let imageInited = false;
 let templates = [];
+let marketImageModels = [];
 
 // 常用采样器 / 调度器（ComfyUI 内置；后端不做硬枚举，非法值由 ComfyUI 报错透传）。
 const SAMPLERS = ["euler", "euler_ancestral", "dpmpp_2m", "dpmpp_2m_sde", "dpmpp_3m_sde", "lcm", "ddim"];
@@ -91,12 +92,14 @@ async function refreshStatus() {
         : t("image.engineMissing");
       status.dataset.installed = ok ? "1" : "0";
     }
-    if (missingCard) missingCard.style.display = ok ? "none" : "";
-    if (form) form.style.display = ok ? "" : "none";
+    if (missingCard) missingCard.style.display = (ok || currentMarketImageModel()) ? "none" : "";
+    // Diffusers models remain usable without a running ComfyUI; only the
+    // ComfyUI template path depends on this status.
+    if (form) form.style.display = "";
     return ok;
   } catch (e) {
-    if (missingCard) missingCard.style.display = "";
-    if (form) form.style.display = "none";
+    if (missingCard) missingCard.style.display = currentMarketImageModel() ? "none" : "";
+    if (form) form.style.display = "";
     if (status) status.dataset.installed = "0";
     return false;
   }
@@ -112,6 +115,105 @@ async function populateTemplates() {
   sel.innerHTML = templates.map((x) =>
     `<option value="${escapeHtml(x.id)}">${escapeHtml(x.label)}</option>`).join("");
   applyTemplateDefaults();
+}
+
+function currentMarketImageModel() {
+  const id = $("#image-model")?.value || "";
+  return marketImageModels.find((m) => m.id === id) || null;
+}
+
+async function populateImageModels() {
+  const sel = $("#image-model");
+  if (!sel) return;
+  try {
+    const r = body(await api.models({ category: "image" }));
+    const rows = (r && (r.models || r.items)) || [];
+    marketImageModels = rows.filter((m) => {
+      const cap = m.capability || {};
+      const tasks = cap.tasks || [];
+      const outputs = cap.outputs || {};
+      return !!outputs.image && (tasks.includes("text-to-image") || tasks.includes("image-to-image"));
+    });
+  } catch (_) { marketImageModels = []; }
+  if (!marketImageModels.length) return;
+  sel.innerHTML = `<option value="">${escapeHtml(t("image.comfyTemplate"))}</option>` +
+    marketImageModels.map((m) => {
+      const cap = m.capability || {};
+      const task = cap.tasks?.includes("text-to-image") ? t("image.taskT2I") : t("image.taskI2I");
+      return `<option value="${escapeHtml(m.id)}" data-repo="${escapeHtml(m.repo || "")}">${escapeHtml(m.name || m.id)} · ${escapeHtml(task)}</option>`;
+    }).join("");
+}
+
+function applyImageModelCapability() {
+  const model = currentMarketImageModel();
+  const cap = model?.capability || {};
+  const isDiffusers = !!model;
+  const promptRow = $("#image-prompt-row");
+  const sourceRow = $("#image-source-row");
+  const templateRow = $("#image-template-row");
+  const ckptRow = $("#image-ckpt-row");
+  const negativeRow = $("#image-negative-row");
+  const samplerRow = $("#image-sampler-row");
+  const schedulerRow = $("#image-scheduler-row");
+  const hint = $("#image-model-capability");
+  const missingCard = $("#image-missing-card");
+  if (missingCard) missingCard.style.display = isDiffusers ? "none" : "";
+  if (!isDiffusers) refreshStatus().catch(() => {});
+  if (templateRow) templateRow.hidden = isDiffusers;
+  if (ckptRow) ckptRow.hidden = isDiffusers;
+  if (promptRow) promptRow.hidden = isDiffusers && !(cap.controls || []).includes("prompt");
+  if (negativeRow) negativeRow.hidden = isDiffusers && !(cap.controls || []).includes("negative_prompt");
+  if (samplerRow) samplerRow.hidden = isDiffusers;
+  if (schedulerRow) schedulerRow.hidden = isDiffusers;
+  const imageInput = cap.inputs?.image;
+  if (sourceRow) sourceRow.hidden = !isDiffusers || !imageInput;
+  if (hint) {
+    if (!isDiffusers) {
+      hint.hidden = true;
+      hint.textContent = "";
+    } else {
+      const bits = [];
+      if (cap.tasks?.includes("text-to-image")) bits.push(t("image.taskT2I"));
+      if (cap.tasks?.includes("image-to-image")) bits.push(t("image.taskI2I"));
+      if (imageInput) bits.push(imageInput.required ? t("image.sourceRequired") : t("image.sourceOptional"));
+      hint.textContent = bits.join(" · ");
+      hint.hidden = bits.length === 0;
+    }
+  }
+}
+
+async function refreshDiffusersStatus() {
+  const status = $("#image-diffusers-status");
+  const install = $("#image-install-diffusers");
+  try {
+    const r = body(await api.multimodalCapabilities());
+    const ready = !!(r && r.installed);
+    if (status) status.textContent = ready
+      ? t("image.diffusersReady")
+      : t("image.diffusersMissing");
+    if (install) install.hidden = ready;
+    return ready;
+  } catch (_) {
+    if (status) status.textContent = t("image.diffusersUnknown");
+    if (install) install.hidden = false;
+    return false;
+  }
+}
+
+async function installDiffusersEngine() {
+  const btn = $("#image-install-diffusers");
+  if (!btn) return;
+  btn.disabled = true;
+  try {
+    await api.installEngine("transformers");
+    // 图片模型走标准 Diffusers 管线；确保 diffusers 也一起装好，
+    // 而不是只装 transformers 让「已安装」状态骗过用户。
+    await api.installEngine("diffusers");
+    toast(t("image.diffusersInstalled"), { kind: "ok" });
+    await refreshDiffusersStatus();
+  } catch (e) {
+    toast(e.message, { kind: "err" });
+  } finally { btn.disabled = false; }
 }
 
 async function populateCheckpoints() {
@@ -158,8 +260,8 @@ function renderResult(res) {
       <figure class="img-card">
         <img src="${im.data_url}" alt="image ${i + 1}" />
         <figcaption>
-          <span class="muted">${escapeHtml(im.filename || "")}</span>
-          <a class="ghost img-download" href="${im.data_url}" download="${escapeHtml(im.filename || "kevrai.png")}">
+          <span class="muted">${escapeHtml(im.filename || im.file || "")}</span>
+          <a class="ghost img-download" href="${im.data_url}" download="${escapeHtml(im.filename || im.file || "kevrai.png")}">
             ${escapeHtml(t("image.download"))}
           </a>
         </figcaption>
@@ -172,7 +274,53 @@ function renderResult(res) {
     `<div class="img-gallery">${cards}</div>`;
 }
 
+async function generateWithDiffusers(model) {
+  const cap = model.capability || {};
+  const controls = cap.controls || [];
+  const prompt = ($("#image-prompt").value || "").trim();
+  const imagePath = ($("#image-source-path")?.value || "").trim();
+  if (controls.includes("prompt") && !prompt) {
+    toast(t("image.promptFirst"), { kind: "warn" });
+    return;
+  }
+  if (cap.inputs?.image?.required && !imagePath) {
+    toast(t("image.sourceFirst"), { kind: "warn" });
+    return;
+  }
+  const [w, h] = parseDimensions($("#image-resolution").value);
+  const seedRaw = ($("#image-seed").value || "").trim();
+  const seed = seedRaw === "" ? null : Number(seedRaw);
+  const btn = $("#image-run");
+  btn.disabled = true;
+  btn.textContent = t("image.generating");
+  try {
+    const res = await api.multimodalGenerateImage({
+      model: model.repo || model.id,
+      prompt,
+      image_path: imagePath,
+      strength: 0.75,
+      guidance_scale: Number($("#image-cfg").value),
+      seed: seed !== null && seed >= 0 ? seed : null,
+      num_images: Number($("#image-batch").value),
+      width: w,
+      height: h,
+      num_inference_steps: Number($("#image-steps").value),
+      allow_any_diffusers: true,
+    });
+    renderResult(res);
+  } catch (e) {
+    toast(e?.response?.data?.detail || e.message || t("image.genFailed"), { kind: "err" });
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t("image.run");
+  }
+}
+
 async function generate() {
+  const model = currentMarketImageModel();
+  if (model) {
+    return generateWithDiffusers(model);
+  }
   const prompt = ($("#image-prompt").value || "").trim();
   const ckpt = ($("#image-ckpt").value || $("#image-ckpt-text")?.value || "").trim();
   const err = validateInputs(prompt, ckpt);
@@ -291,9 +439,19 @@ export async function initImage() {
 
   fillSamplerDefaults();
   await populateTemplates();
+  await populateImageModels();
   await populateCheckpoints();
   await refreshStatus();
+  await refreshDiffusersStatus();
 
+  $("#image-model").addEventListener("change", applyImageModelCapability);
+  $("#image-install-diffusers")?.addEventListener("click", installDiffusersEngine);
+  $("#image-pick-source")?.addEventListener("click", async () => {
+    try {
+      const p = await api.pickFile();
+      if (p) $("#image-source-path").value = p;
+    } catch (_) {}
+  });
   $("#image-template").addEventListener("change", applyTemplateDefaults);
   $("#image-steps").addEventListener("input", () => { $("#image-steps").dataset.userTouched = "1"; });
   $("#image-cfg").addEventListener("input", () => { $("#image-cfg").dataset.userTouched = "1"; });

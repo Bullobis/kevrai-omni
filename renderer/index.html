@@ -841,6 +841,11 @@
             <label for="music-model" data-i18n="music.model">模型</label>
             <select id="music-model"></select>
           </div>
+          <p id="music-model-capability" class="hint" hidden></p>
+          <div class="form-row" id="music-lyrics-row" hidden>
+            <label for="music-lyrics" data-i18n="music.lyrics">歌词（仅 ACE-Step）</label>
+            <textarea id="music-lyrics" rows="3" placeholder="[verse]&#10;..."></textarea>
+          </div>
           <div class="form-row">
             <label for="music-prompt" data-i18n="music.prompt">风格描述</label>
             <textarea id="music-prompt" rows="3" placeholder=""></textarea>
@@ -853,7 +858,12 @@
                 <option value="10">10</option>
                 <option value="15" selected>15</option>
                 <option value="30">30</option>
+                <option value="60">60</option>
+                <option value="120">120</option>
+                <option value="300">300</option>
+                <option value="600">600</option>
               </select>
+              <small id="music-duration-hint" class="field-hint"></small>
             </div>
             <div class="form-row">
               <label for="music-guidance" data-i18n="music.guidance">引导强度（越高越贴合描述）</label>
@@ -891,16 +901,30 @@
 
         <div class="asr-form card" id="image-form">
           <div class="form-row">
-            <label for="image-template" data-i18n="image.template">模型家族</label>
+            <label for="image-model" data-i18n="image.model">模型（本地 Diffusers）</label>
+            <select id="image-model">
+              <option value="" data-i18n="image.comfyTemplate">ComfyUI 模板（SD1.5 / SDXL）</option>
+            </select>
+          </div>
+          <p id="image-model-capability" class="hint" hidden></p>
+          <p id="image-diffusers-status" class="hint">正在检测本地 Diffusers 引擎…</p>
+          <button class="secondary" id="image-install-diffusers" type="button" hidden>安装本地 Diffusers 引擎</button>
+          <div class="form-row" id="image-source-row" hidden>
+            <label for="image-source-path" data-i18n="image.sourcePath">输入图片（图生图）</label>
+            <input id="image-source-path" type="text" placeholder="/path/to/source.png" />
+            <button class="secondary" id="image-pick-source" type="button" data-i18n="image.pickSource">选择…</button>
+          </div>
+          <div class="form-row" id="image-template-row">
+            <label for="image-template" data-i18n="image.template">ComfyUI 模型家族</label>
             <select id="image-template"></select>
           </div>
-          <div class="form-row">
+          <div class="form-row" id="image-ckpt-row">
             <label for="image-ckpt" data-i18n="image.ckpt">Stable Diffusion 模型</label>
             <select id="image-ckpt"></select>
             <input id="image-ckpt-text" type="text" style="display:none;margin-top:6px"
                    placeholder="model.safetensors" />
           </div>
-          <div class="form-row">
+          <div class="form-row" id="image-prompt-row">
             <label for="image-prompt" data-i18n="image.prompt">提示词</label>
             <textarea id="image-prompt" rows="3" data-i18n-placeholder="image.promptPh" placeholder="masterpiece, best quality, a cat sitting on a windowsill"></textarea>
           </div>
@@ -908,7 +932,7 @@
           <details class="adv-row">
             <summary data-i18n="image.advanced">高级参数</summary>
             <div class="form-grid">
-              <div class="form-row">
+              <div class="form-row" id="image-negative-row">
                 <label for="image-negative" data-i18n="image.negative">负向提示词</label>
                 <textarea id="image-negative" rows="2" placeholder="lowres, bad anatomy, ..."></textarea>
               </div>
@@ -924,11 +948,11 @@
                 <label for="image-cfg" data-i18n="image.cfg">提示词相关性 CFG</label>
                 <input id="image-cfg" type="number" min="0" max="30" step="0.5" value="7" />
               </div>
-              <div class="form-row">
+              <div class="form-row" id="image-sampler-row">
                 <label for="image-sampler" data-i18n="image.sampler">采样器</label>
                 <select id="image-sampler"></select>
               </div>
-              <div class="form-row">
+              <div class="form-row" id="image-scheduler-row">
                 <label for="image-scheduler" data-i18n="image.scheduler">调度器</label>
                 <select id="image-scheduler"></select>
               </div>

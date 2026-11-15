@@ -63,6 +63,19 @@ class ThreeDBusyError(ThreeDError):
     """Another 3D generation task is already running."""
 
 
+def _bootstrap_engine_paths() -> None:
+    """把应用内安装的 diffusers/transformers 目录加入 sys.path。"""
+    from .settings import default_data_root
+
+    root = default_data_root()
+    for name in ("pip-diffusers", "pip-transformers"):
+        target = root / "engines" / name
+        if target.is_dir():
+            path = str(target)
+            if path not in sys.path:
+                sys.path.insert(0, path)
+
+
 # ---------------------------------------------------------------------------
 # Hardware-tuned presets
 # ---------------------------------------------------------------------------
@@ -693,6 +706,7 @@ def _load_pipeline(model_id: str, mode: str) -> Any:
     the exact pip line) when the GPU stack is absent, and with the list of
     class names it tried when diffusers is present but has no matching class.
     """
+    _bootstrap_engine_paths()
     try:
         import torch
         if torch is None:  # pragma: no cover — defensive
@@ -930,6 +944,7 @@ def capabilities() -> dict[str, Any]:
 
     Never raises: a missing GPU stack is a legitimate, reportable state.
     """
+    _bootstrap_engine_paths()
     torch_ok = _has("torch")
     diffusers_ok = _has("diffusers")
     trimesh_ok = _has("trimesh")

@@ -233,3 +233,12 @@ def test_catalog_musicgen_entries():
         assert m["license"] == "CC-BY-NC-4.0"
         assert len(m["sources"]) >= 2
         assert m["hardware"]["disk_gb"] > 0
+
+
+def test_capabilities_expose_per_model_duration_and_lyrics(tmp_path):
+    caps = mr.capabilities(tmp_path)
+    by_id = {m["id"]: m for m in caps["models"]}
+    assert by_id["musicgen-small"]["duration_max_s"] == 60
+    assert by_id["musicgen-small"]["supports_lyrics"] is False
+    assert by_id["ace-step-1.5"]["duration_max_s"] == 600
+    assert by_id["ace-step-1.5"]["supports_lyrics"] is True
