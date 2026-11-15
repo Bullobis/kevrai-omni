@@ -1,5 +1,5 @@
 {
-  "version": "4.18.1",
+  "version": "4.18.0",
   "updated": "2026-11-13",
   "notice": "目录真实性修正（2026-11）：移除无权重/闭源占位条目（GLM-5-Code、Wan 3.0、HappyShrimp 1.0、官方 H3-Regenerate-2K），补入 NVIDIA/MIT Open-H3-Regenerate-2K 与 MiniMax H3-Image；修正 demucs、apple/Sharp、Piper 的失效仓库地址。",
   "categories": [
@@ -7336,21 +7336,22 @@
       ],
       "capability": {
         "tasks": [
-          "image-to-3d"
+          "image-to-3d",
+          "text-to-3d"
         ],
         "inputs": {
           "text": {
             "required": false
           },
           "image": {
-            "required": true,
+            "required": false,
             "role": "reference",
             "max": 1
           }
         },
         "outputs": {
           "3d": {
-            "format": "glb"
+            "format": "ply"
           }
         },
         "controls": [
@@ -7361,9 +7362,10 @@
           "cfg",
           "seed"
         ],
-        "source": "huggingface:tencent/HunyuanWorld-1 (pipeline_tag=image-to-3d)",
-        "confidence": "official-pipeline"
-      }
+        "source": "official-readme: HunyuanWorld-1.0 demo_panogen.py + demo_scenegen.py",
+        "confidence": "official-readme"
+      },
+      "availability": null
     },
     {
       "id": "hunyuanworld-voyager",
@@ -7402,8 +7404,7 @@
       ],
       "capability": {
         "tasks": [
-          "image-to-video",
-          "image-to-3d"
+          "image-to-video"
         ],
         "inputs": {
           "text": {
@@ -7419,9 +7420,6 @@
           "video": {
             "format": "mp4",
             "audio": false
-          },
-          "3d": {
-            "format": "glb"
           }
         },
         "controls": [
@@ -7435,9 +7433,10 @@
           "cfg",
           "seed"
         ],
-        "source": "huggingface:tencent/HunyuanWorld-Voyager (pipeline_tag=image-to-video)",
-        "confidence": "official-pipeline"
-      }
+        "source": "official-readme: data_engine/create_input.py + sample_image2video.py",
+        "confidence": "official-readme"
+      },
+      "availability": null
     },
     {
       "id": "hunyuanworld-mirror",
@@ -7479,9 +7478,6 @@
           "image-to-3d"
         ],
         "inputs": {
-          "text": {
-            "required": false
-          },
           "image": {
             "required": true,
             "role": "reference",
@@ -7490,20 +7486,18 @@
         },
         "outputs": {
           "3d": {
-            "format": "glb"
+            "format": "ply"
           }
         },
         "controls": [
-          "prompt",
           "image",
           "format",
-          "steps",
-          "cfg",
           "seed"
         ],
-        "source": "huggingface:tencent/HunyuanWorld-Mirror (pipeline_tag=image-to-3d)",
-        "confidence": "official-pipeline"
-      }
+        "source": "official-readme: infer.py --save_gs --save_colmap",
+        "confidence": "official-readme"
+      },
+      "availability": null
     },
     {
       "id": "hy-world-2",
@@ -7545,9 +7539,6 @@
           "image-to-3d"
         ],
         "inputs": {
-          "text": {
-            "required": false
-          },
           "image": {
             "required": true,
             "role": "reference",
@@ -7556,20 +7547,18 @@
         },
         "outputs": {
           "3d": {
-            "format": "glb"
+            "format": "ply"
           }
         },
         "controls": [
-          "prompt",
           "image",
           "format",
-          "steps",
-          "cfg",
           "seed"
         ],
-        "source": "huggingface:tencent/HY-World-2.0 (pipeline_tag=image-to-3d)",
-        "confidence": "official-pipeline"
-      }
+        "source": "official-readme: python -m hyworld2.worldrecon.pipeline",
+        "confidence": "official-readme"
+      },
+      "availability": null
     },
     {
       "id": "hy-worldplay",
@@ -7608,12 +7597,11 @@
       ],
       "capability": {
         "tasks": [
-          "image-to-video",
-          "text-to-3d"
+          "image-to-video"
         ],
         "inputs": {
           "text": {
-            "required": true
+            "required": false
           },
           "image": {
             "required": true,
@@ -7625,9 +7613,6 @@
           "video": {
             "format": "mp4",
             "audio": false
-          },
-          "3d": {
-            "format": "glb"
           }
         },
         "controls": [
@@ -7641,9 +7626,10 @@
           "cfg",
           "seed"
         ],
-        "source": "huggingface:tencent/HY-WorldPlay (pipeline_tag=image-to-video)",
-        "confidence": "official-pipeline"
-      }
+        "source": "official-readme: hyvideo/generate.py (AR distilled)",
+        "confidence": "official-readme"
+      },
+      "availability": null
     },
     {
       "id": "trellis-text-xlarge",
@@ -7755,19 +7741,18 @@
         },
         "outputs": {
           "3d": {
-            "format": "glb"
+            "format": "ply"
           }
         },
         "controls": [
           "image",
           "format",
-          "steps",
-          "cfg",
           "seed"
         ],
-        "source": "catalog-tags",
-        "confidence": "curated-override"
-      }
+        "source": "official-readme: notebook/inference.py Inference(image, mask)",
+        "confidence": "official-readme"
+      },
+      "availability": null
     },
     {
       "id": "sam-3d-body",
@@ -7818,19 +7803,18 @@
         },
         "outputs": {
           "3d": {
-            "format": "glb"
+            "format": "obj"
           }
         },
         "controls": [
           "image",
           "format",
-          "steps",
-          "cfg",
           "seed"
         ],
-        "source": "catalog-tags",
-        "confidence": "curated-override"
-      }
+        "source": "official-readme: demo.py / setup_sam_3d_body",
+        "confidence": "official-readme"
+      },
+      "availability": null
     },
     {
       "id": "pixal3d",
@@ -7899,7 +7883,7 @@
       "id": "4danyone",
       "category": "3d",
       "name": "4DAnyone（4D 动态数字人）",
-      "repo": "AntResearch/4DAnyone",
+      "repo": "ant-research/4DAnyone",
       "gguf_repo": "",
       "size_gb": 20,
       "engine": [
@@ -7933,43 +7917,32 @@
       ],
       "capability": {
         "tasks": [
-          "image-to-3d",
-          "video-to-video"
+          "video-to-4d"
         ],
         "inputs": {
-          "image": {
-            "required": true,
-            "role": "reference",
-            "max": 1
-          },
           "video": {
-            "required": false,
+            "required": true,
             "role": "reference"
           }
         },
         "outputs": {
-          "3d": {
-            "format": "glb"
-          },
           "video": {
             "format": "mp4",
             "audio": false
           }
         },
         "controls": [
-          "image",
           "video",
           "duration",
           "resolution",
           "fps",
           "format",
-          "steps",
-          "cfg",
           "seed"
         ],
-        "source": "huggingface:AntResearch/4DAnyone (pipeline_tag=video-to-video)",
-        "confidence": "official-pipeline"
-      }
+        "source": "official-readme: inference.py --video_path --output_dir",
+        "confidence": "official-readme"
+      },
+      "availability": null
     },
     {
       "id": "hy3",

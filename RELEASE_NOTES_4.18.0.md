@@ -42,7 +42,7 @@
 ## 发布范围与已知边界
 
 - 本次发布包含三个桌面平台的安装包；模型权重和引擎仍按需下载，不随安装包内置。
-- 259 个市场模型都已标注 capability；其中 8 个 3D 条目的官方推理代码尚未接入，界面显示“本地暂无适配”并禁用运行按钮，不把它们说成可运行。
+- 259 个市场模型都已标注 capability；此前 8 个缺本地入口的 3D/世界模型已全部接上官方代码入口，界面按能力显示“图生 3D / 文生 3D / 图片→世界视频 / 视频→4D”，不再出现“本地暂无适配”的禁用项；首次运行仍需下载官方源码与权重。
 - 图片、视频、音乐、3D 的生成链路已做定向测试和实机表单检查；视频音频输入和部分三维官方运行时仍需要用户在目标机器上安装对应权重/源码后再做端到端生成验证。
 
 ## 测试
@@ -193,7 +193,7 @@
   不再用通用 Diffusers 猜。
 - `/api/models` 返回每个模型的 availability；3D 页对没有本地适配的条目显示
   “本地暂无适配，仅收录展示”，并阻止直接提交，避免“有按钮但跑不了”。
-- `HunyuanWorld` / SAM-3D / 4DAnyone 尚未接官方推理，已从 native 声明中移除。
+- `HunyuanWorld` / SAM-3D / 4DAnyone 当时尚未接官方推理，现已全部接入。
 
 ## 4.18.0 追加修复（3D 不可用条目的按钮）
 
@@ -204,3 +204,22 @@
 
 - PartCrafter 等官方 CLI 可能输出 `.ply` 而不是 `.glb`；现在两种格式都接受，
   不再把“生成了 PLY”误报为失败。
+
+## 4.18.0 追加修复（8 个世界/3D 模型官方入口）
+
+- HunyuanWorld-1：按官方 README 跑两阶段 `demo_panogen.py` → `demo_scenegen.py`，
+  输出 `mesh_layer0.ply`；支持图片/文本生成全景后重建场景。
+- HunyuanWorld-Voyager：官方 `data_engine/create_input.py` 生成参考/深度/掩码序列，
+  再跑 `sample_image2video.py`，输出真实 `.mp4` 世界视频。
+- HunyuanWorld-Mirror：官方 `infer.py --save_gs --save_colmap`，输出
+  `pts_from_pointmap.ply` 点云。
+- HY-World 2.0：官方 `python -m hyworld2.worldrecon.pipeline`，输出 PLY 点云。
+- HY-WorldPlay：官方 `hyvideo/generate.py`（AR distilled），输出世界视频；
+  需要 `HYWORLDPLAY_MODEL_PATH` 与 `HYWORLDPLAY_AR_DISTILL_ACTION_MODEL_PATH`。
+- SAM 3D Objects：官方 `notebook/inference.py` 的 `Inference(image, mask)`，
+  输出 Gaussian PLY；无 alpha 时退回整图 mask。
+- SAM 3D Body：官方 `setup_sam_3d_body` + `process_one_image`，把
+  `pred_vertices`/`faces` 导出 OBJ 人体网格。
+- 4DAnyone：官方 `inference.py --video_path --output_dir`，输出多视角 4D 视频。
+- 上述 8 项的 availability 已改为 `native`；源码统一放在
+  `<data_root>/third_party/<官方仓库名>`，缺失时返回明确目录，而不是假运行。

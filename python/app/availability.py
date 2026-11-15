@@ -78,6 +78,15 @@ SPECIAL_NATIVE: dict[str, dict[str, str]] = {
     "qwen2-audio-7b": {"engine": "qwen2-audio", "action": "audio-chat", "label": "Qwen2-Audio 对话"},
     "gliner2.5": {"engine": "gliner2", "action": "decide", "label": "GLiNER2.5 决策"},
     "laya-decision": {"engine": "laya", "action": "decide", "label": "Laya 决策"},
+    # Official world-model CLIs (source + weights are downloaded separately).
+    "hunyuanworld-1": {"engine": "3d-vendor", "action": "3d", "label": "HunyuanWorld-1 官方 CLI"},
+    "hunyuanworld-voyager": {"engine": "3d-vendor", "action": "3d", "label": "HunyuanWorld-Voyager 官方 CLI"},
+    "hunyuanworld-mirror": {"engine": "3d-vendor", "action": "3d", "label": "HunyuanWorld-Mirror 官方 CLI"},
+    "hy-world-2": {"engine": "3d-vendor", "action": "3d", "label": "HY-World 2.0 官方 CLI"},
+    "hy-worldplay": {"engine": "3d-vendor", "action": "3d", "label": "HY-WorldPlay 官方 CLI"},
+    "sam-3d": {"engine": "3d-vendor", "action": "3d", "label": "SAM 3D Objects 官方 API"},
+    "sam-3d-body": {"engine": "3d-vendor", "action": "3d", "label": "SAM 3D Body 官方 API"},
+    "4danyone": {"engine": "3d-vendor", "action": "3d", "label": "4DAnyone 官方 CLI"},
     # These are real in-process PiperManager voices (pip engines), not
     # external services; availability.py previously contradicted the runtime.
     "kokoro-82m": {"engine": "kokoro-engine", "action": "tts", "label": "Kokoro 本地语音"},

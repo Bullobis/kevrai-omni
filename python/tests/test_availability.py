@@ -103,3 +103,19 @@ def test_summary_counts_add_up():
     assert s["total"] == len(MODELS)
     assert sum(s["counts"].values()) == len(MODELS)
     assert sum(sum(v.values()) for v in s["by_category"].values()) == len(MODELS)
+
+
+def test_eight_world_models_are_native_through_official_vendor_adapters():
+    # These eight used to be "unsupported" because their official code was not
+    # wired. They now have explicit vendor adapters; the UI must not hide them.
+    world_ids = (
+        "hunyuanworld-1", "hunyuanworld-voyager", "hunyuanworld-mirror",
+        "hy-world-2", "hy-worldplay", "sam-3d", "sam-3d-body", "4danyone",
+    )
+    for model_id in world_ids:
+        m = next(x for x in MODELS if x["id"] == model_id)
+        v = availability.describe(m)
+        assert v["status"] == "native", model_id
+        assert any(x["engine"] == "3d-vendor" for x in v["native"]), model_id
+        tasks = m["capability"]["tasks"]
+        assert tasks, model_id

@@ -50,7 +50,7 @@ def test_capabilities_never_raises_and_has_shape():
                 "cuda", "missing", "presets", "modes", "output_formats"):
         assert key in cap, f"missing capability key: {key}"
     assert isinstance(cap["missing"], list)
-    assert set(cap["modes"]) == {"i23d", "t23d"}
+    assert set(cap["modes"]) == {"i23d", "t23d", "i2wv", "v24d"}
     assert "glb" in cap["output_formats"]
     # 未装引擎时应给出可执行的安装提示
     if not cap["available"]:
@@ -95,7 +95,7 @@ def test_bad_output_format_rejected(fmt):
 @pytest.mark.parametrize("prompt", ["", "   ", "\t\n"])
 def test_empty_prompt_rejected(prompt):
     with pytest.raises(td.ThreeDParamError, match="prompt must not be empty"):
-        _params(prompt=prompt).validate()
+        _params(mode="t23d", image_path="", prompt=prompt).validate()
 
 
 def test_overlong_prompt_rejected():

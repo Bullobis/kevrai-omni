@@ -1513,7 +1513,13 @@
     "marketModelNote": "模型市场条目，首次使用需下载权重",
     "curatedModelNote": "已适配的本地 3D 模型",
     "install": "安装 3D 运行时",
-    "unsupported": "本地暂无适配，仅收录展示"
+    "unsupported": "本地暂无适配，仅收录展示",
+    "i2wv": "图片→世界视频",
+    "v24d": "视频→4D",
+    "videoPath": "输入视频路径（视频→4D）",
+    "videoFirst": "视频→4D 需要填写输入视频路径",
+    "worldModelNote": "官方世界模型（首次需下载权重/源码）",
+    "openOutput": "打开输出文件"
   },
   "knowledge": {
     "title": "知识库（RAG）",

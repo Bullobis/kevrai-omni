@@ -3505,11 +3505,14 @@ def three_d_caps(request: Request) -> dict[str, Any]:
 class ThreeDGenerateReq(BaseModel):
     model_config = {"protected_namespaces": ()}  # model_id 字段合法
     mode: str = "i23d"
-    prompt: str = Field(min_length=1, max_length=2000)
+    prompt: str = Field(default="", max_length=2000)
     negative_prompt: str = ""
     model_id: str = "stabilityai/TripoSR"
     preset: str = "fast"
     image_path: str = ""
+    video_path: str = ""
+    mask_path: str = ""
+    num_frames: int = 125
     resolution: int = 256
     num_inference_steps: int = 20
     guidance_scale: float = 5.0
@@ -3526,6 +3529,7 @@ def three_d_generate(request: Request, req: ThreeDGenerateReq) -> dict[str, Any]
     params = ThreeDParams(
         mode=req.mode, prompt=req.prompt, negative_prompt=req.negative_prompt,
         model_id=req.model_id[:256], preset=req.preset, image_path=req.image_path,
+        video_path=req.video_path, mask_path=req.mask_path, num_frames=req.num_frames,
         resolution=req.resolution, num_inference_steps=req.num_inference_steps,
         guidance_scale=req.guidance_scale, seed=req.seed,
         output_format=req.output_format, max_faces=req.max_faces,
@@ -3573,7 +3577,7 @@ def three_d_task_cancel(request: Request, task_id: str) -> dict[str, Any]:
 def three_d_outputs(request: Request) -> dict[str, Any]:
     """List generated 3D assets (newest first)."""
     root = _three_d_manager(request).output_root
-    exts = (".glb", ".gltf", ".obj", ".ply", ".usdz", ".fbx")
+    exts = (".glb", ".gltf", ".obj", ".ply", ".usdz", ".fbx", ".mp4", ".webm", ".zip")
     items: list[dict[str, Any]] = []
     if root.is_dir():
         for f in sorted(root.glob("*"), key=lambda p: p.stat().st_mtime, reverse=True)[:100]:

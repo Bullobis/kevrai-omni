@@ -201,8 +201,8 @@ def license_for_model(model_id: str) -> dict[str, Any]:
     }
 
 
-#: 支持的模式。t23d（文生 3D）依赖模型本身支持，TripoSR 不支持——会在校验时拒绝。
-MODES = ("i23d", "t23d")
+#: 支持的模式。i2wv = 图片→世界视频；v24d = 视频→4D 多视角。
+MODES = ("i23d", "t23d", "i2wv", "v24d")
 
 #: 已知不支持文生 3D 的模型（纯重建类）——写在这里是为了给出**明确**报错，
 #: 而不是让用户等到 pipeline 加载失败才发现问题。
@@ -246,6 +246,9 @@ class ThreeDParams:
     model_id: str = "stabilityai/TripoSR"
     preset: str = "fast"
     image_path: str = ""
+    video_path: str = ""
+    mask_path: str = ""
+    num_frames: int = 125
     resolution: int = 256
     num_inference_steps: int = 20
     guidance_scale: float = 5.0
@@ -265,7 +268,9 @@ class ThreeDParams:
             raise ThreeDParamError(
                 f"output_format must be one of {OUTPUT_FORMATS}, got {self.output_format!r}"
             )
-        if not self.prompt or not self.prompt.strip():
+        # 图生 3D 的提示词是可选的（SAM/Mirror/HY-World 等纯重建模型不需要）；
+        # 文生 3D 才必须有提示词。
+        if self.mode == "t23d" and not self.prompt.strip():
             raise ThreeDParamError("prompt must not be empty")
         if len(self.prompt) > 2000:
             raise ThreeDParamError("prompt too long (max 2000 chars)")
@@ -284,14 +289,22 @@ class ThreeDParams:
         self.max_faces = _as_strict_int(self.max_faces, "max_faces")
         if not (1000 <= self.max_faces <= 5_000_000):
             raise ThreeDParamError("max_faces must be 1000..5000000")
+        self.num_frames = _as_strict_int(self.num_frames, "num_frames")
+        if not (1 <= self.num_frames <= 2000):
+            raise ThreeDParamError("num_frames must be 1..2000")
 
-        # i23d 必须给图；t23d 不能给图（给了也不该静默忽略）
-        if self.mode == "i23d":
+        # 输入要求按模式确定；真正的模型能力由官方 CLI 再校验。
+        if self.mode in ("i23d", "i2wv"):
             if not self.image_path:
-                raise ThreeDParamError("image_path is required for i23d mode")
+                raise ThreeDParamError(f"image_path is required for {self.mode} mode")
             if not Path(self.image_path).expanduser().is_file():
                 raise ThreeDParamError(f"image not found: {self.image_path}")
-        else:
+        elif self.mode == "v24d":
+            if not self.video_path:
+                raise ThreeDParamError("video_path is required for v24d mode")
+            if not Path(self.video_path).expanduser().is_file():
+                raise ThreeDParamError(f"video not found: {self.video_path}")
+        elif self.mode == "t23d":
             low = self.model_id.lower()
             if any(k in low for k in _T23D_UNSUPPORTED):
                 raise ThreeDParamError(
@@ -359,6 +372,7 @@ class ThreeDTask:
             "model_id": self.params.model_id,
             "resolution": self.params.resolution,
             "output_format": self.params.output_format,
+            "output_kind": Path(self.output_path).suffix.lower().lstrip(".") if self.output_path else "",
         }
 
     def request_cancel(self) -> None:
@@ -516,6 +530,94 @@ class ThreeDManager:
 
         data_root = Path(os.environ.get("KEVRAI_DATA_ROOT", "")
                          or self.output_root.parent.parent)
+
+        # --- official world-model adapters ---------------------------------
+        if _is_hunyuanworld_1(p.model_id):
+            if p.mode not in ("i23d", "t23d"):
+                raise ThreeDParamError("HunyuanWorld-1 只支持图生/文生 3D 世界")
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            out = _hunyuanworld1_generate(p, task, data_root, self.output_root)
+            task.output_path = str(out)
+            _fill_mesh_metrics(task, out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+        if _is_voyager(p.model_id):
+            if p.mode != "i2wv":
+                raise ThreeDParamError("HunyuanWorld-Voyager 需要 i2wv（图片→世界视频）模式")
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            out = _voyager_generate(p, task, data_root, self.output_root)
+            task.output_path = str(out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+        if _is_mirror(p.model_id):
+            if p.mode != "i23d":
+                raise ThreeDParamError("HunyuanWorld-Mirror 只支持图生 3D 重建")
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            out = _mirror_generate(p, task, data_root, self.output_root)
+            task.output_path = str(out)
+            _fill_mesh_metrics(task, out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+        if _is_hy_world2(p.model_id):
+            if p.mode != "i23d":
+                raise ThreeDParamError("HY-World 2.0 只支持图生 3D 重建")
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            out = _hy_world2_generate(p, task, data_root, self.output_root)
+            task.output_path = str(out)
+            _fill_mesh_metrics(task, out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+        if _is_worldplay(p.model_id):
+            if p.mode != "i2wv":
+                raise ThreeDParamError("HY-WorldPlay 需要 i2wv（图片→世界视频）模式")
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            out = _worldplay_generate(p, task, data_root, self.output_root)
+            task.output_path = str(out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+        if _is_sam_body(p.model_id):
+            if p.mode != "i23d":
+                raise ThreeDParamError("SAM 3D Body 只支持图生人体 3D 网格")
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            out = _sam_body_generate(p, task, data_root, self.output_root)
+            task.output_path = str(out)
+            _fill_mesh_metrics(task, out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+        if _is_sam_objects(p.model_id):
+            if p.mode != "i23d":
+                raise ThreeDParamError("SAM 3D Objects 只支持图生物体 3D")
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            out = _sam_objects_generate(p, task, data_root, self.output_root)
+            task.output_path = str(out)
+            _fill_mesh_metrics(task, out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+        if _is_four_d_anyone(p.model_id):
+            if p.mode != "v24d":
+                raise ThreeDParamError("4DAnyone 需要 v24d（视频→4D 多视角）模式")
+            task.state = TaskState.RUNNING
+            task.progress = 0.05
+            out = _four_d_anyone_generate(p, task, data_root, self.output_root)
+            task.output_path = str(out)
+            task.progress = 1.0
+            self._finish(task, TaskState.DONE)
+            return
+
         if _is_triposr(p.model_id):
             task.state = TaskState.RUNNING
             task.progress = 0.05
@@ -797,6 +899,292 @@ def _vendor_cli_generate(
     if not matches:
         raise ThreeDEngineMissing(f"{source_dir} 没有产出 {pattern} 或 .ply 文件")
     return matches[-1]
+
+
+
+# ---------------------------------------------------------------------------
+# Official vendor adapters for the eight world-model entries
+# ---------------------------------------------------------------------------
+# These repositories expose a CLI or a documented Python entrypoint, but no
+# Diffusers pipeline. Each adapter runs the official command from the
+# downloaded source tree and copies its real output into the app's output dir.
+
+_VENDOR_SCRIPTS = {
+    "hunyuanworld-1": "HunyuanWorld-1.0",
+    "hunyuanworld-voyager": "HunyuanWorld-Voyager",
+    "hunyuanworld-mirror": "HunyuanWorld-Mirror",
+    "hy-world-2": "HY-World-2.0",
+    "hy-worldplay": "HY-WorldPlay",
+    "sam-3d": "sam-3d-objects",
+    "sam-3d-body": "sam-3d-body",
+    "4danyone": "4DAnyone",
+}
+
+
+def _vendor_repo(data_root: Path, key: str) -> Path:
+    """Resolve ``<data_root>/third_party/<official repo>`` for a vendor model."""
+    repo = Path(data_root) / "third_party" / _VENDOR_SCRIPTS[key]
+    if not repo.is_dir():
+        raise ThreeDEngineMissing(
+            f"{_VENDOR_SCRIPTS[key]} 官方源码缺失：{repo}\n"
+            f"请克隆官方仓库到该目录，并按官方 README 安装依赖/下载权重。"
+        )
+    return repo
+
+
+def _run_vendor_command(
+    repo: Path, args: list[str], *, timeout: int = 3600,
+    env_extra: dict[str, str] | None = None,
+) -> None:
+    """Run a command inside an official repo, with explicit failure output."""
+    import subprocess
+
+    env = {**os.environ, "PYTHONUNBUFFERED": "1",
+           "PYTHONPATH": str(repo) + (os.pathsep + os.environ["PYTHONPATH"]
+                                      if os.environ.get("PYTHONPATH") else "")}
+    if env_extra:
+        env.update(env_extra)
+    proc = subprocess.run(  # noqa: S603 — argv list is internal
+        [sys.executable, *args], cwd=str(repo), capture_output=True, text=True,
+        timeout=timeout, env=env,
+    )
+    if proc.returncode != 0:
+        tail = (proc.stderr or proc.stdout or "")[-1200:]
+        raise ThreeDEngineMissing(
+            f"{repo.name} 官方推理失败（退出码 {proc.returncode}）：\n{tail}"
+        )
+
+
+def _vendor_output_path(task: ThreeDTask, out_root: Path) -> Path:
+    """A temporary per-task output path used by vendor commands."""
+    out = Path(out_root) / f"vendor_{task.id}_{int(task.started_at)}"
+    out.mkdir(parents=True, exist_ok=True)
+    return out
+
+
+def _copy_vendor_result(
+    task: ThreeDTask, src: Path, out_root: Path, *, ext: str | None = None,
+) -> Path:
+    """Copy a vendor output into the app's output directory with a stable name."""
+    import shutil
+
+    if not src.is_file():
+        raise ThreeDEngineMissing(f"官方推理没有产出预期的文件：{src}")
+    suffix = ext or src.suffix or ".bin"
+    out = Path(out_root) / f"3d_{task.id}_{int(task.started_at)}{suffix}"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(src, out)
+    # Vendor workspaces can hold several GB of intermediate frames/meshes.
+    # Once the canonical output is copied, remove the per-task scratch dir.
+    scratch = src.parent
+    if scratch.name.startswith("vendor_") and scratch != Path(out_root):
+        shutil.rmtree(scratch, ignore_errors=True)
+    return out
+
+
+def _newest(root: Path, pattern: str) -> Path:
+    matches = [p for p in root.rglob(pattern) if p.is_file()]
+    if not matches:
+        raise ThreeDEngineMissing(f"{root} 下没有找到 {pattern}")
+    return max(matches, key=lambda p: p.stat().st_mtime)
+
+
+def _hunyuanworld1_generate(
+    p: ThreeDParams, task: ThreeDTask, data_root: Path, out_root: Path,
+) -> Path:
+    repo = _vendor_repo(data_root, "hunyuanworld-1")
+    tmp = _vendor_output_path(task, out_root)
+    panogen_args = [str(repo / "demo_panogen.py"), "--output_path", str(tmp),
+                    "--seed", str(task.seed_used)]
+    if p.image_path:
+        panogen_args += ["--image_path", p.image_path, "--prompt", p.prompt or ""]
+    else:
+        panogen_args += ["--prompt", p.prompt]
+    if p.negative_prompt:
+        panogen_args += ["--negative_prompt", p.negative_prompt]
+    _run_vendor_command(repo, panogen_args)
+    panorama = tmp / "panorama.png"
+    if not panorama.is_file():
+        raise ThreeDEngineMissing(f"HunyuanWorld-1 全景阶段没有产出 {panorama}")
+    _run_vendor_command(repo, [str(repo / "demo_scenegen.py"),
+                               "--image_path", str(panorama), "--classes", "outdoor",
+                               "--output_path", str(tmp), "--seed", str(task.seed_used)])
+    mesh = tmp / "mesh_layer0.ply"
+    if not mesh.is_file():
+        mesh = _newest(tmp, "mesh_layer*.ply")
+    return _copy_vendor_result(task, mesh, out_root, ext=".ply")
+
+
+def _voyager_generate(
+    p: ThreeDParams, task: ThreeDTask, data_root: Path, out_root: Path,
+) -> Path:
+    repo = _vendor_repo(data_root, "hunyuanworld-voyager")
+    tmp = _vendor_output_path(task, out_root)
+    _run_vendor_command(repo, [str(repo / "data_engine" / "create_input.py"),
+                               "--image_path", p.image_path,
+                               "--render_output_dir", str(tmp), "--type", "forward"])
+    out = tmp / "video"
+    out.mkdir(parents=True, exist_ok=True)
+    _run_vendor_command(repo, [str(repo / "sample_image2video.py"),
+                               "--model", "HYVideo-T/2", "--input-path", str(tmp),
+                               "--prompt", p.prompt or "A detailed 3D world.",
+                               "--i2v-stability", "--infer-steps", str(p.num_inference_steps),
+                               "--flow-reverse", "--flow-shift", "7.0",
+                               "--seed", str(task.seed_used),
+                               "--embedded-cfg-scale", str(p.guidance_scale),
+                               "--use-cpu-offload", "--save-path", str(out)])
+    video = _newest(out, "*.mp4")
+    return _copy_vendor_result(task, video, out_root, ext=".mp4")
+
+
+def _mirror_generate(
+    p: ThreeDParams, task: ThreeDTask, data_root: Path, out_root: Path,
+) -> Path:
+    repo = _vendor_repo(data_root, "hunyuanworld-mirror")
+    tmp = _vendor_output_path(task, out_root)
+    _run_vendor_command(repo, [str(repo / "infer.py"), "--input_path", p.image_path,
+                               "--output_path", str(tmp), "--save_gs", "--save_colmap"])
+    ply = _newest(tmp, "pts_from_pointmap.ply")
+    return _copy_vendor_result(task, ply, out_root, ext=".ply")
+
+
+def _hy_world2_generate(
+    p: ThreeDParams, task: ThreeDTask, data_root: Path, out_root: Path,
+) -> Path:
+    repo = _vendor_repo(data_root, "hy-world-2")
+    tmp = _vendor_output_path(task, out_root)
+    _run_vendor_command(repo, ["-m", "hyworld2.worldrecon.pipeline",
+                               "--input_path", p.image_path, "--output_path", str(tmp),
+                               "--strict_output_path", str(tmp / "result")])
+    ply = _newest(tmp, "*.ply")
+    return _copy_vendor_result(task, ply, out_root, ext=".ply")
+
+
+def _worldplay_generate(
+    p: ThreeDParams, task: ThreeDTask, data_root: Path, out_root: Path,
+) -> Path:
+    repo = _vendor_repo(data_root, "hy-worldplay")
+    model_path = os.environ.get("HYWORLDPLAY_MODEL_PATH", "").strip()
+    action_ckpt = os.environ.get("HYWORLDPLAY_AR_DISTILL_ACTION_MODEL_PATH", "").strip()
+    if not model_path or not action_ckpt:
+        raise ThreeDEngineMissing(
+            "HY-WorldPlay 需要官方权重路径：请设置 HYWORLDPLAY_MODEL_PATH（HunyuanVideo-1.5 480P I2V）"
+            " 和 HYWORLDPLAY_AR_DISTILL_ACTION_MODEL_PATH（HY-World 1.5 AR distilled action ckpt）。"
+        )
+    tmp = _vendor_output_path(task, out_root)
+    _run_vendor_command(repo, [str(repo / "hyvideo" / "generate.py"),
+                               "--prompt", p.prompt or "A detailed navigable 3D world.",
+                               "--image_path", p.image_path, "--resolution", "480p",
+                               "--aspect_ratio", "16:9", "--video_length", str(p.num_frames),
+                               "--seed", str(task.seed_used), "--rewrite", "false",
+                               "--pose", "w-31", "--output_path", str(tmp),
+                               "--model_path", model_path, "--action_ckpt", action_ckpt,
+                               "--few_step", "true", "--num_inference_steps", "4",
+                               "--model_type", "ar", "--use_vae_parallel", "false",
+                               "--use_sageattn", "false", "--use_fp8_gemm", "false",
+                               "--transformer_resident_ar_rollout", "true"])
+    video = _newest(tmp, "gen.mp4")
+    return _copy_vendor_result(task, video, out_root, ext=".mp4")
+
+
+def _sam_objects_generate(
+    p: ThreeDParams, task: ThreeDTask, data_root: Path, out_root: Path,
+) -> Path:
+    repo = _vendor_repo(data_root, "sam-3d")
+    config = Path(os.environ.get("SAM3D_OBJECTS_CONFIG", "") or
+                  repo / "checkpoints" / "hf" / "pipeline.yaml")
+    if not config.is_file():
+        raise ThreeDEngineMissing(
+            f"SAM 3D Objects 权重配置缺失：{config}（按官方 README 下载 checkpoints/hf）"
+        )
+    tmp = _vendor_output_path(task, out_root)
+    out = tmp / "object.ply"
+    code = """
+import sys, numpy as np
+from PIL import Image
+sys.path.insert(0, "notebook")
+from inference import Inference
+img = Image.open(sys.argv[1]).convert("RGBA")
+alpha = np.asarray(img)[..., 3]
+mask = (alpha > 0) if alpha.max() > 0 else np.ones((img.height, img.width), dtype=bool)
+inference = Inference(sys.argv[2], compile=False)
+result = inference(np.asarray(img.convert("RGB")), mask, seed=int(sys.argv[4]))
+result["gs"].save_ply(sys.argv[3])
+"""
+    _run_vendor_command(repo, ["-c", code, p.image_path, str(config), str(out), str(task.seed_used)])
+    return _copy_vendor_result(task, out, out_root, ext=".ply")
+
+
+def _sam_body_generate(
+    p: ThreeDParams, task: ThreeDTask, data_root: Path, out_root: Path,
+) -> Path:
+    repo = _vendor_repo(data_root, "sam-3d-body")
+    tmp = _vendor_output_path(task, out_root)
+    out = tmp / "body.obj"
+    code = """
+import sys, trimesh, torch
+from notebook.utils import setup_sam_3d_body
+device = "cuda" if torch.cuda.is_available() else "cpu"
+estimator = setup_sam_3d_body(hf_repo_id=sys.argv[2], device=device)
+outputs = estimator.process_one_image(sys.argv[1], use_mask=True)
+if not outputs:
+    raise SystemExit("SAM 3D Body 没有检测到人体")
+person = outputs[0]
+mesh = trimesh.Trimesh(vertices=person["pred_vertices"], faces=estimator.faces, process=False)
+mesh.export(sys.argv[3])
+"""
+    _run_vendor_command(repo, ["-c", code, p.image_path,
+                               os.environ.get("SAM3D_BODY_REPO", "facebook/sam-3d-body-dinov3"),
+                               str(out)])
+    return _copy_vendor_result(task, out, out_root, ext=".obj")
+
+
+def _four_d_anyone_generate(
+    p: ThreeDParams, task: ThreeDTask, data_root: Path, out_root: Path,
+) -> Path:
+    repo = _vendor_repo(data_root, "4danyone")
+    tmp = _vendor_output_path(task, out_root)
+    _run_vendor_command(repo, [str(repo / "inference.py"), "--video_path", p.video_path,
+                               "--output_dir", str(tmp), "--views_per_layer", "6"])
+    video = _newest(tmp, "*.mp4")
+    return _copy_vendor_result(task, video, out_root, ext=".mp4")
+
+
+
+def _is_hunyuanworld_1(model_id: str) -> bool:
+    low = (model_id or "").lower()
+    return "hunyuanworld-1" in low and "voyager" not in low
+
+
+def _is_voyager(model_id: str) -> bool:
+    return "voyager" in (model_id or "").lower()
+
+
+def _is_mirror(model_id: str) -> bool:
+    low = (model_id or "").lower()
+    return "hunyuanworld-mirror" in low or "worldmirror" in low
+
+
+def _is_hy_world2(model_id: str) -> bool:
+    low = (model_id or "").lower()
+    return "hy-world-2" in low or "hyworld2" in low
+
+
+def _is_worldplay(model_id: str) -> bool:
+    return "worldplay" in (model_id or "").lower()
+
+
+def _is_sam_body(model_id: str) -> bool:
+    return "sam-3d-body" in (model_id or "").lower()
+
+
+def _is_sam_objects(model_id: str) -> bool:
+    low = (model_id or "").lower()
+    return "sam-3d-objects" in low or low.rstrip("/").endswith("/sam-3d") or low == "sam-3d"
+
+
+def _is_four_d_anyone(model_id: str) -> bool:
+    return "4danyone" in (model_id or "").lower()
 
 
 def _is_hunyuan3d(model_id: str) -> bool:

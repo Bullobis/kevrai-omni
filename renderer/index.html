@@ -1023,11 +1023,17 @@
             <div class="form-row-inline">
               <label><input type="radio" name="threed-mode" id="threed-mode-i23d" checked /> <span data-i18n="threed.i23d">图生 3D</span></label>
               <label><input type="radio" name="threed-mode" id="threed-mode-t23d" /> <span data-i18n="threed.t23d">文生 3D</span></label>
+              <label id="threed-mode-i2wv-wrap"><input type="radio" name="threed-mode" id="threed-mode-i2wv" /> <span data-i18n="threed.i2wv">图片→世界视频</span></label>
+              <label id="threed-mode-v24d-wrap"><input type="radio" name="threed-mode" id="threed-mode-v24d" /> <span data-i18n="threed.v24d">视频→4D</span></label>
             </div>
           </div>
           <div class="form-row" id="threed-image-field">
             <label for="threed-image-path" data-i18n="threed.imagePath">输入图片路径（图生 3D）</label>
             <input id="threed-image-path" type="text" placeholder="/path/to/object.png" />
+          </div>
+          <div class="form-row" id="threed-video-field" hidden>
+            <label for="threed-video-path" data-i18n="threed.videoPath">输入视频路径（视频→4D）</label>
+            <input id="threed-video-path" type="text" placeholder="/path/to/clip.mp4" />
           </div>
           <div class="form-row" id="threed-prompt-field">
             <label for="threed-prompt" data-i18n="threed.prompt">提示词（文生 3D）</label>

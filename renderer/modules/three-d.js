@@ -44,6 +44,24 @@ function currentModel() {
     MODELS.find((m) => m.id === id) || marketModels[0] || MODELS[0];
 }
 
+const MODE_TASKS = {
+  i23d: "image-to-3d",
+  t23d: "text-to-3d",
+  i2wv: "image-to-video",
+  v24d: "video-to-4d",
+};
+
+function allowedModes(m) {
+  const tasks = (m && m.capability && m.capability.tasks) || [];
+  const allowed = [];
+  if (tasks.includes(MODE_TASKS.i23d) || !tasks.length) allowed.push("i23d");
+  if (tasks.includes(MODE_TASKS.t23d) || (m && m.t23d)) allowed.push("t23d");
+  if (tasks.includes(MODE_TASKS.i2wv)) allowed.push("i2wv");
+  if (tasks.includes(MODE_TASKS.v24d) || tasks.includes("video-to-video")) allowed.push("v24d");
+  if (!allowed.length) allowed.push("i23d");
+  return allowed;
+}
+
 function entryFromCatalog(m) {
   const cap = m.capability || {};
   const tasks = cap.tasks || [];
@@ -69,7 +87,8 @@ async function loadMarketModels() {
     const catalog = rows
       .filter((m) => {
         const tasks = (m.capability || {}).tasks || [];
-        return tasks.includes("image-to-3d") || tasks.includes("text-to-3d");
+        return tasks.some((task) => ["image-to-3d", "text-to-3d",
+                                     "image-to-video", "video-to-4d"].includes(task));
       })
       .map(entryFromCatalog);
     // keep curated order first, then catalog-only entries
@@ -88,9 +107,10 @@ function applyThreeDCapability() {
   const hint = $("#threed-model-capability");
   if (!hint) return;
   if (!m) { hint.hidden = true; return; }
-  const bits = [];
-  if (m.t23d) bits.push(t("threed.t23d"));
-  bits.push(t("threed.i23d"));
+  const allowed = allowedModes(m);
+  const labels = { i23d: t("threed.i23d"), t23d: t("threed.t23d"),
+                   i2wv: t("threed.i2wv"), v24d: t("threed.v24d") };
+  const bits = allowed.map((x) => labels[x]).filter(Boolean);
   bits.push(m.fromMarket ? t("threed.marketModelNote") : t("threed.curatedModelNote"));
   if (m.availability?.status === "unsupported") bits.push(t("threed.unsupported"));
   hint.textContent = bits.join(" · ");
@@ -101,11 +121,22 @@ function applyThreeDCapability() {
 
 function syncModeAvailability() {
   const m = currentModel();
-  const t2 = $("#threed-mode-t23d");
-  if (!t2) return;
-  t2.disabled = !m.t23d;
-  if (t2.disabled && t2.checked) {
-    $("#threed-mode-i23d").checked = true;
+  const allowed = allowedModes(m);
+  const inputs = {
+    i23d: $("#threed-mode-i23d"),
+    t23d: $("#threed-mode-t23d"),
+    i2wv: $("#threed-mode-i2wv"),
+    v24d: $("#threed-mode-v24d"),
+  };
+  for (const [mode, el] of Object.entries(inputs)) {
+    if (!el) continue;
+    el.disabled = !allowed.includes(mode);
+    if (el.parentElement) el.parentElement.hidden = !allowed.includes(mode);
+  }
+  let mode = currentMode();
+  if (!allowed.includes(mode)) {
+    mode = allowed[0] || "i23d";
+    if (inputs[mode]) inputs[mode].checked = true;
   }
   syncModeFields();
   applyThreeDCapability();
@@ -115,9 +146,11 @@ function syncModeAvailability() {
 function syncModeFields() {
   const mode = currentMode();
   const imageField = $("#threed-image-field");
+  const videoField = $("#threed-video-field");
   const promptField = $("#threed-prompt-field");
-  if (imageField) imageField.hidden = mode !== "i23d";
-  if (promptField) promptField.hidden = mode !== "t23d";
+  if (imageField) imageField.hidden = !(mode === "i23d" || mode === "i2wv");
+  if (videoField) videoField.hidden = mode !== "v24d";
+  if (promptField) promptField.hidden = !(mode === "t23d" || mode === "i2wv");
 }
 
 // 本机显存 vs 模型需求：显示「跑得动哪档」与许可/商用提示。
@@ -200,7 +233,11 @@ function populateModels() {
 }
 
 function currentMode() {
-  return $("#threed-mode-t23d") && $("#threed-mode-t23d").checked ? "t23d" : "i23d";
+  for (const mode of ["i23d", "t23d", "i2wv", "v24d"]) {
+    const el = $("#threed-mode-" + mode);
+    if (el && el.checked) return mode;
+  }
+  return "i23d";
 }
 
 async function generate() {
@@ -212,13 +249,18 @@ async function generate() {
   const mode = currentMode();
   const prompt = ($("#threed-prompt").value || "").trim();
   const imagePath = ($("#threed-image-path").value || "").trim();
+  const videoPath = $("#threed-video-path") ? $("#threed-video-path").value.trim() : "";
 
   if (mode === "t23d" && !prompt) {
     toast(t("threed.promptFirst"), { kind: "warn" });
     return;
   }
-  if (mode === "i23d" && !imagePath) {
+  if ((mode === "i23d" || mode === "i2wv") && !imagePath) {
     toast(t("threed.imageFirst"), { kind: "warn" });
+    return;
+  }
+  if (mode === "v24d" && !videoPath) {
+    toast(t("threed.videoFirst"), { kind: "warn" });
     return;
   }
 
@@ -231,6 +273,7 @@ async function generate() {
       model_id: model.id,
       prompt: prompt || "a object",
       image_path: imagePath,
+      video_path: videoPath,
       preset: $("#threed-preset").value || "fast",
       bake_texture: true,
       remove_background: true,
@@ -261,13 +304,23 @@ function renderTask(task) {
   if (state === "done" || task.output_path) {
     html += `<p class="muted">${escapeHtml(t("threed.done", { path: task.output_path || "" }))}</p>`;
     if (task.mesh_faces) html += `<p class="muted">${escapeHtml(t("threed.mesh", { faces: task.mesh_faces, verts: task.mesh_vertices || 0 }))}</p>`;
+    const outPath = task.output_path || "";
+    const kind = (task.output_kind || "").toLowerCase();
+    if (outPath) {
+      const fileUrl = "file:///" + outPath.replace(/\\/g, "/");
+      if (kind === "mp4" || kind === "webm") {
+        html += `<video controls preload="metadata" style="width:100%;max-height:360px;border-radius:8px" src="${escapeHtml(fileUrl)}"></video>`;
+      } else {
+        html += `<p><a class="secondary" href="${escapeHtml(fileUrl)}" target="_blank" rel="noopener">${escapeHtml(t("threed.openOutput"))}</a></p>`;
+      }
+    }
   }
-  if (state === "error") {
+  if (state === "failed" || state === "error") {
     html += `<p class="muted" style="color:var(--danger,#b91c1c)">${escapeHtml(task.error || "")}</p>`;
   }
   out.innerHTML = html;
 
-  if (state === "done" || state === "error" || state === "cancelled") {
+  if (state === "done" || state === "failed" || state === "error" || state === "cancelled") {
     stopPolling();
     const btn = $("#threed-run");
     if (btn) { btn.disabled = false; btn.textContent = t("threed.run"); }
@@ -300,7 +353,7 @@ export async function initThreeD() {
   updateFit();
 
   $("#threed-model").addEventListener("change", () => { syncModeAvailability(); });
-  ["threed-mode-i23d", "threed-mode-t23d"].forEach((id) => {
+  ["threed-mode-i23d", "threed-mode-t23d", "threed-mode-i2wv", "threed-mode-v24d"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener("change", syncModeFields);
   });

@@ -1513,7 +1513,13 @@
     "marketModelNote": "catalog entry; first use downloads weights",
     "curatedModelNote": "curated local 3D model",
     "install": "Install 3D runtime",
-    "unsupported": "No local adapter yet; catalog entry only"
+    "unsupported": "No local adapter yet; catalog entry only",
+    "i2wv": "Image to world video",
+    "v24d": "Video to 4D",
+    "videoPath": "Input video path (video to 4D)",
+    "videoFirst": "Video-to-4D needs an input video path",
+    "worldModelNote": "official world model (weights/source downloaded on first use)",
+    "openOutput": "Open output file"
   },
   "knowledge": {
     "title": "Knowledge Base (RAG)",
