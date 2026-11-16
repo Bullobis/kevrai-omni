@@ -113,8 +113,15 @@ export async function loadAll() {
     // 非首屏面板（引擎 / 本地模型 / GGUF / 待开源）在空闲期渲染，让出主线程给
     // 首屏可交互；这些面板默认隐藏，用户切过去之前渲染即可。
     whenIdle(() => { renderEngines(); renderLocal(); renderGGUF(); });
-    // v2.4.0 — drive the market grid through the super search (facets, sort).
-    runSearch({ resetPage: true }).catch(() => {});
+    // v4.18.0 hotfix — paint the 259 local catalog cards first, then let the
+    // hub fan-out replace them in the background. The old path waited for
+    // ModelScope/HF before mounting any card, which is why the market was
+    // blank for ~18.8 s on the release deb.
+    runSearch({
+      resetPage: true,
+      seedItems: state.models || [],
+      background: true,
+    }).catch(() => {});
   } catch (e) {
     setHealthErr(String(e?.message || e));
     // Don't leave the market stuck on the skeleton if loading failed.

@@ -872,8 +872,19 @@ def _hub_error_detail(e: Exception, hub: str = "", repo: str = "") -> dict[str, 
 
 
 @app.get("/api/health")
-def health() -> dict[str, Any]:
-    return {"ok": True, "version": __version__, "models_dir": str(MODELS_DIR), "app_root": str(APP_ROOT)}
+def health(request: Request) -> dict[str, Any]:
+    """Liveness probe.
+
+    The route is intentionally unauthenticated (Electron polls it before the
+    renderer exists), so it must not disclose absolute filesystem paths to any
+    local process. Authenticated callers still get the detailed paths used by
+    the in-app diagnostics panel.
+    """
+    body: dict[str, Any] = {"ok": True, "version": __version__}
+    if _bearer_matches(request.headers):
+        body["models_dir"] = str(MODELS_DIR)
+        body["app_root"] = str(APP_ROOT)
+    return body
 
 
 @app.get("/api/categories")
@@ -2548,7 +2559,12 @@ def _mnn_download_one_file(f: dict[str, Any], dest: Path) -> None:
     path = f["path"]
     with _MNN_DL_LOCK:
         _MNN_DL["current_file"] = path
-    target = dest / path
+    # ModelScope's file list is remote input: never join it onto the download
+    # root without the shared traversal/Windows-reserved-name checks.
+    try:
+        target = safe_join(dest, path)
+    except UnsafePathError as exc:
+        raise ValueError(f"unsafe MNN download path: {path!r}") from exc
     target.parent.mkdir(parents=True, exist_ok=True)
     want_size = int(f.get("size", 0))
     if target.exists() and want_size and target.stat().st_size == want_size:

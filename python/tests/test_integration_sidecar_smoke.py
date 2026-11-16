@@ -124,11 +124,13 @@ def test_sidecar_real_subprocess_smoke(tmp_path: Path) -> None:
 
         auth = {"Authorization": f"Bearer {secret}"}
         with httpx.Client(base_url=base_url, timeout=10.0) as client:
-            # 1) 健康端点：无需鉴权；数据根必须落在 tmp（证明隔离生效）。
+            # 1) 健康端点：无需鉴权，只暴露存活状态；绝对路径仅限已鉴权调用。
             assert health["ok"] is True
             assert isinstance(health.get("version"), str) and health["version"]
-            assert health.get("models_dir") and health.get("app_root")
-            Path(health["models_dir"]).resolve().relative_to(tmp_path.resolve())
+            assert "models_dir" not in health and "app_root" not in health
+            detail = client.get("/api/health", headers=auth).json()
+            assert detail.get("models_dir") and detail.get("app_root")
+            Path(detail["models_dir"]).resolve().relative_to(tmp_path.resolve())
 
             # 2) 模型列表：带 Bearer。
             r = client.get("/api/models", headers=auth)

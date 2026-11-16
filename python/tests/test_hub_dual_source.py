@@ -303,11 +303,13 @@ def test_E21_windows_reserved_rejected(tmp_path):
 
 
 async def test_E22_401_degrades_public_still_ok(fake_hub):
-    bad = ModelScopeAdapter(base_url=f"{fake_hub.base_url}/api/v1/models?auth=1")
+    fake_hub.force = {"auth": "1"}
+    bad = ModelScopeAdapter(base_url=f"{fake_hub.base_url}/api/v1/models")
     res = await bad.search(SearchSpec(q="x"), SourceCursor())
     assert res.degraded is True
     assert res.code in {"http_error", "not_found"}
     await bad.aclose()
+    fake_hub.force = {}
 
 
 def test_E23_empty_token_no_auth_header():

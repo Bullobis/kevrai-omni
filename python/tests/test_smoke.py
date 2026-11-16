@@ -36,12 +36,18 @@ def client():
 
 
 def test_health(client):
-    r = client.get("/api/health")
+    # The suite's TestClient injects the bearer globally (conftest.py); send a
+    # wrong one here to exercise the real unauthenticated response.
+    r = client.get("/api/health", headers={"authorization": "Bearer wrong"})
     assert r.status_code == 200
     body = r.json()
     assert body["ok"] is True
-    assert "app_root" in body
-    assert "models_dir" in body
+    # /api/health is unauthenticated (Electron polls it before the renderer
+    # exists); absolute paths must only appear for a bearer-authenticated call.
+    assert "app_root" not in body
+    assert "models_dir" not in body
+    detail = client.get("/api/health").json()
+    assert detail.get("app_root") and detail.get("models_dir")
 
 
 def test_categories(client):

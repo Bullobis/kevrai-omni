@@ -169,7 +169,7 @@ section "Step 5/9 · pip install (Tencent mirror, dependencies only)"
 # "install skipped/failed, pytest still passed using preinstalled deps" from
 # "install succeeded".
 if python3 -m pip install -i "${INDEX}" --quiet --disable-pip-version-check \
-     -r python/requirements.txt; then
+     -r python/requirements-dev.txt; then
   pass "pip install (Tencent mirror)"
 else
   echo "  ⚠ pip install failed — continuing; Step 6 (pytest) is the real gate" >&2

@@ -7,15 +7,18 @@ URL shapes and the ``/repo/files`` parsing already exist in
 constants (``_MS_API``, ``_MS_RESOLVE``, ``_MS_ORG``) and mirrors the same URL
 forms rather than inventing a second client.
 
-Verified by live probe at implementation time (2026-09):
+Verified by live probe at implementation time (2026-09 / re-probe 2026-11):
 
+* ``GET https://modelscope.cn/openapi/v1/models`` with
+  ``search=qwen&page_number=1&page_size=10&sort=default``
+  → ``{"success": true, "data": {"models": [...], "total_count": 28944}}``.
+  This is the documented OpenAPI gateway and is now the **search** path:
+  direct TTFB 0.25 s vs 6.1 s for the legacy cold query below.
 * ``PUT https://modelscope.cn/api/v1/models`` with body
   ``{"Name": "qwen", "PageNumber": 1, "PageSize": 2, "SortBy": "Default"}``
   → ``{"Code": 200, "Data": {"Models": [...], "TotalCount": 27334}}``.
-  **Only ``SortBy: "Default"`` is accepted** — ``Downloads`` / ``Stars`` /
-  ``UpdatedTime`` all return ``Code 10010202002``. Sorting by popularity is
-  therefore applied locally after the page is fetched, and
-  :data:`_MS_SORT_MAP` stays empty.
+  Kept only for detail/file/README compatibility; its search backend is the
+  slow path this module no longer uses.
 * ``GET https://modelscope.cn/api/v1/models/{ns}/{name}`` → ``{"Code":200,
   "Data": {...}}`` with ``Tasks``, ``Revision``, ``StorageSize``, ``License``.
 * ``GET .../models/{ns}/{name}/repo/files?Revision=master&Root=`` →
@@ -30,6 +33,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from collections.abc import Mapping, Sequence
 from typing import Any
 from urllib.parse import quote
@@ -83,8 +87,14 @@ except Exception:  # pragma: no cover
     MS_API_BASE = "https://modelscope.cn/api/v1/models"
     MS_RESOLVE_BASE = "https://modelscope.cn/models"
 
-# Only "Default" is confirmed by live probe; every other value errors out.
-_MS_SORT_MAP: dict[str, str] = {}
+# OpenAPI sort values verified live: default / downloads / likes /
+# last_modified all return 200 and change the order; name_asc has no upstream
+# sort, so it is sorted over the returned page after the fetch.
+_OPENAPI_SORT: dict[str, str] = {
+    "downloads": "downloads",
+    "likes": "likes",
+    "recent": "last_modified",
+}
 
 # Namespaces whose repos are pre-converted MNN bundles (mnn_catalog:26).
 _MNN_NAMESPACES = frozenset({"mnn", "taobao-mnn"})
@@ -111,6 +121,17 @@ class ModelScopeAdapter(SourceAdapter):
     ) -> None:
         super().__init__(base_url=base_url, client=client, settings=settings)
         self.api_base = str(base_url or MS_API_BASE).rstrip("/")
+        # Public list/search is served by the newer OpenAPI gateway. The legacy
+        # `/api/v1/models` endpoint returns the same data but through a
+        # different backend: measured live at 6.1 s TTFB for a cold search vs
+        # 0.25 s on `/openapi/v1/models`. The legacy endpoint stays in use for
+        # detail/files/README, which OpenAPI does not replace today.
+        raw_base = str(self.api_base)
+        self.openapi_base = (
+            raw_base.replace("/api/v1/models", "/openapi/v1/models")
+            if "/api/v1/models" in raw_base
+            else f"{raw_base}/openapi/v1/models"
+        ).rstrip("/")
         self.resolve_base = (MS_RESOLVE_BASE if not base_url
                              else str(base_url).rstrip("/").replace("/api/v1/models", ""))
         self._breaker = breaker or CircuitBreaker(fail_threshold=5, open_seconds=60.0)
@@ -126,9 +147,20 @@ class ModelScopeAdapter(SourceAdapter):
 
     def _client_or_new(self) -> httpx.AsyncClient:
         if self._client is None:
+            # Two independent latency causes measured live:
+            #   1. legacy PUT /api/v1/models cold query: 6.1 s TTFB; the
+            #      OpenAPI search path below is 0.25 s.
+            #   2. this process inherited the machine's HTTPS_PROXY; the same
+            #      domestic request through it was 6.1 s vs 0.11 s direct.
+            # ModelScope is a domestic endpoint, so ignore ambient proxy vars
+            # by default; KEVRAI_MODELSCOPE_PROXY is the explicit opt-in for
+            # networks that genuinely need a proxy.
+            proxy = os.environ.get("KEVRAI_MODELSCOPE_PROXY", "").strip() or None
             self._client = httpx.AsyncClient(
                 timeout=timeout_for("search"),
                 follow_redirects=True,
+                trust_env=False,
+                proxy=proxy,
                 headers={"User-Agent": USER_AGENT},
             )
             self._client_owned = True
@@ -155,7 +187,10 @@ class ModelScopeAdapter(SourceAdapter):
         json_body: Any = None,
     ) -> FetchOutcome:
         client = self._client_or_new()
-        url = f"{self.api_base}/{path.lstrip('/')}" if path else self.api_base
+        if path.startswith(("http://", "https://")):
+            url = path
+        else:
+            url = f"{self.api_base}/{path.lstrip('/')}" if path else self.api_base
         async with self._sem:
             self.requests_made += 1
             return await request_with_retry(
@@ -335,27 +370,125 @@ class ModelScopeAdapter(SourceAdapter):
 
     # --- SourceAdapter surface -------------------------------------------
 
+    def _normalize_openapi(self, obj: Any) -> RemoteModel | None:
+        """One OpenAPI ``data.models[]`` item → :class:`RemoteModel`.
+
+        OpenAPI is deliberately lighter than the legacy PascalCase payload:
+        ``id`` is already ``owner/name`` and the useful fields are ISO dates,
+        integer counters and a flat ``tags`` array. Do not route this through
+        ``_normalize`` — that expects ``Path``/``Name``/``StorageSize`` and
+        would drop every row.
+        """
+        if not isinstance(obj, Mapping):
+            return None
+        repo = clamp_str(pick(obj, "id", default="") or "", 220).strip()
+        if not repo or "/" not in repo:
+            return None
+        namespace, name = repo.split("/", 1)
+        if not namespace or not name:
+            return None
+        if not is_valid_repo(repo):
+            repo = repo[:220]
+
+        tasks = pick(obj, "tasks", default=[])
+        task_name = ""
+        if isinstance(tasks, Sequence) and not isinstance(tasks, (str, bytes)) and tasks:
+            task_name = str(tasks[0] or "").strip()
+        display_name = clamp_str(
+            pick(obj, "display_name", "displayName", default="") or "", 200
+        ).strip()
+        tags = as_str_list(pick(obj, "tags", default=[]), limit=64)
+        category = map_category(
+            pipeline_tag=task_name, tasks=tasks,
+            tags=tags,
+        )
+        storage = as_int(pick(obj, "file_size", "fileSize", default=0), 0)
+        size_gb = size_gb_from_bytes(storage) if storage > 0 else 0.0
+        downloads = as_int(pick(obj, "downloads", default=0), 0)
+        likes = as_int(pick(obj, "likes", default=0), 0)
+
+        libraries = [
+            t.split(":", 1)[1].strip() for t in tags
+            if t.lower().startswith("library:") and t.split(":", 1)[1].strip()
+        ]
+        library = libraries[0] if libraries else ""
+        engines, import_only = infer_engines([], repo=repo, category=category)
+        if namespace.lower() in _MNN_NAMESPACES and "mnn" not in engines:
+            engines = ["mnn"] + engines
+            import_only = False
+
+        return RemoteModel(
+            id=synth_id(self.hub, repo),
+            name=(name or display_name or repo.rsplit("/", 1)[-1])[:200],
+            description=clamp_str(
+                pick(obj, "description", default="") or display_name, 2000
+            ),
+            category=category,
+            license=canonical_license(
+                pick(obj, "license", default="") or ""
+            ),
+            size_gb=size_gb,
+            size_known=storage > 0,
+            engine=engines,
+            engine_confidence="low",
+            trending=trending_from(downloads, likes),
+            repo=repo,
+            hardware={},
+            tags=build_tags(tasks, [], [], [], tags),
+            modality={},
+            hub=self.hub,
+            downloads=downloads,
+            likes=likes,
+            revision="master",
+            task=task_name,
+            import_only=import_only,
+            owner=namespace,
+            owner_full_name="",
+            name_cn=display_name if display_name != name else "",
+            library=library,
+            frameworks=[library] if library else [],
+            architectures=[],
+            created_at=as_iso(pick(obj, "created_at", "createdAt", default=None)),
+            updated_at=as_iso(
+                pick(obj, "last_modified", "lastModified", default=None)
+            ),
+            is_hot=trending_from(downloads, likes),
+            is_new=False,
+        )
+
+
     async def search(self, spec: SearchSpec, cursor: SourceCursor) -> PageResult:
-        """One page of ModelScope results (1-based ``PageNumber``)."""
+        """One page of ModelScope results via the OpenAPI list endpoint.
+
+        The legacy ``PUT /api/v1/models`` backend took 6.1 s for a cold qwen
+        search in a live measurement; the same query on
+        ``GET /openapi/v1/models?search=qwen`` took 0.25 s. The slowness was
+        upstream route/index cold-start, not local rate limiting, so the fix is
+        to use the API ModelScope itself documents instead of shrinking the
+        client timeout.
+        """
         if cursor.done:
             return PageResult(items=[], next=None, total=None)
         page = cursor.page if cursor.page else 1
         size = clamp_int(spec.page_size, 30, 1, 100)
-        body: dict[str, Any] = {
-            "Name": spec.q or "",
-            "PageNumber": max(1, int(page)),
-            "PageSize": size,
-            "SortBy": _MS_SORT_MAP.get(spec.sort, "Default"),
+        sort = _OPENAPI_SORT.get(spec.sort, "default")
+        params: dict[str, Any] = {
+            "page_number": max(1, int(page)),
+            "page_size": size,
+            "sort": sort,
         }
+        if spec.q:
+            params["search"] = spec.q
 
-        key = f"ms:search:{spec.signature()}:{page}:{size}"
+        key = f"ms:openapi:search:{spec.signature()}:{page}:{size}:{sort}"
         cached = self._cache.get(key)
         if cached is not None:
             return cached
 
-        outcome = await self._fetch("PUT", "", kind="search", json_body=body)
+        outcome = await self._fetch(
+            "GET", self.openapi_base, kind="search", params=params
+        )
         if not outcome.ok:
-            # 与 HF 一致：区分「本机限流/熔断」与「上游故障」，避免用户误判。
             msg = degraded_message("魔搭 ModelScope", outcome.code)
             self.last_warning = msg
             if outcome.code == "not_found":
@@ -363,26 +496,44 @@ class ModelScopeAdapter(SourceAdapter):
             return PageResult(items=[], next=None, total=None,
                               degraded=True, code=outcome.code, warning=msg)
 
-        data, err = self._unwrap(outcome.data)
-        if err:
+        payload = outcome.data
+        if not isinstance(payload, Mapping):
+            self._breaker.record_fail()
+            return PageResult(items=[], next=None, total=None, degraded=True,
+                              code="bad_json", warning="魔搭 OpenAPI 返回结构异常")
+        if pick(payload, "success", default=False) is False:
+            self._breaker.record_fail()
             return PageResult(items=[], next=None, total=None, degraded=True,
                               code="http_error",
-                              warning=f"魔搭返回错误码 {err}")
+                              warning="魔搭 OpenAPI 返回失败")
+        data = pick(payload, "data", default=None)
         if not isinstance(data, Mapping):
+            self._breaker.record_fail()
             return PageResult(items=[], next=None, total=None, degraded=True,
-                              code="bad_json", warning="魔搭返回结构异常")
-
-        raw_models = pick(data, "Models", "models", default=None)
+                              code="bad_json", warning="魔搭 OpenAPI 缺少 data")
+        raw_models = pick(data, "models", default=None)
         if not isinstance(raw_models, list):
-            # E05: a string here must not be iterated char-by-char.
-            return PageResult(items=[], next=None, total=0, code="empty")
-        total = as_int(pick(data, "TotalCount", "totalCount", default=0), 0) or None
+            self._breaker.record_fail()
+            return PageResult(items=[], next=None, total=None, degraded=True,
+                              code="bad_json",
+                              warning="魔搭 OpenAPI models 字段不是列表")
 
+        total = as_int(pick(data, "total_count", "totalCount", default=0), 0) or None
         items: list[RemoteModel] = []
         for raw in raw_models:
-            model = self._normalize(raw)
-            if model is not None:
-                items.append(model)
+            model = self._normalize_openapi(raw)
+            if model is None:
+                continue
+            if spec.category and model.category != spec.category:
+                continue
+            if spec.engine and spec.engine not in model.engine:
+                continue
+            if spec.license and model.license != spec.license:
+                continue
+            items.append(model)
+
+        if spec.sort == "name_asc":
+            items.sort(key=lambda m: (m.name or m.repo).lower())
 
         has_more = bool(items) and (total is None or (page * size) < int(total))
         next_cursor = SourceCursor(page=int(page) + 1) if has_more else None

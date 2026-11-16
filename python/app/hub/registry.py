@@ -339,6 +339,38 @@ class HubRegistry:
         # 返回不一致的结果。这里让后到的请求等待同一个 task。
         self._inflight: dict[str, asyncio.Task[MergedPage]] = {}
         self._inflight_lock = asyncio.Lock()
+        # v4.18.0 hotfix — per-source cooldown. The adapters' CircuitBreaker
+        # only opens after 5 transport failures; a source that answers HTTP 200
+        # with a bad envelope, or that black-holes every request, can therefore
+        # keep costing one full timeout per search. Two consecutive failures are
+        # enough to skip it for five minutes.
+        self._source_fails: dict[str, int] = {}
+        self._source_cooldown_until: dict[str, float] = {}
+
+    _SOURCE_FAIL_CODES = frozenset({
+        "timeout", "network", "circuit_open", "http_error", "bad_json",
+    })
+    _SOURCE_FAIL_THRESHOLD = 2
+    _SOURCE_COOLDOWN_S = 300.0
+    _SOURCE_HARD_TIMEOUT_S = 8.0
+
+    def _source_cooling(self, hub: str) -> bool:
+        return self._source_cooldown_until.get(hub, 0.0) > time.monotonic()
+
+    def _note_source_result(self, hub: str, res: PageResult) -> None:
+        """Track consecutive failures and open a registry-level cooldown."""
+        if res.degraded and (res.code or "") in self._SOURCE_FAIL_CODES:
+            fails = self._source_fails.get(hub, 0) + 1
+            self._source_fails[hub] = fails
+            if fails >= self._SOURCE_FAIL_THRESHOLD:
+                self._source_cooldown_until[hub] = (
+                    time.monotonic() + self._SOURCE_COOLDOWN_S
+                )
+            return
+        # An empty / not-found page is a healthy answer and must reset the
+        # streak; only genuine reachability failures count.
+        self._source_fails.pop(hub, None)
+        self._source_cooldown_until.pop(hub, None)
 
     # -- introspection -----------------------------------------------------
 
@@ -420,6 +452,25 @@ class HubRegistry:
         quota = allocate_quota(spec.page_size, sources)
         per_source_limit = max(quota.values()) if quota else spec.page_size
 
+        cooling = [hub for hub in sources if self._source_cooling(hub)]
+        if cooling:
+            # Do not let a source that just failed twice add another timeout to
+            # every page. It is skipped with an explicit warning; the renderer
+            # shows the remaining sources.
+            sources = [hub for hub in sources if hub not in cooling]
+            quota = allocate_quota(spec.page_size, sources)
+            per_source_limit = max(quota.values()) if quota else spec.page_size
+
+        if not sources:
+            warnings = [
+                {"hub": hub, "code": "cooling",
+                 "message": f"{hub} 连续失败，已暂时跳过"}
+                for hub in cooling
+            ]
+            return MergedPage(items=[], next_cursor="", has_more=False,
+                              counts={hub: None for hub in cooling},
+                              warnings=warnings, degraded=True)
+
         results = await asyncio.gather(
             *(
                 self._safe_search(hub, spec, cursors.get(hub, SourceCursor()), per_source_limit)
@@ -429,7 +480,11 @@ class HubRegistry:
         )
 
         buckets: dict[str, list[RemoteModel]] = {}
-        warnings: list[dict[str, str]] = []
+        warnings: list[dict[str, str]] = [
+            {"hub": hub, "code": "cooling",
+             "message": f"{hub} 连续失败，已暂时跳过"}
+            for hub in cooling
+        ]
         counts: dict[str, int | None] = {}
         next_cursors: dict[str, SourceCursor] = {}
 
@@ -486,13 +541,14 @@ class HubRegistry:
           app start-up,
         * never raises — an unreachable source is simply ``online: False``.
 
-        On the timeout budget: measured live from a CN network, a **cold** first
-        call takes 7.5–8.1 s end-to-end. The first HuggingFace mirror in the
-        rotation (``hf-cdn.sufy.com``) answers **403 after ~45 s**, and the
-        official site is unreachable from CN, so the adapter has to walk the
-        whole rotation before it succeeds. A 2.5 s budget therefore reported
-        *both* perfectly healthy sources as offline. 12 s covers the healthy
-        path with room to spare while still bounding a black-holed network.
+        On the timeout budget: with the OpenAPI search path, measured live
+        against modelscope.cn and hf-mirror.com, ModelScope answers in ~0.47 s
+        and HF in ~1.3 s. A 2.5 s budget was too tight only because the legacy
+        ModelScope ``PUT /api/v1/models`` cold query itself took ~6 s and the
+        first HF mirror can answer 403 after ~45 s; the market now uses
+        ``GET /openapi/v1/models`` (0.25 s direct), so latency is no longer
+        hidden behind a tiny timeout. 12 s remains a hard cap for a
+        black-holing network, not the primary latency fix.
         """
         results: dict[str, Any] = {}
         remote = [h for h in REMOTE_HUBS if h in self._adapters]
@@ -522,7 +578,7 @@ class HubRegistry:
             # Only genuine reachability failures mark a source offline. An empty
             # or not-found page from a *reachable* source is still "online".
             online = res.code not in {"timeout", "network", "circuit_open",
-                                      "http_error", "bad_json"}
+                                      "http_error", "bad_json", "cooling"}
             return hub, {
                 "hub": hub,
                 "online": online,
@@ -552,30 +608,36 @@ class HubRegistry:
         if ad is None:
             return PageResult(items=[], next=None, total=0, degraded=True,
                               code="disabled", warning=f"{hub} 未启用")
+        if self._source_cooling(hub):
+            return PageResult(items=[], next=None, total=None, degraded=True,
+                              code="cooling", warning=f"{hub} 连续失败，已暂时跳过")
         sub = SearchSpec(
             q=spec.q, category=spec.category, engine=spec.engine,
             license=spec.license, sort=spec.sort,
             page_size=max(1, min(100, int(limit))), sources=[hub],
         )
         try:
-            # 魔搭等国内源在部分网络下较慢但结果重要，不能轻易跳过；
-            # 30s 只是防卡死上限——网络正常时它在时限内正常返回，只有真
-            # 卡死/黑洞网络才降级，避免"几乎次次跳过魔搭"。
+            # v4.18.0 hotfix — 30 s was inherited from the old single-source
+            # market. On the release deb ModelScope alone consumed ~18 s per
+            # cold search while the local catalog answered in 0.033 s. 8 s is
+            # the hard ceiling for any one source; the first screen now paints
+            # local cards before this future even starts, and a source that
+            # misses the ceiling twice is cooled down for five minutes.
             res = await asyncio.wait_for(
-                ad.search(sub, cursor or SourceCursor()), timeout=30.0,
+                ad.search(sub, cursor or SourceCursor()),
+                timeout=self._SOURCE_HARD_TIMEOUT_S,
             )
         except asyncio.TimeoutError:
-            # 某个源（常见为魔搭在网络受限时）慢到拖垮整页：降级为空结果，
-            # 其余源照常返回，页面在 ~8s 内出结果而不是干等 18s+。
-            return PageResult(items=[], next=None, total=None, degraded=True,
-                              code="timeout", warning=f"{hub} 响应超时，已跳过")
+            res = PageResult(items=[], next=None, total=None, degraded=True,
+                             code="timeout", warning=f"{hub} 响应超时，已跳过")
         except Exception as e:  # noqa: BLE001 — one source must never 500 the page
-            return PageResult(items=[], next=None, total=None, degraded=True,
-                              code="network", warning=f"{hub} 检索异常：{str(e)[:120]}")
-        if isinstance(res, PageResult):
-            return res
-        return PageResult(items=[], next=None, total=None, degraded=True,
-                          code="network", warning=f"{hub} 返回异常类型")
+            res = PageResult(items=[], next=None, total=None, degraded=True,
+                             code="network", warning=f"{hub} 检索异常：{str(e)[:120]}")
+        if not isinstance(res, PageResult):
+            res = PageResult(items=[], next=None, total=None, degraded=True,
+                             code="network", warning=f"{hub} 返回异常类型")
+        self._note_source_result(hub, res)
+        return res
 
     # -- detail / files ----------------------------------------------------
 

@@ -130,9 +130,14 @@ jobs:
       - name: Verify sidecar binary
         shell: bash
         run: |
-          test -f python/dist/sidecar/sidecar \
-            || { echo "::error::sidecar binary missing at python/dist/sidecar/sidecar"; exit 1; }
-          echo "::notice::sidecar OK: $(ls -lh python/dist/sidecar/sidecar | awk '{print $5}')"
+          if [ -f python/dist/sidecar/sidecar.exe ]; then
+            SIDECAR_BIN=python/dist/sidecar/sidecar.exe
+          elif [ -f python/dist/sidecar/sidecar ]; then
+            SIDECAR_BIN=python/dist/sidecar/sidecar
+          else
+            echo "::error::sidecar binary missing at python/dist/sidecar/"; exit 1
+          fi
+          echo "::notice::sidecar OK: $(ls -lh "$SIDECAR_BIN" | awk '{print $5}')"
           # pip-runner 缺失时安装版无法安装任何引擎，必须在打包前拦住。
           if [ -f python/dist/sidecar/pip-runner.exe ]; then
             test -x python/dist/sidecar/pip-runner.exe
@@ -187,6 +192,7 @@ jobs:
             exit 0
           fi
           test -f "$RES/sidecar/sidecar" \
+            || test -f "$RES/sidecar/sidecar.exe" \
             && echo "::notice::sidecar correctly bundled in $RES" \
             || { echo "::error::sidecar NOT bundled in $RES"; exit 1; }
 
@@ -227,15 +233,19 @@ jobs:
             \( -name "Kevrai-Omni-*" -o -name "latest*.yml" \) \
             -exec cp {} release-files/ \;
           echo ""
-          echo "=== collecting sidecar binary (from linux build) ==="
-          # linux job 产出的 PyInstaller sidecar ELF，单独上传方便不想装
-          # Electron 的开发者直接用 sidecar 跑本地 API。
+          echo "=== collecting sidecar onedir (from linux build) ==="
+          # PyInstaller --onedir is not a single executable: the binary needs
+          # its sibling `_internal/` (libpython3.12.so.1.0, shared libs and
+          # package data). Copying only `sidecar` produced a 17.6 MB asset that
+          # could never start. Publish the whole directory as a tarball and
+          # smoke-test the extracted tree, not the bare ELF.
           SIDECAR_LINUX=$(find dist/dist-linux -path "*/python/dist/sidecar/sidecar" -type f 2>/dev/null | head -1)
           if [ -n "$SIDECAR_LINUX" ]; then
-            cp "$SIDECAR_LINUX" release-files/sidecar
-            echo "  copied linux sidecar: $SIDECAR_LINUX ($(du -h $SIDECAR_LINUX | cut -f1))"
+            SIDECAR_DIR=$(dirname "$SIDECAR_LINUX")
+            tar -C "$SIDECAR_DIR" -czf release-files/sidecar-linux-x64.tar.gz .
+            echo "  packaged sidecar onedir: $SIDECAR_DIR ($(du -sh "$SIDECAR_DIR" | cut -f1))"
           else
-            echo "::warning::linux sidecar binary not found in dist/dist-linux"
+            echo "::warning::linux sidecar onedir not found in dist/dist-linux"
           fi
           # 对安装包/归档生成 SHA256SUMS（不含 latest*.yml 与 blockmap）
           ( cd release-files \
@@ -244,9 +254,26 @@ jobs:
           echo "=== final release-files/ ==="
           ls -lh release-files/
           echo ""
-          echo "=== sidecar smoke test ==="
-          chmod +x release-files/sidecar 2>/dev/null || true
-          timeout 6 release-files/sidecar 2>&1 | head -3 || true
+          echo "=== sidecar smoke test (extracted onedir) ==="
+          if [ -f release-files/sidecar-linux-x64.tar.gz ]; then
+            SMOKE_DIR=$(mktemp -d)
+            tar -xzf release-files/sidecar-linux-x64.tar.gz -C "$SMOKE_DIR"
+            chmod +x "$SMOKE_DIR/sidecar"
+            set +e
+            timeout 8 "$SMOKE_DIR/sidecar" > "$SMOKE_DIR/smoke.log" 2>&1
+            SMOKE_RC=$?
+            set -e
+            cat "$SMOKE_DIR/smoke.log" | head -20
+            if ! grep -Eq 'kevrai-sidecar started|Uvicorn running|Application startup complete' "$SMOKE_DIR/smoke.log"; then
+              echo "::error::sidecar tarball extracted but did not start (rc=$SMOKE_RC)"
+              exit 1
+            fi
+            echo "::notice::sidecar tarball starts correctly"
+            rm -rf "$SMOKE_DIR"
+          else
+            echo "::error::sidecar-linux-x64.tar.gz missing from release files"
+            exit 1
+          fi
 
       - name: Resolve tag
         id: rtag

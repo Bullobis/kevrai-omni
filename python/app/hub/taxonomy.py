@@ -63,10 +63,11 @@ def _build_engine_ids() -> set[str]:
     ids: set[str] = set()
     try:
         data = json.loads(ENGINES_JSON.read_text(encoding="utf-8"))
-        for e in (data or {}).get("engines", []):
-            eid = str((e or {}).get("id", "")).strip()
-            if eid:
-                ids.add(eid)
+        for section in ("engines", "runtime_engines"):
+            for e in (data or {}).get(section, []):
+                eid = str((e or {}).get("id", "")).strip()
+                if eid:
+                    ids.add(eid)
     except (OSError, json.JSONDecodeError, AttributeError):
         ids = set()
     if not ids:

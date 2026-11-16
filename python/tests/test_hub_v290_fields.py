@@ -180,7 +180,7 @@ class TestModelScopeFields:
         })]
         ad = self._adapter(fake_hub)
         try:
-            m = (await ad.search(SearchSpec(q='x', page_size=10), SourceCursor())).items[0]
+            m = await ad.detail('Qwen/M')
         finally:
             await ad.aclose()
         d = m.to_dict()
@@ -194,7 +194,7 @@ class TestModelScopeFields:
         fake_hub.ms_items = [ms_item("Qwen", "A-Model", organization="Qwen")]
         ad = self._adapter(fake_hub)
         try:
-            m = (await ad.search(SearchSpec(q='x', page_size=10), SourceCursor())).items[0]
+            m = await ad.detail('Qwen/M')
         finally:
             await ad.aclose()
         assert m.to_dict()["owner"] == "Qwen"
@@ -204,7 +204,7 @@ class TestModelScopeFields:
         fake_hub.ms_items = [ms_item("alice", "user-model", organization=None)]
         ad = self._adapter(fake_hub)
         try:
-            m = (await ad.search(SearchSpec(q='x', page_size=10), SourceCursor())).items[0]
+            m = await ad.detail('Qwen/M')
         finally:
             await ad.aclose()
         d = m.to_dict()
@@ -218,7 +218,7 @@ class TestModelScopeFields:
             "Name": "Qwen", "Avatar": "javascript:alert(1)"})]
         ad = self._adapter(fake_hub)
         try:
-            m = (await ad.search(SearchSpec(q='x', page_size=10), SourceCursor())).items[0]
+            m = await ad.detail('Qwen/M')
         finally:
             await ad.aclose()
         assert m.to_dict()["owner_url"] == ""
@@ -229,7 +229,7 @@ class TestModelScopeFields:
                                       stars=362)]
         ad = self._adapter(fake_hub)
         try:
-            m = (await ad.search(SearchSpec(q='x', page_size=10), SourceCursor())).items[0]
+            m = await ad.detail('Qwen/M')
         finally:
             await ad.aclose()
         d = m.to_dict()
@@ -252,7 +252,7 @@ class TestModelScopeFields:
         fake_hub.ms_items = [item]
         ad = self._adapter(fake_hub)
         try:
-            m = (await ad.search(SearchSpec(q='x', page_size=10), SourceCursor())).items[0]
+            m = await ad.detail('Qwen/M')
         finally:
             await ad.aclose()
         d = m.to_dict()
@@ -268,7 +268,7 @@ class TestModelScopeFields:
         fake_hub.ms_items = [item]
         ad = self._adapter(fake_hub)
         try:
-            m = (await ad.search(SearchSpec(q='x', page_size=10), SourceCursor())).items[0]
+            m = await ad.detail('Qwen/M')
         finally:
             await ad.aclose()
         d = m.to_dict()
@@ -283,7 +283,7 @@ class TestModelScopeFields:
         fake_hub.ms_items = [item]
         ad = self._adapter(fake_hub)
         try:
-            m = (await ad.search(SearchSpec(q='x', page_size=10), SourceCursor())).items[0]
+            m = await ad.detail('Qwen/M')
         finally:
             await ad.aclose()
         assert m.to_dict()["description"] == "千问3-8B"

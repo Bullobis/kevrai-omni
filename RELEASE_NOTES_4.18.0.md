@@ -34,8 +34,8 @@
 ## 验证
 
 - `npm run test:js`：72 个 JS 文件语法通过。
-- `npm run test:renderer`：441/441 通过。
-- `npm run smoke`：9/9 步通过；pytest `2764 passed`。
+- `npm run test:renderer`：450/450 通过。
+- `npm run smoke`：9/9 步通过；pytest `2787 passed`。
 - `test_v270_agent.py`：53/53 通过；审批定向测试 7/7。
 - 实机：1360×768、1440×900，浅色 / 深色主题，空态、有消息 transcript、技能库展开、审批卡预览均检查。
 
@@ -47,8 +47,8 @@
 
 ## 测试
 
-- `npm run smoke`：2766 passed，9/9 步通过。
-- `npm run test:renderer`：441/441。
+- `npm run smoke`：9/9 步通过；pytest `2787 passed`。
+- `npm run test:renderer`：450/450。
 - `npm run test:js`：72 个 JS 文件语法检查通过。
 - 实机复核：新侧车 `4.18.0`，21 个可见页面无 `undefined` / 原始 i18n key，导航行不再触发原生黑色 tooltip。
 

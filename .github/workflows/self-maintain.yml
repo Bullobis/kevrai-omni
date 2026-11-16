@@ -40,7 +40,7 @@ jobs:
       - name: Install Python deps
         run: |
           python -m pip install --upgrade pip -q
-          pip install -q -r python/requirements.txt httpx
+          pip install -q -r python/requirements-dev.txt httpx
 
       - name: Backend full test suite
         id: tests

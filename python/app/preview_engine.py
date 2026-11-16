@@ -56,7 +56,7 @@ def make_image(prompt: str, width: int = 768, height: int = 432,
     # Vertical gradient base.
     y = np.linspace(0, 1, height)[:, None]
     x = np.linspace(0, 1, width)[None, :]
-    base = np.zeros((height, width, 3), dtype=np.float32)
+    base: Any = np.zeros((height, width, 3), dtype=np.float32)
     for i in range(3):
         base[..., i] = (c1[i] * (1 - y) + c2[i] * y) * (0.75 + 0.25 * x)
 
@@ -128,7 +128,7 @@ def write_video(prompt: str, out_path: Path, *, width: int = 512, height: int = 
         else:
             y = np.linspace(0, 1, height)[:, None]
             x = np.linspace(0, 1, width)[None, :]
-            arr = np.zeros((height, width, 3), dtype=np.float32)
+            arr: Any = np.zeros((height, width, 3), dtype=np.float32)
             for k in range(3):
                 arr[..., k] = (c1[k] * (1 - y) + c2[k] * y) * (0.7 + 0.3 * x)
             img = Image.fromarray(np.clip(arr, 0, 255).astype("uint8"), "RGB")
@@ -215,8 +215,8 @@ def write_music(prompt: str, out_path: Path, *, duration_s: float = 10.0,
     roots = [220.0, 196.0, 261.63, 174.61]
     progression = [roots[(s + i) % len(roots)] for i in range(4)]
     chord_len = duration_s / 4.0
-    left = np.zeros(n, dtype=np.float64)
-    right = np.zeros(n, dtype=np.float64)
+    left: Any = np.zeros(n, dtype=np.float64)
+    right: Any = np.zeros(n, dtype=np.float64)
 
     for chord_idx, root in enumerate(progression):
         start = int(chord_idx * chord_len * sr)

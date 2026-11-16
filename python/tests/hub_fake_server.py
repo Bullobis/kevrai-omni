@@ -286,6 +286,13 @@ def _make_handler(server: FakeHubServer):
                 return
 
             # --- ModelScope style -----------------------------------------
+            if path.startswith("/openapi/v1/models"):
+                rest = path[len("/openapi/v1/models"):].strip("/")
+                if not rest:
+                    self._modelscope_openapi_search(qs)
+                    return
+                self._modelscope_detail(qs)
+                return
             if path.startswith("/api/v1/models"):
                 rest = path[len("/api/v1/models"):].strip("/")
                 if not rest:
@@ -361,6 +368,65 @@ def _make_handler(server: FakeHubServer):
             self._send_json(server.hf_files)
 
         # -- ModelScope ----------------------------------------------------
+
+        def _modelscope_openapi_search(self, qs: dict[str, list[str]]) -> None:
+            """OpenAPI ``GET /openapi/v1/models`` response shape."""
+            n = _count(qs, len(server.ms_items))
+            items = server.ms_items[:n]
+            # The fake intentionally does not implement OpenAPI relevance
+            # ranking; tests use q='x' as a shape probe, not a text search.
+            bad = qs.get("bad", [""])[0]
+            if bad == "2":
+                models: Any = "oops"
+            elif bad == "4":
+                models = {"not": "a list"}
+            elif bad == "3":
+                models = [
+                    {k: v for k, v in {
+                        "id": f"{it.get('Path')}/{it.get('Name')}",
+                        "display_name": it.get("ChineseName", ""),
+                        "description": it.get("Description", ""),
+                        "downloads": it.get("Downloads", 0),
+                        "likes": it.get("Stars", 0),
+                        "license": it.get("License", ""),
+                        "tasks": [t.get("Name", "") for t in it.get("Tasks", [])],
+                        "tags": ["task:" + t.get("Name", "") for t in it.get("Tasks", [])],
+                        "file_size": it.get("StorageSize", 0),
+                        "created_at": "2025-01-01T00:00:00Z",
+                        "last_modified": "2026-01-01T00:00:00Z",
+                    }.items() if k not in {"downloads", "likes"}}
+                    for it in items
+                ]
+            else:
+                models = [
+                    {
+                        "id": f"{it.get('Path')}/{it.get('Name')}",
+                        "display_name": it.get("ChineseName", ""),
+                        "description": it.get("Description", ""),
+                        "downloads": it.get("Downloads", 0),
+                        "likes": it.get("Stars", 0),
+                        "license": it.get("License", ""),
+                        "tasks": [t.get("Name", "") for t in it.get("Tasks", [])],
+                        "tags": (
+                            ["task:" + t.get("Name", "") for t in it.get("Tasks", [])]
+                            + ["library:pytorch"]
+                        ),
+                        "file_size": it.get("StorageSize", 0),
+                        "created_at": "2025-01-01T00:00:00Z",
+                        "last_modified": "2026-01-01T00:00:00Z",
+                        "gated": False,
+                    }
+                    for it in items
+                ]
+            self._send_json({
+                "success": True,
+                "data": {
+                    "models": models,
+                    "total_count": n,
+                    "page_number": int(qs.get("page_number", ["1"])[0] or 1),
+                    "page_size": int(qs.get("page_size", [str(n)])[0] or n),
+                },
+            })
 
         def _modelscope_search(self, qs: dict[str, list[str]]) -> None:
             n = _count(qs, len(server.ms_items))

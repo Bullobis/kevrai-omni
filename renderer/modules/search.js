@@ -70,6 +70,12 @@ async function probeSources() {
     (s) => s in (body.sources || {}) && !online.includes(s)
   );
   if (offline.length) {
+    // v4.18.0 hotfix — actually drop the source from this session's search
+    // list. The previous code only showed a toast, so every subsequent search
+    // still waited for the dead source (18.8 s in the release deb, almost all
+    // of it ModelScope). A restart re-probes and can re-add it.
+    const remaining = searchState.sources.filter((s) => !offline.includes(s));
+    if (remaining.length) searchState.sources = remaining;
     const names = offline.map((s) => (s === "hf" ? "Hugging Face" : "ModelScope"));
     toast(t("market.sourceUnreachable", { names: names.join(" / ") }), { kind: "warn" });
   }
@@ -289,14 +295,31 @@ export async function runSearch(opts = {}) {
   const mySeq = ++searchState.reqSeq;   // H5: generation guard
   searchState.loading = true;
   searchState.lastError = null;
-  updateCount(t("market.searching"));
   clearLoadMoreBar();
-  // v3.0.0 — show skeleton cards in the grid while searching
-  if (vgrid && typeof vgrid.setLoading === "function") vgrid.setLoading(true);
+  // v4.18.0 hotfix — first screen must never wait for a remote fan-out.
+  // `seedItems` paints the already-loaded local catalog immediately; the
+  // remote request continues in the background and replaces it when it
+  // arrives. `background` avoids re-showing the skeleton over those cards.
+  const seed = Array.isArray(opts.seedItems) ? opts.seedItems : null;
+  const hasSeed = !!(seed && seed.length);
+  if (hasSeed) {
+    searchState.items = seed;
+    searchState.count = seed.length;
+    setState({ searchResults: seed });
+    if (vgrid && typeof vgrid.setItems === "function") vgrid.setItems(seed);
+    updateCount(t("market.count", { n: seed.length }));
+  } else {
+    // No local seed (cold catalog): still show the skeleton while the remote
+    // request runs, otherwise `background: true` would leave a blank grid.
+    updateCount(t("market.searching"));
+    if (vgrid && typeof vgrid.setLoading === "function") vgrid.setLoading(true);
+  }
 
   const params = {
     q: searchState.q,
-    sources: searchState.sources,
+    // Per-call override lets the startup path request a fast curated page
+    // without permanently changing the user's source selection.
+    sources: Array.isArray(opts.sources) ? opts.sources : searchState.sources,
     category: searchState.cat,
     engine: searchState.engine,
     license: searchState.license,
@@ -311,6 +334,14 @@ export async function runSearch(opts = {}) {
     if (mySeq !== searchState.reqSeq) return;   // stale — discard
     searchState.loading = false;
     searchState.lastError = String(e && e.message || e);
+    // If local seed cards are already on screen, keep them: a failed remote
+    // fetch must not turn a usable first screen back into an error panel.
+    if (searchState.items.length) {
+      updateCount(t("market.count", { n: searchState.items.length }));
+      if (vgrid && typeof vgrid.setLoading === "function") vgrid.setLoading(false);
+      toast(t("market.remoteFailed"), { kind: "warn" });
+      return;
+    }
     updateCount(t("market.searchFailed"));
     if (vgrid && typeof vgrid.setLoading === "function") vgrid.setLoading(false);
     renderLoadError();

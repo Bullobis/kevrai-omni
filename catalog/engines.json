@@ -1,6 +1,6 @@
 {
   "version": "4.18.0",
-  "updated": "2026-10-12",
+  "updated": "2026-11-16",
   "engines": [
     {
       "id": "llama.cpp",
@@ -747,6 +747,113 @@
         "https://hf-mirror.com/yunfengwang/Ming-3.0-tts-0.5B-MNN",
         "https://huggingface.co/inclusionAI/Ming-3.0-tts-0.5B"
       ]
+    }
+  ],
+  "runtime_engines": [
+    {
+      "id": "dots-tts",
+      "name": "dots.tts",
+      "category": "tts",
+      "description": "dots.tts 运行时适配器（SOAR / MeanFlow 加速）",
+      "kind": "runtime"
+    },
+    {
+      "id": "realesrgan",
+      "name": "Real-ESRGAN",
+      "category": "superres",
+      "description": "Real-ESRGAN 图像超分运行时",
+      "kind": "runtime"
+    },
+    {
+      "id": "ultralytics",
+      "name": "Ultralytics YOLO",
+      "category": "vision",
+      "description": "Ultralytics YOLO 视觉检测运行时",
+      "kind": "runtime"
+    },
+    {
+      "id": "magenta-rt",
+      "name": "Magenta Realtime",
+      "category": "audio",
+      "description": "Google Magenta Realtime 音频运行时",
+      "kind": "runtime"
+    },
+    {
+      "id": "paddleocr",
+      "name": "PaddleOCR",
+      "category": "vision",
+      "description": "PaddleOCR 文本检测/识别运行时",
+      "kind": "runtime"
+    },
+    {
+      "id": "voxcpm",
+      "name": "VoxCPM",
+      "category": "tts",
+      "description": "OpenBMB VoxCPM 语音合成运行时",
+      "kind": "runtime"
+    },
+    {
+      "id": "qwen-tts",
+      "name": "Qwen3-TTS",
+      "category": "tts",
+      "description": "Qwen3-TTS 语音合成运行时",
+      "kind": "runtime"
+    },
+    {
+      "id": "breeze-tts",
+      "name": "Breeze TTS",
+      "category": "tts",
+      "description": "Breeze TTS 语音合成运行时",
+      "kind": "runtime"
+    },
+    {
+      "id": "pyannote.audio",
+      "name": "pyannote.audio",
+      "category": "audio",
+      "description": "pyannote 说话人分离运行时",
+      "kind": "runtime"
+    },
+    {
+      "id": "gliner2",
+      "name": "GLiNER2",
+      "category": "llm",
+      "description": "GLiNER2 信息抽取运行时",
+      "kind": "runtime"
+    },
+    {
+      "id": "contrastive-lm",
+      "name": "Contrastive LM",
+      "category": "llm",
+      "description": "CLM 排序/验证运行时",
+      "kind": "runtime"
+    },
+    {
+      "id": "laya",
+      "name": "Laya",
+      "category": "llm",
+      "description": "Laya 决策运行时",
+      "kind": "runtime"
+    },
+    {
+      "id": "python",
+      "name": "Python",
+      "category": "general",
+      "description": "通用 Python 运行时适配器",
+      "kind": "runtime"
+    },
+    {
+      "id": "nemo",
+      "name": "NVIDIA NeMo",
+      "category": "audio",
+      "description": "NVIDIA NeMo 音频运行时",
+      "kind": "runtime"
+    },
+    {
+      "id": "audio-separator",
+      "name": "Audio Separator",
+      "category": "audio",
+      "description": "audio-separator 人声分离运行时",
+      "kind": "runtime"
     }
   ]
 }
