@@ -47,16 +47,21 @@ def test_install_pip_pins_extra_and_uses_eid(monkeypatch, tmp_path):
 
     captured = {}
 
-    class _Proc:
-        returncode = 0
-        stdout = "Successfully installed x"
-        stderr = ""
+    import io
 
-    def _fake_run(cmd, **_kw):
-        captured["cmd"] = cmd
-        return _Proc()
+    class _FakePopen:
+        def __init__(self, cmd, **_kw):
+            captured["cmd"] = cmd
+            self.returncode = 0
+            self.stdout = io.StringIO("Successfully installed x\n")
+        def wait(self, timeout=None):
+            return 0
+        def poll(self):
+            return 0
+        def kill(self):
+            pass
 
-    monkeypatch.setattr(engines.subprocess, "run", _fake_run)
+    monkeypatch.setattr(engines.subprocess, "Popen", _FakePopen)
     res = engines.install_pip_engine(
         "faster-whisper==1.2.1", tmp_path,
         eid="faster-whisper", extra=["av>=13,<19"],

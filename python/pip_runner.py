@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import sys
 
 
@@ -36,6 +37,13 @@ def _patch_distlib_for_frozen() -> None:
 
 
 def main() -> int:
+    # v4.18.2: stdout is a pipe when the sidecar streams install telemetry.
+    # Python block-buffers pipes (4-8KB), so "正在下载/安装 xx" progress lines
+    # arrived in big delayed bursts and active_url stayed empty for minutes.
+    # Line-buffer both streams so every pip line reaches the UI immediately.
+    for stream in (sys.stdout, sys.stderr):
+        with contextlib.suppress(Exception):
+            stream.reconfigure(line_buffering=True)
     _patch_distlib_for_frozen()
     from pip._internal.cli.main import main as pip_main
 

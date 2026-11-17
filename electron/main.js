@@ -29,6 +29,7 @@ const http = require("node:http");
 const { URL } = require("node:url");
 const windowState = require("./window-state");
 const { normalizeMeasureArgs } = require("./measure-args");
+const { engineRecordsFromFetch } = require("./engine-records.js");
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -2019,7 +2020,7 @@ function registerIpc() {
 
   async function findLlamaServerBinary() {
     const st = await sidecarFetch("/api/engines");
-    const items = Array.isArray(st) ? st : (st.engines || []);
+    const items = engineRecordsFromFetch(st);
     const rec = items.find((x) => x && x.id === "llama.cpp");
     if (!rec || !rec.installed) throw new Error("llama.cpp 引擎未安装——请先在「引擎」页安装");
     const base = String(rec.install_path || "");

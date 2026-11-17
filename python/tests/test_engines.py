@@ -44,13 +44,21 @@ def test_download_zip_engine_refuses_random_host(tmp_root: Path):
 def test_pip_install_dryrun(tmp_root: Path, monkeypatch, capsys):
     """We don't actually run pip here (slow / needs network); we just verify
     the function signature returns an InstallResult without crashing."""
-    # monkeypatch subprocess.run to simulate success
+    # v4.18.2: install_pip_engine delegates to EngineManager.install_pip,
+    # which streams pip output via subprocess.Popen — mock that instead.
+    import io
     import subprocess
-    class FakeProc:
-        returncode = 0
-        stdout = "Successfully installed"
-        stderr = ""
-    monkeypatch.setattr(subprocess, "run", lambda *a, **k: FakeProc())
+    class FakePopen:
+        def __init__(self, cmd, **kw):
+            self.returncode = 0
+            self.stdout = io.StringIO("Successfully installed\n")
+        def wait(self, timeout=None):
+            return 0
+        def poll(self):
+            return 0
+        def kill(self):
+            pass
+    monkeypatch.setattr(subprocess, "Popen", FakePopen)
     res = install_pip_engine("MNN", tmp_root)
     assert res.ok is True
     assert "MNN" in res.engine_id

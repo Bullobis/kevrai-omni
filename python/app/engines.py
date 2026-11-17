@@ -509,6 +509,31 @@ def _sha256_of(path: Path) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _kill_pip_tree(proc: subprocess.Popen) -> None:
+    """Kill the pip process TREE, not just the direct child.
+
+    Regression (v4.18.2, live verification): the frozen pip-runner is a
+    PyInstaller onefile bootloader that spawns the real pip as its own
+    child. ``proc.kill()`` only killed the bootloader; the grandchild pip
+    kept downloading for 18+ minutes as an orphan (ppid=1), wasting
+    bandwidth and writing into the engine dir after "timeout".
+    POSIX: start_new_session + killpg. Windows: taskkill /T /F.
+    """
+    try:
+        if os.name == "nt":
+            taskkill = shutil.which("taskkill") or "taskkill"
+            subprocess.run(  # noqa: S603 — fixed argv, pid is an int
+                [taskkill, "/PID", str(proc.pid), "/T", "/F"],
+                capture_output=True, check=False, timeout=15,
+            )
+        else:
+            import signal
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    except Exception:  # noqa: BLE001 — fall back to direct kill
+        with contextlib.suppress(Exception):
+            proc.kill()
+
+
 class EngineManager:
     """Track every engine install in `engine_dir/installed.json`."""
 
@@ -842,6 +867,14 @@ class EngineManager:
         pip_tmp.mkdir(parents=True, exist_ok=True)
         pip_env = os.environ.copy()
         pip_env.update({"TMPDIR": str(pip_tmp), "TEMP": str(pip_tmp), "TMP": str(pip_tmp)})
+        # v4.18.2: bound pip's own network waits. Live verification saw a
+        # wheel download stall on a blackholed connection for 20+ minutes
+        # while the mirror itself served 9MB/s — pip's default retry/backoff
+        # can sit on a dead socket far longer than users expect. Explicit
+        # per-socket timeout + bounded retries make stalls fail fast and
+        # retry on a fresh connection instead of hanging the install.
+        pip_env.setdefault("PIP_DEFAULT_TIMEOUT", "30")
+        pip_env.setdefault("PIP_RETRIES", "5")
         self._set_state(eid, EngineState.DOWNLOADING, install_path=str(target),
                         install_mode="pip")
         try:
@@ -852,6 +885,7 @@ class EngineManager:
             proc = subprocess.Popen(  # noqa: S603 — argv list built from internal constants
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 text=True, bufsize=1, env=pip_env,
+                start_new_session=(os.name != "nt"),
             )
             last_line = ""
             tail: list[str] = []
@@ -869,12 +903,21 @@ class EngineManager:
                     q.put(None)  # EOF sentinel
 
             threading.Thread(target=_reader, daemon=True).start()
-            deadline = _time.monotonic() + 900
+            # v4.18.2: 900s was too tight for torch-class engines on slow
+            # links (live verification: faster-whisper hit the watchdog at
+            # ~300KB/s with 274MB already fetched). Default 1800s, override
+            # with KEVRAI_PIP_TIMEOUT. The streaming watchdog still kills
+            # orphans on expiry, so the install mutex is never held forever.
+            try:
+                pip_timeout = max(60, int(os.environ.get("KEVRAI_PIP_TIMEOUT", "1800")))
+            except ValueError:
+                pip_timeout = 1800
+            deadline = _time.monotonic() + pip_timeout
             while True:
                 remaining = deadline - _time.monotonic()
                 if remaining <= 0:
-                    proc.kill()
-                    raise TimeoutError(f"pip install of {pypi_name} timed out after 900s")
+                    _kill_pip_tree(proc)
+                    raise TimeoutError(f"pip install of {pypi_name} timed out after {pip_timeout}s")
                 try:
                     item = q.get(timeout=min(1.0, remaining))
                 except _queue.Empty:
@@ -896,7 +939,7 @@ class EngineManager:
             # 确保超时/异常时杀掉子进程，不留孤儿 pip。
             try:
                 if "proc" in locals() and proc.poll() is None:
-                    proc.kill()
+                    _kill_pip_tree(proc)
                     proc.wait(timeout=10)
             except Exception as kill_err:  # noqa: BLE001 — never mask the real error
                 # v4.17.7: was a bare ``pass`` (ruff S110). Log it instead so a
@@ -1185,7 +1228,7 @@ def _safe_extract_tar(tf: Any, dest: Path) -> None:
     """
     base = dest.resolve()
     for member in tf.getmembers():
-        if not (member.isfile() or member.isdir()):
+        if not (member.isfile() or member.isdir() or member.issym()):
             continue
         target = (base / member.name).resolve()
         try:
@@ -1195,12 +1238,37 @@ def _safe_extract_tar(tf: Any, dest: Path) -> None:
         if member.isdir():
             target.mkdir(parents=True, exist_ok=True)
             continue
+        if member.issym():
+            # v4.18.2: allow INTERNAL symlinks only. Engine tarballs ship
+            # soname links (libllama.so.1 -> libllama.so.1.0.0); skipping
+            # every symlink broke the dynamic loader ("cannot open shared
+            # object file"). Absolute targets and links resolving outside
+            # dest are still rejected — the classic escape primitive.
+            linkname = member.linkname or ""
+            if os.path.isabs(linkname):
+                continue
+            resolved = os.path.normpath(
+                os.path.join(os.path.dirname(str(target)), linkname))
+            if resolved != str(base) and not resolved.startswith(str(base) + os.sep):
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if target.exists() or target.is_symlink():
+                target.unlink()
+            target.symlink_to(linkname)
+            continue
         target.parent.mkdir(parents=True, exist_ok=True)
         src = tf.extractfile(member)
         if src is None:  # pragma: no cover — isfile() guarantees a reader
             continue
         with src, target.open("wb") as out:
             _shutil_copyfileobj(src, out)
+        # v4.18.2: preserve the member's permission bits. Writing via
+        # open("wb") created every file 0644 — ELF binaries (llama-server,
+        # llama-cli, ...) lost their executable bit and every GGUF chat
+        # failed with "Permission denied" / spawn exit -13. Mask to 0o777
+        # so setuid/setgid/sticky bits from a hostile archive never apply.
+        with contextlib.suppress(OSError):  # pragma: no cover
+            target.chmod(member.mode & 0o777)
 
 
 def _shutil_copyfileobj(src: Any, dst: Any) -> None:
@@ -1320,54 +1388,40 @@ def _download_and_extract_tarball(url: str, root: Path, eid: str) -> InstallResu
         )
 
 
-@_serialized_install
 def install_pip_engine(
     name: str,
     root: Path,
     eid: str | None = None,
     extra: list[str] | None = None,
 ) -> InstallResult:
+    """Legacy adapter — delegates to the hardened ``EngineManager.install_pip``.
+
+    v4.18.2: this function used to carry a SECOND, unhardened pip-install
+    implementation. ``/api/engines/install`` → ``ensure_engine`` →
+    ``install_engine`` routes here, so the API path silently missed every
+    hardening the manager path had:
+      * CPU-only torch wheels (``--extra-index-url .../whl/cpu``) — without
+        it, CPU machines downloaded the multi-GB CUDA wheel set;
+      * TMPDIR relocated into the data dir (small /tmp partitions filled up);
+      * streaming pip output into engine telemetry + orphan-kill on timeout.
+    Found by live install verification: sentence-transformers pulled
+    nvidia_cublas & friends into /tmp on a GPU-less host.
+
+    No ``@_serialized_install`` here on purpose: ``install_pip`` already
+    holds the global install mutex (non-reentrant — nesting would deadlock).
+    """
     dirname = eid or name
     target = engine_install_dir(root) / f"pip-{dirname}"
-    target.mkdir(parents=True, exist_ok=True)
-    requirements = [name, *list(extra or [])]
-    cmd = [*pip_command(), "install", "--target", str(target), *requirements]
-    idx = _pip_index()
-    if idx:
-        cmd += ["-i", idx, "--extra-index-url", "https://pypi.org/simple"]
     try:
-        proc = subprocess.run(  # noqa: S603 — argv list built from internal constants
-            cmd, capture_output=True, text=True, timeout=900
-        )
-        ok = proc.returncode == 0
-        msg = (proc.stdout[-500:] if ok else proc.stderr[-500:]) or ""
-        if ok:
-            if target.is_dir() and any(target.iterdir()):
-                ok_import, import_err = validate_engine_import(str(dirname), target)
-            else:
-                ok_import, import_err = True, ""
-            if not ok_import:
-                retry_cmd = [
-                    *pip_command(), "install", "--target", str(target),
-                    "--upgrade", "--force-reinstall", "--no-cache-dir",
-                    "-i", "https://pypi.org/simple", *requirements,
-                ]
-                retry = subprocess.run(  # noqa: S603
-                    retry_cmd, capture_output=True, text=True, timeout=900
-                )
-                ok_import, import_err = validate_engine_import(str(dirname), target)
-                if retry.returncode != 0 or not ok_import:
-                    detail = (retry.stderr or retry.stdout or import_err)[-400:]
-                    return InstallResult(
-                        engine_id=dirname, path=str(target), ok=False,
-                        message=f"import check failed: {detail}",
-                    )
+        EngineManager(root).install_pip(name, engine_id=eid, extra=extra)
+    except Exception as e:  # noqa: BLE001 — legacy contract: result, not raise
         return InstallResult(
-            engine_id=dirname, path=str(target), ok=ok,
-            message=msg.strip() or ("installed" if ok else "install failed"),
+            engine_id=dirname, path=str(target), ok=False,
+            message=f"exception: {e}",
         )
-    except Exception as e:
-        return InstallResult(engine_id=dirname, path=str(target), ok=False, message=f"exception: {e}")
+    return InstallResult(
+        engine_id=dirname, path=str(target), ok=True, message="installed",
+    )
 
 
 @_serialized_install

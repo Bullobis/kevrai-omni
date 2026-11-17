@@ -11,6 +11,7 @@ Why a dedicated module: ``main.py`` imports ``hub``; ``hub`` must never import
 """
 from __future__ import annotations
 
+import contextlib
 import os
 import re
 import zipfile
@@ -137,6 +138,26 @@ def safe_extract(
         if info.is_dir():
             target.mkdir(parents=True, exist_ok=True)
             continue
+        # v4.18.2: Unix symlinks in zips (S_IFLNK in external_attr) carry the
+        # link target as file content. Allow INTERNAL links only (soname
+        # chains in engine zips); absolute / escaping targets are skipped.
+        unix_mode = (info.external_attr >> 16) & 0o170000
+        if info.create_system == 3 and unix_mode == 0o120000:
+            with archive.open(info, "r") as src:
+                linkname = src.read(4096).decode("utf-8", "replace").strip()
+            if not linkname or os.path.isabs(linkname):
+                continue
+            resolved = os.path.normpath(
+                os.path.join(os.path.dirname(str(target)), linkname))
+            base_s = str(dest_path)
+            if resolved != base_s and not resolved.startswith(base_s + os.sep):
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if target.exists() or target.is_symlink():
+                target.unlink()
+            target.symlink_to(linkname)
+            extracted.append(target)
+            continue
         target.parent.mkdir(parents=True, exist_ok=True)
         with archive.open(info, "r") as src, open(target, "wb") as out:
             while True:
@@ -144,6 +165,16 @@ def safe_extract(
                 if not chunk:
                     break
                 out.write(chunk)
+        # v4.18.2: preserve Unix permission bits stored in external_attr.
+        # open(target, "wb") created every file 0644, so ELF binaries in
+        # engine zips lost their executable bit (llama-server et al. could
+        # not spawn). create_system == 3 marks Unix-made archives; mask to
+        # 0o777 so setuid/setgid/sticky bits never apply.
+        if info.create_system == 3:
+            mode = (info.external_attr >> 16) & 0o777
+            if mode:
+                with contextlib.suppress(OSError):  # pragma: no cover
+                    target.chmod(mode)
         extracted.append(target)
     return extracted
 

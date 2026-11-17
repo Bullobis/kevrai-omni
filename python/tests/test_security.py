@@ -25,6 +25,7 @@ from pydantic import ValidationError
 from app.catalog import (
     ALLOWED_MODEL_HOSTS,
     DEFAULT_BLOCKED_MIRRORS,
+    DEFAULT_MODEL_HOSTS,
     is_host_allowed,
 )
 from app.downloader import DownloadRefused
@@ -207,6 +208,33 @@ def test_is_host_allowed_full_table():
     assert DEFAULT_BLOCKED_MIRRORS, "expected a non-empty hard-block list"
     for bad in DEFAULT_BLOCKED_MIRRORS:
         assert bad not in ALLOWED_MODEL_HOSTS
+
+
+def test_cdn_redirect_hosts_allowlisted():
+    """Regression (2026-11-17, found by live install verification):
+    huggingface.co / hf-mirror.com /resolve/ URLs now 302 into the Xet CAS
+    bridge and regional LFS CDNs; modelscope.cn /resolve/ 302 into
+    cdn-lfs-cn-*.modelscope.cn. The downloader checks the *final* URL against
+    the allowlist, so without these official CDN hosts every redirected
+    model download fails with "host not in allowlist" — HF and ModelScope
+    downloads were both completely broken on CN networks."""
+    for host in (
+        "cas-bridge.xethub.hf.co",
+        "transfer.xethub.hf.co",
+        "cdn-lfs-us-1.hf.co",
+        "cdn-lfs-cn-1.modelscope.cn",
+        "cdn-lfs-cn-2.modelscope.cn",
+    ):
+        assert host in DEFAULT_MODEL_HOSTS, f"CDN host {host} missing"
+        assert is_host_allowed(f"https://{host}/some/object", set(DEFAULT_MODEL_HOSTS))
+    # lookalike / evil subdomains must still be rejected (exact-match list)
+    for bad in (
+        "cas-bridge.xethub.hf.co.evil.com",
+        "evil-cdn-lfs-cn-1.modelscope.cn",
+        "xethub.hf.co",
+        "cdn-lfs-cn-1.modelscope.cn.evil.com",
+    ):
+        assert not is_host_allowed(f"https://{bad}/x", set(DEFAULT_MODEL_HOSTS))
 
 
 def test_engines_json_every_url_is_well_formed():

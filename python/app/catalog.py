@@ -36,6 +36,18 @@ DEFAULT_MODEL_HOSTS: set[str] = {
     "release.github.com",
     # Official HF partner mirrors
     "hf-mirror.com",
+    # HF / ModelScope CDN redirect targets (verified live 2026-11-17):
+    # huggingface.co & hf-mirror.com /resolve/ now 302 into the Xet CAS
+    # bridge / regional LFS CDNs, and modelscope.cn /resolve/ 302 into
+    # cdn-lfs-cn-*.modelscope.cn. Without these the downloader refuses
+    # every redirected model download ("host not in allowlist") even
+    # though the origin hub is allowed. All are official subdomains of
+    # hf.co / modelscope.cn and resolve publicly.
+    "cas-bridge.xethub.hf.co",
+    "transfer.xethub.hf.co",
+    "cdn-lfs-us-1.hf.co",
+    "cdn-lfs-cn-1.modelscope.cn",
+    "cdn-lfs-cn-2.modelscope.cn",
     # NOTE: hf-mirror.us / huggingface.dl.in.tel / hf-cn-mirror.com were here
     # but all fail DNS (verified 2026-10); a positive allowlist must not bless
     # non-resolving hosts. They remain *disabled* presets in sources_registry.

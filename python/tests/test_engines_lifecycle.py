@@ -61,16 +61,23 @@ def test_legacy_status_roundtrip(root: Path):
 
 
 def test_pip_install_dryrun(root: Path, monkeypatch):
-    """Mock subprocess.run to simulate a successful pip install."""
+    """Mock subprocess.Popen (hardened streaming pip path) for success."""
+    import io
     import subprocess
 
     from app.engines import install_pip_engine
 
-    class FakeProc:
-        returncode = 0
-        stdout = "Successfully installed MNN"
-        stderr = ""
-    monkeypatch.setattr(subprocess, "run", lambda *a, **k: FakeProc())
+    class FakePopen:
+        def __init__(self, cmd, **kw):
+            self.returncode = 0
+            self.stdout = io.StringIO("Successfully installed MNN\n")
+        def wait(self, timeout=None):
+            return 0
+        def poll(self):
+            return 0
+        def kill(self):
+            pass
+    monkeypatch.setattr(subprocess, "Popen", FakePopen)
 
     res = install_pip_engine("MNN", root)
     assert res.ok is True
