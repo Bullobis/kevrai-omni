@@ -22,6 +22,8 @@
 - **CPU torch 钉版**：仅加 CPU extra-index 不够——pip 跨索引取最高版本，CN 镜像的 CUDA torch 比 CPU 索引更新（实测装出 5.8GB nvidia_* 轮子）。新增解析 PyTorch CPU 索引最新 +cpu 轮子并按解释器/平台钉住 `torch==X.Y.Z+cpu`；网络失败时优雅回退旧行为。
 - **pip extra-index 可配置**：`KEVRAI_PIP_EXTRA_INDEX=""` 可完全禁用 pypi.org 附加索引（国内网络下 pip 会漂到被黑洞的 Fastly CDN，实测同一 wheel 主镜像 9MB/s 而 Fastly 卡死 20+ 分钟）。
 
+- **冻结 sidecar 缺标准库导致引擎"装了却用不了"**：PyInstaller 只追踪应用导入图可达的标准库；引擎运行时动态导入的标准库模块（实测 sentence-transformers/torch → filecmp）在冻结包里不存在，嵌入接口 503。新增 `app/_stdlib_full.py` 静态导入全部 295 个标准库模块（平台相关项带保护），sidecar 入口首先加载——CI 构建自动继承。实测嵌入接口恢复正常。
+
 ## 验证（全部在本机实际执行）
 
 - pytest 全量通过；renderer 测试全过（含新增 engine-records 回归）；ruff / mypy（CI 口径）零错误。
@@ -31,3 +33,5 @@
 - Markdown / 表格渲染实测：表格、代码块、列表、引用、链接全部正确渲染并截屏核验。
 - **Piper 中文 TTS 实测成功**（zh_CN-huayan-medium，5.47s / 22050Hz WAV）；**faster-whisper tiny 实测转写成功**（直接转写 TTS 产物，中文识别、语言检测概率 1.0、CPU int8）——TTS→ASR 闭环验证。
 - llama.cpp b12458 引擎经加速镜像落盘后，应用 IPC 启动 llama-server 加载 Qwen3-0.6B Q4_K_M **推理成功**（OpenAI 兼容接口正常返回）。
+- **sentence-transformers CPU 钉版实测生效**：torch 2.15.0+cpu，引擎目录 1.4GB（CUDA 版为 5.8GB，缩减 76%）；**嵌入接口实测成功**（all-MiniLM-L6-v2，384 维向量，CPU 推理）。
+- 至此四类模型在本机（4 核 CPU / 8GB 内存 / 无 GPU）全部真实跑通：LLM 对话、中文 TTS、ASR 转写、文本嵌入。
