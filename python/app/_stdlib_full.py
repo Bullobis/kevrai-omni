@@ -1,4 +1,4 @@
-# ruff: noqa: S110 — generated stdlib shim; guarded imports are intentional
+# ruff: noqa: S110, SIM105 — generated stdlib shim; guarded imports are intentional
 """Bundle the FULL Python stdlib into the frozen sidecar.
 
 v4.18.2: PyInstaller only traces stdlib modules reachable from the app's
