@@ -853,7 +853,16 @@ class EngineManager:
         requirements = [pypi_name, *list(extra or [])]
         cmd = [*pip_command(), "install", "--target", str(target), *requirements]
         idx = os.environ.get("KEVRAI_PIP_INDEX", "https://mirrors.tencent.com/pypi/simple/")
-        cmd += ["-i", idx, "--extra-index-url", "https://pypi.org/simple"]
+        # v4.18.2: the extra index is configurable. pip merges candidates
+        # from ALL indexes and may download from pypi.org even when the CN
+        # primary mirror has the same version — live verification saw wheels
+        # stall on Fastly (pypi.org CDN) while the primary mirror served
+        # 9MB/s. KEVRAI_PIP_EXTRA_INDEX="" disables the extra index entirely
+        # for CN-only networks; default keeps pypi.org for completeness.
+        extra_idx = os.environ.get("KEVRAI_PIP_EXTRA_INDEX", "https://pypi.org/simple")
+        cmd += ["-i", idx]
+        if extra_idx.strip():
+            cmd += ["--extra-index-url", extra_idx.strip()]
         # 这些引擎依赖 torch。PyPI 的默认 torch 轮子捆绑整套 CUDA 运行时
         # （实测 cu13 解包后 >3GB），CPU 用户机器上既装不下也跑不起来。
         # 默认改从 PyTorch 官方 CPU 索引取 +cpu 轮子（约 1/10 体积）；
