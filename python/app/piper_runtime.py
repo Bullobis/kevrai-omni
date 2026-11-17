@@ -455,7 +455,7 @@ def _download(url: str, dest: Path) -> Path:
         # voice download failed with "主站与镜像均不可达".
         from . import USER_AGENT
         req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(req, timeout=60) as resp, open(tmp, "wb") as fh:  # noqa: S310
+        with urllib.request.urlopen(req, timeout=60) as resp, open(tmp, "wb") as fh:  # noqa: S310 — https-only VOICE_REPO_BASE
             while True:
                 chunk = resp.read(1 << 20)
                 if not chunk:
