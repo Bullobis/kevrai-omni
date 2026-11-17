@@ -17,6 +17,11 @@
 - **pip 网络等待无界**：实测镜像本身 9MB/s，但 pip 会在被黑洞的连接上干等 20+ 分钟。安装环境注入 `PIP_DEFAULT_TIMEOUT=30`、`PIP_RETRIES=5`，卡死快速失败并换新连接重试。
 - **pip 安装进度遥测空白**：pip-runner stdout 是管道时 Python 块缓冲，"正在下载/安装 xx" 进度行数分钟才到一次。改行缓冲，逐行实时上报。
 
+- **Piper 语音下载被镜像 403 拒绝**：hf-mirror.com 对默认 `Python-urllib/x.y` UA 返回 403（实测），而国内网络 HF 主站不可达——piper 语音下载用裸 urlopen 不带 UA，导致**所有语音下载失败**（"主站与镜像均不可达"）。改带产品 UA，补回归测试。实测中文语音合成成功。
+- **冻结 sidecar 内 import 校验误判**：PyInstaller 只打包应用导入图追踪到的标准库子集，引擎依赖动态导入的标准库模块（实测 sentence-transformers → filecmp）触发 ModuleNotFoundError，把 pip 成功的安装误判为损坏。冻结环境下标准库缺失改为"存疑接受"并记日志；真正的引擎文件缺失仍拒绝。
+- **CPU torch 钉版**：仅加 CPU extra-index 不够——pip 跨索引取最高版本，CN 镜像的 CUDA torch 比 CPU 索引更新（实测装出 5.8GB nvidia_* 轮子）。新增解析 PyTorch CPU 索引最新 +cpu 轮子并按解释器/平台钉住 `torch==X.Y.Z+cpu`；网络失败时优雅回退旧行为。
+- **pip extra-index 可配置**：`KEVRAI_PIP_EXTRA_INDEX=""` 可完全禁用 pypi.org 附加索引（国内网络下 pip 会漂到被黑洞的 Fastly CDN，实测同一 wheel 主镜像 9MB/s 而 Fastly 卡死 20+ 分钟）。
+
 ## 验证（全部在本机实际执行）
 
 - pytest 全量通过；renderer 测试全过（含新增 engine-records 回归）；ruff / mypy（CI 口径）零错误。
@@ -24,3 +29,5 @@
 - 真实下载 Qwen3-0.6B-Q4_K_M.gguf（396,705,472 字节）并经应用 IPC 启动 llama-server **实测推理成功**（模型正确回答提问，OpenAI 兼容接口返回正常 usage）。
 - Windows 安装包 sha256 与发布清单一致；**Wine 11 中实际运行 Windows 版**：sidecar.exe 健康、21 个页面逐一点击遍历 0 控制台报错、截屏核验。
 - Markdown / 表格渲染实测：表格、代码块、列表、引用、链接全部正确渲染并截屏核验。
+- **Piper 中文 TTS 实测成功**（zh_CN-huayan-medium，5.47s / 22050Hz WAV）；**faster-whisper tiny 实测转写成功**（直接转写 TTS 产物，中文识别、语言检测概率 1.0、CPU int8）——TTS→ASR 闭环验证。
+- llama.cpp b12458 引擎经加速镜像落盘后，应用 IPC 启动 llama-server 加载 Qwen3-0.6B Q4_K_M **推理成功**（OpenAI 兼容接口正常返回）。
