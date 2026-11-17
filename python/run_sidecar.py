@@ -9,6 +9,10 @@ import os
 
 import uvicorn
 
+# v4.18.2: pull the full stdlib into the frozen binary BEFORE anything else
+# (engine runtimes import stdlib modules dynamically; see _stdlib_full.py).
+import app._stdlib_full  # noqa: F401
+
 
 def main() -> None:
     host = os.environ.get("KEVRAI_SIDECAR_HOST", "127.0.0.1")
