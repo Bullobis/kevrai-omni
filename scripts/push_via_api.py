@@ -30,7 +30,7 @@ REPO = "Bullobis/kevrai-omni"
 def gh(args: list[str], *, stdin: str | None = None) -> dict:
     """调用 gh api，返回解析后的 JSON。失败时抛出并带上 stderr。"""
     cmd = ["gh", "api"] + args
-    p = subprocess.run(cmd, input=stdin, capture_output=True, text=True)
+    p = subprocess.run(cmd, input=stdin, capture_output=True, text=True, check=False)
     if p.returncode != 0:
         raise RuntimeError(f"gh api {' '.join(args[:3])} 失败: {p.stderr[:400]}")
     out = p.stdout.strip()

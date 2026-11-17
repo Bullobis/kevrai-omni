@@ -12,7 +12,6 @@
 from __future__ import annotations
 
 import ast
-import os
 import re
 import sys
 from pathlib import Path
@@ -141,7 +140,7 @@ def audit_dead_routers() -> list[tuple[str, str]]:
     defined: dict[str, Path] = {}
     for p in (APP).rglob("*.py"):
         src = p.read_text(encoding="utf-8", errors="replace")
-        for m in re.finditer(r"^\s*(\w+)\s*=\s*APIRouter\s*\(", src, re.M):
+        for m in re.finditer(r"^\s*(\w+)\s*=\s*APIRouter\s*\(", src, re.MULTILINE):
             defined.setdefault(m.group(1), p)
 
     findings = []

@@ -13,7 +13,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--report", required=True)
     args = ap.parse_args()
-    data = json.load(open(args.report, encoding="utf-8"))
+    with open(args.report, encoding="utf-8") as f:
+        data = json.load(f)
     rows = data.get("direct_dependencies") or []
     total = 0
     print(f"== {data.get('tool', 'audit')} ==")
@@ -22,7 +23,7 @@ def main() -> int:
         n = len(v)
         total += n
         ver = d.get("resolved_version") or d.get("locked_version") or "?"
-        line = f"  {d['name']:20s} {str(ver):14s} advisories={n}"
+        line = f"  {d['name']:20s} {ver!s:14s} advisories={n}"
         if d.get("latest_version") and str(ver) != str(d.get("latest_version")):
             line += f"  (latest: {d['latest_version']})"
         print(line)

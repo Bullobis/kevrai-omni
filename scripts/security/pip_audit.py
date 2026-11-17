@@ -162,7 +162,7 @@ def run_pip_audit(req_path: Path) -> dict[str, Any] | None:
         "--progress-spinner=off",
     ]
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600, check=False)
     except Exception as e:  # noqa: BLE001
         return {"error": f"pip-audit failed to run: {e}"}
     # pip-audit prints a human line to stderr ("No known vulnerabilities
@@ -249,7 +249,7 @@ def main() -> int:
     unchecked = [r["name"] for r in rows if r["vulnerabilities"] is None]
     report = {
         "tool": "pip_audit.py",
-        "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+        "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
         "requirements_file": str(req_path),
         "pip_audit_available": shutil.which("pip-audit") is not None,
         "pip_audit_error": (audit or {}).get("error") if isinstance(audit, dict) else None,

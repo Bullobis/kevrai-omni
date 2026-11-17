@@ -327,6 +327,7 @@ def check_antivirus() -> Check:
         r = subprocess.run(
             ["tasklist", "/FO", "CSV", "/NH"],
             capture_output=True,
+            check=False,
             text=True,
             timeout=15,
         )
@@ -385,7 +386,7 @@ def check_port(port: int) -> Check:
             return Check(
                 f"端口占用 · {port}", WARN,
                 f"端口 {port} 已被占用，且附近未找到空闲端口",
-                f"请手动关闭占用程序后重试",
+                "请手动关闭占用程序后重试",
             )
         return Check(
             f"端口占用 · {port}", WARN,
@@ -464,7 +465,7 @@ def check_network() -> Check:
         try:
             req = urllib.request.Request(url, method="HEAD",
                                          headers={"User-Agent": "kevrai-health-check"})
-            with urllib.request.urlopen(req, timeout=6) as r:  # noqa: S310
+            with urllib.request.urlopen(req, timeout=6) as r:
                 ok = r.status < 500
         except Exception:
             ok = False

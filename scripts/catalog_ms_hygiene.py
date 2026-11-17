@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Catalog source hygiene + ModelScope coverage.
 
 Reads catalog/models.json and, for every model entry:

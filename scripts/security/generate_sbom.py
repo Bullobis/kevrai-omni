@@ -30,15 +30,13 @@ import datetime as _dt
 import hashlib
 import json
 import sys
-import urllib.request
 from pathlib import Path
 from typing import Any
 
 # Reuse the auditors' resolvers so the SBOM and the audit report never diverge.
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import pip_audit  # noqa: E402
-import npm_audit  # noqa: E402
+import pip_audit
 
 USER_AGENT = "kevrai-security-audit/1.0 (+https://github.com/Bullobis/kevrai-omni)"
 
@@ -128,14 +126,13 @@ def main() -> int:
     npm_comps = build_npm_components(Path(args.package_lock))
     components = pip_comps + npm_comps
 
-    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     sbom = {
         "bomFormat": "CycloneDX",
         "specVersion": "1.5",
         "version": 1,
         "serialNumber": f"urn:uuid:{hashlib.sha1(json.dumps(components, sort_keys=True).encode()).hexdigest()[:8]}-sbom",
         "metadata": {
-            "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+            "timestamp": _dt.datetime.now(_dt.UTC).isoformat(),
             "tools": [{"vendor": "Kevrai", "name": "generate_sbom.py",
                        "version": "1.0.0"}],
             "component": {

@@ -49,6 +49,30 @@ def _testclient_init_with_bearer(self, app, *args, **kwargs):
 _TestClient.__init__ = _testclient_init_with_bearer
 
 
+@pytest.fixture(autouse=True, scope="session")
+def _isolated_data_root(tmp_path_factory):
+    """Session-wide sandbox for the sidecar's data root.
+
+    Regression: test_fuzz.py's module-scoped ``api_client`` (and ~20 other
+    files) build ``TestClient(app)`` without the per-test ``tmp_xdg`` fixture.
+    Their writes to /api/settings leaked into the REAL user data root
+    (~/.local/share/KevraiOmni) — a developer running pytest locally ended up
+    with model_dir="C:\\Windows" / download_dir="abc" in their live app.
+
+    Point XDG / APPDATA at a throwaway session dir so every unisolated test
+    writes there instead. Per-test ``tmp_xdg`` and explicit KEVRAI_DATA_ROOT
+    overrides still win (they are set later / take precedence in
+    settings.default_data_root), so existing isolation semantics unchanged.
+    """
+    tmp = tmp_path_factory.mktemp("kevrai-session-data")
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("XDG_DATA_HOME", str(tmp / "data"))
+        mp.setenv("XDG_CACHE_HOME", str(tmp / "cache"))
+        mp.setenv("LOCALAPPDATA", str(tmp))
+        mp.setenv("APPDATA", str(tmp))
+        yield tmp
+
+
 @pytest.fixture(autouse=True)
 def _reset_source_registry():
     """Keep the (process-global) source registry out of cross-test state.

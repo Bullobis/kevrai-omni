@@ -462,7 +462,7 @@ class HubRegistry:
             per_source_limit = max(quota.values()) if quota else spec.page_size
 
         if not sources:
-            warnings = [
+            warnings: list[dict[str, str]] = [
                 {"hub": hub, "code": "cooling",
                  "message": f"{hub} 连续失败，已暂时跳过"}
                 for hub in cooling
@@ -480,7 +480,7 @@ class HubRegistry:
         )
 
         buckets: dict[str, list[RemoteModel]] = {}
-        warnings: list[dict[str, str]] = [
+        warnings = [
             {"hub": hub, "code": "cooling",
              "message": f"{hub} 连续失败，已暂时跳过"}
             for hub in cooling

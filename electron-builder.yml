@@ -96,6 +96,9 @@ linux:
     - AppImage
     - deb
   category: AudioVideo
+  # 与 package.json 的 desktopName 同步 WM_CLASS / app_id，
+  # 否则桌面环境无法把运行中的窗口关联到 .desktop 条目（任务栏图标/分组失效）。
+  syncDesktopName: true
   icon: assets/icons/icon-1024.png
   desktop:
     entry:

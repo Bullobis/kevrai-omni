@@ -74,13 +74,13 @@ def l2_paths() -> set[str]:
 # ---- L3 preload 暴露的方法名
 def l3_methods() -> set[str]:
     src = read(PRE)
-    return set(re.findall(r"^\s{2,}([A-Za-z][A-Za-z0-9]*)\s*:", src, re.M))
+    return set(re.findall(r"^\s{2,}([A-Za-z][A-Za-z0-9]*)\s*:", src, re.MULTILINE))
 
 
 # ---- L4 api.js 里定义/转发的方法名
 def l4_methods() -> set[str]:
     src = read(API)
-    return set(re.findall(r"^\s{2}([A-Za-z][A-Za-z0-9]*)\s*[:(]", src, re.M))
+    return set(re.findall(r"^\s{2}([A-Za-z][A-Za-z0-9]*)\s*[:(]", src, re.MULTILINE))
 
 
 # ---- L5 前端模块实际调用的 api.xxx

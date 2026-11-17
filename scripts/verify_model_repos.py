@@ -9,8 +9,8 @@ import json
 import re
 import sys
 import time
-import urllib.request
 import urllib.error
+import urllib.request
 
 MIRROR = "https://hf-mirror.com/api/models/{}"
 CATALOG = "catalog/models.json"
@@ -46,7 +46,8 @@ def check(repo: str) -> tuple[str, int]:
 
 
 def main() -> int:
-    data = json.load(open(CATALOG, encoding="utf-8"))
+    with open(CATALOG, encoding="utf-8") as f:
+        data = json.load(f)
     models = data.get("models", [])
     targets = {}  # repo -> list of model ids
     for m in models:

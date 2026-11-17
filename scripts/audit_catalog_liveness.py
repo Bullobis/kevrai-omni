@@ -60,7 +60,7 @@ KNOWN_GOOD_HOSTS = {
     "www.minimax.io", "ollama.com",
 }
 
-FILE_EXT_RE = re.compile(r"\.(gguf|zip|exe|dmg|AppImage|deb|rpm|safetensors|tar\.[a-z0-9]+|whl|bin|pt|pth|onnx|mnn|ms|apk|7z|gz)$", re.I)
+FILE_EXT_RE = re.compile(r"\.(gguf|zip|exe|dmg|AppImage|deb|rpm|safetensors|tar\.[a-z0-9]+|whl|bin|pt|pth|onnx|mnn|ms|apk|7z|gz)$", re.IGNORECASE)
 
 # Hosts whose 401/403/404 (and sometimes 5xx) from THIS egress were shown to
 # be unreliable during development: well-known public repositories

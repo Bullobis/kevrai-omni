@@ -99,7 +99,7 @@ def run_npm_audit() -> dict[str, Any] | None:
     try:
         proc = subprocess.run(
             ["npm", "audit", "--json", "--omit=dev"],
-            capture_output=True, text=True, timeout=300,
+            capture_output=True, text=True, timeout=300, check=False,
         )
     except Exception as e:  # noqa: BLE001
         return {"error": f"npm audit failed: {e}"}
@@ -165,7 +165,7 @@ def main() -> int:
 
     report = {
         "tool": "npm_audit.py",
-        "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+        "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
         "package_json": args.package_json,
         "npm_audit_available": shutil.which("npm") is not None,
         "npm_audit_summary": (npm_audit or {}).get("metadata", {}).get("vulnerabilities")

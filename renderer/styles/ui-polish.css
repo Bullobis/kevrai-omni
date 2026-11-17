@@ -1,0 +1,88 @@
+/* Kevrai Omni — UI polish (v4.18.1)
+ *
+ * 精修层：在 ui-refresh.css 之后加载，只改呈现、不改行为。
+ * 针对实机截屏评审发现的具体弱点：
+ *   1. 卡片元数据标签（pill）10.5px + 透明底 + 次级文字色，小且对比不足；
+ *   2. 首次启动引导弹窗排版拥挤，步骤与操作区缺乏视觉分隔；
+ *   3. 侧边栏分组标题 10px + opacity .9，与普通菜单项权重区分不足；
+ *   4. 浅色主题 stack-1/2/3 全白，浮层缺少投影层次；
+ *   5. 卡片描述行距过紧（实机像素分析：两行墨迹间仅 1px 间隙）。
+ * 设计原则沿用 styles.css 头部的 Cherry Studio 四原则：中性优先、
+ * 语义色、内容先于装饰、表面色阶承担层级。
+ */
+
+/* ── 1. 卡片元数据标签：给一层薄薄的表面 + 边框，字号提到 11px ── */
+.card-meta .pill {
+  padding: 2px 8px;
+  font-size: 11px;
+  line-height: 17px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--mut);
+}
+.card-meta .pill.hub-hf,
+.card-meta .pill.hub-modelscope { color: var(--fg); }
+.card-meta .pill.vram {
+  color: var(--acc2);
+  border-color: color-mix(in srgb, var(--acc2) 26%, transparent);
+  background: color-mix(in srgb, var(--acc2) 8%, transparent);
+}
+.card-meta .pill.license {
+  border-color: color-mix(in srgb, var(--acc) 24%, transparent);
+}
+
+/* 卡片网格留白：14px → 16px，降低密集网格的视觉疲劳 */
+.skeleton-grid { gap: 16px; }
+
+/* ── 2. 引导弹窗：更宽的卡片、更舒展的步骤间距、独立的操作区 ── */
+.onboarding-card { width: min(600px, 96vw); }
+.onboarding-card > header { padding: 18px 24px 14px; }
+.onboarding-card > header h2 { font-size: 17px; letter-spacing: -.01em; }
+.onboarding-steps { padding: 20px 24px 6px; gap: 18px; }
+.onboarding-steps li {
+  gap: 5px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  background: var(--card);
+}
+.onboarding-steps strong { font-size: 14px; font-weight: 650; }
+.onboarding-steps span { font-size: 13px; line-height: 1.6; }
+.onboarding-card > p { margin: 14px 24px 0; line-height: 1.6; }
+.onboarding-actions {
+  margin-top: 16px;
+  padding: 14px 24px 18px;
+  border-top: 1px solid var(--line);
+}
+
+/* ── 3. 侧边栏：分组标题更明确，菜单项更高一点 ── */
+.app-shell.sidebar-expanded .sidebar .nav-group-head {
+  height: 30px;
+  margin: 14px 0 3px;
+}
+.app-shell.sidebar-expanded .nav-group-head .grp-label {
+  font-size: 11px;
+  opacity: 1;
+  color: var(--mut);
+}
+.app-shell.sidebar-expanded .sidebar .pane-tab { height: 38px; }
+.sidebar .pane-tab.active { font-weight: 500; }
+
+/* ── 4. 浅色主题：浮层用投影补层次（表面全白时唯一可靠的层级信号）── */
+html[data-theme="light"] .overlay-card {
+  box-shadow: 0 12px 40px rgba(20, 30, 60, 0.18), 0 2px 8px rgba(20, 30, 60, 0.10);
+}
+html[data-theme="light"] .vgrid-item {
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.06);
+}
+html[data-theme="light"] .vgrid-item:hover {
+  box-shadow: 0 6px 18px rgba(20, 30, 60, 0.12);
+}
+
+/* ── 5. 卡片描述行距：行高 1.55 → 1.7，并补标准 line-clamp 属性
+      （新 Chromium 逐步以标准属性取代 -webkit- 前缀，两者同写保证前后兼容）。 ── */
+.card-desc {
+  line-height: 1.7;
+  line-clamp: 2;
+}

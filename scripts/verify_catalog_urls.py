@@ -33,12 +33,12 @@
 from __future__ import annotations
 
 import argparse
-import concurrent.futures as futures
 import json
 import sys
 import time
 import urllib.error
 import urllib.request
+from concurrent import futures
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -87,10 +87,9 @@ def probe(url: str, timeout: float) -> tuple[str, int | None, str, float]:
     Returns ``(status, http_code, error, elapsed_ms)``. Never raises.
     """
     started = time.time()
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     for method in ("HEAD", "GET"):
         try:
-            r = urllib.request.urlopen(  # noqa: S310 — 用户显式提供的 URL
+            r = urllib.request.urlopen(
                 urllib.request.Request(
                     url, headers={"User-Agent": USER_AGENT}, method=method
                 ),

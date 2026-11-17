@@ -167,7 +167,7 @@ def main(argv: list[str] | None = None) -> int:
     for c in changes:
         print(" ", c)
     print("-" * 66)
-    n = sum(1 for c in changes if c.startswith("[修正]") or c.startswith("[新增]") or c.startswith("[标注]"))
+    n = sum(1 for c in changes if c.startswith(("[修正]", "[新增]", "[标注]")))
     print(f"  共 {len(changes)} 条记录，其中实际改动 {n} 条")
     print("-" * 66)
 
