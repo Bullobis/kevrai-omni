@@ -449,7 +449,13 @@ def _download(url: str, dest: Path) -> Path:
     tmp = dest.with_suffix(dest.suffix + ".part")
     try:
         # URL is always https (VOICE_REPO_BASE); S310 audited.
-        with urllib.request.urlopen(url, timeout=60) as resp, open(tmp, "wb") as fh:  # noqa: S310
+        # v4.18.2: send the product User-Agent. hf-mirror.com answers 403
+        # to the default "Python-urllib/x.y" UA (verified live), so on CN
+        # networks — where the HF main site is unreachable — EVERY piper
+        # voice download failed with "主站与镜像均不可达".
+        from . import USER_AGENT
+        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=60) as resp, open(tmp, "wb") as fh:  # noqa: S310
             while True:
                 chunk = resp.read(1 << 20)
                 if not chunk:
