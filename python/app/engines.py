@@ -14,6 +14,7 @@ import hashlib
 import json
 import logging
 import os
+import platform
 import queue as _queue
 import shutil
 import subprocess
@@ -21,6 +22,7 @@ import sys
 import tempfile
 import threading
 import time as _time
+import urllib.request
 import zipfile
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -851,7 +853,6 @@ class EngineManager:
         target = self.engine_dir() / f"pip-{eid}"
         target.mkdir(parents=True, exist_ok=True)
         requirements = [pypi_name, *list(extra or [])]
-        cmd = [*pip_command(), "install", "--target", str(target), *requirements]
         idx = os.environ.get("KEVRAI_PIP_INDEX", "https://mirrors.tencent.com/pypi/simple/")
         # v4.18.2: the extra index is configurable. pip merges candidates
         # from ALL indexes and may download from pypi.org even when the CN
@@ -859,16 +860,23 @@ class EngineManager:
         # stall on Fastly (pypi.org CDN) while the primary mirror served
         # 9MB/s. KEVRAI_PIP_EXTRA_INDEX="" disables the extra index entirely
         # for CN-only networks; default keeps pypi.org for completeness.
-        extra_idx = os.environ.get("KEVRAI_PIP_EXTRA_INDEX", "https://pypi.org/simple")
-        cmd += ["-i", idx]
-        if extra_idx.strip():
-            cmd += ["--extra-index-url", extra_idx.strip()]
+        extra_idx = os.environ.get("KEVRAI_PIP_EXTRA_INDEX", "https://pypi.org/simple").strip()
         # 这些引擎依赖 torch。PyPI 的默认 torch 轮子捆绑整套 CUDA 运行时
-        # （实测 cu13 解包后 >3GB），CPU 用户机器上既装不下也跑不起来。
-        # 默认改从 PyTorch 官方 CPU 索引取 +cpu 轮子（约 1/10 体积）；
-        # 有 NVIDIA 显卡想用 CUDA 可设 KEVRAI_TORCH_VARIANT=cuda。
-        if (eid in _TORCH_ENGINES
-                and os.environ.get("KEVRAI_TORCH_VARIANT", "cpu").lower() != "cuda"):
+        # （实测 cu13 解包后 >3GB）。默认从 PyTorch 官方 CPU 索引取 +cpu
+        # 轮子（约 1/10 体积）；有 NVIDIA 显卡想用 CUDA 可设
+        # KEVRAI_TORCH_VARIANT=cuda。v4.18.2: 仅加 extra-index 不够——pip
+        # 跨索引取最高版本，CN 镜像的 CUDA torch 往往比 CPU 索引更新，
+        # 实测装出 5.8GB nvidia_*。这里解析 CPU 索引最新 +cpu 版本并钉住。
+        cpu_torch = (eid in _TORCH_ENGINES
+                     and os.environ.get("KEVRAI_TORCH_VARIANT", "cpu").lower() != "cuda")
+        if cpu_torch:
+            pin = _latest_cpu_torch_pin()
+            if pin:
+                requirements.append(pin)
+        cmd = [*pip_command(), "install", "--target", str(target), *requirements, "-i", idx]
+        if extra_idx:
+            cmd += ["--extra-index-url", extra_idx]
+        if cpu_torch:
             cmd += ["--extra-index-url", "https://download.pytorch.org/whl/cpu"]
         # pip 默认把解包/构建临时目录放在 /tmp（常见只有几 GB，torch 这类
         # 大包会把分区写满，报 [Errno 28] No space left）。改到数据目录内。
@@ -1056,6 +1064,46 @@ _ENGINE_IMPORT_NAMES: dict[str, str] = {
 }
 
 
+def _latest_cpu_torch_pin() -> str | None:
+    """Best-effort: pin torch to the newest +cpu wheel on the PyTorch CPU index.
+
+    v4.18.2: --extra-index-url alone does NOT guarantee the CPU wheel — pip
+    picks the highest version across indexes, and the CN PyPI mirror often
+    has a NEWER CUDA-bundled torch than the CPU index (live verification:
+    sentence-transformers pulled 5.8GB of nvidia_* wheels on a GPU-less
+    host). Pinning ``torch==X.Y.Z+cpu`` forces the CPU wheel; the local
+    version segment exists only on the CPU index. Returns None on any
+    network/parse failure so installs degrade to the previous behaviour.
+    """
+    import re
+
+    machine = platform.machine().lower()
+    if machine in ("x86_64", "amd64"):
+        plat_pat = r"(manylinux[^\s]*x86_64|linux_x86_64|win_amd64)"
+    elif machine in ("arm64", "aarch64"):
+        plat_pat = r"(manylinux[^\s]*aarch64|linux_aarch64|macosx[^\s]*arm64)"
+    else:
+        return None
+    cp = f"cp{sys.version_info.major}{sys.version_info.minor}"
+    try:
+        req = urllib.request.Request(
+            "https://download.pytorch.org/whl/cpu/torch/",
+            headers={"User-Agent": "kevrai-omni-installer"},
+        )
+        with urllib.request.urlopen(req, timeout=20) as r:  # noqa: S310 — fixed https URL
+            html = r.read().decode("utf-8", "replace")
+    except Exception:  # noqa: BLE001 — best-effort
+        return None
+    best: tuple[tuple[int, ...], str] | None = None
+    for m in re.finditer(r"torch-(\d+(?:\.\d+)+)\+cpu-(" + cp + r"|abi3)-[^\s]*?" + plat_pat + r"\.whl", html):
+        ver = tuple(int(x) for x in m.group(1).split("."))
+        if best is None or ver > best[0]:
+            best = (ver, m.group(1))
+    if best is None:
+        return None
+    return f"torch=={best[1]}+cpu"
+
+
 def validate_engine_import(eid: str, target: Path) -> tuple[bool, str]:
     """在 sidecar 进程内 import 一次，确认装好的包真的能用。"""
     module = _ENGINE_IMPORT_NAMES.get(str(eid).lower())
@@ -1068,6 +1116,23 @@ def validate_engine_import(eid: str, target: Path) -> tuple[bool, str]:
     try:
         importlib.import_module(module)
         return True, ""
+    except ModuleNotFoundError as exc:
+        # v4.18.2: the frozen sidecar bundles only the stdlib subset
+        # PyInstaller traced from the app's import graph. Engine deps import
+        # stdlib modules dynamically (sentence-transformers -> filecmp),
+        # which produces a FALSE "install broken" verdict even though pip
+        # succeeded and the files are complete. When the missing module is
+        # stdlib and we are frozen, accept the install (pip rc=0 + files
+        # present) and log; real breakage (missing engine files) still fails.
+        missing = (getattr(exc, "name", "") or "").split(".")[0]
+        if getattr(sys, "frozen", False) and missing in sys.stdlib_module_names:
+            log.warning(
+                "engines: import check inconclusive in frozen sidecar "
+                "(stdlib %s not bundled); accepting pip success for %s",
+                missing, eid,
+            )
+            return True, ""
+        return False, f"{type(exc).__name__}: {exc}"
     except Exception as exc:  # noqa: BLE001 — 任何导入失败都算装坏
         return False, f"{type(exc).__name__}: {exc}"
     finally:

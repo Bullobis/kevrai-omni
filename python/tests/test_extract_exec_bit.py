@@ -121,3 +121,65 @@ def test_zip_internal_symlink_allowed_external_rejected(tmp_path: Path):
     out = tmp_path / "out"
     assert (out / "lib" / "libfoo.so.1").is_symlink()
     assert not (out / "lib" / "evil").exists()
+
+
+def test_cpu_torch_pin_parser(monkeypatch):
+    """v4.18.2: pin parser picks the newest +cpu wheel for this interpreter."""
+    import sys as _sys
+
+    from app import engines
+
+    cp = f"cp{_sys.version_info.major}{_sys.version_info.minor}"
+    html = (
+        f'<a href="torch-2.9.1%2Bcpu-{cp}-{cp}-manylinux_2_28_x86_64.whl">x</a>'
+        f'<a href="torch-2.10.0%2Bcpu-{cp}-{cp}-manylinux_2_28_x86_64.whl">y</a>'
+        f'<a href="torch-2.10.0%2Bcpu-{cp}-{cp}-win_amd64.whl">z</a>'
+        f'<a href="torch-2.11.0-{cp}-{cp}-manylinux_2_28_x86_64.whl">cuda-no-local</a>'
+    ).replace("%2B", "+")
+
+    class _Resp:
+        def __enter__(self):
+            return self
+        def __exit__(self, *a):
+            return False
+        def read(self):
+            return html.encode()
+
+    monkeypatch.setattr(engines.urllib.request, "urlopen", lambda *a, **k: _Resp())
+    monkeypatch.setattr(engines.platform, "machine", lambda: "x86_64")
+    pin = engines._latest_cpu_torch_pin()
+    assert pin == "torch==2.10.0+cpu"
+
+
+def test_cpu_torch_pin_network_failure_returns_none(monkeypatch):
+    from app import engines
+
+    def _boom(*a, **k):
+        raise OSError("network down")
+
+    monkeypatch.setattr(engines.urllib.request, "urlopen", _boom)
+    assert engines._latest_cpu_torch_pin() is None
+
+
+def test_frozen_import_check_tolerates_missing_stdlib(monkeypatch, tmp_path):
+    """v4.18.2: frozen sidecar lacks some stdlib modules (filecmp); a
+    ModuleNotFoundError for a STDLIB name must not fail a good install."""
+    from app import engines
+
+    monkeypatch.setattr(engines.sys, "frozen", True, raising=False)
+    monkeypatch.setitem(engines._ENGINE_IMPORT_NAMES, "fake-engine", "fake_mod")
+
+    def _fake_import(name):
+        raise ModuleNotFoundError("No module named 'filecmp'", name="filecmp")
+
+    import importlib
+    monkeypatch.setattr(importlib, "import_module", _fake_import)
+    ok, err = engines.validate_engine_import("fake-engine", tmp_path)
+    assert ok, err
+
+    def _fake_import_real(name):
+        raise ModuleNotFoundError("No module named 'fake_mod'", name="fake_mod")
+
+    monkeypatch.setattr(importlib, "import_module", _fake_import_real)
+    ok2, err2 = engines.validate_engine_import("fake-engine", tmp_path)
+    assert not ok2 and "fake_mod" in err2
