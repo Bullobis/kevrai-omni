@@ -454,7 +454,7 @@ def _download(url: str, dest: Path) -> Path:
         # networks — where the HF main site is unreachable — EVERY piper
         # voice download failed with "主站与镜像均不可达".
         from . import USER_AGENT
-        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})  # noqa: S310 — https-only
         with urllib.request.urlopen(req, timeout=60) as resp, open(tmp, "wb") as fh:  # noqa: S310 — https-only VOICE_REPO_BASE
             while True:
                 chunk = resp.read(1 << 20)
