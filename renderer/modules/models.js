@@ -479,6 +479,24 @@ async function _renderEngineRoute(host, detail) {
   }
 }
 
+// Engine IDs that actually exist in catalog/engines.json. Some model entries
+// reference runtimes that are not installable through the engine catalog
+// (paddleocr, ultralytics, …); calling installEngine for those always returns
+// 400 and paints a red "installEngine failed" notification even though the
+// weight download is about to succeed. Cache the list; it changes rarely.
+let catalogEngineIds = null;
+async function knownCatalogEngineIds() {
+  if (catalogEngineIds) return catalogEngineIds;
+  try {
+    const r = await api.engines();
+    const b = (r && r.body) || r || {};
+    const list = Array.isArray(b.engines) ? b.engines : (Array.isArray(b) ? b : []);
+    const ids = list.map((e) => e && e.id).filter(Boolean);
+    if (ids.length) catalogEngineIds = ids;
+  } catch (_) { /* fall through: unknown catalog must not block install */ }
+  return catalogEngineIds;
+}
+
 export async function installItem(item) {
   const engines = Array.isArray(item.engine) ? item.engine
                 : (item.engine ? [item.engine] : []);
@@ -501,9 +519,16 @@ export async function installItem(item) {
   // Make sure the preferred engine is present; multi-engine models can pick a
   // different engine from the detail panel. import_only 模型无引擎则跳过。
   if (chosenEngine) {
-    try {
-      await api.installEngine(chosenEngine);
-    } catch (_) { /* toast shown by api */ }
+    const known = await knownCatalogEngineIds();
+    if (known && !known.includes(chosenEngine)) {
+      // Not installable through the catalog. Do NOT call installEngine: it
+      // would always 400 and show a failure notice before the download starts.
+      toast(t("toast.engineNotInCatalog", { engine: chosenEngine }), { kind: "warn" });
+    } else {
+      try {
+        await api.installEngine(chosenEngine);
+      } catch (_) { /* toast shown by api */ }
+    }
   }
 
   // GGUF models ship several revisions (branches/tags) and quantizations.
