@@ -2316,9 +2316,13 @@ class MnnChatReq(BaseModel):
 
 
 @app.get("/api/mnn/models")
-def mnn_models() -> dict[str, Any]:
-    """MNN 官方预转换模型市场（内置精选清单，离线可用）。"""
-    items = mnn_market.market_list()
+def mnn_models(live: int = 1) -> dict[str, Any]:
+    """MNN official pre-converted market: curated rows + live org catalog.
+
+    ``live=0`` keeps the offline-only curated list (used by tests and as a
+    fallback when the org API is unreachable).
+    """
+    items = mnn_market.market_list(live=bool(live))
     return {"count": len(items), "models": items}
 
 

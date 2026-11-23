@@ -14,6 +14,7 @@ import { t } from "./i18n.js";
 import { pickQuantization } from "./quant-picker.js";
 import { pickRevision, buildDownloadArgs } from "./revision-picker.js";
 import { planInstall, planReasonKey, PLAN } from "./plan-install.js";
+import { showDownloads } from "./downloads.js";
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -478,7 +479,7 @@ async function _renderEngineRoute(host, detail) {
   }
 }
 
-async function installItem(item) {
+export async function installItem(item) {
   const engines = Array.isArray(item.engine) ? item.engine
                 : (item.engine ? [item.engine] : []);
   // import_only 模型（没有匹配到引擎）不再被挡回：跳过引擎安装，
@@ -545,6 +546,14 @@ async function installItem(item) {
   try {
     const res = await api.hubDownload(plan.args);
     const body = (res && res.body) || res || {};
+    // Starting a model download must open the download panel. Previously only
+    // the single-URL helper did this, so market installs showed a toast and
+    // then appeared to do nothing until the user found the hidden overlay.
+    if (!Array.isArray(body.tasks) || body.tasks.length === 0) {
+      toast(t("toast.downloadNoFiles"), { kind: "warn" });
+      return;
+    }
+    showDownloads();
     if (body.auto_files_picked) {
       toast(t("toast.downloadStartedAuto", { file: item.name || item.id }),
             { kind: "ok" });

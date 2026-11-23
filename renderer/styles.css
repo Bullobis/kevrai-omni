@@ -844,8 +844,18 @@ html[data-theme="light"] .mnn-msg.user { color: #fff; }
 }
 .mnn-chat-input-row input:focus-visible { outline: none; box-shadow: var(--focus); }
 
-/* MNN 下载进度 */
-#mnn-dl-progress { margin: var(--sp-1) 0 var(--sp-2); }
+/* MNN 下载进度：固定在滚动容器顶部，切到市场列表后仍然可见。 */
+#mnn-dl-progress {
+  margin: var(--sp-1) 0 var(--sp-2);
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--card);
+  border: 1px solid var(--bord);
+  border-radius: var(--radius);
+  padding: var(--sp-1) var(--sp-2);
+}
+.mnn-row-dl { margin-top: 6px; }
 .mnn-dl-head {
   display: flex; justify-content: space-between; align-items: center; gap: 8px;
   margin-bottom: 6px;

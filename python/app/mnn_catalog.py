@@ -235,15 +235,110 @@ MODALITY: dict[str, dict] = {
 }
 
 
-def market_list() -> list[dict[str, Any]]:
-    """Static curated list (offline-safe), merged with modality annotation."""
+# Live org catalog cache. The curated MARKET above is a hand-picked subset;
+# taobao-mnn publishes 200+ pre-converted repos. Users repeatedly reported the
+# MNN market as "extremely sparse" (15 rows vs 259 in the main market), so the
+# page also exposes the live org catalog, with the curated entries taking
+# precedence when a repo appears in both.
+_LIVE_CACHE: dict[str, Any] = {"ts": 0.0, "items": []}
+_LIVE_TTL_S = 600.0
+
+
+def _live_item(repo: str, pipeline: str | None, created: str | None) -> dict[str, Any]:
+    short = repo.split("/", 1)[-1]
+    display = short[:-4] if short.endswith("-MNN") else short
+    display = display.replace("_", " ").replace("-", " ").strip()
+    dest_id = short
+    return {
+        "id": f"live-{short.lower().replace('/', '-')}",
+        "dest_id": dest_id,
+        "repo": repo,
+        "name": display,
+        "size_gb": 0,
+        "quant": "MNN",
+        "category": "vision" if pipeline == "image-text-to-text" else "llm",
+        "description": "MNN 官方预转换仓库（在线目录，大小与内存需求在下载前枚举）",
+        "hardware": {},
+        "live": True,
+        "created_at": created or "",
+    }
+
+
+def _live_rows(data: Any) -> list[dict[str, Any]]:
+    """Filter the org API response down to loadable MNN chat repos."""
+    curated_repos = {str(e.get("repo") or "") for e in MARKET}
+    out: list[dict[str, Any]] = []
+    for m in (data if isinstance(data, list) else []):
+        repo = str(m.get("id") or "")
+        if not repo.startswith("taobao-mnn/") or repo in curated_repos:
+            continue
+        short = repo.split("/", 1)[-1].lower()
+        if not (short.endswith("-mnn") or "-mnn-" in short):
+            continue
+        if any(x in short for x in ("-base-mnn", "gguf", "stable-diffusion",
+                                    "bge-", "gte-", "audio", "omni")):
+            continue
+        pipeline = m.get("pipeline_tag")
+        if pipeline not in ("text-generation", "image-text-to-text"):
+            continue
+        out.append(_live_item(repo, pipeline, m.get("createdAt")))
+    return out
+
+
+def live_market_list() -> list[dict[str, Any]]:
+    """Fetch the taobao-mnn org catalog (cached) and return download-safe rows.
+
+    Network failure returns an empty list so the curated MARKET still renders
+    offline. Only text/vision chat repos are included: audio, embedding,
+    diffusion and ``-Base`` checkpoints would download successfully but cannot
+    be loaded by the MNN chat runtime.
+    """
+    import time
+
+    now = time.time()
+    if _LIVE_CACHE["items"] and now - _LIVE_CACHE["ts"] < _LIVE_TTL_S:
+        return [dict(e) for e in _LIVE_CACHE["items"]]
+
+    import httpx
+
+    headers = {"User-Agent": USER_AGENT}
+    data: list[dict[str, Any]] = []
+    # HF API shape is mirrored by hf-mirror; try both for CN reachability.
+    for base in _MIRRORS:
+        try:
+            url = (f"{base}/api/models?author=taobao-mnn&limit=500"
+                   "&sort=createdAt&direction=-1")
+            with httpx.Client(timeout=10.0, follow_redirects=True, headers=headers) as client:
+                r = client.get(url)
+                r.raise_for_status()
+                data = r.json()
+            if isinstance(data, list) and data:
+                break
+        except Exception:  # noqa: BLE001 — fall through to the next mirror
+            data = []
+
+    out = _live_rows(data)
+    _LIVE_CACHE["ts"] = now
+    _LIVE_CACHE["items"] = out
+    return [dict(e) for e in out]
+
+
+def market_list(live: bool = False) -> list[dict[str, Any]]:
+    """Curated list, optionally merged with the live org catalog."""
     items = [dict(e) for e in MARKET]
     for e in items:
+        e["live"] = False
         md = MODALITY.get(e["id"])
         if md is not None:
             e["modality"] = md
         else:
             e["modality"] = {"multimodal": False, "understand": [], "generate": [], "notes": "未标注"}
+    if live:
+        for e in live_market_list():
+            e["modality"] = {"multimodal": e["category"] == "vision",
+                             "understand": ["image"] if e["category"] == "vision" else [],
+                             "generate": ["text"], "notes": "MNN 官方预转换仓库"}
+            items.append(e)
     return items
 
 

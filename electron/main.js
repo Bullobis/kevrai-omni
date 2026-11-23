@@ -30,6 +30,7 @@ const { URL } = require("node:url");
 const windowState = require("./window-state");
 const { normalizeMeasureArgs } = require("./measure-args");
 const { engineRecordsFromFetch } = require("./engine-records.js");
+const { normalizeProgress } = require("./download-progress.js");
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -2524,7 +2525,13 @@ function registerIpc() {
       revision: typeof o.revision === "string" ? o.revision.slice(0, 128) : "",
       files, auto_pick: o.auto_pick !== false,
     };
-    return sidecarFetch("/api/hub/download", { method: "POST", body });
+    const res = await sidecarFetch("/api/hub/download", { method: "POST", body });
+    // The sidecar returns {job_id, tasks:[...]}. Poll the *job* (one request,
+    // aggregated bytes) and fan each task out as a normal download:progress
+    // event; otherwise multi-file downloads start but the UI never sees them.
+    const payload = (res && res.body) || res || {};
+    if (payload.job_id) pollHubJobProgress(payload.job_id, payload.tasks || []);
+    return res;
   });
 
   ipcMain.handle("kevrai:hub-job", async (_e, jobId) => {
@@ -2648,16 +2655,24 @@ function notifyRenderer(channel, payload) {
   }
 }
 
-// Best-effort progress poller for a single download task. Forwards both the new
-// `download:progress` channel and the legacy `api:progress:event` channel so
-// pre-existing subscribers still receive events. Stops when status is terminal
-// (done/failed/cancelled) or after 5 minutes, whichever comes first.
+// Normalise the two sidecar progress shapes into the single shape the
+// renderer consumes; see electron/download-progress.js for the field map.
+function emitDownloadProgress(taskId, body) {
+  const payload = normalizeProgress(taskId, body);
+  notifyRenderer("download:progress", payload);
+  notifyRenderer("api:progress:event", payload);
+  return payload;
+}
+
+// Best-effort progress poller for a single download task. Stops when status is
+// terminal or after 6 hours. The old 5-minute cap silently froze every
+// multi-GB model download mid-flight (a 20 GB model at 10 MB/s takes ~34 min).
 function pollDownloadProgress(taskId) {
   const start = Date.now();
   const interval = 1000;
   const tick = async () => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
-    if (Date.now() - start > 5 * 60 * 1000) return;
+    if (Date.now() - start > 6 * 60 * 60 * 1000) return;
     let r;
     try {
       r = await sidecarFetch(`/api/download/${encodeURIComponent(taskId)}`);
@@ -2665,14 +2680,60 @@ function pollDownloadProgress(taskId) {
       setTimeout(tick, interval);
       return;
     }
-    const body = (r && r.body) || {};
-    const payload = { taskId, ...body };
-    notifyRenderer("download:progress", payload);
-    notifyRenderer("api:progress:event", payload);
-    const status = String(body.status || "").toLowerCase();
+    const body = (r && r.body) || r || {};
+    const payload = emitDownloadProgress(taskId, body);
     // DownloadStatus terminal set. "error" is not a sidecar status (it uses
     // "failed"); including "expired" stops polling watchdog-expired tasks.
-    if (["done", "failed", "cancelled", "expired"].includes(status)) return;
+    if (["done", "failed", "cancelled", "expired"].includes(payload.status)) return;
+    setTimeout(tick, interval);
+  };
+  setTimeout(tick, 500);
+}
+
+// Multi-file hub jobs need job-level polling: the sidecar tracks one task per
+// file and exposes an aggregate at /api/hub/jobs/<job_id>. Emit every task as
+// a normal download:progress event so the existing downloads overlay renders
+// one row per file without a second download subsystem.
+function pollHubJobProgress(jobId, initialTasks) {
+  const start = Date.now();
+  const interval = 1000;
+  const emitTasks = (tasks) => {
+    for (const t of (tasks || [])) {
+      const id = t && (t.task_id || t.taskId);
+      if (!id) continue;
+      emitDownloadProgress(id, {
+        ...t,
+        status: t.status === "unknown" ? "running" : t.status,
+      });
+    }
+  };
+  // Show queued rows immediately, before the first 1s poll.
+  emitTasks((initialTasks || []).map((t) => ({ ...t, status: "queued" })));
+
+  const tick = async () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (Date.now() - start > 6 * 60 * 60 * 1000) return;
+    let r;
+    try {
+      r = await sidecarFetch(`/api/hub/jobs/${encodeURIComponent(jobId)}`);
+    } catch (_) {
+      setTimeout(tick, interval);
+      return;
+    }
+    const body = (r && r.body) || r || {};
+    emitTasks(body.tasks || []);
+    const status = String(body.status || "").toLowerCase();
+    // A task may briefly be absent while the sidecar registers it; keep
+    // polling until the job itself reaches a terminal aggregate status.
+    if (["done", "failed", "partial", "cancelled", "expired"].includes(status)) {
+      // One final pass so a task that finished exactly on the boundary is
+      // reported as done rather than left on "running".
+      try {
+        const fin = await sidecarFetch(`/api/hub/jobs/${encodeURIComponent(jobId)}`);
+        emitTasks(((fin && fin.body) || fin || {}).tasks || []);
+      } catch (_) {}
+      return;
+    }
     setTimeout(tick, interval);
   };
   setTimeout(tick, 500);

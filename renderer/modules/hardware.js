@@ -1,8 +1,8 @@
 // renderer/modules/hardware.js — 硬件快照 + 智能模型推荐页。
 "use strict";
 import { api } from "./api.js";
-import { toast } from "./toast.js";
 import { t } from "./i18n.js";
+import { installItem } from "./models.js";
 
 const $ = (s, r) => (r || document).querySelector(s);
 
@@ -195,12 +195,16 @@ function renderRecs(root) {
       const id = b.dataset.id;
       const item = _lastRecs.find((m) => m.id === id);
       if (!item) return;
-      const engines = Array.isArray(item.engine) ? item.engine : (item.engine ? [item.engine] : []);
-      if (!engines.length) { toast(t("hardware.noEngine"), { kind: "warn" }); return; }
+      // "安装" means install the model, not just its engine. The old handler
+      // called installEngine() only, so the button finished with a toast while
+      // zero weight files were requested -- the exact "recommended hardware
+      // page cannot download anything" report.
+      b.disabled = true;
       try {
-        await api.installEngine(engines[0]);
-        toast(t("hardware.installingEngine", { engine: engines[0] }), { kind: "ok" });
-      } catch (_) { /* toast shown */ }
+        await installItem(item);
+      } finally {
+        b.disabled = false;
+      }
     });
   });
 }
