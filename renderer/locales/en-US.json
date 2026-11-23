@@ -670,6 +670,7 @@
     "downloadStartedAuto": "Picked weight files automatically, downloading: {file}",
     "downloadStarted": "Downloading: {file}",
     "downloadNoFiles": "No new files to download (already present, or the repo has no usable weights)",
+    "engineNotInCatalog": "Engine {engine} is not in the engine catalog; skipped its install and continued with the model weights",
     "installNothingNoItem": "No model information to install",
     "installNothingNoRepo": "No published weight URL for this model yet (awaiting official release)",
     "installNothingGeneric": "Nothing to download"

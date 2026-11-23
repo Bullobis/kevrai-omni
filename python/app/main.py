@@ -1878,6 +1878,11 @@ async def hub_download(request: Request, body: HubDownloadReq) -> dict[str, Any]
     )
     jobs[job_id] = {"tasks": task_meta, "dest_root": str(dest_root),
                     "created_at": time.time(),
+                    # An install where every file already exists produces zero
+                    # tasks. Without a terminal marker hub_job() reports
+                    # "running" forever and Electron polls the empty job for six
+                    # hours; mark it finished immediately.
+                    "finished_at": (time.time() if not task_meta else None),
                     "model": (model_meta.model_dump() if model_meta else {
                         "id": f"download-{job_id[:8]}",
                         "name": Path(body.repo).name,
@@ -1902,6 +1907,7 @@ async def hub_download(request: Request, body: HubDownloadReq) -> dict[str, Any]
             jobs.pop(stale, None)
     return {"job_id": job_id, "dest_root": str(dest_root),
             "tasks": tasks_out, "skipped": skipped,
+            "status": ("done" if not tasks_out else "running"),
             # v4.11.0 — 让前端能区分"用户选的"和"后端代挑的"，
             # 代挑时提示一句，避免用户疑惑为什么下了一堆没见过的文件。
             "auto_files_picked": auto_files_picked}
@@ -1942,7 +1948,11 @@ async def hub_job(request: Request, job_id: str) -> dict[str, Any]:
                            "bytes_done": done_b, "bytes_total": expected})
     files_total = len(job.get("tasks", {}))
     ratio = (bytes_done / bytes_total) if bytes_total else (files_done / files_total if files_total else 0.0)
-    if files_failed and files_done + files_failed == files_total:
+    if not files_total:
+        # Zero tasks means every selected file already existed (or none could
+        # be started). Never leave such a job "running" forever.
+        status = "done" if job.get("finished_at") else "running"
+    elif files_failed and files_done + files_failed == files_total:
         status = "failed" if files_done == 0 else "partial"
     elif files_total and files_done == files_total:
         status = "done"

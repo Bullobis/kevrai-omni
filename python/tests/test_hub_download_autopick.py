@@ -194,3 +194,30 @@ async def test_gguf_only_repo_still_downloads(tmp_xdg, monkeypatch):
         })
     assert r.status_code == 200, r.text
     assert any("model-Q4_K_M.gguf" in u for u in dl.started)
+
+
+async def test_all_files_exist_returns_terminal_job(tmp_xdg, monkeypatch):
+    """重复安装已存在的模型：不能建一个 files_total=0 的“running”任务。
+
+    旧行为：所有文件都命 already_exists → tasks=[]，但 hub_job() 只看
+    files_total，永远返回 running；Electron 主进程随后空轮询 6 小时。
+    """
+    hub, dl = _wire(tmp_xdg, [{"path": "model.safetensors", "size": 10}])
+    monkeypatch.setattr(app_main, "get_registry", lambda settings=None: hub)
+    root = tmp_xdg / "downloads" / "hub" / "hf" / "org__model"
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "model.safetensors").write_bytes(b"0123456789")
+
+    async with _client() as c:
+        r = await c.post("/api/hub/download", json={
+            "hub": "hf", "repo": "org/model", "auto_pick": True,
+        })
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["tasks"] == []
+        assert body["status"] == "done"
+        assert body["skipped"][0]["reason"] == "already_exists"
+        job = (await c.get(f"/api/hub/jobs/{body['job_id']}")).json()
+    assert job["files_total"] == 0
+    assert job["status"] == "done", "空任务必须立即终态，否则主进程会空轮询 6 小时"
+    assert dl.started == []

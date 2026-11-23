@@ -2534,7 +2534,11 @@ function registerIpc() {
     // aggregated bytes) and fan each task out as a normal download:progress
     // event; otherwise multi-file downloads start but the UI never sees them.
     const payload = (res && res.body) || res || {};
-    if (payload.job_id) pollHubJobProgress(payload.job_id, payload.tasks || []);
+    // Zero tasks = every file already existed; nothing will ever progress and
+    // the sidecar job is already terminal. Don't start a six-hour poll loop.
+    if (payload.job_id && Array.isArray(payload.tasks) && payload.tasks.length) {
+      pollHubJobProgress(payload.job_id, payload.tasks);
+    }
     return res;
   });
 

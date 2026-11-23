@@ -6,7 +6,7 @@ import { unwrap, escapeHtml } from "./net.js";
 import { state, setState } from "./state.js";
 import { recordFocus, restoreFocus, trapFocus, registerEsc } from "./focus-return.js";
 import { overlayOpen, overlayClose } from "./overlay-fx.js";
-import { t as translate } from "./i18n.js";
+import { t as translate, bindI18n } from "./i18n.js";
 
 function fmtBytes(n) {
   if (n == null || isNaN(n)) return "?";
@@ -61,19 +61,19 @@ function ensureOverlay() {
   el.setAttribute("aria-labelledby", "download-overlay-title");
   el.innerHTML = `
     <div class="overlay-card" role="document">
-      <header><h2 id="download-overlay-title">${translate("downloads.title")}</h2>
-        <button class="ghost" data-action="close-overlay" aria-label="${translate("downloads.closePanel")}">×</button></header>
+      <header><h2 id="download-overlay-title" data-i18n="downloads.title">${translate("downloads.title")}</h2>
+        <button class="ghost" data-action="close-overlay" aria-label="${translate("downloads.closePanel")}" data-i18n-aria-label="downloads.closePanel">×</button></header>
       <section class="src-test" aria-labelledby="src-test-title">
         <div class="src-test-head">
-          <h3 id="src-test-title">${translate("downloads.sourceTest")}</h3>
-          <button class="ghost" data-action="remeasure-sources">${translate("downloads.remeasure")}</button>
+          <h3 id="src-test-title" data-i18n="downloads.sourceTest">${translate("downloads.sourceTest")}</h3>
+          <button class="ghost" data-action="remeasure-sources" data-i18n="downloads.remeasure">${translate("downloads.remeasure")}</button>
         </div>
         <div id="source-list" class="src-list" aria-live="polite">
-          <div class="hint">${translate("downloads.sourceTestHint")}</div>
+          <div class="hint" data-i18n="downloads.sourceTestHint">${translate("downloads.sourceTestHint")}</div>
         </div>
       </section>
       <div id="download-list" class="list" aria-live="polite"></div>
-      <p class="hint" style="margin-top:12px">${translate("downloads.activeNote")}</p>
+      <p class="hint" style="margin-top:12px" data-i18n="downloads.activeNote">${translate("downloads.activeNote")}</p>
     </div>
   `;
   el.addEventListener("click", (e) => {
@@ -87,6 +87,10 @@ function ensureOverlay() {
     if (unlock) { e.preventDefault(); lockSource(""); }
   });
   document.body.appendChild(el);
+  // The overlay is created during module wiring, often before initI18n()
+  // resolves. Static labels would otherwise stay as raw keys ("downloads.title")
+  // forever, because nothing re-binds them when the locale later arrives.
+  try { bindI18n(el); } catch (_) {}
   el.setAttribute("hidden", ""); // do not auto-show on creation
   return el;
 }
@@ -180,6 +184,9 @@ async function lockSource(sourceId) {
 
 export function showDownloads() {
   if (!overlayEl) overlayEl = ensureOverlay();
+  // Locale is normally ready by now; re-bind in case the panel text was built
+  // before the dictionaries loaded.
+  try { bindI18n(overlayEl); } catch (_) {}
   savedTrigger = recordFocus();
   overlayOpen(overlayEl);
   renderOverlay();
