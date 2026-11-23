@@ -661,11 +661,15 @@ const api = {
     const files = Array.isArray(params.files)
       ? params.files.filter((f) => typeof f === "string").map((f) => f.slice(0, 1024)).slice(0, 200)
       : [];
-    if (!files.length) throw new Error("files: at least one path required");
+    const autoPick = params.auto_pick !== false;
+    // Empty files is valid only for auto-pick: the sidecar's repo_picker
+    // chooses the weight shards. Requiring a non-empty list here is what
+    // blocked every non-GGUF model (165/259) from ever reaching the backend.
+    if (!files.length && !autoPick) throw new Error("files: at least one path required");
     const clean = {
       hub: params.hub, repo: params.repo, files,
       revision: typeof params.revision === "string" ? params.revision.slice(0, 128) : "",
-      auto_pick: params.auto_pick !== false,
+      auto_pick: autoPick,
     };
     return invoke("kevrai:hub-download", clean);
   },

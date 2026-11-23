@@ -2519,11 +2519,15 @@ function registerIpc() {
     assert(isString(o.repo, 256), "repo: invalid");
     assert(Array.isArray(o.files), "files: must be an array");
     const files = o.files.filter((f) => typeof f === "string" && f.length <= 1024).slice(0, 200);
-    assert(files.length > 0, "files: empty after validation");
+    const autoPick = o.auto_pick !== false;
+    // Empty files is valid for auto-pick (backend picks weight shards). The
+    // previous unconditional non-empty assert made non-GGUF model installs fail
+    // in the main process before any HTTP request was made.
+    assert(files.length > 0 || autoPick, "files: empty after validation");
     const body = {
       hub: o.hub, repo: o.repo,
       revision: typeof o.revision === "string" ? o.revision.slice(0, 128) : "",
-      files, auto_pick: o.auto_pick !== false,
+      files, auto_pick: autoPick,
     };
     const res = await sidecarFetch("/api/hub/download", { method: "POST", body });
     // The sidecar returns {job_id, tasks:[...]}. Poll the *job* (one request,

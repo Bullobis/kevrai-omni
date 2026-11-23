@@ -77,7 +77,7 @@ export function planInstall(item, opts = {}) {
     }
     return {
       kind: PLAN.AUTO,
-      args: { hub: HUB_HF, repo, revision: opts.revision || "main", auto_pick: true },
+      args: { hub: HUB_HF, repo, files: [], revision: opts.revision || "main", auto_pick: true },
       reason: "quant-unrecognised",
     };
   }
@@ -86,7 +86,7 @@ export function planInstall(item, opts = {}) {
   // THIS is the branch that used to download nothing at all.
   return {
     kind: PLAN.AUTO,
-    args: { hub: HUB_HF, repo, revision: opts.revision || "main", auto_pick: true },
+    args: { hub: HUB_HF, repo, files: [], revision: opts.revision || "main", auto_pick: true },
   };
 }
 
