@@ -669,6 +669,7 @@
     "mnnRepoStart": "Starting MNN model download (direct from repo)",
     "downloadStartedAuto": "Picked weight files automatically, downloading: {file}",
     "downloadStarted": "Downloading: {file}",
+    "downloadNoFiles": "No new files to download (already present, or the repo has no usable weights)",
     "installNothingNoItem": "No model information to install",
     "installNothingNoRepo": "No published weight URL for this model yet (awaiting official release)",
     "installNothingGeneric": "Nothing to download"
@@ -925,6 +926,10 @@
     "downloadedTitle": "Downloaded MNN models",
     "convertTitle": "Model format conversion (HF → MNN)",
     "marketTitle": "MNN model market (official pre-converted · ready to run)",
+    "marketCount": "{n} models",
+    "liveBadge": "live catalog",
+    "sizeAtDownload": "size computed at download",
+    "ramAtDownload": "RAM requirement resolved before download",
     "cancel": "Cancel",
     "cancelRequested": "Download cancel requested",
     "statusFailed": "Failed to get MNN status: {err}",

@@ -36,14 +36,7 @@ export async function renderMnnPage(root) {
       </div>
     </div>
     <div id="mnn-engine-state"></div>
-    <div id="mnn-chat-card" class="mnn-chat-card" hidden></div>
-    <h3 class="section">${t("mnn.downloadedTitle")}</h3>
-    <div id="mnn-local" class="list"></div>
-    <h3 class="section">${t("mnn.convertTitle")}</h3>
-    <div id="mnn-convert" class="mnn-convert-card"></div>
-    <h3 class="section">${t("mnn.marketTitle")}</h3>
-    <div id="mnn-market" class="list"></div>
-    <div id="mnn-dl-progress" hidden>
+    <div id="mnn-dl-progress" class="mnn-dl-card" hidden>
       <div class="mnn-dl-head">
         <span id="mnn-dl-name" class="sub"></span>
         <button class="ghost small" id="mnn-dl-cancel">${t("mnn.cancel")}</button>
@@ -51,6 +44,13 @@ export async function renderMnnPage(root) {
       <div class="hw-score-bar"><div id="mnn-dl-fill" class="hw-score-fill" style="width:0%"></div></div>
       <div id="mnn-dl-info" class="mut tiny"></div>
     </div>
+    <div id="mnn-chat-card" class="mnn-chat-card" hidden></div>
+    <h3 class="section">${t("mnn.downloadedTitle")}</h3>
+    <div id="mnn-local" class="list"></div>
+    <h3 class="section">${t("mnn.convertTitle")}</h3>
+    <div id="mnn-convert" class="mnn-convert-card"></div>
+    <h3 class="section">${t("mnn.marketTitle")} <span id="mnn-market-count" class="mut tiny"></span></h3>
+    <div id="mnn-market" class="list"></div>
   `;
 
   $("#mnn-refresh", root).addEventListener("click", () => refreshAll(root));
@@ -550,28 +550,44 @@ async function renderMarket(root) {
     return;
   }
   const models = data.models || [];
-  el.innerHTML = models.map((m) => `
+  const countEl = $("#mnn-market-count", root);
+  if (countEl) countEl.textContent = t("mnn.marketCount", { n: models.length });
+  el.innerHTML = models.map((m) => {
+    const sizeGb = Number(m.size_gb) || 0;
+    const ram = Number((m.hardware || {}).ram_gb) || 0;
+    const sizeText = sizeGb > 0 ? t("mnn.approxGb", { gb: esc(m.size_gb) }) : t("mnn.sizeAtDownload");
+    const ramText = ram > 0 ? t("mnn.suggestRam", { ram }) : t("mnn.ramAtDownload");
+    return `
     <div class="row">
       <div class="grow">
         <div class="name">${esc(m.name)}
           ${m.trending ? '<span class="pill warn">🔥</span>' : ""}
           <span class="pill">${esc(m.quant || "int4")}</span>
+          ${m.live ? `<span class="pill">${t("mnn.liveBadge")}</span>` : ""}
         </div>
         <div class="sub">${esc(m.description || "")}</div>
-        <div class="sub mut">${esc(m.repo)} · ${t("mnn.approxGb", { gb: esc(m.size_gb) })} · ${t("mnn.suggestRam", { ram: esc((m.hardware || {}).ram_gb || "?") })}</div>
+        <div class="sub mut">${esc(m.repo)} · ${sizeText} · ${ramText}</div>
+        <div class="mnn-row-dl" data-mnn-row="${esc(m.dest_id || m.id)}" hidden>
+          <div class="hw-score-bar"><div class="hw-score-fill" data-mnn-row-fill style="width:0%"></div></div>
+          <div class="mut tiny" data-mnn-row-info></div>
+        </div>
       </div>
       <div class="hw-rec-side">
         <span class="pill">${esc(m.category || "llm")}</span>
         <button class="primary small" data-action="mnn-download" data-id="${esc(m.id)}">${t("mnn.download")}</button>
       </div>
-    </div>
-  `).join("");
+    </div>`;
+  }).join("");
 
   el.querySelectorAll("[data-action=mnn-download]").forEach((b) => {
     b.addEventListener("click", async () => {
+      const model = models.find((m) => m.id === b.dataset.id);
+      if (!model) return;
       b.disabled = true;
       try {
-        await api.mnnDownload(b.dataset.id);
+        // Live catalog rows are downloaded by repo; static curated rows keep
+        // their stable entry_id (and its friendlier dest folder).
+        await api.mnnDownload(model.live ? { repo: model.repo } : model.id);
         toast(t("mnn.startDownloadMnn"), { kind: "ok" });
         pollDownload(root);
       } catch (_) { /* toast shown (409 已存在/进行中) */ }
@@ -595,11 +611,27 @@ async function pollDownload(root) {
   if (!st || (!st.active && st.status === "idle")) { box.hidden = true; return; }
   box.hidden = false;
   $("#mnn-dl-name", root).textContent = t("mnn.downloadingN", { name: st.name || st.entry_id, done: st.files_done, total: st.files_total });
+  // Before the sidecar has enumerated file sizes, bytes_total is 0; fall back
+  // to completed-files ratio so the bar shows real movement instead of a
+  // permanently empty 0% bar.
   const pct = st.bytes_total > 0
-    ? Math.min(100, Math.round((st.bytes_done / st.bytes_total) * 100)) : 0;
+    ? Math.min(100, Math.round((st.bytes_done / st.bytes_total) * 100))
+    : (st.files_total > 0 ? Math.min(100, Math.round((st.files_done / st.files_total) * 100)) : 0);
   $("#mnn-dl-fill", root).style.width = `${pct}%`;
-  $("#mnn-dl-info", root).textContent =
-    `${(st.bytes_done / 1e9).toFixed(2)} / ${(st.bytes_total / 1e9).toFixed(2)} GB · ${pct}% · ${st.current_file || ""} ${st.error ? "· " + st.error : ""}`;
+  const info = `${(st.bytes_done / 1e9).toFixed(2)} / ${(st.bytes_total / 1e9).toFixed(2)} GB · ${pct}% · ${st.current_file || ""} ${st.error ? "· " + st.error : ""}`;
+  $("#mnn-dl-info", root).textContent = info;
+  // Mirror the same progress into the active model's own row, so the bar
+  // follows the model the user clicked instead of living only at page bottom.
+  root.querySelectorAll("[data-mnn-row]").forEach((row) => { row.hidden = true; });
+  for (const row of root.querySelectorAll("[data-mnn-row]")) {
+    if (row.dataset.mnnRow !== (st.entry_id || "")) continue;
+    row.hidden = false;
+    const fill = row.querySelector("[data-mnn-row-fill]");
+    const label = row.querySelector("[data-mnn-row-info]");
+    if (fill) fill.style.width = `${pct}%`;
+    if (label) label.textContent = info;
+    break;
+  }
   if (!st.active && (st.status === "done" || st.status === "failed" || st.status === "cancelled")) {
     if (st.status === "done") {
       toast(t("mnn.downloadMnnDone"), { kind: "ok" });

@@ -669,6 +669,7 @@
     "mnnRepoStart": "开始下载 MNN 模型（仓库直下）",
     "downloadStartedAuto": "已自动挑选权重并开始下载：{file}",
     "downloadStarted": "开始下载：{file}",
+    "downloadNoFiles": "没有可下载的新文件（可能已存在，或仓库里没有可用权重）",
     "installNothingNoItem": "没有可安装的模型信息",
     "installNothingNoRepo": "该模型尚未公布权重下载地址（等待官方开源）",
     "installNothingGeneric": "没有可下载的内容"
@@ -925,6 +926,10 @@
     "downloadedTitle": "已下载的 MNN 模型",
     "convertTitle": "模型格式转换（HF → MNN）",
     "marketTitle": "MNN 模型市场（官方预转换 · 开箱即用）",
+    "marketCount": "共 {n} 个",
+    "liveBadge": "在线目录",
+    "sizeAtDownload": "大小下载时计算",
+    "ramAtDownload": "内存需求下载前枚举",
     "cancel": "取消",
     "cancelRequested": "已请求取消下载",
     "statusFailed": "无法获取 MNN 状态：{err}",
