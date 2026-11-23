@@ -608,7 +608,11 @@ async function pollDownload(root) {
     const r = await api.mnnDownloadStatus();
     st = r?.body || r || {};
   } catch (_) { return; }
-  if (!st || (!st.active && st.status === "idle")) { box.hidden = true; return; }
+  if (!st || (!st.active && st.status === "idle")) {
+    box.hidden = true;
+    root.querySelectorAll("[data-mnn-row]").forEach((row) => { row.hidden = true; });
+    return;
+  }
   box.hidden = false;
   $("#mnn-dl-name", root).textContent = t("mnn.downloadingN", { name: st.name || st.entry_id, done: st.files_done, total: st.files_total });
   // Before the sidecar has enumerated file sizes, bytes_total is 0; fall back

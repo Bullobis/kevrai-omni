@@ -35,6 +35,7 @@ test("GGUF + 空分片数组 ≠ 取消，降级为自动挑文件", () => {
   const p = planInstall({ id: "m", gguf_repo: "org/repo-GGUF" }, { files: [] });
   assert.equal(p.kind, PLAN.AUTO);
   assert.equal(p.args.auto_pick, true);
+  assert.deepEqual(p.args.files, []);
   assert.equal(p.reason, "quant-unrecognised");
 });
 
@@ -42,6 +43,7 @@ test("GGUF + 未选 → 自动挑文件", () => {
   const p = planInstall({ id: "m", gguf_repo: "org/repo-GGUF" });
   assert.equal(p.kind, PLAN.AUTO);
   assert.equal(p.args.repo, "org/repo-GGUF");
+  assert.deepEqual(p.args.files, []);
 });
 
 test("分片数组里的空串被过滤掉", () => {
@@ -63,6 +65,9 @@ test("普通 HF 仓库 → 自动挑文件（旧行为：什么都不下）", ()
   assert.equal(p.args.repo, "Qwen/Qwen3-Omni-30B-A3B-Instruct");
   assert.equal(p.args.auto_pick, true);
   assert.equal(p.args.hub, HUB_HF);
+  // IPC requires files to be present (empty is valid with auto_pick). Without
+  // this key the preload rejected the call before the sidecar saw it.
+  assert.deepEqual(p.args.files, []);
 });
 
 test("非 GGUF 仓库带 revision 时透传", () => {
