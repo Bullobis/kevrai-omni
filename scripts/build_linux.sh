@@ -53,6 +53,12 @@ step "3. Clean prior artifacts"
 # or move the outputs aside between runs.
 rm -rf build/output dist
 
+# electron-builder packs python/dist/sidecar as extraResources. A bundle
+# missing pip-runner installs fine but every engine/env install is broken at
+# runtime (pip falls back to re-launching the sidecar and hits port 17890).
+[ -x python/dist/sidecar/sidecar ] || fail "python/dist/sidecar/sidecar missing; run scripts/build_sidecar.sh first"
+[ -x python/dist/sidecar/pip-runner ] || fail "python/dist/sidecar/pip-runner missing; rebuild with scripts/build_sidecar.sh"
+
 step "4. electron-builder --linux AppImage deb"
 export ELECTRON_BUILDER_BINARIES_MIRROR="${ELECTRON_BUILDER_BINARIES_MIRROR:-https://registry.npmmirror.com/-/binary/electron-builder-binaries/}"
 export CSC_IDENTITY_AUTO_DISCOVERY=false
