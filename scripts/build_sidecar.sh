@@ -9,6 +9,7 @@
 #
 # Output:
 #   python/dist/sidecar/            (onedir bundle; the launcher is `sidecar`)
+#   python/dist/sidecar/pip-runner  (onefile pip runner used for engine installs)
 #
 # Usage:
 #   bash scripts/build_sidecar.sh
@@ -83,9 +84,30 @@ step "3. Build the frozen bundle"
 ( cd python && "${VPY}" -m PyInstaller sidecar.spec --noconfirm --clean ) \
   || fail "PyInstaller failed"
 
+# The frozen sidecar's pip_exec.py looks for a sibling `pip-runner`; without it
+# it falls back to `sys.executable -m pip`, which re-launches the sidecar itself
+# and collides with the sidecar's fixed port (17890). CI builds this binary; the
+# local script must too, otherwise env/engine installs are broken in the .deb.
+# --collect-submodules/--collect-data pip is required for truststore CA data;
+# a bare --onefile build fails with FileNotFoundError on real installs.
+[ -f "python/pip_runner.py" ] || fail "python/pip_runner.py not found"
+( cd python && "${VPY}" -m PyInstaller pip_runner.py \
+    --name pip-runner --onefile --noconfirm --clean \
+    --distpath dist/sidecar --workpath build/pip-runner \
+    --specpath build/pip-runner \
+    --collect-submodules pip --collect-data pip ) \
+  || fail "pip-runner PyInstaller failed"
+
 # ----------------------------------------------------------------------
 step "4. Verify the bundle"
 # ----------------------------------------------------------------------
+if [ ! -x "python/dist/sidecar/pip-runner" ]; then
+  if [ "${KEVRAI_SIDECAR_OPTIONAL:-0}" = "1" ]; then
+    echo "  WARNING: dist/sidecar/pip-runner not found — engine installs may fail"
+  else
+    fail "pip-runner missing: python/dist/sidecar/pip-runner"
+  fi
+fi
 if [ ! -x "python/dist/sidecar/sidecar" ]; then
   if [ "${KEVRAI_SIDECAR_OPTIONAL:-0}" = "1" ]; then
     echo "  WARNING: dist/sidecar/sidecar not found — using source sidecar"

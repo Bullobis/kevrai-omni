@@ -145,7 +145,11 @@ function _renderEngineStateInner(root, el, st) {
     installBtn.disabled = true;
     installBtn.textContent = t("mnn.installing");
     try {
-      await api.envInstallPip({ name: "MNN", kind: "pip" });
+      // MNN 是引擎而不是普通环境包：必须走 engine 安装路径，装到
+      // <data_root>/engines/pip-mnn，冻结版 sidecar 才能导入到它。
+      // 走 envInstallPip 时冻结版 pip-runner 会把包装进临时/用户目录，
+      // 进程退出即丢失，界面会一直显示“MNN 引擎未安装”。
+      await api.envInstallEngine({ id: "mnn" });
       toast(t("mnn.installDone"), { kind: "ok" });
       await renderEngineState(root);
     } catch (_) { /* toast shown */ }
@@ -173,8 +177,22 @@ function _renderEngineStateInner(root, el, st) {
 function renderChatCard(root, st) {
   const card = $("#mnn-chat-card", root);
   if (!card) return;
-  if (!st || !st.loaded) { card.hidden = true; return; }
+  if (!st || !st.loaded) {
+    card.hidden = true;
+    delete card.dataset.mnnBuilt;
+    return;
+  }
   card.hidden = false;
+  // status 轮询每 1.5s 调一次这里。之前每次都重写 innerHTML，会把用户正在
+  // 输入的文本、已显示的对话和在途的“思考中”整块抹掉——输入框看起来像
+  // 自己清空了，点击发送也偶发无请求。同一个模型只建一次 DOM；换模型或
+  // 卸载后才重建。
+  const modelKey = String(st.model_name || "");
+  if (card.dataset.mnnBuilt === "1" && card.dataset.mnnModel === modelKey) {
+    return;
+  }
+  card.dataset.mnnBuilt = "1";
+  card.dataset.mnnModel = modelKey;
   card.innerHTML = `
     <div class="mnn-chat-head">
       <b>${t("mnn.chatWith", { model: esc(st.model_name) })}</b>
@@ -208,6 +226,10 @@ function renderChatCard(root, st) {
       if (stat) stat.textContent = t("mnn.rate", { s: b.elapsed_s || "?", cps: b.speed_cps || "?" });
       _chatHistory.push({ role: "user", content: text });
       _chatHistory.push({ role: "assistant", content: b.text || "" });
+      // 下载轮询只刷新下载状态，不会刷新引擎卡片里的对话计数。这里主动
+      // 重渲染一次；renderChatCard 对同一模型已做“只建一次”保护，不会
+      // 抹掉刚显示的对话。失败也不能把已经成功的回复改成报错。
+      try { await renderEngineState(root); } catch (_) { /* 状态刷新失败不影响本轮回复 */ }
     } catch (e) {
       thinking.textContent = t("mnn.chatError", { err: e?.message || e });
     }

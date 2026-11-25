@@ -21,6 +21,7 @@ import contextlib
 import logging
 import multiprocessing
 import os
+import sys
 import threading
 import time
 from collections.abc import Iterator
@@ -109,8 +110,28 @@ class _FakeLlmForTests:
             threading.Event().wait()  # simulate C++ deadlock forever
 
 
+def _bootstrap_engine_path() -> None:
+    """让冻结版 sidecar 能找到引擎页安装的 ``engines/pip-mnn``。
+
+    MNN 页面现在通过 envInstallEngine 把包装进 data_root/engines/pip-mnn；
+    PyInstaller 进程的 sys.path 不会自动包含这个目录。不 bootstrap 时，
+    pip 明明成功、文件也在，``import MNN`` 仍然失败，界面会一直显示未安装。
+    开发环境同样适用；目录不存在时只是空操作。
+    """
+    try:
+        from .settings import default_data_root
+        target = default_data_root() / "engines" / "pip-mnn"
+        if target.is_dir():
+            path = str(target)
+            if path not in sys.path:
+                sys.path.insert(0, path)
+    except Exception:  # noqa: BLE001 — 路径问题不能阻断运行时导入
+        pass
+
+
 def _import_llm():
     behavior = os.environ.get(_TEST_FAKE_ENV_VAR, "")
+    _bootstrap_engine_path()
     if behavior:
         def _fake_create(cfg_path: str):
             return _FakeLlmForTests(cfg_path, behavior=behavior)
@@ -125,6 +146,7 @@ def _import_llm():
 
 
 def is_engine_available() -> bool:
+    _bootstrap_engine_path()
     try:
         import MNN  # noqa: F401  — base package presence check
         import MNN.llm  # noqa: F401  — the submodule actually used at run time
@@ -134,6 +156,7 @@ def is_engine_available() -> bool:
 
 
 def engine_version() -> str:
+    _bootstrap_engine_path()
     try:
         import MNN
         return str(getattr(MNN, "__version__", "") or "unknown")
