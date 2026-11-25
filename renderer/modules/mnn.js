@@ -666,6 +666,10 @@ async function pollDownload(root) {
     } else if (st.status === "failed") {
       toast(t("mnn.downloadFailed", { err: st.error || t("mnn.unknownError") }), { kind: "err" });
       box.hidden = true;
+    } else if (st.status === "cancelled") {
+      toast(t("mnn.downloadCancelled"), { kind: "ok" });
+      await refreshAll(root);
+      box.hidden = true;
     }
   }
 }

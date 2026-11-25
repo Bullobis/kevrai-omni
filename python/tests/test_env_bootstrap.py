@@ -92,3 +92,24 @@ def test_timeout_is_passed_through():
     with patch("app.env._run", return_value=(0, "", "")) as m:
         install_pip_package("x")
     assert m.call_args.kwargs.get("timeout") == 300.0
+
+
+def test_forbidden_mirror_retries_other_index():
+    """A mirror can serve metadata but 403 the wheel; retry other indexes."""
+    calls = [
+        (1, "", "HTTP error 403 Client Error: Forbidden for url: https://bad.example/simple/fastapi.whl"),
+        (0, "installed", ""),
+    ]
+    with patch("app.env._run", side_effect=calls) as m:
+        out = install_pip_package(
+            "fastapi",
+            extra_index_urls=[
+                "https://bad.example/simple/",
+                "https://good.example/simple/",
+            ],
+        )
+    assert out["ok"] is True
+    assert m.call_count == 2
+    retry_cmd = m.call_args_list[1].args[0]
+    assert "--index-url" in retry_cmd
+    assert retry_cmd[retry_cmd.index("--index-url") + 1] == "https://good.example/simple/"

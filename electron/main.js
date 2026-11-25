@@ -1861,12 +1861,12 @@ function registerIpc() {
   ipcMain.handle("kevrai:env-install", async (_e, opts) => {
     assert(opts && typeof opts === "object", "opts: invalid");
     assertString(opts.name, "opts.name", 128);
-    return sidecarFetch("/api/env/install", { method: "POST", body: opts });
+    return sidecarFetch("/api/env/install", { method: "POST", body: opts, timeoutMs: 600_000 });
   });
   ipcMain.handle("kevrai:env-upgrade", async (_e, opts) => {
     assert(opts && typeof opts === "object", "opts: invalid");
     assertString(opts.name, "opts.name", 128);
-    return sidecarFetch("/api/env/upgrade", { method: "POST", body: opts });
+    return sidecarFetch("/api/env/upgrade", { method: "POST", body: opts, timeoutMs: 600_000 });
   });
   ipcMain.handle("kevrai:env-install-engine", async (_e, opts) => {
     assert(opts && typeof opts === "object", "opts: invalid");

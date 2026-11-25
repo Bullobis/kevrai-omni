@@ -1004,7 +1004,8 @@
     "downloadFailed": "Download failed: {err}",
     "noDownloaded": "No MNN models downloaded yet. Pick one from the marketplace below — small models finish in seconds.",
     "loaded": "Loaded",
-    "loadedModel": "Model loaded: {name}"
+    "loadedModel": "Model loaded: {name}",
+    "downloadCancelled": "Download cancelled"
   },
   "environments": {
     "title": "Environments",

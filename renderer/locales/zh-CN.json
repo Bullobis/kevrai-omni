@@ -1004,7 +1004,8 @@
     "downloadFailed": "下载失败：{err}",
     "noDownloaded": "还没有下载过 MNN 模型。从下方市场挑选一个吧 —— 小模型几十秒即可完成。",
     "loaded": "已加载",
-    "loadedModel": "模型已加载：{name}"
+    "loadedModel": "模型已加载：{name}",
+    "downloadCancelled": "下载已取消"
   },
   "environments": {
     "title": "环境管理 / Environments",

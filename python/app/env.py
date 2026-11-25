@@ -344,6 +344,29 @@ def install_pip_package(name: str, version: str | None = None,
     target = f"{name}=={version}" if version else name
     cmd.append(target)
     rc, out, err = _run(cmd, timeout=300.0)
+
+    # pip can resolve the newest version from one extra index, then get a 403
+    # fetching that exact wheel from the same mirror, and it does NOT fall back
+    # to the other indexes. This was reproduced live with Tsinghua returning
+    # 403 for a fastapi wheel. Retry each mirror as the sole index so a broken
+    # mirror cannot make the whole upgrade fail.
+    if rc != 0 and mirrors and (
+        "403" in (err or "") or "Forbidden" in (err or "")
+    ):
+        for mirror in mirrors:
+            # Skip the mirror that just produced the 403 when it identifies
+            # itself in pip's error text.
+            if mirror in (err or ""):
+                continue
+            retry_cmd = [*pip_command(), "install", "--no-input",
+                         "--disable-pip-version-check"]
+            if upgrade:
+                retry_cmd.append("--upgrade")
+            retry_cmd += ["--index-url", mirror, target]
+            rc, out, err = _run(retry_cmd, timeout=300.0)
+            if rc == 0:
+                break
+
     if rc != 0:
         action = "升级" if upgrade else "安装"
         tail = (err or out or "").strip()[-500:]
