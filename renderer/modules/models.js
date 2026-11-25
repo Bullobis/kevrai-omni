@@ -516,21 +516,11 @@ export async function installItem(item) {
     chosenEngine = res.engine;
   }
 
-  // Make sure the preferred engine is present; multi-engine models can pick a
-  // different engine from the detail panel. import_only 模型无引擎则跳过。
-  if (chosenEngine) {
-    const known = await knownCatalogEngineIds();
-    if (known && !known.includes(chosenEngine)) {
-      // Not installable through the catalog. Do NOT call installEngine: it
-      // would always 400 and show a failure notice before the download starts.
-      toast(t("toast.engineNotInCatalog", { engine: chosenEngine }), { kind: "warn" });
-    } else {
-      try {
-        await api.installEngine(chosenEngine);
-      } catch (_) { /* toast shown by api */ }
-    }
-  }
-
+  // Engine install deliberately happens AFTER the weight download is
+  // requested. It used to run first and could take minutes (or fail with a
+  // pip resolution error, e.g. kokoro), so users saw "installing engine" and
+  // never any model download. Weights are the thing they clicked; start them
+  // first, then attach the runtime.
   // GGUF models ship several revisions (branches/tags) and quantizations.
   // First pick a revision (defaulting to main, skipped when there is no
   // choice), then pick a quantization off that revision, then download the
@@ -568,6 +558,13 @@ export async function installItem(item) {
     return;
   }
 
+  // Open the panel before the HTTP call so the click always has visible
+  // feedback, even when the backend returns zero new tasks (all files already
+  // present) or the response is slow. Previously the panel only appeared
+  // after a non-empty tasks array, which made a valid download look like
+  // "only the engine installed".
+  try { showDownloads(); } catch (_) { /* panel must not block the download */ }
+
   try {
     const res = await api.hubDownload(plan.args);
     const body = (res && res.body) || res || {};
@@ -576,18 +573,32 @@ export async function installItem(item) {
     // then appeared to do nothing until the user found the hidden overlay.
     if (!Array.isArray(body.tasks) || body.tasks.length === 0) {
       toast(t("toast.downloadNoFiles"), { kind: "warn" });
-      return;
-    }
-    showDownloads();
-    if (body.auto_files_picked) {
-      toast(t("toast.downloadStartedAuto", { file: item.name || item.id }),
-            { kind: "ok" });
     } else {
-      toast(t("toast.downloadStarted", { file: item.name || item.id }),
-            { kind: "ok" });
+      showDownloads();
+      if (body.auto_files_picked) {
+        toast(t("toast.downloadStartedAuto", { file: item.name || item.id }),
+              { kind: "ok" });
+      } else {
+        toast(t("toast.downloadStarted", { file: item.name || item.id }),
+              { kind: "ok" });
+      }
     }
   } catch (e) {
     toast(String((e && e.message) || e), { kind: "err" });
+    return;
+  }
+
+  // The model request is now on its way / already done. A missing or broken
+  // runtime no longer prevents the weights from being downloaded.
+  if (chosenEngine) {
+    const known = await knownCatalogEngineIds();
+    if (known && !known.includes(chosenEngine)) {
+      toast(t("toast.engineNotInCatalog", { engine: chosenEngine }), { kind: "warn" });
+    } else {
+      try {
+        await api.installEngine(chosenEngine);
+      } catch (_) { /* toast shown by api */ }
+    }
   }
 }
 
