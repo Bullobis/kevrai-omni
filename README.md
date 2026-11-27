@@ -1,8 +1,8 @@
 # Kevrai Omni
 
-> **当前源码版本：v4.18.0** · 一键本地 AI 工作站：LLM / TTS / 图像 / 视频 / 3D / 音频 / 超分辨率 / 音乐 / 音源分离 / ASR，多引擎（llama.cpp + MNN + vLLM + ComfyUI），硬件感知推荐，内置 LTX-2.5 视频、Agent 助手、知识库与超级搜索。
+> **当前源码版本：v4.18.3** · 一键本地 AI 工作站：LLM / TTS / 图像 / 视频 / 3D / 音频 / 超分辨率 / 音乐 / 音源分离 / ASR，多引擎（llama.cpp + MNN + vLLM + ComfyUI），硬件感知推荐，内置 LTX-2.5 视频、Agent 助手、知识库与超级搜索。
 >
-> v4.18.0 已发布 Linux（deb / AppImage）、macOS（arm64 / x64 dmg）和 Windows（x64 exe / zip）安装包。安装包内置完整的 PyInstaller onedir sidecar；v4.18.0 发布页上的独立 `sidecar` 资产不完整（缺少 `_internal`），请勿单独下载运行。仓库的发布工作流已改为生成 `sidecar-linux-x64.tar.gz` 完整 onedir，并在发布前解包启动验证，但该产物要等下一次获授权的构建才会出现在 Release 中。
+> v4.18.3 已发布 Linux（deb / AppImage）、macOS（arm64 / x64 dmg）和 Windows（x64 exe / zip）安装包。安装包内置完整的 PyInstaller onedir sidecar；Release 同时提供 `sidecar-linux-x64.tar.gz` 完整 onedir，并在发布前完成解包启动验证。
 
 Kevrai Omni 是一个 **Electron + 原生 HTML/CSS/JS** 的桌面应用，搭配一个本地 Python（FastAPI）sidecar 负责模型目录、下载、引擎与推理。所有数据默认落在本机，不依赖远程服务即可使用已下载的模型。
 
