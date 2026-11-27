@@ -14,6 +14,7 @@ function esc(s) {
 }
 
 let _pollTimer = null;
+let _lastDoneKey = "";
 let _chatHistory = [];
 let _lastCvtSrc = "";
 let _lastCvtArch = "";
@@ -609,6 +610,7 @@ async function renderMarket(root) {
       try {
         // Live catalog rows are downloaded by repo; static curated rows keep
         // their stable entry_id (and its friendlier dest folder).
+        _lastDoneKey = "";
         await api.mnnDownload(model.live ? { repo: model.repo } : model.id);
         toast(t("mnn.startDownloadMnn"), { kind: "ok" });
         pollDownload(root);
@@ -659,13 +661,24 @@ async function pollDownload(root) {
     break;
   }
   if (!st.active && (st.status === "done" || st.status === "failed" || st.status === "cancelled")) {
+    const visible = !box.hidden;
+    // Terminal states must not call refreshAll(): refreshAll() runs
+    // pollDownload() again, and a still-"done" status would recursively re-enter
+    // this branch, firing the completion toast and rebuilding the page on every
+    // poll tick. Refresh only the lists, after hiding the progress card.
+    box.hidden = true;
     if (st.status === "done") {
-      toast(t("mnn.downloadMnnDone"), { kind: "ok" });
-      await refreshAll(root);
-      box.hidden = true;
+      const doneKey = `${st.entry_id || ""}:${st.files_total || 0}:${st.bytes_total || 0}`;
+      if (doneKey !== _lastDoneKey) {
+        _lastDoneKey = doneKey;
+        if (visible) toast(t("mnn.downloadMnnDone"), { kind: "ok" });
+      }
+      await Promise.all([renderLocal(root), renderMarket(root)]);
     } else if (st.status === "failed") {
-      toast(t("mnn.downloadFailed", { err: st.error || t("mnn.unknownError") }), { kind: "err" });
-      box.hidden = true;
+      if (visible) toast(t("mnn.downloadFailed", { err: st.error || t("mnn.unknownError") }), { kind: "err" });
+    } else if (st.status === "cancelled") {
+      if (visible) toast(t("mnn.downloadCancelled"), { kind: "ok" });
+      await Promise.all([renderLocal(root), renderMarket(root)]);
     }
   }
 }

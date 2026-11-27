@@ -95,6 +95,12 @@
     "noSelectionHint": "Pick a model in the market on the left to see its size, engines, license and quantized variants here.",
     "selectModel": "Select model {name}",
     "install": "Install",
+    "installEngine": "Install engine",
+    "chooseEngine": "Choose engine",
+    "engineInstalled": "Engine installed",
+    "downloadModel": "Download model",
+    "downloadModelAria": "Download model; choose revision and quantization",
+    "downloadModelHint": "Install the engine first; then pick a revision / quantization to download",
     "installAria": "Start install",
     "installing": "Installing…",
     "reinstall": "Reinstall",
@@ -670,6 +676,7 @@
     "downloadStartedAuto": "Picked weight files automatically, downloading: {file}",
     "downloadStarted": "Downloading: {file}",
     "downloadNoFiles": "No new files to download (already present, or the repo has no usable weights)",
+    "engineNotInstalled": "Engine {engine} is not installed. Click “Install engine” first.",
     "engineNotInCatalog": "Engine {engine} is not in the engine catalog; skipped its install and continued with the model weights",
     "installNothingNoItem": "No model information to install",
     "installNothingNoRepo": "No published weight URL for this model yet (awaiting official release)",
@@ -918,7 +925,10 @@
     "starterLocalPrompt": "List the local models I already have and explain what each is good for.",
     "traceStepDone": "done",
     "traceStepFailed": "failed",
-    "traceHintOpen": "collapse"
+    "traceHintOpen": "collapse",
+    "deepThink": "Deep thinking",
+    "deepThinkMeta": "{n} steps",
+    "deepThinkLive": "Thinking…"
   },
   "mnn": {
     "title": "MNN inference engine (Alibaba open-source)",
@@ -1004,7 +1014,8 @@
     "downloadFailed": "Download failed: {err}",
     "noDownloaded": "No MNN models downloaded yet. Pick one from the marketplace below — small models finish in seconds.",
     "loaded": "Loaded",
-    "loadedModel": "Model loaded: {name}"
+    "loadedModel": "Model loaded: {name}",
+    "downloadCancelled": "Download cancelled"
   },
   "environments": {
     "title": "Environments",

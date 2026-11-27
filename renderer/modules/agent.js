@@ -785,11 +785,24 @@ function _summarizeObservation(obs) {
 }
 
 // Render the autonomous reasoning trace (thoughts + tool calls + artifacts).
-function _renderTrace(steps) {
+// The collapsed summary intentionally shows the most recent thought, so the
+// card is useful without opening it (matching the "deep thinking" pattern in
+// mainstream assistants), while the expanded body keeps every step readable.
+function _tracePreview(steps) {
+  const thought = [...steps].reverse().map((s) => s && s.thought).find(Boolean);
+  if (thought) {
+    return String(thought).replace(/\s+/g, " ").trim().slice(0, 190);
+  }
+  const tools = steps.filter((s) => s && s.action_tool).map((s) => s.action_tool);
+  return tools.slice(0, 3).join(" → ") + (tools.length > 3 ? " …" : "");
+}
+
+function _renderTrace(steps, { open = false, live = false } = {}) {
   if (!Array.isArray(steps) || !steps.length) return "";
-  const toolSteps = steps.filter((s) => s && s.action_tool);
-  if (!toolSteps.length) return "";
-  const blocks = toolSteps.map((s, i) => {
+  const meaningful = steps.filter((s) => s && (s.thought || s.action_tool));
+  if (!meaningful.length) return "";
+  const preview = _tracePreview(meaningful);
+  const blocks = meaningful.map((s, i) => {
     const params = s.action_params && typeof s.action_params === "object"
       ? Object.entries(s.action_params)
         .filter(([, v]) => v != null && v !== "")
@@ -801,30 +814,68 @@ function _renderTrace(steps) {
       `<button type="button" class="agent-artifact" data-open="${esc(p)}"
          title="${esc(p)}"><span class="agent-artifact-ext">${_artifactKind(p)}</span><span class="agent-artifact-name">${esc(_basename(p))}</span></button>`
     ).join("");
-    // The stream protocol carries observation_ok but intentionally does not
-    // ship the whole observation payload. Do not render an empty "undefined"
-    // line when a step has no detail; show its success state instead.
     const obsText = s.observation != null
       ? _summarizeObservation(s.observation)
       : (s.observation_ok === false ? t("agent.traceStepFailed") : t("agent.traceStepDone"));
-    return `
-      <div class="agent-trace-step">
-        <div class="agent-trace-rail"><span class="agent-trace-dot"></span></div>
-        <div class="agent-trace-main">
-          <div class="agent-trace-head">
-            <span class="agent-trace-tool">${esc(s.action_tool)}</span>
-            <span class="agent-trace-index">${i + 1}</span>
+    const thought = s.thought
+      ? `<div class="deep-think-thought">${renderMarkdown(s.thought)}</div>`
+      : "";
+    const tool = s.action_tool
+      ? `<div class="deep-think-tool">
+          <div class="deep-think-tool-head">
+            <span class="deep-think-tool-name">${esc(s.action_tool)}</span>
+            <span class="deep-think-tool-index">${i + 1}</span>
+            <span class="deep-think-tool-state ${s.observation_ok === false ? "failed" : ""}">${esc(obsText)}</span>
           </div>
-          ${params ? `<div class="agent-trace-params">${esc(params)}</div>` : ""}
-          <div class="agent-trace-obs">${esc(obsText)}</div>
+          ${params ? `<div class="deep-think-tool-params">${esc(params)}</div>` : ""}
           ${chips ? `<div class="agent-trace-artifacts">${chips}</div>` : ""}
-        </div>
-      </div>`;
+        </div>`
+      : "";
+    return `<div class="deep-think-step">
+      <div class="deep-think-rail"><span class="deep-think-dot"></span></div>
+      <div class="deep-think-main">${thought}${tool}</div>
+    </div>`;
   }).join("");
-  return `<details class="agent-trace">
-    <summary><span>${t("agent.reasoningTrace", { n: toolSteps.length })}</span><span class="agent-trace-summary-hint trace-hint-closed">${t("agent.traceHint")}</span><span class="agent-trace-summary-hint trace-hint-open">${t("agent.traceHintOpen")}</span></summary>
-    <div class="agent-trace-body">${blocks}</div>
+  return `<details class="agent-trace deep-think"${open ? " open" : ""}>
+    <summary class="deep-think-summary">
+      <span class="deep-think-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.7 4.9L19 9.6l-5.3 1.7L12 16l-1.7-4.7L5 9.6l5.3-1.7L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg></span>
+      <span class="deep-think-title">${t(live ? "agent.deepThinkLive" : "agent.deepThink")}</span>
+      <span class="deep-think-meta">${t("agent.deepThinkMeta", { n: meaningful.length })}</span>
+      <span class="agent-trace-summary-hint">${t(open ? "agent.traceHintOpen" : "agent.traceHint")}</span>
+      <span class="deep-think-chevron" aria-hidden="true">⌄</span>
+      <span class="deep-think-preview">${esc(preview)}</span>
+    </summary>
+    <div class="deep-think-body">${blocks}</div>
   </details>`;
+}
+
+// A live trace occupies its own slot above the answer while the ReAct loop is
+// running. It starts open so thinking is visible in real time, collapses when
+// the answer starts streaming, and is replaced by the final trace in the
+// message bubble once the turn completes.
+let _liveTraceEl = null;
+
+function _clearLiveTrace() {
+  if (_liveTraceEl) {
+    _liveTraceEl.remove();
+    _liveTraceEl = null;
+  }
+}
+
+function _renderLiveTrace(steps, open, force = false) {
+  const container = document.getElementById("agent-messages");
+  if (!container) return;
+  if (!_liveTraceEl) {
+    _liveTraceEl = document.createElement("div");
+    _liveTraceEl.className = "agent-live-trace";
+    container.appendChild(_liveTraceEl);
+  }
+  // A step update must not fight the user: if they collapsed the live card,
+  // keep it collapsed until the answer starts (force=true closes it).
+  const current = _liveTraceEl.querySelector("details.deep-think");
+  const actualOpen = (!force && current) ? current.open : open;
+  _liveTraceEl.innerHTML = _renderTrace(steps, { open: actualOpen, live: true });
+  container.scrollTop = container.scrollHeight;
 }
 
 // ---------------------------------------------------------------------------
@@ -950,6 +1001,7 @@ function _stopApprovalPolling() {
 
 async function _sendMessage() {
   if (_busy) return;
+  _clearLiveTrace();
   const input = document.getElementById("agent-input");
   const sendBtn = document.getElementById("agent-send-btn");
   const thinking = document.getElementById("agent-thinking");
@@ -1010,6 +1062,7 @@ async function _runAgentTurn(message, thinking, thinkingText) {
   try {
     return await _sendViaStream(message, thinking, thinkingText);
   } catch (e) {
+    _clearLiveTrace();
     console.warn("agent stream unavailable, falling back to REST:", e);
     const res = unwrap(await api.agentChat({ message, session_id: _sessionId }));
     return { ...res, fromStream: false };
@@ -1043,6 +1096,7 @@ function _sendViaStream(message, thinking, thinkingText) {
         try { msg = JSON.parse(ev.data); } catch { return; }
         if (msg.event === "step") {
           steps.push(msg);
+          _renderLiveTrace(steps, true);
           if (msg.action_tool) {
             thinkingText.textContent = `${t("agent.callingTool")}: ${msg.action_tool}`;
           }
@@ -1052,9 +1106,11 @@ function _sendViaStream(message, thinking, thinkingText) {
               document.getElementById("agent-messages"),
               { renderMarkdown, esc });
             thinking.style.display = "none";
+            _renderLiveTrace(steps, false, true);
           }
           bubble.appendDelta(msg.delta);
         } else if (msg.event === "final") {
+          _clearLiveTrace();
           const traceHtml = _renderTrace(steps);
           if (bubble) {
             if (msg.cancelled) {

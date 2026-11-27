@@ -46,6 +46,9 @@ export const api = {
   models:        wrap("models",        (f) => k().listModels(f)),
   modelDetail:   wrap("modelDetail",   (id) => k().getModelDetail(id)),
   modelRevisions: wrap("modelRevisions", (id) => k().modelRevisions(id)),
+  // Revision lookup is optional (remote/uncatalogued models have none). The
+  // picker falls back to "main"; a failed probe must not paint a red toast.
+  modelRevisionsQuiet: (id) => k().modelRevisions(id),
   modelGgufFiles: wrap("modelGgufFiles", (id, revision) => k().modelGgufFiles(id, revision)),
   ggufRepos:     wrap("ggufRepos",     () => k().ggufRepos()),
   engines:       wrap("engines",       () => k().listEngines()),

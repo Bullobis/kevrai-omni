@@ -940,3 +940,98 @@ html[data-theme="light"] .agent-msg-user .agent-msg-content { color: var(--fg); 
   .agent-approval-hint { margin-left: 0; }
   .agent-composer-hint { display: none; }
 }
+
+/* Deep-thinking card: quiet, collapsible, with a two-line preview while closed. */
+.agent-trace.deep-think {
+  margin: 10px 0 4px;
+  padding: 0;
+  border-radius: 14px;
+  border-color: var(--bord, #333);
+  background: linear-gradient(145deg, rgba(122, 162, 255, 0.075), rgba(122, 162, 255, 0.015) 55%, var(--bg, #141518));
+  overflow: hidden;
+}
+.agent-trace.deep-think > summary {
+  display: grid;
+  grid-template-columns: auto auto auto 1fr auto auto;
+  align-items: center;
+  gap: 7px;
+  list-style: none;
+  padding: 11px 14px 10px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--mut, #999);
+}
+.agent-trace.deep-think > summary::-webkit-details-marker { display: none; }
+.deep-think-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 21px; height: 21px; border-radius: 7px;
+  color: var(--acc, #7aa2ff);
+  background: rgba(122, 162, 255, 0.11);
+}
+.deep-think-icon .ic { width: 14px; height: 14px; }
+.deep-think-title { font-size: 13px; font-weight: 600; color: var(--fg, #ddd); letter-spacing: 0.01em; }
+.deep-think-meta { font-size: 11px; color: var(--mut, #999); opacity: 0.8; }
+.agent-trace.deep-think > summary .agent-trace-summary-hint {
+  justify-self: end; font-size: 11px; color: var(--mut, #999); opacity: 0.7;
+}
+.deep-think-chevron { color: var(--mut, #999); font-size: 14px; line-height: 1; transition: transform 0.16s ease; }
+.deep-think-preview {
+  grid-column: 1 / -1;
+  margin-top: 1px;
+  font-size: 12px; line-height: 1.65; color: var(--mut, #999);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+.agent-trace.deep-think[open] .deep-think-chevron { transform: rotate(180deg); }
+.agent-trace.deep-think[open] .deep-think-preview { display: none; }
+.agent-trace.deep-think[open] .agent-trace.deep-think > summary { border-bottom: 1px solid var(--bord, #333); }
+.deep-think-body {
+  display: flex; flex-direction: column; gap: 12px;
+  max-height: 360px; overflow: auto;
+  padding: 13px 14px 15px;
+  scrollbar-width: thin;
+}
+.deep-think-step { display: grid; grid-template-columns: 10px 1fr; gap: 9px; }
+.deep-think-rail { position: relative; display: flex; justify-content: center; }
+.deep-think-dot {
+  width: 6px; height: 6px; margin-top: 7px; border-radius: 50%;
+  background: var(--acc, #7aa2ff); box-shadow: 0 0 0 3px rgba(122, 162, 255, 0.10);
+}
+.deep-think-main { min-width: 0; }
+.deep-think-thought { font-size: 13px; line-height: 1.72; color: var(--fg, #ddd); }
+.deep-think-thought p { margin: 0 0 8px; }
+.deep-think-thought p:last-child { margin-bottom: 0; }
+.deep-think-thought code { font-size: 11.5px; }
+.deep-think-tool {
+  margin-top: 7px; padding: 8px 10px;
+  border-radius: 9px; border: 1px solid var(--bord, #333);
+  background: rgba(255, 255, 255, 0.025);
+}
+.deep-think-tool-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.deep-think-tool-name {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px; color: var(--acc, #7aa2ff);
+}
+.deep-think-tool-index {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: rgba(122, 162, 255, 0.18); color: var(--acc, #7aa2ff); font-size: 10px;
+}
+.deep-think-tool-state { margin-left: auto; font-size: 10.5px; color: var(--mut, #999); }
+.deep-think-tool-state.failed { color: #ff8a8a; }
+.deep-think-tool-params { margin-top: 4px; font-size: 11px; color: var(--mut, #999); word-break: break-all; }
+.agent-trace-step { margin: 6px 0; padding-left: 4px; border-left: 2px solid var(--border, #333); padding: 2px 0 2px 8px; }
+.agent-trace-head { font-size: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.agent-trace-idx { display: inline-flex; width: 17px; height: 17px; border-radius: 50%;
+  background: var(--accent, #4a7dff); color: #fff; font-size: 10px; align-items: center; justify-content: center; }
+.agent-trace-head code { font-size: 11.5px; color: var(--accent, #7aa2ff); }
+.agent-trace-params { font-size: 11px; color: var(--mut, #999); }
+.agent-trace-obs { font-size: 11px; color: var(--mut, #999); margin: 2px 0; }
+.agent-trace-artifacts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.agent-artifact { font-size: 11px; background: var(--card, #1b1c1f); color: var(--fg, #ccc);
+  border: 1px solid var(--border, #333); border-radius: 7px; padding: 3px 8px; cursor: pointer; }
+.agent-artifact:hover { border-color: var(--accent, #4a7dff); }
+
+
+.agent-trace.deep-think > summary::before { display: none; }

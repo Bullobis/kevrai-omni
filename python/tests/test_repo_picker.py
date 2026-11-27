@@ -92,6 +92,25 @@ def test_skips_training_artifacts():
     assert pick_repo_files(files) == ["model.safetensors"]
 
 
+def test_mnn_picks_weight_and_tokenizer():
+    # MNN 预转换仓库：llm.mnn 只是图，体积大的是 llm.mnn.weight；旧扩展名
+    # 列表没有 .weight，会只下 1.7 MB 的图、漏掉 365 MB 权重。
+    files = _d(
+        ("config.json", 433),
+        ("llm.mnn", 1_705_312),
+        ("llm.mnn.weight", 365_474_810),
+        ("tokenizer.mtok", 3_459_532),
+        ("llm_config.json", 5_575),
+        ("README.md", 3_805),
+    )
+    out = pick_repo_files(files)
+    assert "llm.mnn.weight" in out
+    assert "llm.mnn" in out
+    assert "tokenizer.mtok" in out
+    assert "llm_config.json" in out
+    assert "README.md" not in out
+
+
 # ---------------------------------------------------------------------------
 # gguf 的特殊处理：不能一概排除
 # ---------------------------------------------------------------------------

@@ -1308,6 +1308,24 @@ async def env_install_engine(request: Request, body: dict[str, Any]) -> dict[str
     }
 
 
+@app.post("/api/engines/uninstall")
+async def engines_uninstall(request: Request, body: dict[str, Any]) -> dict[str, Any]:
+    """Remove an installed engine and its manifest entry.
+
+    The renderer has always called this endpoint (engines page "卸载"), but the
+    route was missing, so every uninstall returned 404 and the button silently
+    showed a failure toast. Keep the contract: engine_id -> {ok, engine_id}.
+    """
+    eid = str(body.get("engine_id") or body.get("id") or "").strip()
+    if not eid or not re.match(r"^[A-Za-z0-9._-]{1,128}$", eid):
+        raise HTTPException(status_code=400, detail="invalid engine id")
+    em: EngineManager = request.app.state.engine_manager
+    removed = await asyncio.to_thread(em.uninstall, eid)
+    if not removed:
+        raise HTTPException(status_code=404, detail=f"engine not installed: {eid}")
+    return {"ok": True, "engine_id": eid}
+
+
 # ---------------------------------------------------------------------------
 # DSH-compatible Plugin Manager MVP (v4.17.5)
 # ---------------------------------------------------------------------------
@@ -2543,13 +2561,26 @@ def _mnn_download_worker(entry: dict[str, Any], dest: Path) -> None:
             with _MNN_DL_LOCK:
                 if _MNN_DL["cancel"]:
                     _MNN_DL["status"] = "cancelled"
+                    _MNN_DL["current_file"] = ""
                     return
             _mnn_download_one_file(f, dest)
+            # A cancel can land during the final chunk of the final file. Check
+            # again before counting it as completed, otherwise the loop exits
+            # and overwrites "cancelled" with "done" (UI then claims success
+            # while only a .part file exists).
             with _MNN_DL_LOCK:
+                if _MNN_DL["cancel"]:
+                    _MNN_DL["status"] = "cancelled"
+                    _MNN_DL["current_file"] = ""
+                    return
                 _MNN_DL["files_done"] += 1
         with _MNN_DL_LOCK:
-            _MNN_DL["status"] = "done"
-            _MNN_DL["current_file"] = ""
+            if _MNN_DL["cancel"]:
+                _MNN_DL["status"] = "cancelled"
+                _MNN_DL["current_file"] = ""
+            else:
+                _MNN_DL["status"] = "done"
+                _MNN_DL["current_file"] = ""
     except Exception as e:  # noqa: BLE001
         with _MNN_DL_LOCK:
             _MNN_DL["status"] = "failed"
@@ -2673,7 +2704,11 @@ async def mnn_download(req: MnnDownloadReq, request: Request) -> dict[str, Any]:
 
     settings = _get_settings(request)
     dest = Path(settings.resolved_model_dir()) / "mnn" / entry_id
-    if (dest / "config.json").exists():
+    # A cancelled/failed attempt leaves config.json plus one or more .part
+    # files behind. Treating that as "already downloaded" made retry impossible
+    # (409), even though the model was never usable. Only a clean tree without
+    # partial files counts as complete.
+    if (dest / "config.json").exists() and not any(dest.rglob("*.part")):
         raise HTTPException(status_code=409, detail=f"该模型已下载：{dest}")
     dest.mkdir(parents=True, exist_ok=True)
     # Atomic single-flight reservation: check-and-reserve under the lock so two

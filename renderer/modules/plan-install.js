@@ -22,6 +22,7 @@
 "use strict";
 
 export const HUB_HF = "hf";
+export const HUB_MODELSCOPE = "modelscope";
 
 /** Result kinds, so callers can branch without string matching. */
 export const PLAN = {
@@ -50,6 +51,13 @@ export function planInstall(item, opts = {}) {
 
   const ggufRepo = item.gguf_repo || "";
   const repo = (opts.repo || "").trim() || ggufRepo || (item.repo || "").trim();
+  // ModelScope entries must not be fetched from Hugging Face just because the
+  // download planner predates multi-hub support; that produced 502s on valid
+  // models such as MNN/Hunyuan-0.5B-Instruct-MNN.
+  // GGUF repos are Hugging Face repos even when the catalog entry was found
+  // through ModelScope; only a native ModelScope repo should use that hub.
+  const hub = item.hub === HUB_MODELSCOPE && !ggufRepo ? HUB_MODELSCOPE : HUB_HF;
+  const defaultRevision = hub === HUB_MODELSCOPE ? "master" : "main";
 
   // No repo of any kind → genuinely nothing to download (e.g. pending models
   // whose weights have not been published yet).
@@ -67,17 +75,17 @@ export function planInstall(item, opts = {}) {
       return {
         kind: PLAN.FILES,
         args: {
-          hub: HUB_HF,
+          hub: hub,
           repo,
           files,
-          revision: opts.revision || "main",
+          revision: opts.revision || defaultRevision,
           auto_pick: false,
         },
       };
     }
     return {
       kind: PLAN.AUTO,
-      args: { hub: HUB_HF, repo, files: [], revision: opts.revision || "main", auto_pick: true },
+      args: { hub: hub, repo, files: [], revision: opts.revision || defaultRevision, auto_pick: true },
       reason: "quant-unrecognised",
     };
   }
@@ -86,7 +94,7 @@ export function planInstall(item, opts = {}) {
   // THIS is the branch that used to download nothing at all.
   return {
     kind: PLAN.AUTO,
-    args: { hub: HUB_HF, repo, files: [], revision: opts.revision || "main", auto_pick: true },
+    args: { hub: hub, repo, files: [], revision: opts.revision || defaultRevision, auto_pick: true },
   };
 }
 
