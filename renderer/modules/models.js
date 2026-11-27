@@ -12,7 +12,10 @@ import {
 } from "./compare.js";
 import { t } from "./i18n.js";
 import { pickQuantization } from "./quant-picker.js";
-import { pickRevision, buildDownloadArgs } from "./revision-picker.js";
+import {
+  resolveEngine, readRemembered, readGlobalDefault, pickEngine, applyEngineChoice,
+} from "./engine-picker.js";
+import { pickRevision } from "./revision-picker.js";
 import { planInstall, planReasonKey, PLAN } from "./plan-install.js";
 import { showDownloads } from "./downloads.js";
 
@@ -210,6 +213,19 @@ function paintCompareButton(btn, active, name) {
   btn.innerHTML = columnsSvg(active);
 }
 
+function cardEngineButtonHtml(engines) {
+  if (!engines.length) {
+    return `<span class="hint">${t("market.engineUnassigned")}</span>`;
+  }
+  const allInstalled = engines.every(engineIsInstalled);
+  if (engines.length > 1) {
+    return `<button class="secondary small" type="button" data-action="choose-engine"
+      title="${escapeHtml(engines.join(" / "))}" aria-label="${t("market.chooseEngine")}">${allInstalled ? t("market.engineInstalled") : t("market.chooseEngine")}</button>`;
+  }
+  return `<button class="secondary small" type="button" data-action="install-engine"
+    data-id="${escapeHtml(engines[0])}" title="${escapeHtml(engines[0])}" ${allInstalled ? "disabled" : ""}>${allInstalled ? t("market.engineInstalled") : t("market.installEngine")}</button>`;
+}
+
 function renderCard(m) {
   const root = document.createElement("div");
   // Register the full model object so the compare modal can resolve it even when
@@ -226,7 +242,7 @@ function renderCard(m) {
   if (state.selectedId && m.id && m.id === state.selectedId) root.classList.add("selected");
   if (m.id && isFavorite(m.id)) root.classList.add("is-favorite");
   const hw = m.hardware || {};
-  const engineList = Array.isArray(m.engine) ? m.engine : (m.engine ? [m.engine] : []);
+  const engineList = engineIdsOf(m);
   const highlights = m._highlights || [];
   const nameHl = highlights.filter((h) => h.field === "name");
   const descHl = highlights.filter((h) => h.field === "description");
@@ -261,7 +277,9 @@ function renderCard(m) {
     ? `<p class="card-desc card-repo">${escapeHtml(m.repo || "")}</p>`
     : `<p class="card-desc">${descHtml}</p>`;
   const statsHtml = heatText ? `<span class="card-stats">${heatText}</span>` : "";
-  const installBtn = `<button class="primary small install-btn" data-action="install" aria-label="${t("market.installAria")}">${t("market.install")}</button>`;
+  const engineBtn = cardEngineButtonHtml(engineList);
+  const downloadBtn = `<button class="primary small install-btn" type="button" data-action="download-model"
+    aria-label="${t("market.downloadModelAria")}" title="${t("market.downloadModelHint")}">${t("market.downloadModel")}</button>`;
 
   root.innerHTML = `
     <div class="card-head">
@@ -286,7 +304,7 @@ function renderCard(m) {
         <span class="card-owner">${owner}</span>
         ${statsHtml}
       </div>
-      ${installBtn}
+      <div class="card-foot-actions">${engineBtn}${downloadBtn}</div>
     </div>
   `;
   // Keep sub-line labels consistent with the detail view without turning the
@@ -414,7 +432,28 @@ function taskLabel(task) {
 }
 
 function onCardClick(idx, item, e) {
-  // Detail selection is always triggered; install button does its own thing.
+  // Engine and model are two separate actions. Installing a runtime must not
+  // start (or hide) a weight download, and downloading weights must not
+  // silently install a runtime.
+  const installEngineBtn = e.target.closest("[data-action=install-engine]");
+  if (installEngineBtn) {
+    e.stopPropagation();
+    installEngineForItem(item).catch(() => {});
+    return;
+  }
+  const chooseEngineBtn = e.target.closest("[data-action=choose-engine]");
+  if (chooseEngineBtn) {
+    e.stopPropagation();
+    installEngineForItem(item, { forcePicker: true }).catch(() => {});
+    return;
+  }
+  const downloadBtn = e.target.closest("[data-action=download-model]");
+  if (downloadBtn) {
+    e.stopPropagation();
+    downloadItem(item).catch(() => {});
+    return;
+  }
+  // Legacy combined action (kept for any older mount path).
   if (e.target.closest("[data-action=install]")) {
     e.stopPropagation();
     installItem(item).catch(() => {});
@@ -497,109 +536,165 @@ async function knownCatalogEngineIds() {
   return catalogEngineIds;
 }
 
-export async function installItem(item) {
-  const engines = Array.isArray(item.engine) ? item.engine
-                : (item.engine ? [item.engine] : []);
-  // import_only 模型（没有匹配到引擎）不再被挡回：跳过引擎安装，
-  // 直接走 planInstall 自动挑文件下载，让所有模型都能"下载"而不只是导入。
-  let chosenEngine = engines[0] || "";
-  if (engines.length > 1) {
-    const { pickEngine, applyEngineChoice } = await import("./engine-picker.js");
-    const res = await pickEngine({
-      engines,
-      modelId: item.id || "",
-      modelName: item.name || "",
-      t,
-    });
-    if (!res) return;   // 取消 = 中止安装，不能退回默认引擎偷偷装
-    applyEngineChoice(res, item.id || "");
-    chosenEngine = res.engine;
+function engineIdsOf(item) {
+  const raw = Array.isArray(item.engine) ? item.engine
+            : (item.engines && Array.isArray(item.engines) ? item.engines
+            : (item.engine ? [item.engine] : []));
+  return raw.map((e) => (typeof e === "string" ? e : (e && e.id))).filter(Boolean);
+}
+
+function engineRecord(id) {
+  return (state.engines || []).find((e) => (e.id || e.engine_id) === id) || null;
+}
+
+function engineIsInstalled(id) {
+  const rec = engineRecord(id);
+  if (!rec) return false;
+  const st = String(rec.state || rec.status || "").toLowerCase();
+  return rec.installed === true || st.includes("installed");
+}
+
+async function refreshEngineState() {
+  try {
+    const r = await api.engines();
+    const b = (r && r.body) || r || {};
+    const list = Array.isArray(b.engines) ? b.engines : (Array.isArray(b) ? b : []);
+    if (Array.isArray(list) && list.length) {
+      catalogEngineIds = list.map((e) => e && e.id).filter(Boolean);
+      setState({ engines: list });
+      // Repaint mounted cards so "安装引擎" switches to "引擎已安装" without
+      // waiting for a page switch or a manual refresh.
+      try { if (vgrid) vgrid.refresh(); } catch (_) {}
+    }
+    return list;
+  } catch (_) {
+    return state.engines || [];
+  }
+}
+
+async function chooseEngineForItem(item, forcePicker = false) {
+  const engines = engineIdsOf(item);
+  if (!engines.length) return null;
+  // A single-engine model can install without a dialog; multiple candidates
+  // always ask, because "which runtime will run this" is a real choice.
+  if (engines.length === 1 && !forcePicker) return engines[0];
+  const res = await pickEngine({
+    engines,
+    modelId: item.id || "",
+    modelName: item.name || "",
+    t,
+  });
+  if (!res) return null;
+  applyEngineChoice(res, item.id || "");
+  return res.engine;
+}
+
+/** Install only the runtime. Model weights are downloaded by downloadItem(). */
+export async function installEngineForItem(item, opts = {}) {
+  const engines = engineIdsOf(item);
+  if (!engines.length) {
+    toast(t("toast.engineNotSpecified"), { kind: "warn" });
+    return null;
+  }
+  const engine = await chooseEngineForItem(item, !!opts.forcePicker);
+  if (!engine) return null;
+
+  const known = await knownCatalogEngineIds();
+  if (known && !known.includes(engine)) {
+    toast(t("toast.engineNotInCatalog", { engine }), { kind: "warn" });
+    return null;
+  }
+  try {
+    await api.installEngine(engine);
+    toast(t("toast.installingEngine", { id: engine }), { kind: "ok" });
+    await refreshEngineState();
+    return engine;
+  } catch (_) { /* api wrapper already reports the failure */ }
+  return null;
+}
+
+/** Download only weights, after verifying the selected runtime exists. */
+export async function downloadItem(item) {
+  const engines = engineIdsOf(item);
+  if (!engines.length) {
+    toast(t("toast.engineNotSpecified"), { kind: "warn" });
+    return;
   }
 
-  // Engine install deliberately happens AFTER the weight download is
-  // requested. It used to run first and could take minutes (or fail with a
-  // pip resolution error, e.g. kokoro), so users saw "installing engine" and
-  // never any model download. Weights are the thing they clicked; start them
-  // first, then attach the runtime.
-  // GGUF models ship several revisions (branches/tags) and quantizations.
-  // First pick a revision (defaulting to main, skipped when there is no
-  // choice), then pick a quantization off that revision, then download the
-  // chosen shard(s) at the chosen revision.
-  let revision = "main";
+  const remembered = readRemembered();
+  let engine = resolveEngine(engines, {
+    modelId: item.id || "",
+    remembered,
+    globalDefault: readGlobalDefault(),
+  }).engine;
+
+  // If the remembered/default engine is missing but another listed engine is
+  // installed, use the working one instead of blocking a valid download.
+  await refreshEngineState();
+  if (!engineIsInstalled(engine)) {
+    const installedAlternative = engines.find((id) => engineIsInstalled(id));
+    if (installedAlternative) engine = installedAlternative;
+  }
+  if (!engineIsInstalled(engine)) {
+    toast(t("toast.engineNotInstalled", { engine }), { kind: "warn" });
+    return;
+  }
+
+  // Repos commonly expose branches/tags; let the user pick before downloading.
+  // GGUF additionally exposes quantization files.
+  const rev = await pickRevision(item, api);
+  if (rev === null) return;
+  let revision = (rev && rev.revision) || "main";
+  // ModelScope defaults to `master`; passing HF's `main` makes a valid repo
+  // look missing (404 model_not_found).
+  if (item.hub === "modelscope" && (!rev || rev.fallback || rev.skipped)) {
+    revision = "master";
+  }
   let pickedFiles = null;
-  let pickedRepo = "";
+  let pickedRepo = (rev && rev.repo) || "";
 
   if (item.gguf_repo) {
-    const rev = await pickRevision(item, api);
-    if (rev === null) return;  // user cancelled revision picker → abort install
-    revision = (rev && rev.revision) || "main";
-
     const pick = await pickQuantization(item, api, revision);
-    if (!pick) return;  // user cancelled
+    if (!pick) return;
     if (pick.error) { toast(pick.error, { kind: "warn" }); return; }
-    // 空数组 ≠ 取消：它表示"没识别出任何量化档"。以前这里 `if (pick.files…)`
-    // 直接静默 return，用户点了安装却什么都没下。现在交给后端自动挑文件。
     pickedFiles = (pick && pick.files) || null;
-    pickedRepo = (pick && pick.repo) || (rev && rev.repo) || "";
+    pickedRepo = (pick && pick.repo) || pickedRepo;
   }
 
-  // v4.11.0 — 下载决策集中到 planInstall：它把"能下什么"变成显式的
-  // 三种结果（指定分片 / 自动挑文件 / 真的无东西可下），而不是散落在
-  // if 分支里。真实 bug：165 个没有 gguf_repo 的模型走到这里时旧代码
-  // 只装引擎就 return，权重从未下载。
   const plan = planInstall(item, {
     revision,
     files: pickedFiles || undefined,
     repo: pickedRepo || undefined,
   });
-
   if (plan.kind === PLAN.NOTHING) {
     toast(t(planReasonKey(plan.reason)), { kind: "warn" });
     return;
   }
 
-  // Open the panel before the HTTP call so the click always has visible
-  // feedback, even when the backend returns zero new tasks (all files already
-  // present) or the response is slow. Previously the panel only appeared
-  // after a non-empty tasks array, which made a valid download look like
-  // "only the engine installed".
   try { showDownloads(); } catch (_) { /* panel must not block the download */ }
-
   try {
     const res = await api.hubDownload(plan.args);
     const body = (res && res.body) || res || {};
-    // Starting a model download must open the download panel. Previously only
-    // the single-URL helper did this, so market installs showed a toast and
-    // then appeared to do nothing until the user found the hidden overlay.
     if (!Array.isArray(body.tasks) || body.tasks.length === 0) {
       toast(t("toast.downloadNoFiles"), { kind: "warn" });
     } else {
       showDownloads();
       if (body.auto_files_picked) {
-        toast(t("toast.downloadStartedAuto", { file: item.name || item.id }),
-              { kind: "ok" });
+        toast(t("toast.downloadStartedAuto", { file: item.name || item.id }), { kind: "ok" });
       } else {
-        toast(t("toast.downloadStarted", { file: item.name || item.id }),
-              { kind: "ok" });
+        toast(t("toast.downloadStarted", { file: item.name || item.id }), { kind: "ok" });
       }
     }
   } catch (e) {
     toast(String((e && e.message) || e), { kind: "err" });
-    return;
   }
+}
 
-  // The model request is now on its way / already done. A missing or broken
-  // runtime no longer prevents the weights from being downloaded.
-  if (chosenEngine) {
-    const known = await knownCatalogEngineIds();
-    if (known && !known.includes(chosenEngine)) {
-      toast(t("toast.engineNotInCatalog", { engine: chosenEngine }), { kind: "warn" });
-    } else {
-      try {
-        await api.installEngine(chosenEngine);
-      } catch (_) { /* toast shown by api */ }
-    }
-  }
+// Kept for older callers: install the engine, then start the weight download.
+// The market UI no longer uses this combined path; it exposes two buttons.
+export async function installItem(item) {
+  const engine = await installEngineForItem(item);
+  if (engine) await downloadItem(item);
 }
 
 export function populateCategoryFilter() {
@@ -740,6 +835,8 @@ export async function showDetail(item) {
       try { await api.installEngine(id); toast(t("toast.installingEngine", { id }), { kind: "ok" }); }
       catch (_) {}
       b.disabled = false;
+      await refreshEngineState();
+      showDetail(item).catch(() => {});
     })
   );
   host.querySelectorAll("[data-action=uninstall-engine]").forEach((b) =>
@@ -749,7 +846,12 @@ export async function showDetail(item) {
       try { await api.uninstallEngine(id); toast(t("toast.uninstalledEngine", { id }), { kind: "ok" }); }
       catch (_) {}
       b.disabled = false;
+      await refreshEngineState();
+      showDetail(item).catch(() => {});
     })
+  );
+  host.querySelectorAll("[data-action=download-model]").forEach((b) =>
+    b.addEventListener("click", () => downloadItem(detail).catch(() => {}))
   );
   host.querySelectorAll("[data-action=configure-external]").forEach((b) =>
     b.addEventListener("click", () => {
@@ -1004,22 +1106,31 @@ function renderDetail(m, gguf) {
     ${engines.includes("mnn") ? `<p class="hint">${t("market.mnnEngineHint")}</p>` : ""}
     ` : ""}
 
+    <div class="detail-download-row">
+      <button class="primary" type="button" data-action="download-model">${t("market.downloadModel")}</button>
+      <span class="hint">${t("market.downloadModelHint")}</span>
+    </div>
+
     <h3 class="section">${t("market.requiredEngines")}</h3>
     <div class="list compact">
       ${engines.length === 0
         ? `<div class="hint">${t("market.engineUnassigned")}</div>`
-        : engines.map((e) => `
+        : engines.map((e) => {
+          const eid = typeof e === "string" ? e : (e.id || e.name || "");
+          const installed = engineIsInstalled(eid) || !!(e && e.installed);
+          return `
           <div class="row">
             <div class="grow">
-              <div class="name">${escapeHtml(typeof e === "string" ? e : (e.id || e.name || ""))}${e === "mnn" ? ` <span class="pill ok">${t("market.edgeAccel")}</span>` : ""}</div>
+              <div class="name">${escapeHtml(eid)}${eid === "mnn" ? ` <span class="pill ok">${t("market.edgeAccel")}</span>` : ""}</div>
               <div class="sub">${escapeHtml(typeof e === "string" ? "" : (e.description || ""))}</div>
             </div>
-            <span class="pill ${e.installed ? "ok" : ""}">${e.installed ? t("market.installed") : t("market.notInstalled")}</span>
-            <button class="primary" data-action="install-engine"
-                    data-id="${escapeHtml(typeof e === "string" ? e : e.id)}">${e.installed ? t("market.reinstall") : t("market.install")}</button>
-            ${e.installed ? `<button class="danger" data-action="uninstall-engine"
-              data-id="${escapeHtml(typeof e === "string" ? e : e.id)}">${t("market.uninstall")}</button>` : ""}
-          </div>`).join("")}
+            <span class="pill ${installed ? "ok" : ""}">${installed ? t("market.installed") : t("market.notInstalled")}</span>
+            <button class="primary small" data-action="install-engine"
+                    data-id="${escapeHtml(eid)}">${installed ? t("market.reinstall") : t("market.installEngine")}</button>
+            ${installed ? `<button class="danger small" data-action="uninstall-engine"
+              data-id="${escapeHtml(eid)}">${t("market.uninstall")}</button>` : ""}
+          </div>`;
+        }).join("")}
     </div>
 
     <h3 class="section">${t("market.importLocalCopy")}</h3>

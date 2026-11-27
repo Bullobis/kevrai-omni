@@ -126,6 +126,9 @@ export class VirtualGrid {
 
   // v2.8.0 — allow the owner to flip the "a request is in flight" flag so the
   // near-end callback cannot fire repeatedly while a page is loading.
+  /** Re-render the mounted window in place (e.g. after engine state changes). */
+  refresh() { this._render(); }
+
   setLoading(flag) {
     this.loading = !!flag;
     if (!this.loading) this._nearEndFired = false;

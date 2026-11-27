@@ -83,7 +83,7 @@ export function buildDownloadArgs({ repo, files, revision }) {
 export async function pickRevision(item, api) {
   let parsed;
   try {
-    parsed = parseRevisions(await api.modelRevisions(item.id));
+    parsed = parseRevisions(await (api.modelRevisionsQuiet || api.modelRevisions)(item.id));
   } catch (_e) {
     // Lookup failed/timeout/empty → graceful fall back to the default branch.
     return { revision: DEFAULT_REVISION, fallback: true };

@@ -419,7 +419,9 @@ html[data-theme="light"] .skip-link { color: #fff; }
 }
 .card-pills { display: flex; flex-wrap: wrap; gap: 5px; }
 .card-pills .pill { font-size: 10px; padding: 2px 7px; }
-.card-foot { display: flex; justify-content: space-between; align-items: center; }
+.card-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.card-foot-actions { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
+.detail-download-row { display: flex; gap: 8px; align-items: center; margin: 14px 0 4px; flex-wrap: wrap; }
 .card-foot .mut { font-size: 11px; }
 
 /* ---------- v2.9.0 model-market cards ---------- */

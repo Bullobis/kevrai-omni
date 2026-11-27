@@ -12,6 +12,7 @@ import {
   shouldAbortOnEngineFailure,
   PLAN,
   HUB_HF,
+  HUB_MODELSCOPE,
 } from "../modules/plan-install.js";
 
 // ---------------------------------------------------------------------------
@@ -68,6 +69,16 @@ test("普通 HF 仓库 → 自动挑文件（旧行为：什么都不下）", ()
   // IPC requires files to be present (empty is valid with auto_pick). Without
   // this key the preload rejected the call before the sidecar saw it.
   assert.deepEqual(p.args.files, []);
+});
+
+test("ModelScope 仓库 → 走 modelscope，而不是硬编码 HF", () => {
+  const p = planInstall(
+    { id: "ms", hub: "modelscope", repo: "MNN/Hunyuan-0.5B-Instruct-MNN" },
+  );
+  assert.equal(p.kind, PLAN.AUTO);
+  assert.equal(p.args.hub, HUB_MODELSCOPE);
+  assert.equal(p.args.repo, "MNN/Hunyuan-0.5B-Instruct-MNN");
+  assert.equal(p.args.revision, "master");
 });
 
 test("非 GGUF 仓库带 revision 时透传", () => {

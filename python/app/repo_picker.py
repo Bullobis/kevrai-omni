@@ -24,7 +24,7 @@ from typing import Any
 
 # 权重文件扩展名，按常见度排序。
 WEIGHT_EXTS: tuple[str, ...] = (
-    ".safetensors", ".gguf", ".bin", ".onnx", ".mnn",
+    ".safetensors", ".gguf", ".bin", ".onnx", ".mnn", ".weight",
     ".pt", ".pth", ".ckpt", ".npz", ".msgpack",
 )
 
@@ -45,6 +45,11 @@ _ESSENTIAL_NAMES: frozenset[str] = frozenset({
     "chat_template.json",
     "model_index.json",      # diffusers 管线
     "scaling_factor.json",
+    # MNN 预转换仓库的配套文件（llm.mnn 只是图，llm.mnn.weight 才是权重）
+    "llm_config.json",
+    "llm.mnn.json",
+    "configuration.json",
+    "tokenizer.mtok",
 })
 
 # 这些目录/前缀永远不下载：原始检查点、示例、文档、测试。
