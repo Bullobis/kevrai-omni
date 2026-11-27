@@ -125,7 +125,7 @@ def _bootstrap_engine_path() -> None:
             path = str(target)
             if path not in sys.path:
                 sys.path.insert(0, path)
-    except Exception:  # noqa: BLE001 — 路径问题不能阻断运行时导入
+    except Exception:  # noqa: BLE001, S110 — 路径问题不能阻断运行时导入
         pass
 
 
