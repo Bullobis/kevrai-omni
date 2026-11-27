@@ -925,7 +925,10 @@
     "starterLocalPrompt": "List the local models I already have and explain what each is good for.",
     "traceStepDone": "done",
     "traceStepFailed": "failed",
-    "traceHintOpen": "collapse"
+    "traceHintOpen": "collapse",
+    "deepThink": "Deep thinking",
+    "deepThinkMeta": "{n} steps",
+    "deepThinkLive": "Thinking…"
   },
   "mnn": {
     "title": "MNN inference engine (Alibaba open-source)",

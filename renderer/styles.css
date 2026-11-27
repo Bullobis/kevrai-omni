@@ -1090,17 +1090,6 @@ html[data-theme="light"] .agent-msg-user { color: #fff; }
 .agent-trace { margin: 8px 0 2px; border: 1px solid var(--border, #333);
   border-radius: 8px; background: var(--bg, #141518); padding: 6px 10px; }
 .agent-trace > summary { cursor: pointer; font-size: 12px; color: var(--mut, #999); user-select: none; }
-.agent-trace-step { margin: 6px 0; padding-left: 4px; border-left: 2px solid var(--border, #333); padding: 2px 0 2px 8px; }
-.agent-trace-head { font-size: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.agent-trace-idx { display: inline-flex; width: 17px; height: 17px; border-radius: 50%;
-  background: var(--accent, #4a7dff); color: #fff; font-size: 10px; align-items: center; justify-content: center; }
-.agent-trace-head code { font-size: 11.5px; color: var(--accent, #7aa2ff); }
-.agent-trace-params { font-size: 11px; color: var(--mut, #999); }
-.agent-trace-obs { font-size: 11px; color: var(--mut, #999); margin: 2px 0; }
-.agent-trace-artifacts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
-.agent-artifact { font-size: 11px; background: var(--card, #1b1c1f); color: var(--fg, #ccc);
-  border: 1px solid var(--border, #333); border-radius: 7px; padding: 3px 8px; cursor: pointer; }
-.agent-artifact:hover { border-color: var(--accent, #4a7dff); }
 
 /* ── 快捷短语（对标 Cherry Studio）：折叠按钮 + 分组 chips ── */
 .agent-quickphrases { margin-bottom: 8px; }
