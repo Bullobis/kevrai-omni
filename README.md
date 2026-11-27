@@ -1,6 +1,6 @@
 # Kevrai Omni
 
-> **当前源码版本：v4.18.3** · 一键本地 AI 工作站：LLM / TTS / 图像 / 视频 / 3D / 音频 / 超分辨率 / 音乐 / 音源分离 / ASR，多引擎（llama.cpp + MNN + vLLM + ComfyUI），硬件感知推荐，内置 LTX-2.5 视频、Agent 助手、知识库与超级搜索。
+> **官网：** <https://bullobis.github.io/kevrai-omni/> · **当前源码版本：v4.18.3** · 一键本地 AI 工作站：LLM / TTS / 图像 / 视频 / 3D / 音频 / 超分辨率 / 音乐 / 音源分离 / ASR，多引擎（llama.cpp + MNN + vLLM + ComfyUI），硬件感知推荐，内置 LTX-2.5 视频、Agent 助手、知识库与超级搜索。
 >
 > v4.18.3 已发布 Linux（deb / AppImage）、macOS（arm64 / x64 dmg）和 Windows（x64 exe / zip）安装包。安装包内置完整的 PyInstaller onedir sidecar；Release 同时提供 `sidecar-linux-x64.tar.gz` 完整 onedir，并在发布前完成解包启动验证。
 

@@ -4,66 +4,143 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>下载 · Kevrai Omni v4.18.3</title>
-<link rel="stylesheet" href="/style.css">
+<meta name="description" content="下载 Kevrai Omni v4.18.3 官方安装包：Windows 10/11、macOS 12+、Linux x86_64。提供 SHA256 校验值与 GitHub Releases 原始链接。">
+<meta name="theme-color" content="#080b09">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../style.css">
 </head>
 <body>
-<header><div class="wrap nav">
-  <a class="logo" href="/">Kevrai<span>·</span>Omni</a>
-  <nav>
-    <a href="/">首页</a>
-    <a href="/downloads/" class="on">下载</a>
-    <a href="/showcase/">预览</a>
-    <a href="/showcase/">界面</a><a href="/docs/">上手</a>
-    <a href="https://github.com/Bullobis/kevrai-omni">GitHub</a>
-  </nav>
-  <a class="btn primary" href="#win">立即下载</a>
-</div></header>
 
-<section style="border-bottom:1px solid var(--line)">
-<div class="wrap">
-  <h1 style="font-size:32px;font-weight:700;letter-spacing:-.3px">下载 Kevrai Omni</h1>
-  <p class="sub" style="margin-top:10px">v4.18.3 · 选择你的系统安装包。首次启动会自动准备本地运行时，不需要预装 Python。</p>
-
-  <div class="os-grid">
-    <div class="os" id="win">
-      <h3>Windows</h3>
-      <div class="ver">Windows 10 / 11 · x64</div>
-      <ul>
-        <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-x64.exe">安装程序 .exe</a><small>221.6 MB</small></li>
-        <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-x64.zip">便携版 .zip</a><small>272.1 MB</small></li>
-      </ul>
-    </div>
-    <div class="os">
-      <h3>macOS</h3>
-      <div class="ver">macOS 12+</div>
-      <ul>
-        <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-x64.dmg">Intel Mac</a><small>218.2 MB</small></li>
-        <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-arm64.dmg">Apple Silicon</a><small>214.1 MB</small></li>
-      </ul>
-    </div>
-    <div class="os">
-      <h3>Linux</h3>
-      <div class="ver">x86_64 桌面环境</div>
-      <ul>
-        <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-amd64.deb">Debian / Ubuntu .deb</a><small>263.9 MB</small></li>
-        <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-x86_64.AppImage">AppImage</a><small>318.1 MB</small></li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="note">
-    <b>源码与校验：</b>完整安装包、历史版本与
-    <a style="color:var(--ac)" href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/SHA256SUMS.txt">SHA256 校验值</a>见
-    <a style="color:var(--ac)" href="https://github.com/Bullobis/kevrai-omni/releases">GitHub Releases</a>。
-    想自己编译：<code>git clone https://github.com/Bullobis/kevrai-omni.git</code> 后按 README 构建。
-    macOS 首次打开如提示"无法验证开发者"，到「系统设置 → 隐私与安全性」允许即可。
+<div class="release-bar">
+  <div class="shell release-inner">
+    <span class="release-tag">v4.18.3</span>
+    <span>最新正式版 · 2026 年 11 月 27 日发布</span>
+    <a href="https://github.com/Bullobis/kevrai-omni/releases/tag/v4.18.3">Release Notes <span aria-hidden="true">↗</span></a>
   </div>
 </div>
-</section>
 
-<footer><div class="wrap flex">
-  <span>© Kevrai Omni · Community License v2.5</span>
-  <span><a href="/docs/">安装遇到问题？看上手文档</a></span>
-</div></footer>
+<header class="site-header">
+  <div class="shell nav">
+    <a class="brand" href="../" aria-label="Kevrai Omni 首页">
+      <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="30" height="30" rx="8" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M11 8.5v15M11 16l8.5-7.5M11.6 16l8.7 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="21.5" cy="10" r="2" fill="currentColor"/>
+      </svg>
+      <span class="brand-type"><b>KEVRAI</b><small>OMNI</small></span>
+    </a>
+    <nav class="nav-links" aria-label="主导航">
+      <a href="../#capabilities">功能</a>
+      <a href="../#screens">截屏</a>
+      <a href="./" class="on">下载</a>
+      <a href="../docs/">文档</a>
+      <a href="https://github.com/Bullobis/kevrai-omni" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <a class="btn btn-primary nav-cta" href="#platforms">选择平台</a>
+  </div>
+</header>
+
+<main>
+  <section class="subpage" id="platforms">
+    <div class="shell">
+      <div class="subpage-head">
+        <div class="eyebrow">DOWNLOAD · v4.18.3</div>
+        <h1>下载 Kevrai Omni</h1>
+        <p>选择你的系统安装包。首次启动会自动准备本地运行时，不需要预装 Python。所有安装包由 GitHub Actions 构建，统一通过 GitHub Releases 分发。</p>
+      </div>
+
+      <div class="os-grid">
+        <div class="os" id="win">
+          <h3>Windows</h3>
+          <div class="ver">Windows 10 / 11 · x64</div>
+          <ul>
+            <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-x64.exe">安装程序 .exe</a><small>221.6 MB</small></li>
+            <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-x64.zip">便携版 .zip</a><small>272.1 MB</small></li>
+            <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/latest.yml">自动更新清单</a><small>latest.yml</small></li>
+          </ul>
+        </div>
+        <div class="os" id="mac">
+          <h3>macOS</h3>
+          <div class="ver">macOS 12 及以上</div>
+          <ul>
+            <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-arm64.dmg">Apple Silicon .dmg</a><small>214.1 MB</small></li>
+            <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-x64.dmg">Intel Mac .dmg</a><small>218.2 MB</small></li>
+            <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/latest-mac.yml">自动更新清单</a><small>latest-mac.yml</small></li>
+          </ul>
+        </div>
+        <div class="os" id="linux">
+          <h3>Linux</h3>
+          <div class="ver">x86_64 桌面环境</div>
+          <ul>
+            <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-amd64.deb">Debian / Ubuntu .deb</a><small>263.9 MB</small></li>
+            <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-x86_64.AppImage">AppImage</a><small>318.1 MB</small></li>
+            <li><a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/latest-linux.yml">自动更新清单</a><small>latest-linux.yml</small></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="note">
+        <b>校验与源码。</b>完整的 SHA256 校验值见
+        <a href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/SHA256SUMS.txt">SHA256SUMS.txt</a>，
+        全部历史版本见 <a href="https://github.com/Bullobis/kevrai-omni/releases">GitHub Releases</a>。
+        想自己编译，可克隆仓库后按 README 构建。
+      </div>
+
+      <div class="section-head" style="margin-top:72px;margin-bottom:28px">
+        <div class="eyebrow">BEFORE YOU INSTALL</div>
+        <h2>安装前需要知道的三件事</h2>
+      </div>
+      <div class="bento bento-three">
+        <article class="feature">
+          <div class="feature-top"><span class="num">01</span><span class="chip">RUNTIME</span></div>
+          <h3>不需要预装 Python</h3>
+          <p>应用自带独立 sidecar 运行时。首次启动会在后台准备环境，不污染系统 Python，也不需要命令行。</p>
+        </article>
+        <article class="feature">
+          <div class="feature-top"><span class="num">02</span><span class="chip">ENGINE</span></div>
+          <h3>先装引擎，再下模型</h3>
+          <p>日常对话推荐 llama.cpp；需要 MNN 量化模型时再单独安装 MNN 引擎。两者可以同时存在。</p>
+        </article>
+        <article class="feature">
+          <div class="feature-top"><span class="num">03</span><span class="chip">STORAGE</span></div>
+          <h3>给模型留出磁盘空间</h3>
+          <p>安装包不含大模型。模型按需下载，单个模型从几百 MB 到数百 GB，建议预留充足空间。</p>
+        </article>
+      </div>
+
+      <div class="note" style="margin-top:26px">
+        <b>macOS 首次打开提示“无法验证开发者”？</b>
+        到「系统设置 → 隐私与安全性」允许打开即可。Linux 的 AppImage 需要先赋予执行权限：
+        <code>chmod +x Kevrai-Omni-4.18.3-x86_64.AppImage</code>。
+      </div>
+
+      <div class="download-actions" style="margin-top:40px">
+        <a class="btn btn-primary" href="../docs/">第一次使用？看上手文档</a>
+        <a class="text-link" href="../#screens">先看真实界面截图 <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div class="footer-brand">
+      <a class="brand" href="../">
+        <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <rect x="1" y="1" width="30" height="30" rx="8" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M11 8.5v15M11 16l8.5-7.5M11.6 16l8.7 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="21.5" cy="10" r="2" fill="currentColor"/>
+        </svg>
+        <span class="brand-type"><b>KEVRAI</b><small>OMNI</small></span>
+      </a>
+      <p>开源的本地 AI 工作站。<br>模型在你这里，数据也留在你这里。</p>
+    </div>
+    <div class="footer-col"><h4>产品</h4><a href="./">下载</a><a href="../#screens">界面截屏</a><a href="../#capabilities">功能</a><a href="../docs/">上手文档</a></div>
+    <div class="footer-col"><h4>项目</h4><a href="https://github.com/Bullobis/kevrai-omni" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/Bullobis/kevrai-omni/releases" target="_blank" rel="noopener">Releases</a><a href="https://github.com/Bullobis/kevrai-omni/issues" target="_blank" rel="noopener">Issues</a></div>
+    <div class="footer-col"><h4>许可</h4><span>Community License 2.5</span><span>源码公开可审计</span><span>© 2026 Kevrai Omni</span></div>
+  </div>
+  <div class="shell footer-bottom"><span>Built for local inference.</span><span>Windows · macOS · Linux</span></div>
+</footer>
+
 </body>
 </html>

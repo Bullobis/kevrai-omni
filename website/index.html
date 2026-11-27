@@ -3,79 +3,247 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kevrai Omni — 一键本地 AI 工作站</title>
-<meta name="description" content="开源本地 AI 桌面应用：LLM、TTS、图像、视频、3D、音频、超分，llama.cpp + MNN 双引擎。">
-<link rel="stylesheet" href="/style.css">
+<title>Kevrai Omni — 本地 AI 工作站</title>
+<meta name="description" content="Kevrai Omni 是开源的本地 AI 桌面工作站：模型市场、llama.cpp + MNN 双引擎、Agent、语音、图像、视频与知识库，全部在本机运行。当前版本 v4.18.3。">
+<meta name="theme-color" content="#080b09">
+<meta property="og:title" content="Kevrai Omni — 本地 AI 工作站">
+<meta property="og:description" content="一个安装包，把完整的本地 AI 工作流装进你的电脑。开源自托管，数据不出设备。">
+<meta property="og:image" content="https://bullobis.github.io/kevrai-omni/shots/market.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header><div class="wrap nav">
-  <a class="logo" href="/">Kevrai<span>·</span>Omni</a>
-  <nav>
-    <a href="/" class="on">首页</a>
-    <a href="/downloads/">下载</a>
-    <a href="/showcase/">预览</a>
-    <a href="/showcase/">界面</a><a href="/docs/">上手</a>
-    <a href="https://github.com/Bullobis/kevrai-omni">GitHub</a>
-  </nav>
-  <a class="btn primary" href="/downloads/">下载</a>
-</div></header>
 
-<div class="wrap hero">
-  <h1>把整套 AI 工作站<br>装进你自己的电脑。</h1>
-  <p>开源的本地 AI 桌面应用。下载一次，LLM、语音合成、图像、视频、3D、音频、超分辨率都在本机跑——不依赖云端，数据不出设备。</p>
-  <div class="cta">
-    <a class="btn primary" href="/downloads/">下载 v4.18.3</a>
-    <a class="btn" href="https://github.com/Bullobis/kevrai-omni">在 GitHub 查看</a>
-  </div>
-  <div class="meta">
-    <span><b>Electron 33</b> 原生前端</span>
-    <span><b>FastAPI</b> 本地 sidecar</span>
-    <span><b>llama.cpp + MNN</b> 双引擎</span>
-    <span>Community License v2.5</span>
+<div class="release-bar">
+  <div class="shell release-inner">
+    <span class="release-tag">v4.18.3</span>
+    <span>正式发布：MNN 引擎与模型解耦、Agent 深度思考卡、下载流程重构</span>
+    <a href="https://github.com/Bullobis/kevrai-omni/releases/tag/v4.18.3">查看更新 <span aria-hidden="true">↗</span></a>
   </div>
 </div>
 
-<section><div class="wrap">
-  <h2>功能一览</h2>
-  <p class="sub">从模型市场到推理，全部在一个窗口里完成。</p>
-  <div class="grid">
-    <div class="cell"><h3>模型市场</h3><p>搜索、筛选、收藏，虚拟滚动。GGUF 量化档按需下载，魔搭与 HuggingFace 双源。</p></div>
-    <div class="cell"><h3>双引擎推理</h3><p>llama.cpp 跑 GGUF，MNN 跑量化模型。装引擎进度实时可见。</p></div>
-    <div class="cell"><h3>硬件感知</h3><p>探测 CPU、内存、磁盘与显卡，据此推荐合适的模型与量化档。</p></div>
-    <div class="cell"><h3>视频生成</h3><p>内置 LTX-2.5 文生视频与图生视频，分辨率、帧数、种子可调。</p></div>
-    <div class="cell"><h3>语音合成</h3><p>Piper、Kokoro、Chatterbox 与 Ming-3.0，支持语气指令与音色克隆。</p></div>
-    <div class="cell"><h3>Agent 助手</h3><p>本地 ReAct 助手，技能可插拔，工具调用进度实时反馈。</p></div>
-    <div class="cell"><h3>环境自举</h3><p>首次启动自动准备便携运行时，缺什么装什么，多镜像兜底。</p></div>
-    <div class="cell"><h3>命令面板</h3><p>Ctrl/⌘+K 模糊执行任意操作，最近使用置顶。</p></div>
-    <div class="cell"><h3>主题与双语</h3><p>深色 / 浅色 / 跟随系统，中英文一键切换。</p></div>
+<header class="site-header">
+  <div class="shell nav">
+    <a class="brand" href="./" aria-label="Kevrai Omni 首页">
+      <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="30" height="30" rx="8" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M11 8.5v15M11 16l8.5-7.5M11.6 16l8.7 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="21.5" cy="10" r="2" fill="currentColor"/>
+      </svg>
+      <span class="brand-type"><b>KEVRAI</b><small>OMNI</small></span>
+    </a>
+    <nav class="nav-links" aria-label="主导航">
+      <a href="#capabilities">功能</a>
+      <a href="#screens">截屏</a>
+      <a href="downloads/">下载</a>
+      <a href="docs/">文档</a>
+      <a href="https://github.com/Bullobis/kevrai-omni" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <a class="btn btn-primary nav-cta" href="downloads/">下载 v4.18.3</a>
   </div>
-</div></section>
+</header>
 
-<section><div class="wrap">
-  <h2>技术栈</h2>
-  <p class="sub">不打包重型框架，保持轻量与可审计。</p>
-  <div class="stack">
-    <span class="tag">Electron 33</span><span class="tag">原生 HTML / CSS / JS</span>
-    <span class="tag">Python 3.10</span><span class="tag">FastAPI</span>
-    <span class="tag">llama.cpp</span><span class="tag">Alibaba MNN</span>
-    <span class="tag">transformers</span><span class="tag">ComfyUI 工作流</span>
-    <span class="tag">魔搭 ModelScope</span><span class="tag">HuggingFace</span>
+<main>
+  <section class="hero">
+    <div class="shell hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="status-dot"></span>OPEN SOURCE · LOCAL-FIRST · v4.18.3</div>
+        <h1>本地 AI，<br><span class="h1-accent">完整工作站。</span></h1>
+        <p class="hero-lead">一个安装包，把模型市场、双引擎推理、Agent、语音与创作工具装进同一台电脑。模型在你这里，数据也留在你这里。</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary btn-lg" href="downloads/">下载 Kevrai Omni</a>
+          <a class="btn btn-ghost btn-lg" href="https://github.com/Bullobis/kevrai-omni" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+            查看源码
+          </a>
+        </div>
+        <div class="platform-line">
+          <span>Windows 10 / 11</span><i></i><span>macOS 12+</span><i></i><span>Linux x64</span><i></i><span>Community License 2.5</span>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <figure class="window-frame">
+          <div class="window-bar">
+            <div class="traffic" aria-hidden="true"><span></span><span></span><span></span></div>
+            <span class="window-title">Kevrai Omni / 模型市场</span>
+            <span class="window-version">v4.18.3</span>
+          </div>
+          <img src="shots/market.png" width="1440" height="900" alt="Kevrai Omni 4.18.3 模型市场界面，深色主题，模型卡片提供安装引擎与下载模型两个操作">
+        </figure>
+        <div class="visual-caption"><span class="live-dot"></span>真实应用截图 · 1440 × 900 · 深色主题</div>
+      </div>
+    </div>
+
+    <div class="shell stats-strip">
+      <div class="stat"><strong>25</strong><span>在线模型<small>当前市场快照</small></span></div>
+      <div class="stat"><strong>187</strong><span>MNN 预转换模型<small>官方格式，开箱即用</small></span></div>
+      <div class="stat"><strong>15</strong><span>推理引擎<small>按需安装，独立管理</small></span></div>
+      <div class="stat"><strong>100%</strong><span>本地推理<small>对话与文件不出设备</small></span></div>
+    </div>
+  </section>
+
+  <section class="section screens" id="screens">
+    <div class="shell">
+      <div class="section-head">
+        <div class="eyebrow">REAL SCREENS · 4.18.3</div>
+        <h2>真实界面，不做概念图。</h2>
+        <p>以下截图取自 Kevrai Omni 4.18.3 实际运行窗口，保留完整应用边框与侧边栏版本信息。</p>
+      </div>
+
+      <div class="gallery">
+        <figure class="shot-card">
+          <a class="shot-media" href="shots/agent.png" target="_blank" rel="noopener" aria-label="查看 Agent 深度思考截图原图">
+            <img src="shots/agent.png" width="1440" height="900" loading="lazy" alt="Kevrai Omni Agent 界面：用户询问本地模型大小，回答下方是折叠的深度思考卡">
+          </a>
+          <figcaption>
+            <div class="shot-title"><h3>Agent 深度思考</h3><span class="shot-tag">真实截图</span></div>
+            <p>推理步骤、工具调用与参数集中在同一张折叠卡里。过程可展开，结果可复核。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="shot-card">
+          <a class="shot-media" href="shots/mnn.png" target="_blank" rel="noopener" aria-label="查看 MNN 推理引擎截图原图">
+            <img src="shots/mnn.png" width="1440" height="900" loading="lazy" alt="Kevrai Omni MNN 推理引擎页面：引擎已就绪，下方是 187 个官方预转换模型列表">
+          </a>
+          <figcaption>
+            <div class="shot-title"><h3>MNN 推理引擎</h3><span class="shot-tag">真实截图</span></div>
+            <p>引擎独立安装，模型单独下载。187 个官方预转换模型，也可把 HF 权重转换为 MNN 格式。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="shot-card">
+          <a class="shot-media" href="shots/engines.png" target="_blank" rel="noopener" aria-label="查看 AI 引擎管理截图原图">
+            <img src="shots/engines.png" width="1440" height="900" loading="lazy" alt="Kevrai Omni AI 引擎页面：llama.cpp、vLLM、MNN、ONNX、ComfyUI 等引擎集中管理">
+          </a>
+          <figcaption>
+            <div class="shot-title"><h3>引擎集中管理</h3><span class="shot-tag">真实截图</span></div>
+            <p>llama.cpp、vLLM、MNN、ONNX Runtime、ComfyUI 等引擎在一个页面里安装、检查更新。</p>
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="section capabilities" id="capabilities">
+    <div class="shell">
+      <div class="section-head">
+        <div class="eyebrow">WORKFLOW</div>
+        <h2>一个窗口，走完从模型到结果的全过程。</h2>
+        <p>不是把十几个工具拼在一起，而是让它们共享同一套模型、引擎与运行环境。</p>
+      </div>
+
+      <div class="bento">
+        <article class="feature feature-wide">
+          <div class="feature-top"><span class="num">01</span><span class="chip">MODEL MARKET</span></div>
+          <h3>先找到合适的模型，再开始下载。</h3>
+          <p>统一搜索 HuggingFace 与魔搭 ModelScope。按任务、引擎、量化与热度筛选，每张卡片直接标出体积、推荐引擎和运行内存。</p>
+          <div class="feature-tags"><span>GGUF / MNN</span><span>双源下载</span><span>收藏与最近使用</span><span>断点续传</span></div>
+        </article>
+
+        <article class="feature">
+          <div class="feature-top"><span class="num">02</span><span class="chip">ENGINES</span></div>
+          <h3>引擎与模型，彻底分开。</h3>
+          <p>llama.cpp 跑 GGUF，MNN 跑量化模型。引擎按需安装，模型独立下载；换引擎不用重装整个应用。</p>
+        </article>
+
+        <article class="feature">
+          <div class="feature-top"><span class="num">03</span><span class="chip">AGENT</span></div>
+          <h3>工具调用，过程可见。</h3>
+          <p>本地 ReAct 助手自动拆解任务、调用工具。每一步推理、参数与结果都留在对话里，危险操作先征求确认。</p>
+        </article>
+
+        <article class="feature">
+          <div class="feature-top"><span class="num">04</span><span class="chip">CREATE</span></div>
+          <h3>生成，不止文字。</h3>
+          <p>LTX-2.5 文生视频与图生视频、图片生成、3D 生成、音乐生成，共用同一套本地模型管理。</p>
+        </article>
+
+        <article class="feature">
+          <div class="feature-top"><span class="num">05</span><span class="chip">AUDIO</span></div>
+          <h3>听得懂，也说得出来。</h3>
+          <p>语音转写、语音合成、音源分离与音色克隆。Piper、Kokoro、Fish Speech、CosyVoice 等引擎可选。</p>
+        </article>
+
+        <article class="feature">
+          <div class="feature-top"><span class="num">06</span><span class="chip">KNOWLEDGE</span></div>
+          <h3>把资料变成可检索的知识。</h3>
+          <p>知识库 RAG、向量嵌入、多模态对话与翻译。文档索引和向量都保存在本机。</p>
+        </article>
+
+        <article class="feature">
+          <div class="feature-top"><span class="num">07</span><span class="chip">SYSTEM</span></div>
+          <h3>先体检硬件，再推荐模型。</h3>
+          <p>读取 CPU、内存、显卡、磁盘与网络，按真实配置推荐模型与量化档；环境、插件、日志集中管理。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section principles">
+    <div class="shell">
+      <div class="principles-head">
+        <div>
+          <div class="eyebrow">WHY KEVRAI</div>
+          <h2>为长期使用而设计，<br>不是为演示而设计。</h2>
+        </div>
+        <p>本地 AI 的门槛不该是命令行、Python 环境和一堆互不相干的仓库。Kevrai Omni 把这些收进一个可维护的桌面应用，同时保留开源与可审计。</p>
+      </div>
+      <div class="principle-grid">
+        <div class="principle"><span class="num">01</span><h3>本地优先</h3><p>推理在本机完成，模型、对话与知识库文件保存在你的磁盘，不经过云端。</p></div>
+        <div class="principle"><span class="num">02</span><h3>引擎解耦</h3><p>应用、引擎、模型三层独立更新。新引擎接入不需要重写界面，旧模型也能继续用。</p></div>
+        <div class="principle"><span class="num">03</span><h3>透明进度</h3><p>引擎安装、模型下载、格式转换都有实时状态与失败原因，不把等待藏在后台。</p></div>
+        <div class="principle"><span class="num">04</span><h3>开源可审计</h3><p>Electron 前端、FastAPI sidecar 与构建脚本公开在 GitHub，问题、PR 与发行记录都可追溯。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="download-section" id="download">
+    <div class="shell download-panel">
+      <div class="download-copy">
+        <div class="eyebrow">DOWNLOAD · v4.18.3</div>
+        <h2>选一个平台，<br>开始本地运行。</h2>
+        <p>官方安装包由 GitHub Releases 分发。首次启动会自动准备本地运行时，不需要预装 Python。</p>
+        <div class="download-actions">
+          <a class="btn btn-primary" href="downloads/">全部下载与校验值</a>
+          <a class="text-link" href="docs/">第一次使用？看上手文档 <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+      <div class="os-stack">
+        <a class="os-row" href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-x64.exe">
+          <span class="os-name">Windows<small>x64 · 安装程序</small></span><span class="os-size">221.6 MB</span><span class="os-arrow">↓</span>
+        </a>
+        <a class="os-row" href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-arm64.dmg">
+          <span class="os-name">macOS<small>Apple Silicon · DMG</small></span><span class="os-size">214.1 MB</span><span class="os-arrow">↓</span>
+        </a>
+        <a class="os-row" href="https://github.com/Bullobis/kevrai-omni/releases/download/v4.18.3/Kevrai-Omni-4.18.3-amd64.deb">
+          <span class="os-name">Linux<small>x86_64 · Debian / Ubuntu</small></span><span class="os-size">263.9 MB</span><span class="os-arrow">↓</span>
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div class="footer-brand">
+      <a class="brand" href="./">
+        <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <rect x="1" y="1" width="30" height="30" rx="8" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M11 8.5v15M11 16l8.5-7.5M11.6 16l8.7 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="21.5" cy="10" r="2" fill="currentColor"/>
+        </svg>
+        <span class="brand-type"><b>KEVRAI</b><small>OMNI</small></span>
+      </a>
+      <p>开源的本地 AI 工作站。<br>模型在你这里，数据也留在你这里。</p>
+    </div>
+    <div class="footer-col"><h4>产品</h4><a href="downloads/">下载</a><a href="#screens">界面截屏</a><a href="#capabilities">功能</a><a href="docs/">上手文档</a></div>
+    <div class="footer-col"><h4>项目</h4><a href="https://github.com/Bullobis/kevrai-omni" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/Bullobis/kevrai-omni/releases" target="_blank" rel="noopener">Releases</a><a href="https://github.com/Bullobis/kevrai-omni/issues" target="_blank" rel="noopener">Issues</a></div>
+    <div class="footer-col"><h4>许可</h4><span>Community License 2.5</span><span>源码公开可审计</span><span>© 2026 Kevrai Omni</span></div>
   </div>
-</div></section>
+  <div class="shell footer-bottom"><span>Built for local inference.</span><span>Windows · macOS · Linux</span></div>
+</footer>
 
-<section><div class="wrap">
-  <h2>三步上手</h2>
-  <p class="sub">不需要命令行。</p>
-  <div class="steps">
-    <div class="step"><div class="n">01</div><h3>下载安装包</h3><p>从下载页选对应系统的安装包，双击安装。</p></div>
-    <div class="step"><div class="n">02</div><h3>装一个引擎</h3><p>首次启动按引导选 llama.cpp 或 MNN，进度条走完。</p></div>
-    <div class="step"><div class="n">03</div><h3>下模型开聊</h3><p>在模型市场挑一个适合你显存/内存的模型。</p></div>
-  </div>
-</div></section>
-
-<footer><div class="wrap flex">
-  <span>© Kevrai Omni · 开源项目，欢迎 issue 与 PR</span>
-  <span><a href="https://github.com/Bullobis/kevrai-omni">GitHub</a> · <a href="/downloads/">下载</a></span>
-</div></footer>
 </body>
 </html>

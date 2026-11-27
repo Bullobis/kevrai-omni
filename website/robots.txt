@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bullobis.github.io/kevrai-omni/sitemap.xml
