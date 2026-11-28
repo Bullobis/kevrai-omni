@@ -569,6 +569,16 @@ const api = {
     assertString(sessionId, "sessionId", 128);
     return invoke("kevrai:agent-approval-policy-set", sessionId || "default", policy);
   },
+  // Coding workspace execution mode. The mode is a user choice, not a model
+  // tool; the renderer reads and writes it through these IPC calls.
+  agentExecutionMode: () => invoke("kevrai:agent-execution-mode"),
+  agentSetExecutionMode: (mode, acknowledgeRisk) => {
+    assertString(mode, "mode", 32);
+    if (!["none", "test_runner", "approval_shell"].includes(mode)) {
+      throw new TypeError("mode: must be none|test_runner|approval_shell");
+    }
+    return invoke("kevrai:agent-execution-mode-set", mode, !!acknowledgeRisk);
+  },
 
   // ----- v2.9.0: skill hub（导入外部 SKILL.md 技能）-----
   skillHubList: () => invoke("kevrai:skill-hub-list"),

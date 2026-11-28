@@ -25,6 +25,7 @@ import time
 import pytest
 
 from app.agent import Agent, AgentMemory, ToolContext
+from app.agent.approval import ApprovalManager
 from app.agent.tool_registry import Tool, ToolRegistry
 
 
@@ -319,6 +320,12 @@ def test_rest_approval_policy_endpoints(hub_client):
     r = hub_client.get("/api/agent/approval-policy?session_id=rest-policy")
     assert r.json()["policy"] == "confirm"
 
+    # The explicit high-risk bypass is accepted by the API.
+    r = hub_client.put("/api/agent/approval-policy",
+                       json={"session_id": "rest-policy", "policy": "no_confirm"})
+    assert r.status_code == 200
+    assert r.json()["policy"] == "no_confirm"
+
     # Invalid policy -> 400.
     r = hub_client.put("/api/agent/approval-policy",
                        json={"session_id": "rest-policy", "policy": "bogus"})
@@ -500,3 +507,14 @@ def test_rule_mode_tool_call_honours_deny_policy(tmp_path):
     assert obs.get("ok") is False
     assert obs.get("error_type") == "ApprovalDenied"
     assert hits == []
+
+
+def test_no_confirm_bypasses_force_prompt():
+    """The high-risk policy skips requires_confirmation, not just auto tools."""
+    manager = ApprovalManager()
+    manager.set_policy("bypass-sess", "no_confirm")
+    gate = manager.gate(
+        "bypass-sess", "write_file", {"path": "x"}, force_prompt=True,
+    )
+    assert gate.approved is True
+    assert gate.reason == "no_confirm"

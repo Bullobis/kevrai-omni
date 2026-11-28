@@ -1,15 +1,16 @@
 # 上游开源项目对照记录
 
-这份记录只记录**实际下载并读过的源码**，不引用二手介绍。三个仓库放在项目外：
+这份记录只记录**实际下载并读过的源码**，不引用二手介绍。四个仓库放在项目外：
 
 ```
 /home/user/Doubao/chats/38453556993272066/references/
 ├── cherry-studio        # CherryHQ/cherry-studio, 89ed7aa
 ├── codex                # openai/codex, 69231e1
-└── deepseek-harness     # deepseek-ai/deepseek-harness, 39163dd3
+├── deepseek-harness     # deepseek-ai/deepseek-harness, 39163dd3
+└── claw-code            # ultraworkers/claw-code, 0492eb3 / v0.1.16
 ```
 
-下载命令使用 `git clone --depth 1 --filter=blob:none --sparse`，再按目录 `git sparse-checkout set`，因此本地是真实工作树，不是网页摘要。
+前三个仓库使用 `git clone --depth 1 --filter=blob:none --sparse`，再按目录 `git sparse-checkout set`；Claw Code 使用完整克隆并已 `git fetch --unshallow`。本地都是真实工作树，不是网页摘要。
 
 ## 许可证边界
 
@@ -18,8 +19,9 @@
 | Cherry Studio | AGPL-3.0 | 只借鉴信息架构、交互模式和设计原则；不复制其源码。 |
 | Codex | Apache-2.0 | 可参考协议与组件边界；当前未直接复制 Rust/TUI 代码。 |
 | DeepSeek Harness | MIT | 可参考插件、会话与审批的分层方式；当前未直接复制其包代码。 |
+| Claw Code | MIT | 只按不变量重写；不复制 57 个工具、Rust runtime、CLI/TUI 代码。 |
 
-Kevrai Omni 自己的许可证与这三个项目不同。以下改动都是按这些项目的**结构原则**重写现有原生实现，不是整段搬运。
+Kevrai Omni 自己的许可证与这些项目不同。以下改动都是按这些项目的**结构原则**重写现有原生实现，不是整段搬运。
 
 ## 实际读到的关键实现
 
@@ -66,6 +68,19 @@ Kevrai Omni 自己的许可证与这三个项目不同。以下改动都是按�
   - “everything is a plugin”，但插件管理本身有 profile、lock、安装状态、失败恢复和明确的 `restart-required` 语义。
   - 安装失败要恢复 `package.json` / lockfile，不能留下半安装状态。
 
+### Claw Code
+
+完整清单见 [`CLAW-CODE-REFERENCE.md`](./CLAW-CODE-REFERENCE.md)。核心对照点：
+
+- `rust/crates/runtime/src/permissions.rs`：`PermissionMode` 五级；`prompt` 永远问、`allow` 永远不问；`covers()` 是显式层级。
+- `rust/crates/runtime/src/permission_enforcer.rs` 与 `tools/src/lib.rs`：文件写入按实际路径分类；工作区外路径升到 `DangerFullAccess`。
+- `rust/crates/runtime/src/compact.rs`：保留最近 4 条、估算上限 10,000 token；边界回退，避免拆开 `ToolUse` / `ToolResult`。
+- `rust/crates/runtime/src/conversation.rs`：每个 pending tool 都补 `ToolResult`，中断也不例外；累计 token 超阈值后自动压缩。
+- `rust/crates/runtime/src/file_ops.rs`：`validate_workspace_boundary` / `resolves_within` 处理 `..`、symlink、缺失父目录和 Windows 路径别名。
+- `rust/crates/tools/src/lib.rs` 的 `Agent`：独立 `Session`、独立 runtime、工具白名单、后台 manifest；但活动权限是 `DangerFullAccess`，白名单不是沙箱。
+- `rust/crates/runtime/src/session.rs`：`Session.workspace_root` 把会话绑到 worktree，避免并行 lane 写错目录。
+- `rust/crates/runtime/src/prompt.rs`：单文件 4,000 字符、总指令 12,000 字符、git diff 50,000 字符上限。
+
 ## 已落到本项目
 
 ### Agent 工作区（`renderer/styles/agent-workspace.css`、`renderer/modules/agent*.js`）
@@ -83,6 +98,14 @@ Kevrai Omni 自己的许可证与这三个项目不同。以下改动都是按�
   - 轮询请求集合不变时不再重建 DOM，避免每秒清空用户正在编辑的参数。
 - 移除 Agent UI 内的 emoji 标签/按钮（`🗑`、`↻`、`⧉`、`⏸️`、`✅`、`✋` 等），技能名前的 emoji 也剥离，统一用字母 glyph + 语义色。
 - 打开技能库时不再把会话区压成不可用的一条缝；页面改为可增长并保留可用 transcript 高度。
+
+### 执行方式（`python/app/agent/workspace.py`、`renderer/modules/agent.js`）
+
+- 固定工作区 `APP_ROOT/agent/workspace`，路径守卫拒绝绝对路径、`..`、`~`、Windows 盘符和 symlink 逃逸。
+- 用户显式选择 `none` / `test_runner` / `approval_shell`；状态条常驻，首次开启代码工作区时弹出三档面板，完整 Shell 必须先勾选风险确认。
+- 写文件、编辑文件、完整 Shell 标 `requires_confirmation=True`；审批层新增 `force_prompt`，全局 `auto` 也不能静默绕过。
+- 测试运行器只接受白名单命令；完整 Shell 走 `shell=True`，有超时、输出上限、进程组 kill、环境变量清洗和 JSONL 审计。
+- 这是路径边界 + 审批，不是 OS 沙箱；文档和 UI 都明确写了这一点。
 
 ### 尚未落地的部分
 

@@ -239,6 +239,9 @@ export const api = {
   agentRejectTool:      wrap("agentRejectTool",      (id) => k().agentRejectTool(id)),
   agentApprovalPolicy:  wrap("agentApprovalPolicy",  (sid) => k().agentApprovalPolicy(sid)),
   agentSetApprovalPolicy: wrap("agentSetApprovalPolicy", (sid, policy) => k().agentSetApprovalPolicy(sid, policy)),
+  // Coding workspace execution mode (none / test_runner / approval_shell)
+  agentExecutionMode:    wrap("agentExecutionMode",    () => k().agentExecutionMode()),
+  agentSetExecutionMode: wrap("agentSetExecutionMode", (mode, ack) => k().agentSetExecutionMode(mode, ack)),
   // v2.9.0 — skill hub（导入外部 Anthropic SKILL.md 技能）
   // 走 k() 守卫：老 preload 缺这些方法时抛可捕获的错误，而不是 TypeError。
   skillHubList:      wrap("skillHubList",      () => k().skillHubList()),

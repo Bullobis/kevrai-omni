@@ -5,7 +5,7 @@ Coverage:
 - SkillManager: enable/disable, required-skill protection, reset, persistence,
   corrupt/unknown state, active-only registry, guidance block, cross-skill
   uniqueness, tool->skill map
-- Built-in skill bundles (6 skills, default 16 active tools, 23 when all on,
+- Built-in skill bundles (11 skills, default 16 active tools, 43 when all on,
   writing/media opt-in, v2.7.0 flat registry preserved at 11)
 - media_prompt studio tools (positive/negative/theme_constraints, validation)
 - writing studio tools (offline scaffold / extractive summary / stats)
@@ -223,7 +223,7 @@ class TestBuiltinSkills:
         assert ids == ["core", "model_catalog", "local_system",
                        "drama_studio", "writing_studio", "media_prompt_studio",
                        "media_engines", "knowledge_retrieval", "web_search",
-                       "mcp_servers"]
+                       "mcp_servers", "coding_workspace"]
 
     def test_default_active_count(self):
         sm = build_skill_manager()
@@ -235,14 +235,16 @@ class TestBuiltinSkills:
         assert not sm.is_enabled("knowledge_retrieval")
         assert not sm.is_enabled("web_search")
         assert not sm.is_enabled("mcp_servers")
+        assert not sm.is_enabled("coding_workspace")
 
     def test_all_enabled(self):
         sm = build_skill_manager()
         for sid in ("writing_studio", "media_prompt_studio", "media_engines",
-                    "knowledge_retrieval", "web_search", "mcp_servers"):
+                    "knowledge_retrieval", "web_search", "mcp_servers",
+                    "coding_workspace"):
             sm.enable(sid)
-        assert len(sm.active_tool_names()) == 35
-        assert len(all_skill_tools()) == 35
+        assert len(sm.active_tool_names()) == 43
+        assert len(all_skill_tools()) == 43
 
     def test_global_tool_name_uniqueness(self):
         names = [t.name for t in all_skill_tools()]
@@ -501,7 +503,7 @@ class TestSkillsAPI:
         r = client.get("/api/agent/skills")
         assert r.status_code == 200
         d = r.json()
-        assert d["count"] == 10 and d["active_count"] == 4
+        assert d["count"] == 11 and d["active_count"] == 4
         assert d["active_tool_count"] == 16
 
     def test_toggle_changes_tool_count(self, client):

@@ -46,13 +46,14 @@ DEFAULT_TIMEOUT_SECONDS = 60.0
 # cancel feel near-instant; long enough that the poll loop costs ~nothing.
 _POLL_INTERVAL_SECONDS = 0.2
 
-#: 三档，对齐 Operit 的 PermissionLevel：ALLOW / ASK / FORBID。
-#:  ``auto``    = ALLOW   直接执行，不再询问
-#:  ``confirm`` = ASK     每次调用前请用户确认
-#:  ``deny``    = FORBID  直接拒绝执行
-#: 第三档的意义：缺了它，用户对"这个工具我永远不想让它碰"只能靠每次点拒绝，
-#: 既烦又容易漏——尤其是 Agent 在无人值守时反复重试同一个工具的场景。
-VALID_POLICIES = ("auto", "confirm", "deny")
+#: 用户可见的三档审批策略：
+#:  ``confirm``    = 全部需确认：每次工具调用前都询问用户。
+#:  ``auto``      = 自动确认（推荐）：普通工具直接执行；标了 requires_confirmation
+#:                   的敏感工具（写文件、edit_lines、完整 Shell 等）仍然询问。
+#:  ``no_confirm`` = 无需确认（高风险）：所有工具直接执行，连 requires_confirmation
+#:                   也跳过。只允许用户在明确知道风险时选择。
+#:  ``deny`` 是内部/单工具级别的 FORBID 档，不放进用户三档选择里。
+VALID_POLICIES = ("auto", "confirm", "no_confirm", "deny")
 
 
 class ApprovalSessionMismatch(PermissionError):
@@ -73,6 +74,10 @@ _POLICY_ALIASES = {
     "confirm": "confirm",
     "ask": "confirm",
     "manual": "confirm",
+    "no_confirm": "no_confirm",
+    "no-confirm": "no_confirm",
+    "bypass": "no_confirm",
+    "always": "no_confirm",
     "deny": "deny",
     "forbid": "deny",
     "never": "deny",
@@ -218,6 +223,12 @@ class ApprovalManager:
     def get_tool_policies(self, session_id: str) -> dict[str, str]:
         with self._lock:
             return dict(self._tool_policies.get(session_id, {}))
+
+    def has_tool_policy(self, session_id: str, tool_name: str) -> bool:
+        """Whether this tool has an explicit user override for the session."""
+        key = (tool_name or "").strip()
+        with self._lock:
+            return key in self._tool_policies.get(session_id, {})
 
     def effective_policy(self, session_id: str, tool_name: str) -> str:
         """该工具实际生效的档位：**工具例外 > 会话全局 > 默认 auto**。
@@ -375,6 +386,7 @@ class ApprovalManager:
         tool_name: str,
         tool_params: dict[str, Any],
         cancel_event: threading.Event | None = None,
+        force_prompt: bool = False,
     ) -> GateResult:
         """Decide whether a tool call may run.
 
@@ -387,12 +399,20 @@ class ApprovalManager:
         both resolve it gracefully. The returned :class:`GateResult` tells the
         loop whether to run the tool (and with which params) or to treat the
         call as not-approved and feed the model a "用户未批准" observation.
+
+        ``force_prompt`` is used by tools marked ``requires_confirmation``:
+        a session-wide ``auto`` policy does not silently bypass them. An
+        explicit per-tool policy still wins (the user asked for it directly).
+        ``no_confirm`` is the explicit high-risk bypass: it skips even
+        ``force_prompt`` for every tool in the session.
         """
         # 注意用 effective_policy 而不是 get_policy：前者会先看该工具有没有
         # 单独配置的档位（Operit 的"全局默认 + 单工具例外"）。
         policy = self.effective_policy(session_id, tool_name)
-        if policy == "auto":
-            return GateResult(True, dict(tool_params), "auto")
+        if force_prompt and policy == "auto" and not self.has_tool_policy(session_id, tool_name):
+            policy = "confirm"
+        if policy in ("auto", "no_confirm"):
+            return GateResult(True, dict(tool_params), policy)
         if policy == "deny":
             # 直接拒绝，不挂起、不等待、不消耗审批超时窗口。
             # 理由：禁止语义上是"这工具不许用"，若还去弹确认框，等于把

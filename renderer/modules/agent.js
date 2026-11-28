@@ -27,6 +27,7 @@ function esc(s) {
 let _sessionId = "default";
 let _busy = false;
 let _status = { llm_ready: false, mode: "rule_based", tool_count: 0 };
+let _execution = null;
 
 // ---------------------------------------------------------------------------
 // 初始化
@@ -43,6 +44,7 @@ export async function initAgent() {
   _loadSkills();
   _loadSessionList();
   _loadApprovalPolicy();
+  _loadExecutionMode();
   _wireApprovals(document.getElementById("agent-approvals"));
 }
 
@@ -93,10 +95,23 @@ function _renderShell() {
           <select id="agent-persona-select" class="agent-brain-select" title="${t("agent.personaTitle")}"></select>
         </div>
         <span class="hint" id="agent-brain-hint"></span>
-        <label class="agent-approval-toggle" title="${t("agent.approvalTooltip")}">
-          <input type="checkbox" id="agent-approval-confirm">
-          ${t("agent.approvalToggle")}
+        <label class="agent-approval-policy" title="${t("agent.approvalPolicyTooltip")}">
+          <span>${t("agent.approvalPolicyLabel")}</span>
+          <select id="agent-approval-select" class="agent-approval-select">
+            <option value="confirm">${t("agent.approvalPolicyAll")}</option>
+            <option value="auto">${t("agent.approvalPolicyAuto")}</option>
+            <option value="no_confirm">${t("agent.approvalPolicyNone")}</option>
+          </select>
         </label>
+      </div>
+      <div class="agent-execution-bar" id="agent-execution-bar" data-mode="none">
+        <span class="agent-brain-label">${t("agent.executionLabel")}</span>
+        <button type="button" id="agent-execution-btn" class="agent-execution-btn"
+          title="${t("agent.executionChangeTitle")}">
+          <span id="agent-execution-current">${t("agent.executionLoading")}</span>
+          <span class="agent-execution-change">${t("agent.executionChange")}</span>
+        </button>
+        <span id="agent-execution-note" class="hint agent-execution-note"></span>
       </div>
       <div id="agent-approvals" class="agent-approvals" aria-live="polite" hidden></div>
       <details class="agent-skills-panel" id="agent-skills-panel">
@@ -133,6 +148,26 @@ function _renderShell() {
           </div>
         </div>
       </details>
+      <div id="agent-execution-dialog" class="agent-modal" hidden role="dialog"
+        aria-modal="true" aria-labelledby="agent-execution-title">
+        <div class="agent-modal-backdrop" data-execution-close></div>
+        <div class="agent-modal-card">
+          <div class="agent-modal-head">
+            <h3 id="agent-execution-title">${t("agent.executionDialogTitle")}</h3>
+            <button type="button" class="agent-modal-close" data-execution-close
+              aria-label="${t("agent.executionClose")}">×</button>
+          </div>
+          <p class="hint">${t("agent.executionDialogHint")}</p>
+          <div id="agent-execution-options" class="agent-execution-options"></div>
+          <label class="agent-risk-ack" id="agent-execution-risk" hidden>
+            <input type="checkbox" id="agent-execution-risk-ack">
+            <span>${t("agent.executionRiskAck")}</span>
+          </label>
+          <div class="agent-modal-actions">
+            <button type="button" id="agent-execution-save" class="btn btn-primary">${t("agent.executionSave")}</button>
+          </div>
+        </div>
+      </div>
       <div class="agent-surface">
         <div id="agent-messages" class="agent-messages">${_agentEmptyHtml()}</div>
         <div class="agent-quickphrases" id="agent-quickphrases">
@@ -200,7 +235,8 @@ function _wireEvents(root) {
   // The native toggle event is not delivered reliably for every synthetic
   // click in embedded Chromium; update the hint from the summary click too.
   root.addEventListener("click", (e) => {
-    const summary = e.target instanceof Element ? e.target.closest("summary") : null;
+    const summary = (typeof Element !== "undefined" && e.target instanceof Element)
+      ? e.target.closest("summary") : null;
     const details = summary?.closest("details.agent-trace");
     if (!details) return;
     // <summary>'s native toggle happens after this click event; compute the
@@ -327,22 +363,32 @@ function _wireEvents(root) {
     }
   });
 
-  // Approval policy toggle: auto (run everything) vs confirm (ask first).
-  const approvalToggle = $("#agent-approval-confirm", root);
-  if (approvalToggle) {
-    approvalToggle.addEventListener("change", async () => {
-      const policy = approvalToggle.checked ? "confirm" : "auto";
-      approvalToggle.disabled = true;
+  // Tool approval policy: three visible choices. `auto` is the recommended
+  // middle ground (ordinary tools run, requires_confirmation tools still ask);
+  // `no_confirm` is an explicit high-risk bypass.
+  const approvalSelect = $("#agent-approval-select", root);
+  if (approvalSelect) {
+    approvalSelect.addEventListener("change", async () => {
+      const policy = approvalSelect.value;
+      const previous = approvalSelect.dataset.previous || "auto";
+      approvalSelect.disabled = true;
       try {
-        unwrap(await api.agentSetApprovalPolicy(_sessionId, policy));
-        toast(policy === "confirm"
-          ? t("agent.approvalOn")
-          : t("agent.approvalOff"), { kind: "ok" });
+        const res = unwrap(await api.agentSetApprovalPolicy(_sessionId, policy));
+        const savedPolicy = res && res.policy ? res.policy : policy;
+        approvalSelect.value = savedPolicy;
+        approvalSelect.dataset.previous = savedPolicy;
+        const label = approvalSelect.selectedOptions[0]?.textContent || savedPolicy;
+        toast(t("agent.approvalPolicySaved", { mode: label }), {
+          kind: savedPolicy === "no_confirm" ? "err" : "ok",
+        });
+        if (savedPolicy === "no_confirm") {
+          toast(t("agent.approvalPolicyNoConfirmWarn"), { kind: "err" });
+        }
       } catch (err) {
-        approvalToggle.checked = !approvalToggle.checked; // rollback
+        approvalSelect.value = previous;
         toast(t("agent.approvalFailed", { err: err.message || err }), { kind: "err" });
       } finally {
-        approvalToggle.disabled = false;
+        approvalSelect.disabled = false;
       }
     });
   }
@@ -359,6 +405,9 @@ function _wireEvents(root) {
         await api.agentToggleSkill(id, cb.checked);
         toast(cb.checked ? t("agent.skillAdded", { id }) : t("agent.skillDisabled", { id }), { kind: "ok" });
         await Promise.all([_loadSkills(), _refreshStatus()]);
+        if (id === "coding_workspace" && cb.checked && !(_execution && _execution.explicit)) {
+          _openExecutionDialog(true);
+        }
       } catch (err) {
         cb.checked = !cb.checked; // 回滚 UI
         toast(t("agent.toggleFailed", { err: err.message || err }), { kind: "err" });
@@ -384,6 +433,31 @@ function _wireEvents(root) {
   }
   _wireQuickPhrases(root, input, sendBtn);
   _wireSkillHub(root);
+  _wireExecution(root);
+}
+
+function _wireExecution(root) {
+  const btn = $("#agent-execution-btn", root);
+  if (btn) btn.addEventListener("click", () => _openExecutionDialog(false));
+  root.querySelectorAll("[data-execution-close]").forEach((el) => {
+    el.addEventListener("click", _closeExecutionDialog);
+  });
+  const options = $("#agent-execution-options", root);
+  if (options) {
+    options.addEventListener("change", () => {
+      const selected = options.querySelector("input[name=agent-exec-mode]:checked");
+      const risk = $("#agent-execution-risk", root);
+      if (risk) risk.hidden = selected?.value !== "approval_shell";
+    });
+  }
+  const save = $("#agent-execution-save", root);
+  if (save) save.addEventListener("click", _saveExecutionMode);
+  const dialog = $("#agent-execution-dialog", root);
+  if (dialog) {
+    dialog.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") _closeExecutionDialog();
+    });
+  }
 }
 
 // 折叠开关 + chip 点击（事件委托到 #agent-qp-body）。
@@ -784,6 +858,81 @@ function _summarizeObservation(obs) {
   return `{ ${keys}${Object.keys(obs).length > 6 ? ", …" : ""} }`;
 }
 
+function _editSummary(tool, obs) {
+  if (tool !== "edit_file" && tool !== "write_file" && tool !== "edit_lines") return null;
+  if (!obs || typeof obs !== "object" || obs.ok === false) return null;
+  const path = String(obs.path || "");
+  if (!path) return null;
+  const additions = Number(obs.additions);
+  const deletions = Number(obs.deletions);
+  if (!Number.isFinite(additions) || !Number.isFinite(deletions)) return null;
+  const startLine = Number(obs.start_line);
+  const endLine = Number(obs.end_line);
+  return {
+    path,
+    additions: Math.max(0, additions),
+    deletions: Math.max(0, deletions),
+    diff: typeof obs.diff === "string" ? obs.diff : "",
+    startLine: Number.isFinite(startLine) ? startLine : null,
+    endLine: Number.isFinite(endLine) ? endLine : null,
+    operation: typeof obs.operation === "string" ? obs.operation : "replace",
+  };
+}
+
+function _renderEditDiff(diff) {
+  if (!diff) return "";
+  const lines = diff.split("\n").slice(0, 180);
+  const html = lines.map((line) => {
+    const cls = line.startsWith("+++") || line.startsWith("---")
+      ? "is-meta"
+      : line.startsWith("@@")
+        ? "is-hunk"
+        : line.startsWith("+")
+          ? "is-add"
+          : line.startsWith("-")
+            ? "is-del"
+            : "";
+    return `<span class="agent-edit-line ${cls}">${esc(line) || " "}</span>`;
+  }).join("");
+  return `<details class="agent-edit-details">
+    <summary>${t("agent.viewFullContent")}</summary>
+    <pre class="agent-edit-diff"><code>${html}</code></pre>
+  </details>`;
+}
+
+function _editPathLabel(p) {
+  const path = String(p || "").replace(/\\/g, "/").replace(/^\.\//, "");
+  return path || String(p || "");
+}
+
+function _renderEditCard(edit) {
+  const name = _editPathLabel(edit.path);
+  let title = t("agent.editedFile", { name });
+  if (edit.startLine != null) {
+    if (edit.operation === "insert_before") {
+      title = t("agent.insertedBefore", { name, line: edit.startLine });
+    } else if (edit.operation === "insert_after") {
+      title = t("agent.insertedAfter", { name, line: edit.startLine });
+    } else if (edit.endLine != null && edit.endLine !== edit.startLine) {
+      title = t("agent.editedLines", {
+        name, start: edit.startLine, end: edit.endLine,
+      });
+    } else {
+      title = t("agent.editedLine", { name, line: edit.startLine });
+    }
+  }
+  return `<div class="agent-edit-card">
+    <div class="agent-edit-head">
+      <span class="agent-edit-title" title="${esc(edit.path)}">${esc(title)}</span>
+      <span class="agent-edit-stats" title="${esc(edit.path)}">
+        <span class="is-add">+${edit.additions}</span>
+        <span class="is-del">-${edit.deletions}</span>
+      </span>
+    </div>
+    ${_renderEditDiff(edit.diff)}
+  </div>`;
+}
+
 // Render the autonomous reasoning trace (thoughts + tool calls + artifacts).
 // The collapsed summary intentionally shows the most recent thought, so the
 // card is useful without opening it (matching the "deep thinking" pattern in
@@ -810,13 +959,16 @@ function _renderTrace(steps, { open = false, live = false } = {}) {
           ? JSON.stringify(v) : v).slice(0, 60)}`).join(" ")
       : "";
     const artifacts = _collectArtifacts(s.observation);
+    const edit = _editSummary(s.action_tool, s.observation);
     const chips = artifacts.map((p) =>
       `<button type="button" class="agent-artifact" data-open="${esc(p)}"
          title="${esc(p)}"><span class="agent-artifact-ext">${_artifactKind(p)}</span><span class="agent-artifact-name">${esc(_basename(p))}</span></button>`
     ).join("");
-    const obsText = s.observation != null
-      ? _summarizeObservation(s.observation)
-      : (s.observation_ok === false ? t("agent.traceStepFailed") : t("agent.traceStepDone"));
+    const obsText = edit
+      ? `+${edit.additions} -${edit.deletions}`
+      : s.observation != null
+        ? _summarizeObservation(s.observation)
+        : (s.observation_ok === false ? t("agent.traceStepFailed") : t("agent.traceStepDone"));
     const thought = s.thought
       ? `<div class="deep-think-thought">${renderMarkdown(s.thought)}</div>`
       : "";
@@ -828,6 +980,7 @@ function _renderTrace(steps, { open = false, live = false } = {}) {
             <span class="deep-think-tool-state ${s.observation_ok === false ? "failed" : ""}">${esc(obsText)}</span>
           </div>
           ${params ? `<div class="deep-think-tool-params">${esc(params)}</div>` : ""}
+          ${edit ? _renderEditCard(edit) : ""}
           ${chips ? `<div class="agent-trace-artifacts">${chips}</div>` : ""}
         </div>`
       : "";
@@ -879,6 +1032,123 @@ function _renderLiveTrace(steps, open, force = false) {
 }
 
 // ---------------------------------------------------------------------------
+// 执行方式（用户显式选择：不执行 / 测试运行器 / 完整 Shell）
+// 这不是高级设置里的隐藏开关：状态条常驻，选择面板列出三种方式的真实代价。
+// ---------------------------------------------------------------------------
+async function _loadExecutionMode() {
+  try {
+    const res = unwrap(await api.agentExecutionMode());
+    _execution = res;
+    _renderExecutionMode(res);
+  } catch (e) {
+    console.warn("execution mode load failed:", e);
+    const note = document.getElementById("agent-execution-note");
+    if (note) note.textContent = t("agent.executionLoadFailed", { err: e.message || e });
+  }
+}
+
+function _renderExecutionMode(data) {
+  const bar = document.getElementById("agent-execution-bar");
+  const current = document.getElementById("agent-execution-current");
+  const note = document.getElementById("agent-execution-note");
+  if (!bar || !current) return;
+  const modes = data.modes || [];
+  const mode = modes.find((m) => m.id === data.mode);
+  const label = _executionLabel(data.mode, mode?.label);
+  bar.dataset.mode = data.mode || "none";
+  bar.classList.toggle("is-unset", !data.explicit);
+  current.textContent = data.explicit
+    ? t("agent.executionCurrent", { mode: label })
+    : t("agent.executionUnset");
+  if (note) {
+    const key = data.mode === "approval_shell"
+      ? "agent.executionShellHint"
+      : data.mode === "test_runner"
+        ? "agent.executionTestHint"
+        : data.explicit ? "agent.executionNoneHint" : "agent.executionUnsetHint";
+    note.textContent = t(key);
+  }
+}
+
+function _executionLabel(id, fallback) {
+  const key = {
+    none: "agent.executionNone",
+    test_runner: "agent.executionTest",
+    approval_shell: "agent.executionShell",
+  }[id];
+  return key ? t(key) : (fallback || id);
+}
+
+function _executionDescription(id, fallback) {
+  const key = {
+    none: "agent.executionNoneDesc",
+    test_runner: "agent.executionTestDesc",
+    approval_shell: "agent.executionShellDesc",
+  }[id];
+  return key ? t(key) : (fallback || "");
+}
+
+function _executionOptionsHtml(selected) {
+  const modes = _execution?.modes || [];
+  return modes.map((m) => `
+    <label class="agent-execution-option ${m.id === "approval_shell" ? "is-danger" : ""}">
+      <input type="radio" name="agent-exec-mode" value="${esc(m.id)}"
+        ${m.id === selected ? "checked" : ""}>
+      <span class="agent-execution-option-copy">
+        <strong>${esc(_executionLabel(m.id, m.label))}</strong>
+        <span>${esc(_executionDescription(m.id, m.description))}</span>
+      </span>
+    </label>`).join("");
+}
+
+async function _openExecutionDialog(fromSkill) {
+  if (!_execution) await _loadExecutionMode();
+  const dialog = document.getElementById("agent-execution-dialog");
+  const options = document.getElementById("agent-execution-options");
+  const risk = document.getElementById("agent-execution-risk");
+  const ack = document.getElementById("agent-execution-risk-ack");
+  if (!dialog || !options) return;
+  const selected = _execution?.mode || "none";
+  options.innerHTML = _executionOptionsHtml(selected);
+  if (risk) risk.hidden = selected !== "approval_shell";
+  if (ack) ack.checked = false;
+  dialog.dataset.fromSkill = fromSkill ? "1" : "";
+  dialog.hidden = false;
+  dialog.querySelector("input[name=agent-exec-mode]:checked")?.focus();
+}
+
+function _closeExecutionDialog() {
+  const dialog = document.getElementById("agent-execution-dialog");
+  if (dialog) dialog.hidden = true;
+}
+
+async function _saveExecutionMode() {
+  const dialog = document.getElementById("agent-execution-dialog");
+  const selected = dialog?.querySelector("input[name=agent-exec-mode]:checked");
+  const ack = document.getElementById("agent-execution-risk-ack");
+  const save = document.getElementById("agent-execution-save");
+  if (!selected) return;
+  const mode = selected.value;
+  if (mode === "approval_shell" && !(ack && ack.checked)) {
+    toast(t("agent.executionRiskRequired"), { kind: "err" });
+    return;
+  }
+  if (save) save.disabled = true;
+  try {
+    const res = unwrap(await api.agentSetExecutionMode(mode, mode === "approval_shell"));
+    _execution = res;
+    _renderExecutionMode(res);
+    _closeExecutionDialog();
+    const label = _executionLabel(res.mode, (res.modes || []).find((m) => m.id === res.mode)?.label);
+    toast(t("agent.executionSaved", { mode: label }), { kind: "ok" });
+  } catch (e) {
+    toast(t("agent.executionSaveFailed", { err: e.message || e }), { kind: "err" });
+  } finally {
+    if (save) save.disabled = false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Tool-call approval gate (confirm-before-run)
 // While a chat is in flight we poll GET /approvals and render a card per pending
 // tool call: the human can approve (optionally editing the JSON params), or
@@ -887,11 +1157,15 @@ function _renderLiveTrace(steps, open, force = false) {
 let _approvalTimer = null;
 
 async function _loadApprovalPolicy() {
-  const toggle = document.getElementById("agent-approval-confirm");
-  if (!toggle) return;
+  const select = document.getElementById("agent-approval-select");
+  if (!select) return;
   try {
     const res = unwrap(await api.agentApprovalPolicy(_sessionId));
-    toggle.checked = res.policy === "confirm";
+    const policy = ["confirm", "auto", "no_confirm"].includes(res.policy)
+      ? res.policy
+      : "auto";
+    select.value = policy;
+    select.dataset.previous = policy;
   } catch (e) {
     console.warn("approval policy load failed:", e);
   }

@@ -337,8 +337,10 @@ class Agent:
     def set_tool_approval_policy(self, session_id: str, mode: str) -> str:
         """Set a session's approval policy and persist it best-effort.
 
-        ``mode`` is ``"auto"`` (run tools immediately, default) or ``"confirm"``
-        (ask before each tool call). Raises ``ValueError`` for other values.
+        ``mode`` is ``"confirm"`` (ask before every tool call), ``"auto"``
+        (auto-run ordinary tools but still ask for ``requires_confirmation`` ones),
+        or ``"no_confirm"`` (explicitly bypass all confirmations; high risk).
+        Raises ``ValueError`` for other values.
         """
         mode = self.approval.set_policy(session_id, mode)
         if self.memory:
@@ -496,6 +498,19 @@ class Agent:
             skills_block = self.skills.build_guidance_block() or "（暂无额外技能）"
         else:
             skills_block = "（暂无额外技能）"
+        workspace = getattr(self.ctx, "workspace", None)
+        if workspace is not None:
+            mode = getattr(workspace, "mode", "none")
+            mode_label = {
+                "none": "不执行命令",
+                "test_runner": "测试运行器",
+                "approval_shell": "完整 Shell（无隔离）",
+            }.get(mode, mode)
+            skills_block += (
+                f"\n\n当前代码工作区执行方式：{mode_label}。"
+                "不要声称这是沙箱；run_test 仍会执行项目代码，"
+                "run_command 没有操作系统隔离。"
+            )
         prefs = self.memory.get_all_preferences() if self.memory else {}
         preferences_block = "\n".join(f"- {k}: {v}" for k, v in prefs.items()) if prefs else "（暂无）"
 
@@ -532,6 +547,16 @@ class Agent:
     # ------------------------------------------------------------------
     # Rule-based fallback (no LLM loaded)
     # ------------------------------------------------------------------
+    def _tool_requires_confirmation(self, tool_name: str) -> bool:
+        # Some tests and lightweight integrations provide a duck-typed registry
+        # without ``get()``; a missing lookup means "no forced prompt", not a
+        # crash in the middle of a ReAct turn.
+        getter = getattr(self.registry, "get", None)
+        if not callable(getter):
+            return False
+        tool = getter(tool_name)
+        return bool(getattr(tool, "requires_confirmation", False))
+
     def _rule_tool_call(self, session_id: str, tool: str,
                         params: dict[str, Any]) -> dict[str, Any]:
         """Run a deterministic rule-mode tool through the approval gate.
@@ -544,7 +569,10 @@ class Agent:
         """
         with self._cancel_lock:
             cancel_ev = self._cancel_events.get(session_id)
-        gate = self.approval.gate(session_id, tool, params, cancel_event=cancel_ev)
+        gate = self.approval.gate(
+            session_id, tool, params, cancel_event=cancel_ev,
+            force_prompt=self._tool_requires_confirmation(tool),
+        )
         if gate.reason == "cancel":
             return {"ok": False, "error": "已取消", "error_type": "Cancelled"}
         if not gate.approved:
@@ -1026,6 +1054,7 @@ class Agent:
                 cancel_ev = self._cancel_events.get(session_id)
             gate = self.approval.gate(
                 session_id, tool_name, tool_params, cancel_event=cancel_ev,
+                force_prompt=self._tool_requires_confirmation(tool_name),
             )
             if gate.reason == "cancel":
                 cancelled = True

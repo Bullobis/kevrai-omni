@@ -25,6 +25,26 @@ window.kevrai = {
   agentSessions: async () => ({ body: { sessions: [] } }),
   agentSkills: async () => ({ body: { skills: [], count: 0, active_count: 0, active_tool_count: 0 } }),
   agentApprovalPolicy: async () => ({ body: { policy: "auto" } }),
+  agentExecutionMode: async () => ({
+    body: {
+      mode: "none", explicit: false, root: "/tmp/workspace",
+      modes: [
+        { id: "none", label: "不执行命令", description: "只读写文件。" },
+        { id: "test_runner", label: "测试运行器", description: "白名单测试。" },
+        { id: "approval_shell", label: "完整 Shell（无隔离）", description: "任意命令。" },
+      ],
+    },
+  }),
+  agentSetExecutionMode: async (mode) => ({
+    body: {
+      mode, explicit: true, root: "/tmp/workspace",
+      modes: [
+        { id: "none", label: "不执行命令", description: "只读写文件。" },
+        { id: "test_runner", label: "测试运行器", description: "白名单测试。" },
+        { id: "approval_shell", label: "完整 Shell（无隔离）", description: "任意命令。" },
+      ],
+    },
+  }),
 };
 
 const mod = await import(`../modules/agent.js?dom=${Date.now()}`);

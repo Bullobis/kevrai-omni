@@ -6052,6 +6052,7 @@ def _get_agent(request: Request):
             return _AGENT_SINGLETON["agent"]
         from .agent import Agent, AgentMemory, ModelRouter, ToolContext, skill_hub
         from .agent.tools import build_skill_manager
+        from .agent.workspace import WorkspaceRuntime
 
         db_path = APP_ROOT / "agent" / "memory.sqlite3"
         memory = AgentMemory(db_path)
@@ -6081,6 +6082,7 @@ def _get_agent(request: Request):
             settings=getattr(request.app.state, "settings", None),
             models_dir=MODELS_DIR,
             app_root=APP_ROOT,
+            workspace=WorkspaceRuntime(APP_ROOT / "agent" / "workspace"),
         )
         agent = Agent(memory=memory, router=router, ctx=ctx, skill_manager=skill_manager)
         _AGENT_SINGLETON["agent"] = agent
@@ -6772,6 +6774,43 @@ def agent_set_approval_policy(req: ApprovalPolicyReq, request: Request) -> dict[
         raise HTTPException(status_code=400, detail=str(e)) from None
     return {"ok": True, "session_id": req.session_id, "policy": mode,
             "timeout_seconds": agent.approval.default_timeout}
+
+
+class ExecutionModeReq(BaseModel):
+    mode: str = Field(min_length=1, max_length=32)
+    # Selecting the no-isolation shell requires an explicit risk acknowledgement.
+    acknowledge_risk: bool = False
+
+
+@app.get("/api/agent/execution-mode")
+def agent_get_execution_mode(request: Request) -> dict[str, Any]:
+    """Return the workspace execution mode and the options shown to the user."""
+    from .agent.workspace import WorkspaceError
+
+    agent = _get_agent(request)
+    workspace = getattr(agent.ctx, "workspace", None)
+    if workspace is None:
+        raise HTTPException(status_code=503, detail="workspace runtime unavailable")
+    try:
+        return workspace.describe()
+    except WorkspaceError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+@app.put("/api/agent/execution-mode")
+def agent_set_execution_mode(req: ExecutionModeReq, request: Request) -> dict[str, Any]:
+    """Set the workspace execution mode. Only the user-facing IPC may call this."""
+    from .agent.workspace import WorkspaceError
+
+    agent = _get_agent(request)
+    workspace = getattr(agent.ctx, "workspace", None)
+    if workspace is None:
+        raise HTTPException(status_code=503, detail="workspace runtime unavailable")
+    try:
+        workspace.set_mode(req.mode, acknowledge_risk=req.acknowledge_risk)
+    except WorkspaceError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+    return {"ok": True, **workspace.describe()}
 
 
 

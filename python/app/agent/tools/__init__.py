@@ -37,6 +37,7 @@ from .system_tools import (
     set_preference,
 )
 from .web_tools import WEB_TOOLS
+from .workspace_tools import CODING_WORKSPACE_TOOLS
 from .writing_tools import WRITING_TOOLS
 
 # ---------------------------------------------------------------------------
@@ -221,6 +222,28 @@ WEB_SKILL = Skill(
     ),
 )
 
+CODING_WORKSPACE_SKILL = Skill(
+    id="coding_workspace",
+    name="代码工作区",
+    description=(
+        "读写固定工作区内的文件，按用户选择的方式运行测试或命令。"
+        "文件操作有路径边界；完整 Shell 没有操作系统隔离。"
+    ),
+    icon="🛠️",
+    category="coding",
+    default_enabled=False,  # opt-in: 文件与命令能力必须由用户主动开启
+    tools=CODING_WORKSPACE_TOOLS,
+    guidance=(
+        "涉及代码或文件任务时：先 list_dir / read_file（with_line_numbers=true）了解现状，再 edit_file 或 "
+        "write_file；只改特定行时用 edit_lines（按 1-based 行号，可替换/删除/插入，"
+        "并尽量带 expected_text 防止行号漂移；expected_text 用不带行号前缀的原文）。"
+        "写入前必须让用户看到改动意图。运行验证优先用 run_test，"
+        "只允许 pytest / npm test / cargo test / go test / ruff check / mypy 等白名单命令。"
+        "run_command 只有在用户明确选择“完整 Shell”后才可用，并且每次都需要用户确认；"
+        "它不是沙箱，不要把任意命令说成安全隔离。"
+    ),
+)
+
 BUILTIN_SKILLS: list[Skill] = [
     CORE_SKILL,
     CATALOG_SKILL,
@@ -232,6 +255,7 @@ BUILTIN_SKILLS: list[Skill] = [
     KNOWLEDGE_SKILL,
     WEB_SKILL,
     MCP_SKILL,
+    CODING_WORKSPACE_SKILL,
 ]
 
 

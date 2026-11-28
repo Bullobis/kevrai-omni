@@ -2322,9 +2322,19 @@ function registerIpc() {
   });
   ipcMain.handle("kevrai:agent-approval-policy-set", async (_e, sessionId, policy) => {
     const sid = (typeof sessionId === "string" && sessionId) ? sessionId : "default";
-    assert(policy === "auto" || policy === "confirm", "policy: must be auto|confirm");
+    assert(["auto", "confirm", "no_confirm"].includes(policy), "policy: must be auto|confirm|no_confirm");
     return sidecarFetch("/api/agent/approval-policy",
       { method: "PUT", body: { session_id: sid, policy } });
+  });
+  ipcMain.handle("kevrai:agent-execution-mode", async () =>
+    sidecarFetch("/api/agent/execution-mode"));
+  ipcMain.handle("kevrai:agent-execution-mode-set", async (_e, mode, acknowledgeRisk) => {
+    assert(typeof mode === "string" && ["none", "test_runner", "approval_shell"].includes(mode),
+           "mode: must be none|test_runner|approval_shell");
+    return sidecarFetch("/api/agent/execution-mode", {
+      method: "PUT",
+      body: { mode, acknowledge_risk: acknowledgeRisk === true },
+    });
   });
 
 

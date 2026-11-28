@@ -138,7 +138,9 @@ for p in root.rglob("*"):
         continue
     # Local build artifacts are not shipped source. The PyInstaller venv
     # contains cryptography's test fixtures with literal PEM headers.
-    if rel.startswith(("python/.venv-sidecar/", "python/build/", "python/dist/")):
+    if rel.startswith(("python/.venv-sidecar/", "python/build/", "python/dist/", "build/", "dist/")):
+        continue
+    if "/.venv-sidecar/" in rel or rel.endswith("/.venv-sidecar"):
         continue
     if rel in EXCLUDE: continue
     if p.suffix not in {".py",".js",".json",".yml",".yaml",".toml",".md",".sh",".txt"}:

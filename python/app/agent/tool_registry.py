@@ -63,6 +63,7 @@ class ToolContext:
     settings: Any = None
     models_dir: Any = None
     app_root: Any = None
+    workspace: Any = None
     extra: dict[str, Any] = field(default_factory=dict)
 
 
@@ -74,6 +75,13 @@ class Tool:
     parameters: dict[str, Any]  # JSON Schema subset
     handler: Callable[[dict[str, Any], ToolContext], dict[str, Any]]
     category: str = "general"
+    # Permission metadata is advisory for now: the actual gate is still
+    # ApprovalManager. It records what the tool is allowed to touch so the
+    # UI and future policy layers can classify it without guessing.
+    required_permission: str = ""
+    # When True, a global "auto" policy is not enough: the call must be
+    # confirmed by the user unless the tool has an explicit per-tool "auto".
+    requires_confirmation: bool = False
 
     def to_spec(self) -> dict[str, Any]:
         return {
@@ -81,6 +89,8 @@ class Tool:
             "description": self.description,
             "parameters": self.parameters,
             "category": self.category,
+            "required_permission": self.required_permission,
+            "requires_confirmation": self.requires_confirmation,
         }
 
     def execute(self, params: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:

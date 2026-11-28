@@ -202,6 +202,9 @@ class TestBuiltinPreserved:
         "knowledge_retrieval": {"list_knowledge_bases", "search_knowledge"},
         "web_search": {"web_search"},
         "mcp_servers": {"list_mcp_tools", "call_mcp_tool"},
+        "coding_workspace": {"read_file", "list_dir", "search_text",
+                             "write_file", "edit_file", "edit_lines",
+                             "run_test", "run_command"},
     }
     EXPECTED_IDS = set(EXPECTED)
 
